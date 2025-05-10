@@ -15,11 +15,11 @@
     <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link rel="stylesheet" href="css/vina.css">
     <!-- Preload internal fonts -->
+    <link rel="preload" href="../webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
     <!-- Include Header -->
@@ -64,7 +64,7 @@
             <h2 class="fade-in" data-delay="0">Why Choose Vina Network?</h2>
             <div class="why-choose-cards">
                 <div class="why-choose-card fade-in" data-delay="200">
-                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-shield"></i> <!-- Changed from fa-shield-alt -->
                     <h3>Security First</h3>
                     <p>Advanced encryption and decentralized protocols to protect your assets.</p>
                 </div>
@@ -119,7 +119,7 @@
                     <i class="fab fa-discord"></i> Discord
                 </a>
                 <a href="https://t.me/Vina_Network" target="_blank" class="community-link">
-                    <i class="fab fa-telegram-plane"></i> Telegram
+                    <i class="fab fa-telegram"></i> Telegram <!-- Changed from fa-telegram-plane -->
                 </a>
             </div>
         </div>
