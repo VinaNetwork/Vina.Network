@@ -15,11 +15,11 @@
     <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link rel="stylesheet" href="css/vina.css">
     <!-- Preload internal fonts -->
-    <link rel="preload" href="/fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
     <!-- Include Header -->
@@ -113,7 +113,7 @@
             <p class="fade-in" data-delay="200">Be a part of the Vina Network revolution. Connect with us and stay updated!</p>
             <div class="community-links fade-in" data-delay="400">
                 <a href="https://x.com/Vina_Network" target="_blank" class="community-link">
-                    <i class="fab fa-twitter"></i> Twitter
+                    <i class="fab fa-x-twitter"></i> Twitter
                 </a>
                 <a href="https://discord.gg/wm2H5epF" target="_blank" class="community-link">
                     <i class="fab fa-discord"></i> Discord
