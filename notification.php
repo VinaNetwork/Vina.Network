@@ -27,6 +27,6 @@
     </section>
 
     <?php include 'include/footer.php'; ?>
-    <script src="../js/vina.js"></script>
+    <script src="js/vina.js"></script>
 </body>
 </html>
