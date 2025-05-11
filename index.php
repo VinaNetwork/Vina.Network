@@ -133,6 +133,11 @@
     <!-- Include Footer -->
     <?php include 'include/footer.php'; ?>
 
+    <!-- Nút Back to Top -->
+    <button id="back-to-top" title="Về đầu trang">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
     <script src="js/vina.js"></script>
 </body>
 </html>
