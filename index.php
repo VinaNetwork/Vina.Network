@@ -17,9 +17,6 @@
     <link rel="stylesheet" href="/css/all.css">
     <link rel="stylesheet" href="/css/poppins.css">
     <!-- Preload critical resources -->
-    <link rel="preload" href="/css/vina.css" as="style">
-    <link rel="preload" href="/css/poppins.css" as="style">
-    <link rel="preload" href="/css/all.css" as="style">
     <link rel="preload" href="/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
