@@ -268,16 +268,7 @@
         max-width: 300px;
   }
 
-  .community-section {
-        padding: 2rem 1rem;
-  }
-
-  .community-link {
-        padding: 0.6rem 1.2rem;
-        font-size: 1rem;
-  }
-
-  .community-link i {
-        font-size: 1rem;
-  }
+  .community-section {padding: 2rem 1rem;}
+  .community-link {padding: 0.6rem 1.2rem;}
+  .community-link i {font-size: 1rem;}
 }
