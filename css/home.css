@@ -106,7 +106,12 @@
     color: #666;
 }
 
-.coinmarketcap-currency-widget {margin: 20px;}
+.crypto-widget {
+    text-align: center;
+    padding: 2rem 1rem;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .hero {
