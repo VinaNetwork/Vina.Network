@@ -13,151 +13,34 @@
     padding: 3rem 1rem;
     overflow-y: auto;
 }
-
 .hero-content h1 {
     font-weight: 700;
     color: #00d4ff;
     text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
 }
-
 .hero-content p {
     font-weight: 400;
     color: #e0e0e0;
 }
 
 /* About Section */
-.about-section {
-    padding: 4rem 1rem;
-    background: #fff;
-    text-align: center;
-}
-
-.about-content h2 {
-    font-weight: 700;
-    color: #1a1a1a;
-}
-
-.about-cards {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.about-card {
-    background: #f8f9fa;
-    border-radius: 15px;
-    padding: 2rem;
-    width: 300px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-    cursor: pointer;
-}
-
-.about-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
-    background-color: #e6f7ff;
-}
-
-.about-card:active {transform: scale(0.95);}
-
-.about-card:active h3 {color: #00d4ff;}
-
-.card-icon {
-    width: 50px;
-    height: 50px;
-    object-fit: contain;
-    margin-bottom: 1rem;
-    transition: transform 0.5s ease;
-}
-
-.about-card:hover .card-icon {
-    transform: scale(1.1) rotate(15deg);
-}
-
-.about-card h3 {
-    font-weight: 600;
-    color: #007bff;
-    transition: color 0.3s ease;
-}
-
-.about-card p {color: #666;}
-
-/* Why Choose Us Section */
-.why-choose-section {
-    padding: 4rem 1rem;
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    text-align: center;
-}
-
-.why-choose-content h2 {
-    font-weight: 700;
-    color: #1a1a1a;
-}
-
-.why-choose-cards {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.why-choose-card {
-    background: #fff;
-    border-radius: 15px;
-    padding: 2rem;
-    width: 300px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-    cursor: pointer;
-}
-
-.why-choose-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
-    background-color: #e6f7ff;
-}
-
-.why-choose-card:active {transform: scale(0.95);}
-
-.why-choose-card:active h3 {color: #00d4ff;}
-
-.why-choose-card i {
-    font-size: 2.5rem;
-    color: #00d4ff;
-    margin-bottom: 1rem;
-    transition: transform 0.5s ease;
-}
-
-.why-choose-card:hover i {
-    transform: scale(1.1) rotate(15deg);
-}
-
-.why-choose-card h3 {
-    font-weight: 600;
-    color: #007bff;
-    transition: color 0.3s ease;
-}
-
-.why-choose-card p {color: #666;}
-
-/* Ecosystem Section */
+.about-section,
+.why-choose-section,
 .ecosystem-section {
     padding: 4rem 1rem;
-    background: #fff;
     text-align: center;
 }
-
+.about-section { background: #fff; }
+.why-choose-section { background: linear-gradient(135deg, #f8f9fa, #e9ecef); }
+.ecosystem-section { background: #fff; }
+.about-content h2,
+.why-choose-content h2,
 .ecosystem-content h2 {
     font-weight: 700;
     color: #1a1a1a;
 }
-
+.about-cards,
+.why-choose-cards,
 .ecosystem-cards {
     display: flex;
     justify-content: center;
@@ -166,7 +49,8 @@
     max-width: 1200px;
     margin: 0 auto;
 }
-
+.about-card,
+.why-choose-card,
 .ecosystem-card {
     background: #f8f9fa;
     border-radius: 15px;
@@ -176,35 +60,51 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     cursor: pointer;
 }
-
+.about-card:hover,
+.why-choose-card:hover,
 .ecosystem-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
     background-color: #e6f7ff;
 }
-
-.ecosystem-card:active {transform: scale(0.95);}
-
-.ecosystem-card:active h3 {color: #00d4ff;}
-
+.about-card:active,
+.why-choose-card:active,
+.ecosystem-card:active {
+    transform: scale(0.95);
+}
+.about-card:active h3,
+.why-choose-card:active h3,
+.ecosystem-card:active h3 {
+    color: #00d4ff;
+}
+.card-icon,
+.why-choose-card i,
 .ecosystem-card i {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin-bottom: 1rem;
     font-size: 2.5rem;
     color: #00d4ff;
-    margin-bottom: 1rem;
     transition: transform 0.5s ease;
 }
-
+.about-card:hover .card-icon,
+.why-choose-card:hover i,
 .ecosystem-card:hover i {
     transform: scale(1.1) rotate(15deg);
 }
-
+.about-card h3,
+.why-choose-card h3,
 .ecosystem-card h3 {
     font-weight: 600;
     color: #007bff;
     transition: color 0.3s ease;
 }
-
-.ecosystem-card p {color: #666;}
+.about-card p,
+.why-choose-card p,
+.ecosystem-card p {
+    color: #666;
+}
 
 /* Community Section */
 .community-section {
@@ -212,21 +112,19 @@
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
     text-align: center;
 }
-
 .community-content h2 {
     font-weight: 700;
     color: #1a1a1a;
 }
-
-.community-content p {color: #666;}
-
+.community-content p {
+    color: #666;
+}
 .community-links {
     display: flex;
     justify-content: center;
     gap: 1.5rem;
     flex-wrap: wrap;
 }
-
 .community-link {
     display: inline-flex;
     align-items: center;
@@ -234,18 +132,15 @@
     background: linear-gradient(45deg, #00d4ff, #007bff);
     color: white;
     padding: 0.8rem 1.5rem;
-    text-decoration: none;
     border-radius: 50px;
     font-size: 1.1rem;
     font-weight: 500;
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 .community-link i {
     font-size: 1.2rem;
 }
-
 .community-link:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
@@ -253,22 +148,29 @@
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-  .hero {
+    .hero {
         background-attachment: scroll;
         padding: 2rem 1rem;
-  }
-
-  .about-cards, .why-choose-cards, .ecosystem-cards {
+    }
+    .about-cards,
+    .why-choose-cards,
+    .ecosystem-cards {
         flex-direction: column;
         align-items: center;
-  }
-
-  .about-card, .why-choose-card, .ecosystem-card {
+    }
+    .about-card,
+    .why-choose-card,
+    .ecosystem-card {
         width: 100%;
         max-width: 300px;
-  }
-
-  .community-section {padding: 2rem 1rem;}
-  .community-link {padding: 0.6rem 1.2rem;}
-  .community-link i {font-size: 1rem;}
+    }
+    .community-section {
+        padding: 2rem 1rem;
+    }
+    .community-link {
+        padding: 0.6rem 1.2rem;
+    }
+    .community-link i {
+        font-size: 1rem;
+    }
 }
