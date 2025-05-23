@@ -9,7 +9,7 @@
             <h3>Quick Links</h3>
             <ul class="footer-links">
                 <li><a href="https://www.vina.network/"><i class="fas fa-home"></i> Home</a></li>
-                <li><a href="https://kimo.vina.network/token/">Kimo</a></li>
+                <li><a href="https://kimo.vina.network/token/"><i class="fas fa-coins"></i> Kimo</a></li>
                 <li><a href="https://www.vina.network/contact/"><i class="fas fa-envelope"></i> Contact</a></li>
             </ul>
         </div>
