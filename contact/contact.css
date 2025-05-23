@@ -5,6 +5,8 @@
     text-align: center;
 }
 
+.contact-info .info-content {margin: 20px;}
+
 .contact-info .info-content h1 {
     font-weight: 600;
     color: #4a90e2;
