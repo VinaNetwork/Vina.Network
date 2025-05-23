@@ -60,6 +60,6 @@
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-    .contact-info {padding: 40px 10px;}
+    .contact-info {padding-top: 64px;}
     .contact-info .method-card {width: 100%;}
 }
