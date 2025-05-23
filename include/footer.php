@@ -8,9 +8,9 @@
         <div class="footer-column">
             <h3>Quick Links</h3>
             <ul class="footer-links">
-                <li><a href="https://www.vina.network/">Home</a></li>
+                <li><a href="https://www.vina.network/"><i class="fas fa-home"></i> Home</a></li>
                 <li><a href="https://kimo.vina.network/token/">Kimo</a></li>
-                <li><a href="https://www.vina.network/contact/">Contact</a></li>
+                <li><a href="https://www.vina.network/contact/"><i class="fas fa-envelope"></i> Contact</a></li>
             </ul>
         </div>
         <div class="footer-column">
