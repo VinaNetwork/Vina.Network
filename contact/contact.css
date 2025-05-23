@@ -1,13 +1,12 @@
 /* Contact Info Section */
 .contact-info {
-    padding: 80px 20px;
+    padding-top: 72px;
     background: linear-gradient(135deg, #f4f7fc, #e8f0fe);
     text-align: center;
 }
 
 .contact-info .info-content h1 {
     font-weight: 600;
-    margin-bottom: 20px;
     color: #4a90e2;
 }
 
