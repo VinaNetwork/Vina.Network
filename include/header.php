@@ -10,10 +10,10 @@
         <li class="dropdown">
             <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-box"></i> Product</a>
             <ul class="dropdown-menu">
-                <li><a href="../notification.php" class="dropdown-item"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
-                <li><a href="../notification.php" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
-                <li><a href="../notification.php" class="dropdown-item"><i class="fas fa-search"></i> Vina Scan</a></li>
-                <li><a href="../notification.php" class="dropdown-item"><i class="fas fa-chart-line"></i> Vina Investment</a></li>
+                <li><a href="https://www.vina.network/notification/" class="dropdown-item"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
+                <li><a href="https://www.vina.network/notification/" class="dropdown-item"><i class="fas fa-search"></i> Vina Scan</a></li>
+                <li><a href="https://www.vina.network/notification/" class="dropdown-item"><i class="fas fa-chart-line"></i> Vina Investment</a></li>
             </ul>
         </li>
         <li class="dropdown">
@@ -22,7 +22,7 @@
                 <li><a href="https://dogcat.vina.network/" class="dropdown-item"><i class="fas fa-paw"></i> Dog Cat</a></li>
             </ul>
         </li>
-        <li><a href="../contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact</a></li>
+        <li><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
     </ul>
     <div class="burger" aria-label="Menu toggle">
         <div class="line1"></div>
