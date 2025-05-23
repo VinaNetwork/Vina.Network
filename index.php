@@ -110,32 +110,13 @@
     </section>
 
     <!-- Join Our Community Section -->
-    <section class="community-section">
-        <div class="community-content">
-            <h2 class="fade-in" data-delay="0">Join Our Community</h2>
-            <p class="fade-in" data-delay="200">Be a part of the Vina Network revolution. Connect with us and stay updated!</p>
-            <div class="community-links fade-in" data-delay="400">
-                <a href="https://x.com/Vina_Network" target="_blank" class="community-link">
-                    <i class="fab fa-x-twitter"></i> Twitter
-                </a>
-                <a href="https://discord.gg/wm2H5epF" target="_blank" class="community-link">
-                    <i class="fab fa-discord"></i> Discord
-                </a>
-                <a href="https://t.me/Vina_Network" target="_blank" class="community-link">
-                    <i class="fab fa-telegram"></i> Telegram <!-- Changed from fa-telegram-plane -->
-                </a>
-            </div>
-        </div>
-    </section>
-
+    <?php include 'include/community.php'; ?>
     <!-- Include Crypto Widget -->
     <?php include 'include/crypto_widget.php'; ?>
-
     <!-- Include Footer -->
     <?php include 'include/footer.php'; ?>
-
-    <!-- Nút Back to Top -->
-    <button id="back-to-top" title="Về đầu trang">
+    <!-- Back to Top -->
+    <button id="back-to-top" title="Back to top">
         <i class="fas fa-arrow-up"></i>
     </button>
 
