@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notification - Vina Network</title>
     <link rel="stylesheet" href="css/vina.css">
+    <link rel="stylesheet" href="notification.css">
     <link rel="stylesheet" href="css/all.css">
     <link rel="stylesheet" href="css/poppins.css">
     <!-- Preload critical resources -->
