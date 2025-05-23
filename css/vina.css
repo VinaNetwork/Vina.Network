@@ -42,7 +42,7 @@ body {
     justify-content: space-between;
     align-items: center;
     background-color: #1a1a1a;
-    padding: 1rem 2rem;
+    padding: .5rem;
     position: fixed;
     width: 100%;
     top: 0;
@@ -55,7 +55,7 @@ body {
     background-color: rgba(26, 26, 26, 0.95);
 }
 .logo img {
-    height: 60px;
+    height: 56px;
     width: auto;
     object-fit: contain;
     border-radius: 50%;
@@ -359,9 +359,7 @@ footer {
         padding: 0.5rem 0;
         display: none;
     }
-    .dropdown-menu.active {
-        display: block;
-    }
+    .dropdown-menu.active {display: block;}
     .dropdown-item {
         padding: 0.5rem 0;
         font-size: 1rem;
@@ -371,9 +369,7 @@ footer {
         gap: 0.5rem;
         padding-left: 1rem;
     }
-    .dropdown-item i {
-        font-size: 0.9rem;
-    }
+    .dropdown-item i {font-size: 0.9rem;}
     .dropdown-item:hover {
         background-color: transparent;
         color: #00d4ff;
@@ -384,32 +380,16 @@ footer {
         justify-content: flex-start;
         width: 100%;
     }
-    .nav-link i {
-        margin-right: 0.5rem;
-    }
-    .nav-link::after {
-        display: none;
-    }
-    .burger {
-        display: block;
-    }
-    .notification-content {
-        padding: 2rem;
-    }
-    .notification-icon {
-        font-size: 2.5rem;
-    }
+    .nav-link i {margin-right: 0.5rem;}
+    .nav-link::after {display: none;}
+    .burger {display: block;}
+    .logo img {height: 48px;}
+    .notification-content {padding: 2rem;}
+    .notification-icon {font-size: 2.5rem;}
     .footer-container {
         flex-direction: column;
         text-align: center;
     }
-    .footer-column {
-        margin: 1rem 0;
-    }
-    .social-links {
-        justify-content: center;
-    }
-    .logo img {
-        height: 45px;
-    }
+    .footer-column {margin: 1rem 0;}
+    .social-links {justify-content: center;}
 }
