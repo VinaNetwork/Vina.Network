@@ -1,0 +1,114 @@
+/* Contact Hero Section */
+.contact-hero {
+    height: 60vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../img/dogcat-hero-bg.jpg') center/cover no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #fff;
+}
+
+.contact-hero .hero-content h1 {
+    font-size: 3.5em;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    color: #ff6f91;
+}
+
+.contact-hero .hero-content p {
+    font-size: 1.3em;
+    font-weight: 400; /* Changed from 300 to 400 to match available Poppins font-weight */
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Contact Info Section */
+.contact-info {
+    padding: 80px 20px;
+    background: linear-gradient(135deg, #f4f7fc, #e8f0fe);
+    text-align: center;
+}
+
+.contact-info .info-content h2 {
+    font-size: 2.5em;
+    font-weight: 600; /* Changed from default to 600 to match available Poppins font-weight */
+    margin-bottom: 40px;
+    color: #4a90e2;
+}
+
+.contact-info .contact-methods {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.contact-info .method-card {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.contact-info .method-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.contact-info .method-card i {
+    font-size: 2em;
+    color: #ff6f91;
+    margin-bottom: 15px;
+}
+
+.contact-info .method-card h3 {
+    font-size: 1.5em;
+    font-weight: 600; /* Changed from default to 600 to match available Poppins font-weight */
+    margin-bottom: 10px;
+    color: #4a90e2;
+}
+
+.contact-info .method-card p {
+    font-size: 1em;
+    font-weight: 400; /* Changed from default to 400 to match available Poppins font-weight */
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.contact-info .method-card a {
+    font-size: 1.1em;
+    font-weight: 600; /* Changed from default to 600 to match available Poppins font-weight */
+    color: #ff6f91;
+    transition: color 0.3s;
+}
+
+.contact-info .method-card a:hover {
+    color: #ff85a1;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .contact-hero {
+        height: 50vh;
+    }
+
+    .contact-hero .hero-content h1 {
+        font-size: 2.5em;
+    }
+
+    .contact-hero .hero-content p {
+        font-size: 1.1em;
+    }
+
+    .contact-info {
+        padding: 40px 10px;
+    }
+
+    .contact-info .method-card {
+        width: 100%;
+    }
+}
