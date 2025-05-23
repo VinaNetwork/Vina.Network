@@ -38,7 +38,7 @@
                     <i class="fab fa-x-twitter"></i>
                     <h2>X (Twitter)</h2>
                     <p>Follow us and send a DM!</p>
-                    <a href="https://x.com/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">@Vina_Network</a>
+                    <a href="https://x.com/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">Follow Now</a>
                 </div>
                 <div class="method-card fade-in" data-delay="400">
                     <i class="fab fa-telegram-plane"></i>
@@ -50,7 +50,7 @@
                     <i class="fas fa-envelope"></i>
                     <h2>Email</h2>
                     <p>Send us an email for inquiries.</p>
-                    <a href="mailto:contact@vina.network">contact@vina.network</a>
+                    <a href="mailto:contact@vina.network">Send Now</a>
                 </div>
             </div>
         </div>
