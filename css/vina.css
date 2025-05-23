@@ -644,10 +644,7 @@ footer {
     h1 {font-size: 2em;}
     h2 {font-size: 1.6em;}
     h3 {font-size: 1.3em;}
-    p {
-        font-size: 1.05em;
-        text-align: left;
-    }
+    p {font-size: 1.05em;}
     a {font-size: 1.05em;}
     
     .nav-links {
