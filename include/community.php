@@ -7,11 +7,11 @@
             <a href="https://x.com/Vina_Network" target="_blank" class="community-link">
                 <i class="fab fa-x-twitter"></i> Twitter
             </a>
+            <a href="https://t.me/Vina_Network" target="_blank" class="community-link">
+                <i class="fab fa-telegram"></i> Telegram
+            </a>
             <a href="https://discord.gg/wm2H5epF" target="_blank" class="community-link">
                     <i class="fab fa-discord"></i> Discord
-            </a>
-            <a href="https://t.me/Vina_Network" target="_blank" class="community-link">
-                <i class="fab fa-telegram"></i> Telegram <!-- Changed from fa-telegram-plane -->
             </a>
         </div>
     </div>
