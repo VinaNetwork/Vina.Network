@@ -4,23 +4,21 @@
     background: linear-gradient(135deg, #f4f7fc, #e8f0fe);
     text-align: center;
 }
-
-.contact-info .info-content {margin: 20px;}
-
-.contact-info .info-content h1 {
+.info-content {
+    margin: 20px;
+}
+.info-content h1 {
     font-weight: 600;
     color: #4a90e2;
 }
-
-.contact-info .contact-methods {
+.contact-methods {
     margin-top: 20px;
     display: flex;
     justify-content: center;
     gap: 30px;
     flex-wrap: wrap;
 }
-
-.contact-info .method-card {
+.method-card {
     background-color: #fff;
     border-radius: 10px;
     padding: 20px;
@@ -28,40 +26,34 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
-.contact-info .method-card:hover {
+.method-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-
-.contact-info .method-card i {
+.method-card i {
     font-size: 2em;
     color: #ff6f91;
     margin-bottom: 15px;
 }
-
-.contact-info .method-card h2 {
+.method-card h2 {
     font-weight: 600;
     color: #4a90e2;
 }
-
-.contact-info .method-card p {
+.method-card p {
     font-weight: 400;
     color: #666;
 }
-
-.contact-info .method-card a {
+.method-card a {
     font-weight: 600;
     color: #ff6f91;
     transition: color 0.3s;
 }
-
-.contact-info .method-card a:hover {
+.method-card a:hover {
     color: #ff85a1;
 }
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-    .contact-info {padding-top: 64px;}
-    .contact-info .method-card {width: 100%;}
+    .contact-info { padding-top: 64px; }
+    .method-card { width: 100%; }
 }
