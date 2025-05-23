@@ -19,7 +19,7 @@
         <li class="dropdown">
             <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-coins"></i> Meme Coin</a>
             <ul class="dropdown-menu">
-                <li><a href="https://dogcat.vina.network/" class="dropdown-item"><i class="fas fa-paw"></i> Dog Cat</a></li>
+                <li><a href="https://kimo.vina.network/token/" class="dropdown-item"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
         </li>
         <li><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
