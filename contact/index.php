@@ -28,34 +28,27 @@
     <!-- Include Header -->
     <?php include '../include/header.php'; ?>
 
-    <!-- Contact Hero Section -->
-    <section class="contact-hero">
-        <div class="hero-content">
-            <h1 class="fade-in" data-delay="0">Contact Us</h1>
-            <p class="fade-in" data-delay="200">We'd love to hear from you! Reach out to Vina Network via X, Telegram, or Email.</p>
-        </div>
-    </section>
-
     <!-- Contact Info Section -->
     <section class="contact-info">
         <div class="info-content">
-            <h2 class="fade-in" data-delay="0">Get in Touch</h2>
+            <h1 class="fade-in" data-delay="0">Contact Us</h1>
+            <p class="fade-in" data-delay="200">We'd love to hear from you! Reach out to Vina Network via X, Telegram, or Email.</p>
             <div class="contact-methods">
                 <div class="method-card fade-in" data-delay="200">
                     <i class="fab fa-x-twitter"></i>
-                    <h3>X (Twitter)</h3>
+                    <h2>X (Twitter)</h2>
                     <p>Follow us and send a DM!</p>
                     <a href="https://x.com/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">@Vina_Network</a>
                 </div>
                 <div class="method-card fade-in" data-delay="400">
                     <i class="fab fa-telegram-plane"></i>
-                    <h3>Telegram</h3>
+                    <h2>Telegram</h2>
                     <p>Join our community on Telegram!</p>
                     <a href="https://t.me/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">Join Now</a>
                 </div>
                 <div class="method-card fade-in" data-delay="600">
                     <i class="fas fa-envelope"></i>
-                    <h3>Email</h3>
+                    <h2>Email</h2>
                     <p>Send us an email for inquiries.</p>
                     <a href="mailto:contact@vina.network">contact@vina.network</a>
                 </div>
