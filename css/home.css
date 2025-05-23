@@ -147,7 +147,7 @@
 }
 
 .coinmarketcap-currency-widget {margin-bottom: 20px;}
-
+.coinmarketcap-currency-widget: last-item {margin-bottom: 0px;}
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .hero {
