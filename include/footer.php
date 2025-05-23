@@ -9,7 +9,7 @@
             <h3>Quick Links</h3>
             <ul class="footer-links">
                 <li><a href="https://www.vina.network/">Home</a></li>
-                <li><a href="https://dogcat.vina.network/">Dog Cat</a></li>
+                <li><a href="https://kimo.vina.network/token/">Kimo</a></li>
                 <li><a href="https://www.vina.network/contact/">Contact</a></li>
             </ul>
         </div>
