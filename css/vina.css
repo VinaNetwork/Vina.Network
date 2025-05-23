@@ -308,9 +308,7 @@ body {
 }
 
 .about-content h2 {
-    font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 2rem;
     color: #1a1a1a;
 }
 
@@ -339,13 +337,9 @@ body {
     background-color: #e6f7ff;
 }
 
-.about-card:active {
-    transform: scale(0.95);
-}
+.about-card:active {transform: scale(0.95);}
 
-.about-card:active h3 {
-    color: #00d4ff;
-}
+.about-card:active h3 {color: #00d4ff;}
 
 .card-icon {
     width: 50px;
@@ -360,18 +354,12 @@ body {
 }
 
 .about-card h3 {
-    font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 1rem;
     color: #007bff;
     transition: color 0.3s ease;
 }
 
-.about-card p {
-    font-size: 1rem;
-    color: #666;
-    line-height: 1.6;
-}
+.about-card p {color: #666;}
 
 /* Why Choose Us Section */
 .why-choose-section {
@@ -381,9 +369,7 @@ body {
 }
 
 .why-choose-content h2 {
-    font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 2rem;
     color: #1a1a1a;
 }
 
@@ -412,13 +398,9 @@ body {
     background-color: #e6f7ff;
 }
 
-.why-choose-card:active {
-    transform: scale(0.95);
-}
+.why-choose-card:active {transform: scale(0.95);}
 
-.why-choose-card:active h3 {
-    color: #00d4ff;
-}
+.why-choose-card:active h3 {color: #00d4ff;}
 
 .why-choose-card i {
     font-size: 2.5rem;
@@ -432,18 +414,12 @@ body {
 }
 
 .why-choose-card h3 {
-    font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 1rem;
     color: #007bff;
     transition: color 0.3s ease;
 }
 
-.why-choose-card p {
-    font-size: 1rem;
-    color: #666;
-    line-height: 1.6;
-}
+.why-choose-card p {color: #666;}
 
 /* Ecosystem Section */
 .ecosystem-section {
@@ -453,9 +429,7 @@ body {
 }
 
 .ecosystem-content h2 {
-    font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 2rem;
     color: #1a1a1a;
 }
 
@@ -484,13 +458,9 @@ body {
     background-color: #e6f7ff;
 }
 
-.ecosystem-card:active {
-    transform: scale(0.95);
-}
+.ecosystem-card:active {transform: scale(0.95);}
 
-.ecosystem-card:active h3 {
-    color: #00d4ff;
-}
+.ecosystem-card:active h3 {color: #00d4ff;}
 
 .ecosystem-card i {
     font-size: 2.5rem;
@@ -504,18 +474,12 @@ body {
 }
 
 .ecosystem-card h3 {
-    font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 1rem;
     color: #007bff;
     transition: color 0.3s ease;
 }
 
-.ecosystem-card p {
-    font-size: 1rem;
-    color: #666;
-    line-height: 1.6;
-}
+.ecosystem-card p {color: #666;}
 
 /* Community Section */
 .community-section {
@@ -525,17 +489,11 @@ body {
 }
 
 .community-content h2 {
-    font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: 1.5rem;
     color: #1a1a1a;
 }
 
-.community-content p {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-    color: #666;
-}
+.community-content p {color: #666;}
 
 .community-links {
     display: flex;
@@ -610,15 +568,8 @@ footer {
 }
 
 .footer-column h3 {
-    font-size: 1.2rem;
     font-weight: 600;
-    margin-bottom: 1rem;
     color: #00d4ff;
-}
-
-.footer-column p {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
 }
 
 .footer-column p a {
@@ -627,28 +578,15 @@ footer {
     transition: color 0.3s ease;
 }
 
-.footer-column p a:hover {
-    color: #00d4ff;
-}
-
-.footer-links {
-    list-style: none;
-}
-
-.footer-links li {
-    margin-bottom: 0.5rem;
-}
+.footer-column p a:hover {color: #00d4ff;}
+.footer-links li {margin-bottom: 0.5rem;}
 
 .footer-links a {
     color: #e0e0e0;
-    text-decoration: none;
-    font-size: 0.9rem;
     transition: color 0.3s ease;
 }
 
-.footer-links a:hover {
-    color: #00d4ff;
-}
+.footer-links a:hover {color: #00d4ff;}
 
 .social-links {
     display: flex;
@@ -657,8 +595,6 @@ footer {
 
 .social-links a {
     color: #e0e0e0;
-    text-decoration: none;
-    font-size: 1rem;
     font-weight: 400;
     display: flex;
     align-items: center;
@@ -666,22 +602,14 @@ footer {
     transition: color 0.3s ease;
 }
 
-.social-links a:hover {
-    color: #00d4ff;
-}
+.social-links a:hover {color: #00d4ff;}
 
-.social-links i {
-    font-size: 1.2rem;
-}
+.social-links i {font-size: 1.2rem;}
 
 .footer-bottom {
     text-align: center;
     padding-top: 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.footer-bottom p {
-    font-size: 0.9rem;
 }
 
 #back-to-top {
