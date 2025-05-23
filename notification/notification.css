@@ -41,9 +41,5 @@
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .notification-section {padding-top: 64px;}
-    .notification-content {
-        margin: 1rem;
-        padding: 2rem;
-    }
     .notification-icon {font-size: 2rem;}
 }
