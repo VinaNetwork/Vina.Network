@@ -121,6 +121,8 @@
     flex: 1;
     min-width: 250px;
     max-width: 300px;
+    background: #fff;
+    border-radius: 10px;
 }
 
 /* Responsive Design */
