@@ -146,6 +146,8 @@
     box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
 }
 
+.coinmarketcap-currency-widget {margin-bottom: 20px;}
+
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .hero {
