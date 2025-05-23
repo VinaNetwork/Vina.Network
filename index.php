@@ -13,6 +13,7 @@
     <meta property="og:url" content="https://vina.network">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <link rel="stylesheet" href="css/home.css">
     <link rel="stylesheet" href="css/vina.css">
     <link rel="stylesheet" href="css/all.css">
     <link rel="stylesheet" href="css/poppins.css">
