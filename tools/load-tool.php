@@ -18,7 +18,7 @@ if (!in_array($tool, ['nft-holders', 'nft-valuation'])) {
 
 // Include file tương ứng
 if ($tool === 'nft-holders') {
-    $tool_file = 'nft-hold.php';
+    $tool_file = 'nft-holders.php';
 } elseif ($tool === 'nft-valuation') {
     $tool_file = 'nft-valuation.php';
 }
