@@ -9,7 +9,7 @@ $page_og_title = "Vina Network - Check NFT Holders";
 $page_og_url = "https://vina.network/tools/nft-holders/";
 $page_canonical = "https://vina.network/tools/nft-holders/";
 $page_css = ['tools/nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
-include '../include/header.php'; // header.php đã cung cấp <html>, <head>, và <body> mở
+include '../include/header.php'; // header.php chỉ cung cấp <head>
 ?>
 
 <body>
