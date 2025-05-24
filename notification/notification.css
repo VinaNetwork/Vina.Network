@@ -37,7 +37,7 @@
     color: #00d4ff;
 }
 .notification-content p {color: #fff;}
-.notification-content.cta-button {margin-top: 20px;}
+.notification-content .cta-button {margin-top: 20px;}
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
