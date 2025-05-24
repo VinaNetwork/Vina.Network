@@ -49,8 +49,8 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
         }
 
         function getNFTHolders($mintAddress) {
-            // Sử dụng API key bạn cung cấp
-            $apiKey = "f88c1b40-bdec-44e2-b391-aa1869c0b2ca";
+            // Sử dụng API key mới bạn cung cấp
+            $apiKey = "8eb75cd9-015a-4e24-9de2-5be9ee0f1c63";
             $url = "https://api.helius.xyz/v0/token-accounts?api-key=" . $apiKey;
 
             // Tạo payload cho API Helius
