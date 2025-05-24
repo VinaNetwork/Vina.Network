@@ -380,4 +380,5 @@ footer {
     
     .footer-container {flex-direction: column;}
     .footer-column {margin: 1rem 0;}
+    .footer-bottom {text-align: left;}
 }
