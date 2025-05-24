@@ -36,7 +36,7 @@
     font-weight: 700;
     color: #00d4ff;
 }
-.notification-content p {color: #666;}
+.notification-content p {color: #fff;}
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
