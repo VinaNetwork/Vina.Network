@@ -202,6 +202,7 @@ body {
     justify-content: center;
     gap: 1.5rem;
     flex-wrap: wrap;
+    margin-top: 20px;
 }
 .community-link {
     display: inline-flex;
