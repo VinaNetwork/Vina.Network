@@ -2,6 +2,7 @@
 <html lang="en">
 <!-- Header -->
 <?php
+$page_canonical = 'https://vina.network';
 $page_css = ['css/home.css'];
 include 'include/header.php';
 ?>
