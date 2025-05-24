@@ -30,10 +30,12 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
             $mintAddress = trim($_POST['mintAddress']);
 
-            // Gọi API để lấy danh sách holders (giả lập, cần tích hợp thực tế)
+            // Gọi API để lấy danh sách holders
             $holders = getNFTHolders($mintAddress);
 
-            if ($holders && !empty($holders['holders'])) {
+            if (isset($holders['error'])) {
+                echo "<p>" . htmlspecialchars($holders['error']) . "</p>";
+            } elseif ($holders && !empty($holders['holders'])) {
                 echo "<h2>Results</h2>";
                 echo "<p>Total Holders: " . count($holders['holders']) . "</p>";
                 echo "<ul>";
@@ -47,24 +49,43 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
         }
 
         function getNFTHolders($mintAddress) {
-            // Đây là hàm giả lập, bạn cần thay thế bằng API thực tế
-            // Ví dụ: Sử dụng Helius API hoặc Metaplex JS SDK
-            $apiKey = "YOUR_HELIUS_API_KEY"; // Thay bằng API key của bạn
-            $url = "https://api.helius.xyz/v1/token-accounts?api-key=" . $apiKey . "&mint=" . urlencode($mintAddress);
+            // Sử dụng API key bạn cung cấp
+            $apiKey = "f88c1b40-bdec-44e2-b391-aa1869c0b2ca";
+            $url = "https://api.helius.xyz/v0/token-accounts?api-key=" . $apiKey;
+
+            // Tạo payload cho API Helius
+            $payload = [
+                "mint" => $mintAddress,
+                "includeOffChain" => false,
+                "limit" => 1000 // Giới hạn tối đa 1000 ví mỗi lần gọi
+            ];
 
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json'
+            ]);
+
             $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
+
+            if ($httpCode !== 200) {
+                return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
+            }
 
             $data = json_decode($response, true);
 
-            if ($data && isset($data['result'])) {
-                $holders = array_unique(array_column($data['result'], 'owner'));
+            if ($data && isset($data['token_accounts'])) {
+                // Lấy danh sách ví duy nhất từ các token account
+                $holders = array_unique(array_column($data['token_accounts'], 'owner'));
                 return ['holders' => $holders];
             }
-            return false;
+
+            return ['error' => 'No data found for this mint address.'];
         }
         ?>
     </div>
@@ -73,6 +94,6 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
 <!-- Include Footer -->
 <?php include '../include/footer.php'; ?>
 
-    <script src="../js/vina.js"></script>
+<script src="../js/vina.js"></script>
 </body>
 </html>
