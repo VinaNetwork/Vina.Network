@@ -7,7 +7,7 @@ $page_description = "Check the number of wallets holding a specific Solana NFT a
 $page_keywords = "Vina Network, Solana NFT, NFT holders, blockchain, $VINA";
 $page_og_title = "Vina Network - Check NFT Holders";
 $page_og_url = "https://vina.network/tools/nft-holders/";
-$page_canonical = "https://vina.network/tools/nft-holders/";
+$page.canonical = "https://vina.network/tools/nft-holders/";
 $page_css = ['nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
 include '../include/header.php'; // header.php chỉ cung cấp <head>
 ?>
@@ -29,27 +29,39 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
         <?php
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
             $mintAddress = trim($_POST['mintAddress']);
+            $page = isset($_POST['page']) ? (int)$_POST['page'] : 1; // Lấy số trang từ form, mặc định là 1
 
             // Gọi API để lấy danh sách holders
-            $holders = getNFTHolders($mintAddress);
+            $holders = getNFTHolders($mintAddress, $page);
 
             if (isset($holders['error'])) {
                 echo "<p>" . htmlspecialchars($holders['error']) . "</p>";
             } elseif ($holders && !empty($holders['holders'])) {
                 echo "<h2>Results</h2>";
-                echo "<p>Total Holders: " . count($holders['holders']) . "</p>";
+                echo "<p>Total Holders: " . count($holders['holders']) . " (Page $page)</p>";
                 echo "<ul>";
                 foreach ($holders['holders'] as $holder) {
                     echo "<li>" . htmlspecialchars($holder) . "</li>";
                 }
                 echo "</ul>";
+
+                // Thêm nút phân trang
+                echo "<div class='pagination'>";
+                if ($page > 1) {
+                    echo "<form method='POST' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit'>Previous</button></form>";
+                }
+                // Chỉ hiển thị nút "Next" nếu số lượng ví trả về bằng giới hạn (1000), nghĩa là có thể còn dữ liệu ở trang tiếp theo
+                if (count($holders['holders']) == 1000) {
+                    echo "<form method='POST' style='display:inline; margin-left: 10px;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit'>Next</button></form>";
+                }
+                echo "</div>";
             } else {
                 echo "<p>No holders found or invalid mint address.</p>";
             }
         }
 
-        function getNFTHolders($mintAddress) {
-            // Sử dụng API key mới bạn cung cấp
+        function getNFTHolders($mintAddress, $page = 1) {
+            // Sử dụng API key bạn cung cấp
             $apiKey = "8eb75cd9-015a-4e24-9de2-5be9ee0f1c63";
             $url = "https://api.helius.xyz/v0/token-accounts?api-key=" . $apiKey;
 
@@ -57,7 +69,8 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
             $payload = [
                 "mint" => $mintAddress,
                 "includeOffChain" => false,
-                "limit" => 1000 // Giới hạn tối đa 1000 ví mỗi lần gọi
+                "limit" => 1000, // Giới hạn tối đa 1000 ví mỗi lần gọi
+                "page" => $page // Thêm tham số page
             ];
 
             $ch = curl_init();
