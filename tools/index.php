@@ -8,7 +8,7 @@ $page_keywords = "Vina Network, Solana NFT, NFT holders, blockchain, $VINA";
 $page_og_title = "Vina Network - Check NFT Holders";
 $page_og_url = "https://vina.network/tools/nft-holders/";
 $page_canonical = "https://vina.network/tools/nft-holders/";
-$page_css = ['tools/nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
+$page_css = ['nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
 include '../include/header.php'; // header.php chỉ cung cấp <head>
 ?>
 
