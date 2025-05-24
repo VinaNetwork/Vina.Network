@@ -16,7 +16,7 @@
     <link rel="preload" href="../fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
-    <?php include '../include/header.php'; ?>
+    <?php include '../include/navbar.php'; ?>
 
     <section class="notification-section">
         <div class="notification-content fade-in">
