@@ -28,7 +28,7 @@ include $header_path;
 // Xác định chức năng được chọn (mặc định là nft-holders)
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 if (!in_array($tool, ['nft-holders', 'nft-valuation'])) {
-    $tool = 'nft-holders'; // Nếu tool không hợp lệ, mặc định là nft-holders
+    $tool = 'nft-holders'; // Chỉ giữ 2 tab
 }
 ?>
 
@@ -77,7 +77,7 @@ include $navbar_path;
             ?>
         </div>
 
-        <!-- Thêm thông báo -->
+        <!-- Thông báo -->
         <p class="note">Note: Only supports checking on the Solana blockchain.</p>
     </div>
 </section>
@@ -105,7 +105,7 @@ document.querySelectorAll('.tab-link').forEach(link => {
 
         // Lấy giá trị tool từ data-tool
         const tool = this.getAttribute('data-tool');
-        
+
         // Cập nhật URL mà không làm mới trang
         history.pushState({}, '', `?tool=${tool}`);
 
