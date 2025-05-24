@@ -11,9 +11,10 @@ $page_og_url = isset($page_og_url) ? $page_og_url : 'https://vina.network';
 $page_og_type = isset($page_og_type) ? $page_og_type : 'website';
 $page_css = isset($page_css) ? $page_css : [];
 $page_theme_color = isset($page_theme_color) ? $page_theme_color : '#f5f5f5';
-
-// Xử lý đường dẫn động dựa trên vị trí file
 $root_path = isset($root_path) ? $root_path : '';
+
+// Thêm canonical URL để tránh nội dung trùng lặp
+$page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
 ?>
 
 <head>
@@ -30,6 +31,7 @@ $root_path = isset($root_path) ? $root_path : '';
     <meta property="og:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars($page_og_url); ?>">
     <meta property="og:type" content="<?php echo htmlspecialchars($page_og_type); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars($page_canonical); ?>">
     <link rel="icon" type="image/x-icon" href="<?php echo $root_path; ?>img/favicon.ico">
     <link rel="stylesheet" href="<?php echo $root_path; ?>css/vina.css">
     <?php if (!empty($page_css)): ?>
@@ -45,4 +47,29 @@ $root_path = isset($root_path) ? $root_path : '';
     <link rel="preload" href="<?php echo $root_path; ?>webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="<?php echo $root_path; ?>fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="<?php echo $root_path; ?>fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- JSON-LD Schema for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Vina Network",
+        "url": "<?php echo htmlspecialchars($page_og_url); ?>",
+        "logo": "<?php echo htmlspecialchars($page_og_image); ?>",
+        "description": "<?php echo htmlspecialchars($page_description); ?>",
+        "sameAs": [
+            "https://x.com/Vina_Network",
+            "https://t.me/Vina_Network"
+        ]
+    }
+    </script>
+    <!-- Optional: Google Analytics (thay YOUR_GA_TRACKING_ID bằng ID thực tế) -->
+    <?php if (isset($ga_tracking_id)): ?>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=<?php echo htmlspecialchars($ga_tracking_id); ?>"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '<?php echo htmlspecialchars($ga_tracking_id); ?>');
+        </script>
+    <?php endif; ?>
 </head>
