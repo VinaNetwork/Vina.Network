@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 <?php
 $root_path = '../'; // Đường dẫn về thư mục gốc
 $page_title = "Vina Network - Check NFT Holders";
@@ -9,6 +11,9 @@ $page_canonical = "https://vina.network/tools/nft-holders/";
 $page_css = ['tools/nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
 include '../include/header.php';
 ?>
+
+<body>
+<?php include '../include/footer.php'; ?>
 
 <section class="nft-holders-section">
     <div class="nft-holders-content fade-in">
