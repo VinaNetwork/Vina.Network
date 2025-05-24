@@ -19,7 +19,8 @@
         <li class="dropdown">
             <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-screwdriver-wrench"></i> Tools</a>
             <ul class="dropdown-menu">
-                <li><a href="https://vina.network/tools/" class="dropdown-item"><i class="fas fa-wallet"></i> NFT Holders</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=nft-holders" class="dropdown-item"><i class="fas fa-wallet"></i> NFT Holders</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=nft-valuation" class="dropdown-item"><i class="fas fa-wallet"></i> NFT Valuation</a></li>
             </ul>
         </li>
         <li class="dropdown">
