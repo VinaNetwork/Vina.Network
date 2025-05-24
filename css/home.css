@@ -21,9 +21,8 @@
 .hero-content p {
     font-weight: 400;
     color: #e0e0e0;
+    margin: 20px 0;
 }
-
-.hero-content .cta-button {margin-top: 20px;}
 
 /* About Section */
 section h2 {
