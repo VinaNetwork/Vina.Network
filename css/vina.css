@@ -230,7 +230,6 @@ footer {
     background-color: #1a1a1a;
     color: white;
     padding: 3rem 2rem;
-    font-weight: 300;
 }
 .footer-container {
     display: flex;
@@ -252,12 +251,7 @@ footer {
     color: #e0e0e0;
     transition: color 0.3s ease;
 }
-.footer-column p a:hover {
-    color: #00d4ff;
-}
-.footer-links li {
-    margin-bottom: 0.5rem;
-}
+.footer-column p a:hover {color: #00d4ff;}
 .footer-links a {
     color: #e0e0e0;
     transition: color 0.3s ease;
