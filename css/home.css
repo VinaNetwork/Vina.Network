@@ -23,6 +23,8 @@
     color: #e0e0e0;
 }
 
+.hero-content .cta-button {margin-top: 20px;}
+
 /* About Section */
 section h2 {
     font-weight: 700;
