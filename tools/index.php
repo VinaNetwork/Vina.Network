@@ -43,7 +43,7 @@ include $navbar_path;
         <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
         
         <form id="nftForm" method="POST" action="">
-            <input type="text" name="mintAddress" id="mintAddress" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+            <input type="text" name="mintAddress" id="mintAddress" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
             <button type="submit">Check Holders</button>
         </form>
 
