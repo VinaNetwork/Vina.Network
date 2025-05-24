@@ -26,7 +26,7 @@
 </head>
 <body>
     <!-- Include Header -->
-    <?php include 'include/header.php'; ?>
+    <?php include 'include/navbar.php'; ?>
 
     <!-- Hero Section -->
     <section id="home" class="hero">
