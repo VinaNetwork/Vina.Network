@@ -63,7 +63,7 @@ include $navbar_path;
             <?php
             // Include file tương ứng với chức năng được chọn
             if ($tool === 'nft-holders') {
-                $tool_file = 'nft-holders.php';
+                $tool_file = 'nft-holders.php'; // Cập nhật tên file
             } elseif ($tool === 'nft-valuation') {
                 $tool_file = 'nft-valuation.php';
             }
