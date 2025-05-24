@@ -1,20 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
+// Bật hiển thị lỗi để debug
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $root_path = '../'; // Đường dẫn về thư mục gốc
 $page_title = "Vina Network - Check NFT Holders";
 $page_description = "Check the number of wallets holding a specific Solana NFT and list their addresses.";
 $page_keywords = "Vina Network, Solana NFT, NFT holders, blockchain, $VINA";
 $page_og_title = "Vina Network - Check NFT Holders";
 $page_og_url = "https://vina.network/tools/nft-holders/";
-$page.canonical = "https://vina.network/tools/nft-holders/";
+$page_canonical = "https://vina.network/tools/nft-holders/";
 $page_css = ['nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
+
+// Kiểm tra file header.php
+if (!file_exists('../include/header.php')) {
+    die('Error: header.php not found.');
+}
 include '../include/header.php'; // header.php chỉ cung cấp <head>
 ?>
 
 <body>
 <!-- Include Navbar -->
-<?php include '../include/navbar.php'; ?>
+<?php 
+if (!file_exists('../include/navbar.php')) {
+    die('Error: navbar.php not found.');
+}
+include '../include/navbar.php'; 
+?>
 
 <section class="nft-holders-section">
     <div class="nft-holders-content fade-in">
@@ -74,6 +89,10 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
             ];
 
             $ch = curl_init();
+            if (!$ch) {
+                return ['error' => 'Failed to initialize cURL.'];
+            }
+
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POST, 1);
@@ -83,6 +102,12 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
             ]);
 
             $response = curl_exec($ch);
+            if ($response === false) {
+                $curlError = curl_error($ch);
+                curl_close($ch);
+                return ['error' => 'cURL error: ' . $curlError];
+            }
+
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
@@ -91,8 +116,11 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
             }
 
             $data = json_decode($response, true);
+            if ($data === null) {
+                return ['error' => 'Failed to parse API response as JSON.'];
+            }
 
-            if ($data && isset($data['token_accounts'])) {
+            if (isset($data['token_accounts'])) {
                 // Lấy danh sách ví duy nhất từ các token account
                 $holders = array_unique(array_column($data['token_accounts'], 'owner'));
                 return ['holders' => $holders];
@@ -105,7 +133,12 @@ include '../include/header.php'; // header.php chỉ cung cấp <head>
 </section>
 
 <!-- Include Footer -->
-<?php include '../include/footer.php'; ?>
+<?php 
+if (!file_exists('../include/footer.php')) {
+    die('Error: footer.php not found.');
+}
+include '../include/footer.php'; 
+?>
 
 <script src="../js/vina.js"></script>
 </body>
