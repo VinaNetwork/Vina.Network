@@ -26,7 +26,7 @@
 </head>
 <body>
     <!-- Include Header -->
-    <?php include '../include/header.php'; ?>
+    <?php include '../include/navbar.php'; ?>
 
     <!-- Contact Info Section -->
     <section class="contact-info">
