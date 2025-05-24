@@ -13,8 +13,8 @@ $page_title = "Vina Network - Tools";
 $page_description = "Explore various tools on Vina Network, including NFT Holders Checker and NFT Valuation.";
 $page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
-$page_og_url = "https://vina.network/tools/tools.php";
-$page_canonical = "https://vina.network/tools/tools.php";
+$page_og_url = "https://vina.network/tools/";
+$page_canonical = "https://vina.network/tools/";
 $page_css = ['tools.css'];
 
 // Kiểm tra và include header.php
@@ -63,7 +63,7 @@ include $navbar_path;
             <?php
             // Include file tương ứng với chức năng được chọn
             if ($tool === 'nft-holders') {
-                $tool_file = 'nft-holders.php';
+                $tool_file = 'nft-hold.php';
             } elseif ($tool === 'nft-valuation') {
                 $tool_file = 'nft-valuation.php';
             }
