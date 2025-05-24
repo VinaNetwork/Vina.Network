@@ -12,17 +12,15 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQ
 
 // Xác định chức năng được chọn
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
+if (!in_array($tool, ['nft-holders', 'nft-valuation'])) {
     $tool = 'nft-holders'; // Nếu tool không hợp lệ, mặc định là nft-holders
 }
 
 // Include file tương ứng
 if ($tool === 'nft-holders') {
-    $tool_file = 'nft-holders.php';
+    $tool_file = 'nft-holders.php'; // Cập nhật tên file
 } elseif ($tool === 'nft-valuation') {
     $tool_file = 'nft-valuation.php';
-} elseif ($tool === 'nft-transactions') {
-    $tool_file = 'nft-transactions.php';
 }
 
 // Kiểm tra và include file
