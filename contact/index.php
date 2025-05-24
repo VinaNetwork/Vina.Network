@@ -1,29 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vina Network - Contact Us</title>
-    <meta name="description" content="Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!">
-    <meta name="keywords" content="Vina Network, contact, X, Telegram, Email, support, Web3, cryptocurrency">
-    <meta name="author" content="Vina Network">
-    <meta property="og:title" content="Vina Network - Contact Us">
-    <meta property="og:description" content="Contact Vina Network via X, Telegram, or Email. Join our community today!">
-    <meta property="og:image" content="https://vina.network/img/logo.png">
-    <meta property="og:url" content="https://www.vina.network/contact/">
-    <meta property="og:type" content="website">
-    <link rel="icon" type="image/x-icon" href="../img/favicon.ico">
-    <link rel="stylesheet" href="../css/vina.css">
-    <link rel="stylesheet" href="../css/all.css">
-    <link rel="stylesheet" href="../css/poppins.css">
-    <link rel="stylesheet" href="contact.css">
-    <!-- Preload internal fonts -->
-    <link rel="preload" href="../fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="../fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="../webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="../webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="../webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-</head>
+<?php
+$root_path = '../'; // Đường dẫn về thư mục gốc
+$page_title = "Vina Network - Contact Us";
+$page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
+$page_keywords = "Vina Network, contact, X, Telegram, Email, support, Web3, cryptocurrency";
+$page_og_title = "Vina Network - Contact Us";
+$page_og_description = "Contact Vina Network via X, Telegram, or Email. Join our community today!";
+$page_og_url = "https://www.vina.network/contact/";
+$page_css = ['contact.css']; // Thêm CSS riêng
+include '../include/header.php';
+?>
+
 <body>
     <!-- Include Header -->
     <?php include '../include/navbar.php'; ?>
