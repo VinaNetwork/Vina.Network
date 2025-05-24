@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-$root_path = '../'; // Đường dẫn về thư mục gốc
+$root_path = '../';
 $page_title = "Vina Network - Contact Us";
 $page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
 $page_keywords = "Vina Network, contact, X, Telegram, Email, support, Web3, cryptocurrency";
 $page_og_title = "Vina Network - Contact Us";
 $page_og_description = "Contact Vina Network via X, Telegram, or Email. Join our community today!";
 $page_og_url = "https://www.vina.network/contact/";
-$page_css = ['contact.css']; // Thêm CSS riêng
+$page_canonical = "https://www.vina.network/contact/";
+$page_css = ['contact.css'];
 include '../include/header.php';
 ?>
 
@@ -48,5 +49,14 @@ include '../include/header.php';
     <?php include '../include/footer.php'; ?>
 
     <script src="../js/vina.js"></script>
+
+    <script type="application/ld+json">
+        {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "url": "https://www.vina.network/contact/",
+        "name": "Contact Vina Network"
+        }
+    </script>
 </body>
 </html>
