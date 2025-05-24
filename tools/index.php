@@ -1,34 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-// Bật hiển thị lỗi để debug
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+// Cấu hình log lỗi vào file riêng (nếu server không hiển thị lỗi)
+ini_set('log_errors', 1);
+ini_set('error_log', '/home/hthxhyqf/domains/vina.network/public_html/tools/error_log.txt'); // Đường dẫn log tùy chỉnh
+ini_set('display_errors', 0); // Tắt hiển thị lỗi trên trình duyệt
 error_reporting(E_ALL);
 
-$root_path = '../'; // Đường dẫn về thư mục gốc
+// Định nghĩa biến trước khi sử dụng
+$root_path = '../';
 $page_title = "Vina Network - Check NFT Holders";
 $page_description = "Check the number of wallets holding a specific Solana NFT and list their addresses.";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, blockchain, VINA"; // Sửa $VINA thành VINA
+$page_keywords = "Vina Network, Solana NFT, NFT holders, blockchain, VINA";
 $page_og_title = "Vina Network - Check NFT Holders";
 $page_og_url = "https://vina.network/tools/nft-holders/";
-$page.canonical = "https://vina.network/tools/nft-holders/";
-$page_css = ['nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
+$page_canonical = "https://vina.network/tools/nft-holders/";
+$page_css = ['nft-holders.css'];
 
-// Kiểm tra file header.php
-if (!file_exists('../include/header.php')) {
-    die('Error: header.php not found.');
+// Kiểm tra và include header.php
+$header_path = $root_path . 'include/header.php';
+if (!file_exists($header_path)) {
+    error_log("Error: header.php not found at $header_path");
+    die('Internal Server Error: Missing header.php');
 }
-include '../include/header.php'; // header.php chỉ cung cấp <head>
+include $header_path;
 ?>
 
 <body>
 <!-- Include Navbar -->
 <?php 
-if (!file_exists('../include/navbar.php')) {
-    die('Error: navbar.php not found.');
+$navbar_path = $root_path . 'include/navbar.php';
+if (!file_exists($navbar_path)) {
+    error_log("Error: navbar.php not found at $navbar_path");
+    die('Internal Server Error: Missing navbar.php');
 }
-include '../include/navbar.php'; 
+include $navbar_path;
 ?>
 
 <section class="nft-holders-section">
@@ -44,7 +50,7 @@ include '../include/navbar.php';
         <?php
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
             $mintAddress = trim($_POST['mintAddress']);
-            $page = isset($_POST['page']) ? (int)$_POST['page'] : 1; // Lấy số trang từ form, mặc định là 1
+            $page = isset($_POST['page']) ? (int)$_POST['page'] : 1;
 
             // Gọi API để lấy danh sách holders
             $holders = getNFTHolders($mintAddress, $page);
@@ -60,12 +66,10 @@ include '../include/navbar.php';
                 }
                 echo "</ul>";
 
-                // Thêm nút phân trang
                 echo "<div class='pagination'>";
                 if ($page > 1) {
                     echo "<form method='POST' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit'>Previous</button></form>";
                 }
-                // Chỉ hiển thị nút "Next" nếu số lượng ví trả về bằng giới hạn (1000), nghĩa là có thể còn dữ liệu ở trang tiếp theo
                 if (count($holders['holders']) == 1000) {
                     echo "<form method='POST' style='display:inline; margin-left: 10px;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit'>Next</button></form>";
                 }
@@ -76,20 +80,19 @@ include '../include/navbar.php';
         }
 
         function getNFTHolders($mintAddress, $page = 1) {
-            // Sử dụng API key bạn cung cấp
             $apiKey = "8eb75cd9-015a-4e24-9de2-5be9ee0f1c63";
             $url = "https://api.helius.xyz/v0/token-accounts?api-key=" . $apiKey;
 
-            // Tạo payload cho API Helius
             $payload = [
                 "mint" => $mintAddress,
                 "includeOffChain" => false,
-                "limit" => 1000, // Giới hạn tối đa 1000 ví mỗi lần gọi
-                "page" => $page // Thêm tham số page
+                "limit" => 1000,
+                "page" => $page
             ];
 
             $ch = curl_init();
             if (!$ch) {
+                error_log("cURL initialization failed.");
                 return ['error' => 'Failed to initialize cURL.'];
             }
 
@@ -97,13 +100,13 @@ include '../include/navbar.php';
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_POST, 1);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json'
-            ]);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
             $response = curl_exec($ch);
             if ($response === false) {
                 $curlError = curl_error($ch);
+                error_log("cURL error: $curlError");
                 curl_close($ch);
                 return ['error' => 'cURL error: ' . $curlError];
             }
@@ -112,16 +115,17 @@ include '../include/navbar.php';
             curl_close($ch);
 
             if ($httpCode !== 200) {
+                error_log("API request failed with HTTP code: $httpCode");
                 return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
             }
 
             $data = json_decode($response, true);
             if ($data === null) {
+                error_log("Failed to parse API response as JSON. Response: $response");
                 return ['error' => 'Failed to parse API response as JSON.'];
             }
 
             if (isset($data['token_accounts'])) {
-                // Lấy danh sách ví duy nhất từ các token account
                 $holders = array_unique(array_column($data['token_accounts'], 'owner'));
                 return ['holders' => $holders];
             }
@@ -134,10 +138,12 @@ include '../include/navbar.php';
 
 <!-- Include Footer -->
 <?php 
-if (!file_exists('../include/footer.php')) {
-    die('Error: footer.php not found.');
+$footer_path = $root_path . 'include/footer.php';
+if (!file_exists($footer_path)) {
+    error_log("Error: footer.php not found at $footer_path");
+    die('Internal Server Error: Missing footer.php');
 }
-include '../include/footer.php'; 
+include $footer_path;
 ?>
 
 <script src="../js/vina.js"></script>
