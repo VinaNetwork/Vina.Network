@@ -10,8 +10,8 @@ error_reporting(E_ALL);
 // Định nghĩa biến trước khi sử dụng
 $root_path = '../';
 $page_title = "Vina Network - Tools";
-$page_description = "Explore various tools on Vina Network, including NFT Holders Checker and NFT Valuation.";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, blockchain, VINA";
+$page_description = "Explore various tools on Vina Network, including NFT Holders Checker, NFT Valuation, and NFT Transaction History.";
+$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/";
@@ -27,8 +27,8 @@ include $header_path;
 
 // Xác định chức năng được chọn (mặc định là nft-holders)
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-if (!in_array($tool, ['nft-holders', 'nft-valuation'])) {
-    $tool = 'nft-holders'; // Chỉ giữ 2 tab
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
+    $tool = 'nft-holders'; // Hỗ trợ cả 3 tab
 }
 ?>
 
@@ -56,6 +56,9 @@ include $navbar_path;
             <a href="?tool=nft-valuation" class="tab-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
                 <i class="fas fa-chart-line"></i> NFT Valuation
             </a>
+            <a href="?tool=nft-transactions" class="tab-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
+                <i class="fas fa-history"></i> NFT Transactions
+            </a>
         </div>
 
         <!-- Nội dung chức năng -->
@@ -66,6 +69,8 @@ include $navbar_path;
                 $tool_file = 'nft-holders.php';
             } elseif ($tool === 'nft-valuation') {
                 $tool_file = 'nft-valuation.php';
+            } elseif ($tool === 'nft-transactions') {
+                $tool_file = 'nft-transactions.php';
             }
 
             // Kiểm tra và include file
@@ -105,7 +110,7 @@ document.querySelectorAll('.tab-link').forEach(link => {
 
         // Lấy giá trị tool từ data-tool
         const tool = this.getAttribute('data-tool');
-
+        
         // Cập nhật URL mà không làm mới trang
         history.pushState({}, '', `?tool=${tool}`);
 
