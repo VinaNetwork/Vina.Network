@@ -50,10 +50,10 @@ include $navbar_path;
 
         <!-- Tab để chọn chức năng -->
         <div class="tools-tabs">
-            <a href="?tool=nft-holders" class="tab-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>">
+            <a href="?tool=nft-holders" class="tab-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
                 <i class="fas fa-wallet"></i> NFT Holders
             </a>
-            <a href="?tool=nft-valuation" class="tab-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>">
+            <a href="?tool=nft-valuation" class="tab-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
                 <i class="fas fa-chart-line"></i> NFT Valuation
             </a>
         </div>
@@ -90,5 +90,40 @@ include $footer_path;
 ?>
 
 <script src="../js/vina.js"></script>
+<script>
+// Xử lý chuyển tab bằng AJAX
+document.querySelectorAll('.tab-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault(); // Ngăn chặn làm mới trang
+
+        // Cập nhật trạng thái active của tab
+        document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
+        this.classList.add('active');
+
+        // Lấy giá trị tool từ data-tool
+        const tool = this.getAttribute('data-tool');
+        
+        // Cập nhật URL mà không làm mới trang
+        history.pushState({}, '', `?tool=${tool}`);
+
+        // Tải nội dung mới qua AJAX
+        fetch(`/tools/load-tool.php?tool=${tool}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            // Cập nhật nội dung trong tool-content
+            document.querySelector('.tool-content').innerHTML = data;
+        })
+        .catch(error => {
+            console.error('Error loading tool content:', error);
+            document.querySelector('.tool-content').innerHTML = '<p>Error loading content. Please try again.</p>';
+        });
+    });
+});
+</script>
 </body>
 </html>
