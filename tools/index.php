@@ -9,10 +9,10 @@ error_reporting(E_ALL);
 $root_path = '../'; // Đường dẫn về thư mục gốc
 $page_title = "Vina Network - Check NFT Holders";
 $page_description = "Check the number of wallets holding a specific Solana NFT and list their addresses.";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, blockchain, $VINA";
+$page_keywords = "Vina Network, Solana NFT, NFT holders, blockchain, VINA"; // Sửa $VINA thành VINA
 $page_og_title = "Vina Network - Check NFT Holders";
 $page_og_url = "https://vina.network/tools/nft-holders/";
-$page_canonical = "https://vina.network/tools/nft-holders/";
+$page.canonical = "https://vina.network/tools/nft-holders/";
 $page_css = ['nft-holders.css']; // Đường dẫn đến file CSS trong thư mục tools
 
 // Kiểm tra file header.php
