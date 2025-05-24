@@ -107,6 +107,14 @@
     background-color: #0056b3;
 }
 
+/* Note */
+.note {
+    color: #666;
+    text-align: center;
+    margin-top: 20px;
+    font-style: italic;
+}
+
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .tools-section {
