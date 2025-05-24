@@ -63,7 +63,7 @@ include $navbar_path;
             <?php
             // Include file tương ứng với chức năng được chọn
             if ($tool === 'nft-holders') {
-                $tool_file = 'nft-holders.php'; // Cập nhật tên file
+                $tool_file = 'nft-holders.php';
             } elseif ($tool === 'nft-valuation') {
                 $tool_file = 'nft-valuation.php';
             }
@@ -76,6 +76,9 @@ include $navbar_path;
             }
             ?>
         </div>
+
+        <!-- Thêm thông báo -->
+        <p class="note">Note: Only supports checking on the Solana blockchain.</p>
     </div>
 </section>
 
