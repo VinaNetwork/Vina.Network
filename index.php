@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <!-- Header -->
-<?php include 'include/header.php'; ?>
+<?php
+$page_css = ['css/home.css'];
+include 'include/header.php';
+?>
 
 <!-- body -->
 <body>
