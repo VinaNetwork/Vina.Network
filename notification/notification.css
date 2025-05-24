@@ -10,7 +10,7 @@
 }
 
 .notification-content {
-    background: #fff;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     border-radius: 15px;
     padding: 3rem;
     margin: 2rem;
