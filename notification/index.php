@@ -4,6 +4,7 @@
 $root_path = '../';
 $page_title = "Notification - Vina Network";
 $page_og_url = "https://www.vina.network/notification/";
+$page_canonical = "https://www.vina.network/notification/";
 $page_css = ['notification.css'];
 include '../include/header.php';
 ?>
@@ -22,5 +23,14 @@ include '../include/header.php';
 
     <?php include '../include/footer.php'; ?>
     <script src="../js/vina.js"></script>
+
+    <script type="application/ld+json">
+        {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "url": "https://www.vina.network/notification/",
+    "name": "Notification - Vina Network"
+        }
+    </script>
 </body>
 </html>
