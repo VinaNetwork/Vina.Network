@@ -83,6 +83,8 @@ if ($tool === 'nft-holders') {
     $tool_file = 'nft-valuation.php';
 } elseif ($tool === 'nft-transactions') {
     $tool_file = 'nft-transactions.php';
+} elseif ($tool === 'wallet-analysis') {
+    $tool_file = 'wallet-analysis.php';
 }
 
 // Kiểm tra và include file
