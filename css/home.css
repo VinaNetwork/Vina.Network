@@ -1,3 +1,4 @@
+/* Common Section Styles */
 section h2 {
     font-weight: 700;
     color: #1a1a1a;
@@ -14,27 +15,23 @@ section h3 {
     min-height: 100vh;
     padding-top: 72px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background: cover center fixed;
     display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: white;
+    color: #fff;
     overflow-y: auto;
 }
 
 .hero-content {
-    max-width: 90%; /* Giới hạn chiều rộng để tránh tràn */
-    padding: 0 10px; /* Thêm padding để căn chỉnh */
+    max-width: 90%;
+    padding: 0 10px;
 }
 
 .hero-content h1 {
-    font-weight: 700;
-    font-size: 4.5em;
-    background: linear-gradient(45deg, #00d4ff, #ff00ff, #00ffaa, #00d4ff);
-    background-size: 400%;
+    font: 700 4.5em sans-serif;
+    background: linear-gradient(45deg, #00d4ff, #ff00ff, #00ffaa, #00d4ff) 0/400%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -43,13 +40,12 @@ section h3 {
 }
 
 .hero-content p {
-    font-weight: 400;
-    font-size: 1.5em;
+    font: 400 1.5em sans-serif;
     color: #e0e0e0;
     margin: 20px;
     overflow: hidden;
     white-space: nowrap;
-    animation: typewriter 4s steps(40, end) forwards, blinkCursor 0.75s step-end infinite, zoomIn 1s ease-out forwards 0.5s;
+    animation: typewriter 4s steps(40) forwards, blinkCursor 0.75s step-end infinite, zoomIn 1s ease-out forwards 0.5s;
 }
 
 .hero-content h1:hover {
@@ -60,86 +56,38 @@ section h3 {
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
 }
 
-.hero-content h1.fade-in {
-    font-weight: 700;
-    font-size: 4.5em;
-    background: linear-gradient(45deg, #00d4ff, #ff00ff, #00ffaa, #00d4ff);
-    background-size: 400%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
-    animation: gradientText 8s ease infinite, fade-in 0.6s ease-out forwards, zoomIn 1s ease-out forwards;
-}
-
-.hero-content p.fade-in {
-    font-weight: 400;
-    font-size: 1.5em;
-    color: #e0e0e0;
-    margin: 20px;
-    overflow: hidden;
-    white-space: nowrap;
-    animation: typewriter 4s steps(40, end) forwards, blinkCursor 0.75s step-end infinite, fade-in 0.6s ease-out forwards, zoomIn 1s ease-out forwards 0.5s;
-}
-
-/* Keyframes cho hiệu ứng gradient chuyển động */
+/* Keyframes */
 @keyframes gradientText {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
-/* Keyframes cho hiệu ứng typewriter */
 @keyframes typewriter {
-    from {
-        width: 0;
-    }
-    to {
-        width: 100%;
-    }
+    from { width: 0; }
+    to { width: 100%; }
 }
 
-/* Keyframes cho con trỏ nhấp nháy */
 @keyframes blinkCursor {
-    from, to {
-        border-right: 2px solid transparent;
-    }
-    50% {
-        border-right: 2px solid #00d4ff;
-    }
+    from, to { border-right: 2px solid transparent; }
+    50% { border-right: 2px solid #00d4ff; }
 }
 
-/* Keyframes cho hiệu ứng zoom-in */
 @keyframes zoomIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
 }
 
-/* About Section */
-.about-section,
-.why-choose-section,
-.ecosystem-section {
+/* Card Sections */
+.about-section, .why-choose-section, .ecosystem-section {
     padding: 20px;
     text-align: center;
 }
 
-.why-choose-section {background: #c3c7c4;}
+.why-choose-section {
+    background: #c3c7c4;
+}
 
-.about-cards,
-.why-choose-cards,
-.ecosystem-cards {
+.about-cards, .why-choose-cards, .ecosystem-cards {
     display: flex;
     justify-content: center;
     gap: 2rem;
@@ -148,10 +96,8 @@ section h3 {
     margin: 0 auto;
 }
 
-.about-card,
-.why-choose-card,
-.ecosystem-card {
-    background: #ffffff;
+.about-card, .why-choose-card, .ecosystem-card {
+    background: #fff;
     border-radius: 15px;
     padding: 20px;
     width: 300px;
@@ -160,41 +106,30 @@ section h3 {
     cursor: pointer;
 }
 
-.about-card:hover,
-.why-choose-card:hover,
-.ecosystem-card:hover {
+.about-card:hover, .why-choose-card:hover, .ecosystem-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
-    background-color: #e6f7ff;
+    background: #e6f7ff;
 }
 
-.about-card:active,
-.why-choose-card:active,
-.ecosystem-card:active {
+.about-card:active, .why-choose-card:active, .ecosystem-card:active {
     transform: scale(0.95);
 }
 
-.about-card:active h3,
-.why-choose-card:active h3,
-.ecosystem-card:active h3 {
+.about-card:active h3, .why-choose-card:active h3, .ecosystem-card:active h3 {
     color: #00d4ff;
 }
 
-.card-icon,
-.why-choose-card i,
-.ecosystem-card i {
+.card-icon, .why-choose-card i, .ecosystem-card i {
     width: 50px;
     height: 50px;
-    object-fit: contain;
     margin-bottom: 1rem;
     font-size: 2.5rem;
     color: #00d4ff;
     transition: transform 0.5s ease;
 }
 
-.about-card:hover .card-icon,
-.why-choose-card:hover i,
-.ecosystem-card:hover i {
+.about-card:hover .card-icon, .why-choose-card:hover i, .ecosystem-card:hover i {
     transform: scale(1.1) rotate(15deg);
 }
 
@@ -202,7 +137,7 @@ section h3 {
 .crypto-widget {
     text-align: center;
     padding: 20px;
-    background-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -224,29 +159,23 @@ section h3 {
         background-attachment: scroll;
         padding-top: 64px;
     }
-    .hero-content h1,
-    .hero-content h1.fade-in {
-        font-size: 2em; /* Giảm kích thước chữ cho di động */
-        animation: gradientText 6s ease infinite, fade-in 0.6s ease-out forwards, zoomIn 1s ease-out forwards;
-        white-space: normal; /* Cho phép xuống dòng */
-        word-wrap: break-word; /* Đảm bảo chữ dài được cắt và xuống dòng */
+    .hero-content h1 {
+        font-size: 2em;
+        white-space: normal;
+        word-wrap: break-word;
+        animation: gradientText 6s ease infinite, zoomIn 1s ease-out forwards;
     }
-    .hero-content p,
-    .hero-content p.fade-in {
-        font-size: 1em; /* Giảm kích thước chữ cho di động */
-        white-space: normal; /* Tắt nowrap để cho phép xuống dòng */
-        animation: zoomIn 1s ease-out forwards 0.5s, fade-in 0.6s ease-out forwards; /* Loại bỏ typewriter và blinkCursor */
-        word-wrap: break-word; /* Đảm bảo chữ dài được cắt và xuống dòng */
+    .hero-content p {
+        font-size: 1em;
+        white-space: normal;
+        word-wrap: break-word;
+        animation: zoomIn 1s ease-out forwards 0.5s;
     }
-    .about-cards,
-    .why-choose-cards,
-    .ecosystem-cards {
+    .about-cards, .why-choose-cards, .ecosystem-cards {
         flex-direction: column;
         align-items: center;
     }
-    .about-card,
-    .why-choose-card,
-    .ecosystem-card {
+    .about-card, .why-choose-card, .ecosystem-card {
         width: 100%;
     }
     .crypto-widget {
