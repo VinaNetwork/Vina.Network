@@ -170,6 +170,25 @@ document.addEventListener('submit', (e) => {
         });
     }
 });
+
+    // Đồng bộ trạng thái tab khi tải trang
+window.addEventListener('load', () => {
+    // Lấy tham số tool từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const tool = urlParams.get('tool') || 'nft-holders';
+
+    // Xóa class active khỏi tất cả các tab
+    document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
+
+    // Thêm class active cho tab tương ứng
+    const activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    } else {
+        // Mặc định chọn tab NFT Holders nếu tool không hợp lệ
+        document.querySelector('.tab-link[data-tool="nft-holders"]').classList.add('active');
+    }
+});
 </script>
 </body>
 </html>
