@@ -1,6 +1,18 @@
+section h2 {
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+section h3 {
+    font-weight: 600;
+    color: #007bff;
+    transition: color 0.3s ease;
+}
+
 /* Hero Section */
 .hero {
     min-height: 100vh;
+    padding-top: 72px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     background-size: cover;
     background-position: center;
@@ -10,7 +22,6 @@
     align-items: center;
     text-align: center;
     color: white;
-    padding: 3rem 1rem;
     overflow-y: auto;
 }
 .hero-content h1 {
@@ -25,21 +36,10 @@
 }
 
 /* About Section */
-section h2 {
-    font-weight: 700;
-    color: #1a1a1a;
-}
-
-section h3 {
-    font-weight: 600;
-    color: #007bff;
-    transition: color 0.3s ease;
-}
-
 .about-section,
 .why-choose-section,
 .ecosystem-section {
-    padding: 4rem 1rem;
+    padding: 20px;
     text-align: center;
 }
 
@@ -60,7 +60,7 @@ section h3 {
 .ecosystem-card {
     background: #f8f9fa;
     border-radius: 15px;
-    padding: 2rem;
+    padding: 20px;
     width: 300px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
@@ -129,7 +129,7 @@ section h3 {
 @media screen and (max-width: 768px) {
     .hero {
         background-attachment: scroll;
-        padding: 2rem 1rem;
+        padding-top: 64px;
     }
     .about-cards,
     .why-choose-cards,
