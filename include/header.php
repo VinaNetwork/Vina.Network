@@ -62,14 +62,14 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
         ]
     }
     </script>
-    <!-- Optional: Google Analytics (thay YOUR_GA_TRACKING_ID bằng ID thực tế) -->
-    <?php if (isset($ga_tracking_id)): ?>
-        <script async src="https://www.googletagmanager.com/gtag/js?id=<?php echo htmlspecialchars($ga_tracking_id); ?>"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '<?php echo htmlspecialchars($ga_tracking_id); ?>');
-        </script>
-    <?php endif; ?>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9PX6BGXB5N"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-9PX6BGXB5N');
+    </script>
 </head>
