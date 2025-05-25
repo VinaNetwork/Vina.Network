@@ -86,70 +86,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
 
     <?php if (!empty($transactions)): ?>
         <?php if (isset($transactions['error'])): ?>
-            <p class="error"><?php echo htmlspecialchars($transactions['error']); ?></p>
+            <div class='result-error'><p class="error"><?php echo htmlspecialchars($transactions['error']); ?></p></div>
         <?php else: ?>
-            <p>Total Transactions: <?php echo $total_transactions; ?> (Page <?php echo $page; ?>)</p>
-            <table class="transaction-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Price</th>
-                        <th>Buyer</th>
-                        <th>Seller</th>
-                        <th>Signature</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($transactions as $tx): ?>
+            <div class='result-section'>
+                <p class='result-info'>Total Transactions: <?php echo $total_transactions; ?> (Page <?php echo $page; ?>)</p>
+                <table class="transaction-table">
+                    <thead>
                         <tr>
-                            <td><?php echo htmlspecialchars($tx['timestamp']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['type']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['price']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['buyer']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['seller']); ?></td>
-                            <td>
-                                <a href="https://explorer.solana.com/tx/<?php echo htmlspecialchars($tx['signature']); ?>" target="_blank">
-                                    <?php echo substr(htmlspecialchars($tx['signature']), 0, 10) . '...'; ?>
-                                </a>
-                            </td>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Buyer</th>
+                            <th>Seller</th>
+                            <th>Signature</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($transactions as $tx): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($tx['timestamp']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['type']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['price']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['buyer']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['seller']); ?></td>
+                                <td>
+                                    <a href="https://explorer.solana.com/tx/<?php echo htmlspecialchars($tx['signature']); ?>" target="_blank">
+                                        <?php echo substr(htmlspecialchars($tx['signature']), 0, 10) . '...'; ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
 
-            <!-- Phân trang -->
-            <?php if ($total_transactions > $transactions_per_page): ?>
-                <div class="pagination">
-                    <?php
-                    $total_pages = ceil($total_transactions / $transactions_per_page);
-                    if ($page > 1): ?>
-                        <form method="POST" style="display:inline;">
-                            <input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>">
-                            <input type="hidden" name="page" value="<?php echo $page - 1; ?>">
-                            <button type="submit">Previous</button>
-                        </form>
-                    <?php endif; ?>
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <?php if ($i === $page): ?>
-                            <span class="active-page"><?php echo $i; ?></span>
-                        <?php else: ?>
-                            <form method="POST" style="display:inline; margin-left: 5px;">
-                                <input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>">
-                                <input type="hidden" name="page" value="<?php echo $i; ?>">
-                                <button type="submit">$i</button>
-                            </form>
+                <!-- Phân trang -->
+                <?php if ($total_transactions > $transactions_per_page): ?>
+                    <div class="pagination">
+                        <?php
+                        $total_pages = ceil($total_transactions / $transactions_per_page);
+                        if ($page > 1): ?>
+                            <form method="POST" class='page-form'><input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>"><input type="hidden" name="page" value="<?php echo $page - 1; ?>"><button type="submit" class='page-btn'>Previous</button></form>
                         <?php endif; ?>
-                    <?php endfor; ?>
-                    <?php if ($page < $total_pages): ?>
-                        <form method="POST" style="display:inline; margin-left: 10px;">
-                            <input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>">
-                            <input type="hidden" name="page" value="<?php echo $page + 1; ?>">
-                            <button type="submit">Next</button>
-                        </form>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
+                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                            <?php if ($i === $page): ?>
+                                <span class='active-page'><?php echo $i; ?></span>
+                            <?php else: ?>
+                                <form method="POST" class='page-form'><input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>"><input type="hidden" name="page" value="<?php echo $i; ?>"><button type="submit" class='page-btn'><?php echo $i; ?></button></form>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+                        <?php if ($page < $total_pages): ?>
+                            <form method="POST" class='page-form'><input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>"><input type="hidden" name="page" value="<?php echo $page + 1; ?>"><button type="submit" class='page-btn'>Next</button></form>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
     <?php endif; ?>
 </div>
