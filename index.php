@@ -93,13 +93,18 @@ include 'include/header.php';
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="400">
                     <i class="fas fa-exchange-alt"></i>
-                    <h3></h3>
-                    <p></p>
+                    <h3>Vina DeFi</h3>
+                    <p>Vina DeFi is a decentralized finance platform within the Vina Network ecosystem, offering services such as staking, lending, borrowing, and yield farming. Designed to be accessible and transparent, Vina DeFi empowers users to earn passive income, participate in governance, and interact with DeFi protocols - all while maintaining full control of their assets in a trustless environment.</p>
+                </div>
+                <div class="ecosystem-card fade-in" data-delay="400">
+                    <i class="fas fa-exchange-alt"></i>
+                    <h3>Vina GameFi</h3>
+                    <p>Vina GameFi is an innovative platform that merges blockchain technology with gaming, enabling players to earn rewards through play-to-earn mechanics. Integrated with NFTs and DeFi elements, Vina GameFi offers immersive gameplay experiences while allowing users to truly own, trade, and monetize in-game assets within the Vina Network ecosystem.</p>
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="600">
                     <i class="fas fa-image"></i>
                     <h3>NFT Marketplace</h3>
-                    <p></p>
+                    <p>Vina NFT Marketplace is a decentralized platform where users can create, buy, sell, and trade NFTs with ease and security. Supporting a wide range of digital assets, from art and music to in-game items, this marketplace empowers creators and collectors within the Vina Network to engage in a transparent, low-fee, and community-driven environment.</p>
                 </div>
             </div>
         </div>
