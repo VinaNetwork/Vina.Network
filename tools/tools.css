@@ -183,6 +183,30 @@
     font-style: italic;
 }
 
+/* Describe */
+.feature-description {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f1f8ff;
+    border-radius: 4px;
+    text-align: left;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.feature-description h3 {
+    font-size: 1.3em;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.feature-description p {
+    font-size: 1em;
+    color: #333;
+    line-height: 1.6;
+}
+
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .tools-section {
