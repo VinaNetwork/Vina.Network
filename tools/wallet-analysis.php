@@ -5,6 +5,8 @@ ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
+
+include 'api-helper.php';
 ?>
 
 <div class="wallet-analysis-content">
@@ -20,10 +22,25 @@ error_reporting(E_ALL);
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
         $walletAddress = trim($_POST['walletAddress']);
+
         if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $walletAddress)) {
             echo "<div class='result-error'><p>Invalid wallet address. Please enter a valid Solana wallet address (32-44 characters, base58).</p></div>";
         } else {
-            echo "<div class='result-section'><p class='result-info'>Wallet analysis for $walletAddress is not yet implemented. Please wait for API integration.</p></div>";
+            $walletData = getWalletData($walletAddress);
+
+            if (isset($walletData['error'])) {
+                echo "<div class='result-error'><p>" . htmlspecialchars($walletData['error']) . "</p></div>";
+            } elseif ($walletData) {
+                echo "<div class='result-section'>";
+                echo "<h3>Results</h3>";
+                echo "<p class='result-info'>Wallet Address: " . htmlspecialchars($walletAddress) . "</p>";
+                echo "<p class='result-info'>SOL Balance: " . htmlspecialchars($walletData['sol_balance'] ?? 'N/A') . " SOL</p>";
+                echo "<p class='result-info'>Token Count: " . htmlspecialchars($walletData['token_count'] ?? 'N/A') . "</p>";
+                echo "<p class='result-info'>Recent Activity Count: " . htmlspecialchars($walletData['activity_count'] ?? 'N/A') . "</p>";
+                echo "</div>";
+            } else {
+                echo "<div class='result-error'><p>No data found for this wallet address.</p></div>";
+            }
         }
     }
     ?>
@@ -32,8 +49,46 @@ error_reporting(E_ALL);
         <h3>About Wallet Analysis</h3>
         <p>
             The Wallet Analysis tool allows you to analyze a Solana wallet by entering its address. 
-            It will retrieve key information such as the SOL balance, number of tokens held, and recent activities on the Solana blockchain. 
+            It retrieves key information such as the SOL balance, number of tokens held, and recent activities on the Solana blockchain. 
             This tool is useful for investors, traders, or anyone interested in tracking wallet activities.
         </p>
     </div>
 </div>
+
+<?php
+function getWalletData($walletAddress) {
+    // Gọi API Helius để lấy thông tin ví
+    $payload = [
+        "addresses" => [$walletAddress]
+    ];
+
+    // Lấy số dư SOL
+    $balanceData = callHeliusAPI('addresses/' . $walletAddress . '/balances');
+    if (isset($balanceData['error'])) {
+        return ['error' => $balanceData['error']];
+    }
+
+    // Lấy danh sách token
+    $tokenData = callHeliusAPI('addresses/' . $walletAddress . '/tokens');
+    if (isset($tokenData['error'])) {
+        return ['error' => $tokenData['error']];
+    }
+
+    // Lấy hoạt động gần đây
+    $activityData = callHeliusAPI('addresses/' . $walletAddress . '/transactions', ['limit' => 10]);
+    if (isset($activityData['error'])) {
+        return ['error' => $activityData['error']];
+    }
+
+    // Xử lý dữ liệu trả về
+    $solBalance = isset($balanceData['nativeBalance']) ? $balanceData['nativeBalance'] / 1e9 : 'N/A'; // Chuyển từ lamports sang SOL
+    $tokenCount = isset($tokenData['tokens']) ? count($tokenData['tokens']) : 'N/A';
+    $activityCount = isset($activityData['transactions']) ? count($activityData['transactions']) : 'N/A';
+
+    return [
+        'sol_balance' => $solBalance,
+        'token_count' => $tokenCount,
+        'activity_count' => $activityCount
+    ];
+}
+?>
