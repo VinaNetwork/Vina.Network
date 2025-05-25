@@ -1,54 +1,85 @@
 <?php
-// nft-valuation.php
-include 'api-helper.php';
+// Chức năng: Kiểm tra giá trị NFT
+?>
 
-$response = ['error' => null, 'html' => ''];
+<h2>Check NFT Valuation</h2>
+<p>Enter the mint address of the NFT to see its current floor price and recent sales.</p>
+
+<form id="nftValuationForm" method="POST" action="">
+    <input type="text" name="mintAddressValuation" id="mintAddressValuation" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+    <button type="submit">Check Valuation</button>
+</form>
+
+<?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressValuation'])) {
-    $mint_address = trim($_POST['mintAddressValuation']);
+    $mintAddress = trim($_POST['mintAddressValuation']);
 
-    if (validateMintAddress($mint_address)) {
-        $params = ["mintAddresses" => [$mint_address]];
-        $data = callHeliusAPI('tokens', $params);
+    // Gọi API để lấy thông tin giá trị NFT
+    $valuation = getNFTValuation($mintAddress);
 
-        if (!isset($data['error']) && isset($data[0])) {
-            $valuation = [
-                'floorPrice' => $data[0]['floorPrice'] ?? 'N/A',
-                'lastSale' => $data[0]['lastSale'] ?? 'N/A',
-                'volume' => $data[0]['volume'] ?? 'N/A'
-            ];
-
-            ob_start();
-            ?>
-            <h2>Check NFT Valuation</h2>
-            <p>Enter the mint address of the NFT to see its current floor price and recent sales.</p>
-            <form id="nftValuationForm" method="POST" action="">
-                <input type="text" name="mintAddressValuation" id="mintAddressValuation" value="<?php echo htmlspecialchars($mint_address); ?>" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-                <button type="submit">Check Valuation</button>
-            </form>
-            <h3>Results</h3>
-            <p>Floor Price: <?php echo htmlspecialchars($valuation['floorPrice']); ?> SOL</p>
-            <p>Last Sale: <?php echo htmlspecialchars($valuation['lastSale']); ?> SOL</p>
-            <p>Volume (24h): <?php echo htmlspecialchars($valuation['volume']); ?> SOL</p>
-            <?php
-            $response['html'] .= ob_get_clean();
-        } else {
-            $response['error'] = $data['error'] ?? 'No valuation data found for this NFT.';
-        }
+    if (isset($valuation['error'])) {
+        echo "<p>" . htmlspecialchars($valuation['error']) . "</p>";
+    } elseif ($valuation) {
+        echo "<h3>Results</h3>";
+        echo "<p>Floor Price: " . htmlspecialchars($valuation['floorPrice'] ?? 'N/A') . " SOL</p>";
+        echo "<p>Last Sale: " . htmlspecialchars($valuation['lastSale'] ?? 'N/A') . " SOL</p>";
+        echo "<p>Volume (24h): " . htmlspecialchars($valuation['volume'] ?? 'N/A') . " SOL</p>";
     } else {
-        $response['error'] = 'Invalid mint address. Please enter a valid Solana mint address.';
+        echo "<p>No valuation data found or invalid mint address.</p>";
     }
-} else {
-    ob_start();
-    ?>
-    <h2>Check NFT Valuation</h2>
-    <p>Enter the mint address of the NFT to see its current floor price and recent sales.</p>
-    <form id="nftValuationForm" method="POST" action="">
-        <input type="text" name="mintAddressValuation" id="mintAddressValuation" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-        <button type="submit">Check Valuation</button>
-    </form>
-    <?php
-    $response['html'] = ob_get_clean();
 }
 
-echo json_encode($response);
-?>
+function getNFTValuation($mintAddress) {
+    $apiKey = "8eb75cd9-015a-4e24-9de2-5be9ee0f1c63";
+    $url = "https://api.helius.xyz/v0/tokens?api-key=" . $apiKey;
+
+    $payload = [
+        "mintAddresses" => [$mintAddress]
+    ];
+
+    $ch = curl_init();
+    if (!$ch) {
+        error_log("cURL initialization failed.");
+        return ['error' => 'Failed to initialize cURL.'];
+    }
+
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+    $response = curl_exec($ch);
+    if ($response === false) {
+        $curlError = curl_error($ch);
+        error_log("cURL error: $curlError");
+        curl_close($ch);
+        return ['error' => 'cURL error: ' . $curlError];
+    }
+
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        error_log("API request failed with HTTP code: $httpCode");
+        return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
+    }
+
+    $data = json_decode($response, true);
+    if ($data === null) {
+        error_log("Failed to parse API response as JSON. Response: $response");
+        return ['error' => 'Failed to parse API response as JSON.'];
+    }
+
+    // Giả lập dữ liệu trả về (Helius API có thể không trả về đúng format này, cần điều chỉnh)
+    if (isset($data[0])) {
+        return [
+            'floorPrice' => $data[0]['floorPrice'] ?? 'N/A',
+            'lastSale' => $data[0]['lastSale'] ?? 'N/A',
+            'volume' => $data[0]['volume'] ?? 'N/A'
+        ];
+    }
+
+    return ['error' => 'No data found for this mint address.'];
+}

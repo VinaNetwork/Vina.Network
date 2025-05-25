@@ -1,27 +1,34 @@
 <?php
-// load-tool.php
-header('Content-Type: application/json');
+// Cấu hình log lỗi
+ini_set('log_errors', 1);
+ini_set('error_log', '/home/hthxhyqf/domains/vina.network/public_html/tools/error_log.txt');
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
+// Kiểm tra nếu không phải là yêu cầu AJAX
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
-    echo json_encode(['error' => 'Direct access not allowed']);
-    exit;
+    die('Direct access not allowed');
 }
 
+// Xác định chức năng được chọn
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
-    $tool = 'nft-holders';
+    $tool = 'nft-holders'; // Hỗ trợ cả 3 tab
 }
 
-$response = ['error' => null, 'html' => ''];
-$tool_file = $tool . '.php';
+// Include file tương ứng
+if ($tool === 'nft-holders') {
+    $tool_file = 'nft-holders.php';
+} elseif ($tool === 'nft-valuation') {
+    $tool_file = 'nft-valuation.php';
+} elseif ($tool === 'nft-transactions') {
+    $tool_file = 'nft-transactions.php';
+}
 
-if (file_exists($tool_file)) {
-    ob_start();
+// Kiểm tra và include file
+if (isset($tool_file) && file_exists($tool_file)) {
     include $tool_file;
-    $response['html'] = ob_get_clean();
 } else {
-    $response['error'] = 'Error: Tool not found.';
+    echo "<p>Error: Tool not found.</p>";
 }
-
-echo json_encode($response);
 ?>
