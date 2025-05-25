@@ -12,8 +12,10 @@
             <ul class="dropdown-menu">
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-search"></i> Vina Scan</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-chart-line"></i> Vina Investment</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-search"></i> Vina DeFi</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-chart-line"></i> Vina GameFi</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-chart-line"></i> NFT Marketplace</a></li>
+                
             </ul>
         </li>
         <li class="dropdown">
