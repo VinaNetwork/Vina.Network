@@ -1,17 +1,13 @@
 <?php
 // api-helper.php
 
-// Include file cấu hình
-$config_path = dirname(__DIR__) . '/config/config.php'; // Đường dẫn tương đối từ tools/
-if (!file_exists($config_path)) {
-    error_log("Error: config.php not found at $config_path");
-    die('Internal Server Error: Missing config.php');
-}
-include $config_path;
+// Định nghĩa API Key (sẽ chuyển sang file config ở bước sau)
+$helius_api_key = '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63';
 
 // Hàm gọi API Helius
-function callHeliusAPI($endpoint, $params = []) {
-    $url = "https://api.helius.xyz/v0/{$endpoint}?api-key=" . HELIUS_API_KEY;
+function callHeliusAPI($endpoint, $params = [], $method = 'POST') {
+    global $helius_api_key;
+    $url = "https://api.helius.xyz/v0/{$endpoint}?api-key={$helius_api_key}";
 
     $ch = curl_init();
     if (!$ch) {
@@ -21,9 +17,11 @@ function callHeliusAPI($endpoint, $params = []) {
 
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    if (!empty($params)) {
+    if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
+        if (!empty($params)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
+        }
     }
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -51,22 +49,5 @@ function callHeliusAPI($endpoint, $params = []) {
     }
 
     return $data;
-}
-
-// Hàm kiểm tra mint address
-function validateMintAddress($mint_address) {
-    return !empty($mint_address) && strlen($mint_address) > 20;
-}
-
-// Hàm phân trang
-function getPaginatedData($data, $page, $per_page) {
-    $offset = ($page - 1) * $per_page;
-    $total_items = count($data);
-    $paginated_data = array_slice($data, $offset, $per_page);
-    return [
-        'data' => $paginated_data,
-        'total_items' => $total_items,
-        'total_pages' => ceil($total_items / $per_page)
-    ];
 }
 ?>
