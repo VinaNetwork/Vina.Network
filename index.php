@@ -26,12 +26,12 @@ include 'include/header.php';
         <div class="about-content">
             <h2 class="fade-in" data-delay="0">About Vina Network</h2>
             <div class="about-cards">
-                <div class="about-card fade-in" data-delay="200">
+                <div class="about-card fade-in" data-delay="400">
                     <img src="img/vision.png" alt="Vision Icon" class="card-icon">
                     <h3>Vision & Mission</h3>
                     <p>Vina Network envisions becoming a leading crypto-focused ecosystem that serves a global user base. Its mission is to connect, educate, and accelerate the growth of blockchain adoption through innovative Web3 products, stablecoins, decentralized finance (DeFi), and community-driven initiatives.</p>
                 </div>
-                <div class="about-card fade-in" data-delay="600">
+                <div class="about-card fade-in" data-delay="500">
                     <img src="img/financial.png" alt="Financial Icon" class="card-icon">
                     <h3>Financial Ecosystem</h3>
                     <p>Vina Network aims to build a comprehensive crypto ecosystem, including Web3 wallets, decentralized exchanges (DEX), stablecoins, on-chain analytics tools, NFT platforms, GameFi, and DeFi services. This ecosystem will connect a global community and drive blockchain adoption through transparent, user-friendly, and accessible Web3 applications.</p>
@@ -41,7 +41,7 @@ include 'include/header.php';
                     <h3>Core Values</h3>
                     <p>Vina Network is guided by three core principles: transparency, innovation, and community empowerment. These values shape the way we build products, collaborate with partners, and grow the ecosystem—ensuring that every step forward benefits users and strengthens the future of Web3.</p>
                 </div>
-                <div class="about-card fade-in" data-delay="400">
+                <div class="about-card fade-in" data-delay="700">
                     <img src="img/stages.png" alt="Stages Icon" class="card-icon">
                     <h3>Development Roadmap</h3>
                     <p>Vina Network is developing a strategic roadmap that begins with building a strong community and foundational platform. It will gradually launch core products such as a Web3 wallet, DEX, and stablecoin protocol, while expanding into areas like NFT, GameFi, and educational partnerships - laying the groundwork for a robust and scalable Web3 ecosystem.</p>
@@ -53,14 +53,14 @@ include 'include/header.php';
     <!-- Why Choose Us Section -->
     <section class="why-choose-section">
         <div class="why-choose-content">
-            <h2 class="fade-in" data-delay="0">Why Choose Vina Network?</h2>
+            <h2 class="fade-in" data-delay="300">Why Choose Vina Network?</h2>
             <div class="why-choose-cards">
-                <div class="why-choose-card fade-in" data-delay="200">
+                <div class="why-choose-card fade-in" data-delay="400">
                     <i class="fas fa-shield"></i> <!-- Changed from fa-shield-alt -->
                     <h3>Community - Centric Approach</h3>
                     <p>Vina Network places its community at the heart of development. From education to governance, users are empowered to shape the future of the ecosystem through transparency, participation, and incentives.</p>
                 </div>
-                <div class="why-choose-card fade-in" data-delay="400">
+                <div class="why-choose-card fade-in" data-delay="500">
                     <i class="fas fa-globe"></i>
                     <h3>Comprehensive Web3 Ecosystem</h3>
                     <p>By integrating key crypto applications — like wallets, DEX, stablecoins, and on-chain tools — Vina Network offers a seamless and interconnected experience, enabling users to access the full power of Web3 in one place.</p>
@@ -69,6 +69,11 @@ include 'include/header.php';
                     <i class="fas fa-rocket"></i>
                     <h3>Visionary & Scalable Development</h3>
                     <p>The products developed by Vina Network are designed with a long-term vision in mind. Its adaptable infrastructure and cross-chain compatibility ensure sustainability as blockchain technology continues to evolve.</p>
+                </div>
+                <div class="why-choose-card fade-in" data-delay="700">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Security - First Design</h3>
+                    <p>Vina Network prioritizes user safety with a security-first approach in all its products. From non-custodial wallets to transparent smart contracts, the ecosystem is built to protect assets, ensure data privacy, and maintain trust in every transaction.</p>
                 </div>
             </div>
         </div>
