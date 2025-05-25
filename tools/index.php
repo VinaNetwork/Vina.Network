@@ -38,51 +38,6 @@ if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
 }
 ?>
 
-<head>
-    <!-- Thêm CSS inline để điều chỉnh .tools-tabs -->
-    <style>
-        .tools-tabs {
-            display: flex;
-            justify-content: flex-start;
-            gap: 20px;
-            margin-bottom: 10px;
-            white-space: nowrap; /* Ngăn tab xuống dòng */
-            overflow-x: auto; /* Cho phép trượt ngang */
-            -webkit-overflow-scrolling: touch; /* Cải thiện trượt trên thiết bị di động */
-            padding-bottom: 5px; /* Thêm padding dưới để hiển thị thanh trượt */
-        }
-
-        .tools-tabs::-webkit-scrollbar {
-            height: 5px; /* Điều chỉnh độ cao của thanh trượt */
-        }
-
-        .tools-tabs::-webkit-scrollbar-thumb {
-            background-color: #ccc; /* Màu của thanh trượt */
-            border-radius: 5px;
-        }
-
-        .tools-tabs::-webkit-scrollbar-track {
-            background-color: #f1f1f1; /* Màu nền của thanh trượt */
-        }
-
-        /* Đảm bảo tab-link không xuống dòng */
-        .tab-link {
-            flex-shrink: 0; /* Ngăn tab-link thu nhỏ khi trượt */
-        }
-
-        /* Loại bỏ media query responsive cho .tools-tabs */
-        @media screen and (max-width: 768px) {
-            .tools-section { padding-top: 64px; }
-            .tool-content form { flex-direction: column; align-items: center; }
-            .tool-content input { width: 100%; max-width: 300px; }
-            .holders-list, .transaction-table { width: 95%; }
-            .page-btn, .active-page { padding: 6px 12px; font-size: 0.9em; }
-            /* Giữ .tools-tabs luôn ngang */
-            .tools-tabs { flex-direction: row; } /* Đảm bảo không chuyển thành cột */
-        }
-    </style>
-</head>
-
 <body>
 <!-- Include Navbar -->
 <?php 
@@ -112,6 +67,9 @@ include $navbar_path;
             </a>
         </div>
 
+        <!-- Note -->
+        <p class="note">Note: Only supports checking on the Solana blockchain.</p>
+
         <!-- Nội dung chức năng -->
         <div class="tool-content">
             <?php
@@ -132,9 +90,6 @@ include $navbar_path;
             }
             ?>
         </div>
-
-        <!-- Thông báo -->
-        <p class="note">Note: Only supports checking on the Solana blockchain.</p>
     </div>
 </section>
 
