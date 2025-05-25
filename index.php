@@ -90,7 +90,7 @@ include 'include/header.php';
                     <p>Vina DEX is a decentralized exchange developed by Vina Network that enables users to trade cryptocurrencies directly from their wallets without relying on intermediaries. Built for speed, security, and low fees, Vina DEX offers a seamless trading experience with full control over user assets, supporting multiple blockchain networks and fostering true financial freedom.</p>
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="400">
-                    <i class="fas fa-exchange-alt"></i>
+                    <i class="fas fa-link"></i>
                     <h3>Vina DeFi</h3>
                     <p>Vina DeFi is a decentralized finance platform within the Vina Network ecosystem, offering services such as staking, lending, borrowing, and yield farming. Designed to be accessible and transparent, Vina DeFi empowers users to earn passive income, participate in governance, and interact with DeFi protocols - all while maintaining full control of their assets in a trustless environment.</p>
                 </div>
