@@ -37,7 +37,7 @@ include 'include/header.php';
                     <p>Vina Network aims to build a comprehensive crypto ecosystem, including Web3 wallets, decentralized exchanges (DEX), stablecoins, on-chain analytics tools, NFT platforms, GameFi, and DeFi services. This ecosystem will connect a global community and drive blockchain adoption through transparent, user-friendly, and accessible Web3 applications.</p>
                 </div>
                 <div class="about-card fade-in" data-delay="600">
-                    <i class="fas fa-star"></i>
+                    <img src="img/core-values.png" alt="Core Values Icon" class="card-icon">
                     <h3>Core Values</h3>
                     <p>Vina Network is guided by three core principles: transparency, innovation, and community empowerment. These values shape the way we build products, collaborate with partners, and grow the ecosystem—ensuring that every step forward benefits users and strengthens the future of Web3.</p>
                 </div>
