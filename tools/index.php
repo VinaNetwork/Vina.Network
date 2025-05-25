@@ -109,6 +109,7 @@ include $footer_path;
 ?>
 
 <script src="../js/vina.js"></script>
+    
 <script>
 // Xử lý chuyển tab bằng AJAX
 document.querySelectorAll('.tab-link').forEach(link => {
@@ -146,7 +147,7 @@ document.querySelectorAll('.tab-link').forEach(link => {
 
 // Xử lý submit form bằng AJAX
 document.addEventListener('submit', (e) => {
-    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form')) {
+    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
         e.preventDefault(); // Ngăn chặn submit mặc định
 
         const formData = new FormData(e.target);
