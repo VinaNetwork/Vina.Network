@@ -1,7 +1,7 @@
 .tools-section {
     padding-top: 72px;
     text-align: center;
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
@@ -73,6 +73,7 @@
 }
 
 .nft-checkbox {
+    margin: 20px auto;
     padding: 20px;
     border-radius:10px;
     background: #c3c7c4;
