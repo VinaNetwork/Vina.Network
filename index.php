@@ -31,15 +31,15 @@ include 'include/header.php';
                     <h3>Vision & Mission</h3>
                     <p>Our vision is to build a global blockchain network. Our mission is to educate and accelerate crypto adoption through Web3 innovation.</p>
                 </div>
-                <div class="about-card fade-in" data-delay="400">
-                    <img src="img/stages.png" alt="Stages Icon" class="card-icon">
-                    <h3>Development Roadmap</h3>
-                    <p>From community building to launching DeFi products and expanding partnerships, we’re shaping the future of blockchain.</p>
-                </div>
                 <div class="about-card fade-in" data-delay="600">
                     <img src="img/financial.png" alt="Financial Icon" class="card-icon">
                     <h3>Financial Ecosystem</h3>
                     <p>Leverage $VINA for staking, governance, and more, with revenue from DEX fees and stablecoin management.</p>
+                </div>
+                <div class="about-card fade-in" data-delay="400">
+                    <img src="img/stages.png" alt="Stages Icon" class="card-icon">
+                    <h3>Development Roadmap</h3>
+                    <p>From community building to launching DeFi products and expanding partnerships, we’re shaping the future of blockchain.</p>
                 </div>
             </div>
         </div>
