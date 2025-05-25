@@ -2,8 +2,16 @@
 // Định nghĩa API Key Helius
 $helius_api_key = '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63';
 
+// Số lượng giao dịch mỗi trang
+$transactions_per_page = 10;
+
+// Xác định trang hiện tại
+$page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
+$offset = ($page - 1) * $transactions_per_page;
+
 // Xử lý khi form được gửi
 $transactions = [];
+$total_transactions = 0;
 $mint_address = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
     $mint_address = trim($_POST['mint_address']);
@@ -27,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
                 $data = json_decode($response, true);
                 if (!empty($data)) {
                     // Lọc các giao dịch liên quan đến NFT (chuyển NFT, mua/bán)
+                    $filtered_transactions = [];
                     foreach ($data as $tx) {
                         $is_nft_related = false;
                         $price = null;
@@ -47,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
                         }
 
                         if ($is_nft_related) {
-                            $transactions[] = [
+                            $filtered_transactions[] = [
                                 'timestamp' => isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A',
                                 'type' => $tx['type'] ?? 'Unknown',
                                 'price' => $price ? number_format($price, 2) . ' SOL' : 'N/A',
@@ -56,6 +65,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
                                 'signature' => $tx['signature'] ?? 'N/A'
                             ];
                         }
+                    }
+
+                    // Lưu tổng số giao dịch
+                    $total_transactions = count($filtered_transactions);
+                    
+                    // Phân trang: chỉ lấy dữ liệu cho trang hiện tại
+                    $transactions = array_slice($filtered_transactions, $offset, $transactions_per_page);
+
+                    if (empty($transactions) && $total_transactions > 0) {
+                        $transactions = ['error' => 'No more transactions to display on this page.'];
+                    } elseif ($total_transactions == 0) {
+                        $transactions = ['error' => 'No transactions found for this NFT.'];
                     }
                 } else {
                     $transactions = ['error' => 'No transactions found for this NFT.'];
@@ -83,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
         <?php if (isset($transactions['error'])): ?>
             <p class="error"><?php echo htmlspecialchars($transactions['error']); ?></p>
         <?php else: ?>
+            <p>Total Transactions: <?php echo $total_transactions; ?> (Page <?php echo $page; ?>)</p>
             <table class="transaction-table">
                 <thead>
                     <tr>
@@ -111,6 +133,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
                     <?php endforeach; ?>
                 </tbody>
             </table>
+
+            <!-- Phân trang -->
+            <?php if ($total_transactions > $transactions_per_page): ?>
+                <div class="pagination">
+                    <?php
+                    $total_pages = ceil($total_transactions / $transactions_per_page);
+                    if ($page > 1): ?>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>">
+                            <input type="hidden" name="page" value="<?php echo $page - 1; ?>">
+                            <button type="submit">Previous</button>
+                        </form>
+                    <?php endif; ?>
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <?php if ($i === $page): ?>
+                            <span class="active-page"><?php echo $i; ?></span>
+                        <?php else: ?>
+                            <form method="POST" style="display:inline; margin-left: 5px;">
+                                <input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>">
+                                <input type="hidden" name="page" value="<?php echo $i; ?>">
+                                <button type="submit"><?php echo $i; ?></button>
+                            </form>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                    <?php if ($page < $total_pages): ?>
+                        <form method="POST" style="display:inline; margin-left: 10px;">
+                            <input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>">
+                            <input type="hidden" name="page" value="<?php echo $page + 1; ?>">
+                            <button type="submit">Next</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     <?php endif; ?>
 </div>
