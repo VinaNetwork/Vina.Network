@@ -19,14 +19,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressValuation'
     $valuation = getNFTValuation($mintAddress);
 
     if (isset($valuation['error'])) {
-        echo "<p>" . htmlspecialchars($valuation['error']) . "</p>";
+        echo "<div class='result-error'><p>" . htmlspecialchars($valuation['error']) . "</p></div>";
     } elseif ($valuation) {
+        echo "<div class='result-section'>";
         echo "<h3>Results</h3>";
-        echo "<p>Floor Price: " . htmlspecialchars($valuation['floorPrice'] ?? 'N/A') . " SOL</p>";
-        echo "<p>Last Sale: " . htmlspecialchars($valuation['lastSale'] ?? 'N/A') . " SOL</p>";
-        echo "<p>Volume (24h): " . htmlspecialchars($valuation['volume'] ?? 'N/A') . " SOL</p>";
+        echo "<p class='result-info'>Floor Price: " . htmlspecialchars($valuation['floorPrice'] ?? 'N/A') . " SOL</p>";
+        echo "<p class='result-info'>Last Sale: " . htmlspecialchars($valuation['lastSale'] ?? 'N/A') . " SOL</p>";
+        echo "<p class='result-info'>Volume (24h): " . htmlspecialchars($valuation['volume'] ?? 'N/A') . " SOL</p>";
+        echo "</div>";
     } else {
-        echo "<p>No valuation data found or invalid mint address.</p>";
+        echo "<div class='result-error'><p>No valuation data found or invalid mint address.</p></div>";
     }
 }
 
