@@ -16,8 +16,8 @@ error_reporting(E_ALL);
 // Định nghĩa biến trước khi sử dụng
 $root_path = '../';
 $page_title = "Vina Network - Tools";
-$page_description = "Explore various tools on Vina Network, including NFT Holders Checker, NFT Valuation, and NFT Transaction History.";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
+$page_description = "Explore various tools on Vina Network, including NFT Holders Checker, NFT Valuation, NFT Transactions, and Wallet Analysis.";
+$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, Solana wallet analysis, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/";
