@@ -16,11 +16,11 @@ error_reporting(E_ALL);
 // Định nghĩa biến trước khi sử dụng
 $root_path = '../';
 $page_title = "Vina Network - Tools";
-$page_description = "Explore various tools on Vina Network, including NFT Holders Checker, NFT Valuation, NFT Transactions, and Wallet Analysis.";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, Solana wallet analysis, blockchain, VINA";
+$page_description = "Explore various tools on Vina Network, including NFT Holders Checker, NFT Valuation, and NFT Transaction History.";
+$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
-$page.canonical = "https://vina.network/tools/";
+$page_canonical = "https://vina.network/tools/";
 $page_css = ['tools.css'];
 
 // Kiểm tra và include header.php
@@ -33,8 +33,8 @@ include $header_path;
 
 // Xác định chức năng được chọn (mặc định là nft-holders)
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
-    $tool = 'nft-holders'; // Hỗ trợ cả 4 tab
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
+    $tool = 'nft-holders'; // Hỗ trợ cả 3 tab
 }
 ?>
 
@@ -65,9 +65,6 @@ include $navbar_path;
             <a href="?tool=nft-transactions" class="tab-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
                 <i class="fas fa-history"></i> NFT Transactions
             </a>
-            <a href="?tool=wallet-analysis" class="tab-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
-                <i class="fas fa-search"></i> Wallet Analysis
-            </a>
         </div>
 
         <!-- Note -->
@@ -83,8 +80,6 @@ include $navbar_path;
                 $tool_file = 'nft-valuation.php';
             } elseif ($tool === 'nft-transactions') {
                 $tool_file = 'nft-transactions.php';
-            } elseif ($tool === 'wallet-analysis') {
-                $tool_file = 'wallet-analysis.php';
             }
 
             // Kiểm tra và include file
@@ -146,7 +141,7 @@ document.querySelectorAll('.tab-link').forEach(link => {
 
 // Xử lý submit form bằng AJAX
 document.addEventListener('submit', (e) => {
-    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
+    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form')) {
         e.preventDefault(); // Ngăn chặn submit mặc định
 
         const formData = new FormData(e.target);
