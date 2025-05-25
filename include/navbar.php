@@ -13,7 +13,7 @@
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina DeFi</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-link"></i> Vina DeFi</a></li>
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-gamepad"></i> Vina GameFi</a></li>
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-image"></i> NFT Marketplace</a></li>
             </ul>
