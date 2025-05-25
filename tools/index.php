@@ -65,6 +65,9 @@ include $navbar_path;
             <a href="?tool=nft-transactions" class="tab-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
                 <i class="fas fa-history"></i> NFT Transactions
             </a>
+            <a href="?tool=wallet-analysis" class="tab-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
+                <i class="fas fa-search"></i> Wallet Analysis
+            </a>
         </div>
 
         <!-- Note -->
