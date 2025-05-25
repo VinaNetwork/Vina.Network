@@ -7,7 +7,7 @@ $page_description = "Explore various tools on Vina Network, including NFT Holder
 $page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/";
+$page.canonical = "https://vina.network/tools/";
 $page_css = ['tools.css'];
 
 // Kiểm tra và include header.php
@@ -82,12 +82,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json()) // Nhận JSON
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json(); // Parse JSON từ response
+        })
         .then(data => {
             if (data.error) {
                 toolContent.innerHTML = `<p>${data.error}</p>`;
             } else {
-                toolContent.innerHTML = data.html;
+                toolContent.innerHTML = data.html; // Render HTML từ JSON
             }
         })
         .catch(error => {
@@ -96,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Xử lý click tab
     document.querySelectorAll('.tab-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -110,6 +116,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Tải tool mặc định khi trang load
     loadTool(defaultTool);
+
+    // Xử lý form submit bằng AJAX
+    document.addEventListener('submit', (e) => {
+        if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form')) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
+
+            fetch(`/tools/load-tool.php?tool=${tool}`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    toolContent.innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    toolContent.innerHTML = data.html;
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting form:', error);
+                toolContent.innerHTML = '<p>Error submitting form. Please try again.</p>';
+            });
+        }
+    });
 });
 </script>
 </body>
