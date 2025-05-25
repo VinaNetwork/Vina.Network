@@ -83,8 +83,13 @@ include 'include/header.php';
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="400">
                     <i class="fas fa-exchange-alt"></i>
-                    <h3></h3>
-                    <p></p>
+                    <h3>Vina Stablecoin</h3>
+                    <p>Vina Stablecoin is a core component of the Vina Network ecosystem, providing a reliable, value-stable medium of exchange for users and DeFi platforms. It is designed to support seamless transactions, lending, and cross-border payments. It is backed by digital assets and other highly liquid assets, ensuring stability, transparency, and trust in a decentralized environment.</p>
+                </div>
+                <div class="ecosystem-card fade-in" data-delay="400">
+                    <i class="fas fa-exchange-alt"></i>
+                    <h3>Vina DEX</h3>
+                    <p>Vina DEX is a decentralized exchange developed by Vina Network that enables users to trade cryptocurrencies directly from their wallets without relying on intermediaries. Built for speed, security, and low fees, Vina DEX offers a seamless trading experience with full control over user assets, supporting multiple blockchain networks and fostering true financial freedom.</p>
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="400">
                     <i class="fas fa-exchange-alt"></i>
