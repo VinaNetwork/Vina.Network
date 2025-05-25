@@ -78,18 +78,23 @@ include 'include/header.php';
             <div class="ecosystem-cards">
                 <div class="ecosystem-card fade-in" data-delay="200">
                     <i class="fas fa-coins"></i>
-                    <h3>$VINA Token</h3>
-                    <p>The core of our ecosystem, used for staking, governance, and transactions.</p>
+                    <h3>Vina Wallet</h3>
+                    <p>Vina Wallet is a user-friendly, non-custodial Web3 wallet developed by Vina Network. It allows users to securely store, send, and receive cryptocurrencies, interact with decentralized applications (DApps), and manage NFTs - all in one streamlined interface. Designed for both beginners and advanced users, Vina Wallet prioritizes security, simplicity, and seamless integration across multiple blockchain networks.</p>
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="400">
                     <i class="fas fa-exchange-alt"></i>
-                    <h3>DeFi Solutions</h3>
-                    <p>Decentralized finance tools for lending, borrowing, and yield farming.</p>
+                    <h3></h3>
+                    <p></p>
+                </div>
+                <div class="ecosystem-card fade-in" data-delay="400">
+                    <i class="fas fa-exchange-alt"></i>
+                    <h3></h3>
+                    <p></p>
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="600">
                     <i class="fas fa-image"></i>
                     <h3>NFT Marketplace</h3>
-                    <p>Create, trade, and collect NFTs on our secure and user-friendly platform.</p>
+                    <p></p>
                 </div>
             </div>
         </div>
