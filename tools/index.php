@@ -33,8 +33,8 @@ include $header_path;
 
 // Xác định chức năng được chọn (mặc định là nft-holders)
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
-    $tool = 'nft-holders'; // Hỗ trợ cả 3 tab
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
+    $tool = 'nft-holders'; // Hỗ trợ cả 4 tab
 }
 ?>
 
