@@ -16,7 +16,7 @@ include 'include/header.php';
     <section id="home" class="hero">
         <div class="hero-content">
             <h1 class="fade-in" data-delay="0">Vina Network</h1>
-            <p class="fade-in" data-delay="200">Empowering the Future of Blockchain and Web3</p>
+            <p class="fade-in" data-delay="200">"Simplifying Crypto. Unlocking Web3"</p>
             <a href="#about" class="cta-button fade-in" data-delay="400">Discover More</a>
         </div>
     </section>
