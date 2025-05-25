@@ -109,24 +109,30 @@ include $footer_path;
 ?>
 
 <script src="../js/vina.js"></script>
-    
+
 <script>
+// Đồng bộ trạng thái tab khi tải trang
+window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tool = urlParams.get('tool') || 'nft-holders';
+    console.log('Current tool:', tool); // Debug
+    document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
+    const activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    } else {
+        document.querySelector('.tab-link[data-tool="nft-holders"]').classList.add('active');
+    }
+});
+
 // Xử lý chuyển tab bằng AJAX
 document.querySelectorAll('.tab-link').forEach(link => {
     link.addEventListener('click', function(e) {
-        e.preventDefault(); // Ngăn chặn làm mới trang
-
-        // Cập nhật trạng thái active của tab
+        e.preventDefault();
         document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
         this.classList.add('active');
-
-        // Lấy giá trị tool từ data-tool
         const tool = this.getAttribute('data-tool');
-        
-        // Cập nhật URL mà không làm mới trang
         history.pushState({}, '', `?tool=${tool}`);
-
-        // Tải nội dung mới qua AJAX
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'GET',
             headers: {
@@ -135,7 +141,6 @@ document.querySelectorAll('.tab-link').forEach(link => {
         })
         .then(response => response.text())
         .then(data => {
-            // Cập nhật nội dung trong tool-content
             document.querySelector('.tool-content').innerHTML = data;
         })
         .catch(error => {
@@ -148,11 +153,9 @@ document.querySelectorAll('.tab-link').forEach(link => {
 // Xử lý submit form bằng AJAX
 document.addEventListener('submit', (e) => {
     if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
-        e.preventDefault(); // Ngăn chặn submit mặc định
-
+        e.preventDefault();
         const formData = new FormData(e.target);
         const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
-
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'POST',
             body: formData,
@@ -170,25 +173,6 @@ document.addEventListener('submit', (e) => {
         });
     }
 });
-
-    // Đồng bộ trạng thái tab khi tải trang
-window.addEventListener('load', () => {
-    // Lấy tham số tool từ URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const tool = urlParams.get('tool') || 'nft-holders';
-
-    // Xóa class active khỏi tất cả các tab
-    document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
-
-    // Thêm class active cho tab tương ứng
-    const activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
-    if (activeTab) {
-        activeTab.classList.add('active');
-    } else {
-        // Mặc định chọn tab NFT Holders nếu tool không hợp lệ
-        document.querySelector('.tab-link[data-tool="nft-holders"]').classList.add('active');
-    }
-});
-</script>
+    </script>
 </body>
 </html>
