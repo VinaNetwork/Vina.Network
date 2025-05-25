@@ -186,16 +186,13 @@ body {
 
 /* Community Section */
 .community-section {
-    padding: 4rem 1rem;
+    padding: 30px;
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
     text-align: center;
 }
 .community-content h2 {
     font-weight: 700;
     color: #1a1a1a;
-}
-.community-content p {
-    color: #666;
 }
 .community-links {
     display: flex;
@@ -261,7 +258,7 @@ footer {
 .footer-links a:hover {
     color: #00d4ff;
 }
-.footer-links i {margin-left: 5px;}
+.footer-links i {margin-right: 5px;}
 
 .social-links {
     display: flex;
@@ -378,7 +375,7 @@ footer {
     .nav-link::after {display: none;}
     .burger {display: block;}
 
-    .community-section {padding: 2rem 1rem;}
+    .community-section {padding: 20px;}
     .community-link {padding: 0.6rem 1.2rem;}
     .community-link i {font-size: 1rem;}
     
