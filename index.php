@@ -29,7 +29,7 @@ include 'include/header.php';
                 <div class="about-card fade-in" data-delay="200">
                     <img src="img/vision.png" alt="Vision Icon" class="card-icon">
                     <h3>Vision & Mission</h3>
-                    <p>Our vision is to build a global blockchain network. Our mission is to educate and accelerate crypto adoption through Web3 innovation.</p>
+                    <p>Vina Network envisions becoming a leading crypto-focused ecosystem that serves a global user base. Its mission is to connect, educate, and accelerate the growth of blockchain adoption through innovative Web3 products, stablecoins, decentralized finance (DeFi), and community-driven initiatives.</p>
                 </div>
                 <div class="about-card fade-in" data-delay="600">
                     <img src="img/financial.png" alt="Financial Icon" class="card-icon">
