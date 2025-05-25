@@ -1,13 +1,17 @@
 <?php
 // api-helper.php
 
-// Định nghĩa API Key (nên chuyển sang file config riêng sau)
-$helius_api_key = '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63';
+// Include file cấu hình
+$config_path = dirname(__DIR__) . '/config/config.php'; // Đường dẫn tương đối từ tools/
+if (!file_exists($config_path)) {
+    error_log("Error: config.php not found at $config_path");
+    die('Internal Server Error: Missing config.php');
+}
+include $config_path;
 
 // Hàm gọi API Helius
 function callHeliusAPI($endpoint, $params = []) {
-    global $helius_api_key;
-    $url = "https://api.helius.xyz/v0/{$endpoint}?api-key={$helius_api_key}";
+    $url = "https://api.helius.xyz/v0/{$endpoint}?api-key=" . HELIUS_API_KEY;
 
     $ch = curl_init();
     if (!$ch) {
