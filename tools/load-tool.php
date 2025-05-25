@@ -33,10 +33,8 @@ if ($tool === 'nft-holders') {
 
 // Kiểm tra và include file
 if (isset($tool_file) && file_exists($tool_file)) {
-    error_log("Including tool file: $tool_file"); // Thêm log để debug
     include $tool_file;
 } else {
-    error_log("Tool file not found: $tool_file"); // Thêm log để debug
     echo "<p>Error: Tool not found.</p>";
 }
 ?>

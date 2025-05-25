@@ -20,7 +20,7 @@ $page_description = "Explore various tools on Vina Network, including NFT Holder
 $page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
-$page.canonical = "https://vina.network/tools/";
+$page_canonical = "https://vina.network/tools/";
 $page_css = ['tools.css'];
 
 // Kiểm tra và include header.php
@@ -70,7 +70,7 @@ include $navbar_path;
         <!-- Nội dung chức năng -->
         <div class="tool-content">
             <?php
-            // Tạm thời include trực tiếp nft-holders.php để kiểm tra
+            // Include file tương ứng với chức năng được chọn
             if ($tool === 'nft-holders') {
                 $tool_file = 'nft-holders.php';
             } elseif ($tool === 'nft-valuation') {
@@ -120,25 +120,22 @@ document.querySelectorAll('.tab-link').forEach(link => {
         // Cập nhật URL mà không làm mới trang
         history.pushState({}, '', `?tool=${tool}`);
 
-        // Tạm thời bỏ AJAX cho tab "NFT Holders" để kiểm tra trực tiếp
-        if (tool !== 'nft-holders') {
-            console.log(`Fetching tool content for: ${tool}`);
-            fetch(`/tools/load-tool.php?tool=${tool}&t=${new Date().getTime()}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.text())
-            .then(data => {
-                console.log('Tool content loaded:', data);
-                document.querySelector('.tool-content').innerHTML = data;
-            })
-            .catch(error => {
-                console.error('Error loading tool content:', error);
-                document.querySelector('.tool-content').innerHTML = '<p>Error loading content. Please try again.</p>';
-            });
-        }
+        // Tải nội dung mới qua AJAX
+        fetch(`/tools/load-tool.php?tool=${tool}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            // Cập nhật nội dung trong tool-content
+            document.querySelector('.tool-content').innerHTML = data;
+        })
+        .catch(error => {
+            console.error('Error loading tool content:', error);
+            document.querySelector('.tool-content').innerHTML = '<p>Error loading content. Please try again.</p>';
+        });
     });
 });
 
@@ -150,7 +147,7 @@ document.addEventListener('submit', (e) => {
         const formData = new FormData(e.target);
         const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
 
-        fetch(`/tools/load-tool.php?tool=${tool}&t=${new Date().getTime()}`, {
+        fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'POST',
             body: formData,
             headers: {
