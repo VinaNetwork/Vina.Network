@@ -62,12 +62,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
                     <?php endif; ?>
                 </div>
             <?php endif;
-            $response['html'] .= ob_get_clean();
+            $response['html'] = ob_get_clean();
         } else {
-            $response['error'] = $data['error'] ?? 'No holders found for this NFT.';
+            ob_start();
+            ?>
+            <h2>Check Solana NFT Holders</h2>
+            <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
+            <form id="nftHoldersForm" method="POST" action="">
+                <input type="text" name="mintAddress" id="mintAddressHolders" value="<?php echo htmlspecialchars($mint_address); ?>" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+                <button type="submit">Check Holders</button>
+            </form>
+            <p><?php echo htmlspecialchars($data['error'] ?? 'No holders found for this NFT.'); ?></p>
+            <?php
+            $response['html'] = ob_get_clean();
         }
     } else {
-        $response['error'] = 'Invalid mint address. Please enter a valid Solana mint address.';
+        ob_start();
+        ?>
+        <h2>Check Solana NFT Holders</h2>
+        <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
+        <form id="nftHoldersForm" method="POST" action="">
+            <input type="text" name="mintAddress" id="mintAddressHolders" value="<?php echo htmlspecialchars($mint_address); ?>" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+            <button type="submit">Check Holders</button>
+        </form>
+        <p>Invalid mint address. Please enter a valid Solana mint address.</p>
+        <?php
+        $response['html'] = ob_get_clean();
     }
 } else {
     ob_start();
