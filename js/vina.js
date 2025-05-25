@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                const delay = parseInt(entry.target.getAttribute('data-delay') || 0); // Lấy giá trị data-delay, mặc định là 0
+                const delay = parseInt(entry.target.getAttribute('data-delay') || 0);
                 setTimeout(() => {
                     entry.target.classList.add('visible');
                     observer.unobserve(entry.target); // Stop observing after displaying
@@ -44,12 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Đảm bảo thẻ p có border nhấp nháy khi hiệu ứng typewriter hoàn tất
-    const heroP = document.querySelector('.hero-content p');
-    heroP.style.borderRight = '2px solid #00d4ff';
-    setTimeout(() => {
-        heroP.style.borderRight = 'none'; // Tắt border sau khi hiệu ứng hoàn tất
-    }, 4000); // Thời gian khớp với animation typewriter (4s)
+    // Đảm bảo thẻ p có border nhấp nháy khi hiệu ứng typewriter hoàn tất (chỉ trên desktop)
+    if (window.innerWidth > 768) {
+        const heroP = document.querySelector('.hero-content p');
+        heroP.style.borderRight = '2px solid #00d4ff';
+        setTimeout(() => {
+            heroP.style.borderRight = 'none'; // Tắt border sau khi hiệu ứng hoàn tất
+        }, 4000); // Thời gian khớp với animation typewriter (4s)
+    }
 });
 
 // Change navbar style on scroll with debounce
