@@ -252,6 +252,8 @@ footer {
     transition: color 0.3s ease;
 }
 .footer-column p a:hover {color: #00d4ff;}
+
+.footer-links li {padding: 10px;}
 .footer-links a {
     color: #e0e0e0;
     transition: color 0.3s ease;
@@ -259,6 +261,8 @@ footer {
 .footer-links a:hover {
     color: #00d4ff;
 }
+.footer-links i {margin-left: 5px;}
+
 .social-links {
     display: flex;
     gap: 1.5rem;
