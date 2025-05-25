@@ -22,14 +22,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
     $holders_data = getNFTHolders($mintAddress, $page);
 
     if (isset($holders_data['error'])) {
-        echo "<p>" . htmlspecialchars($holders_data['error']) . "</p>";
+        echo "<div class='result-error'><p>" . htmlspecialchars($holders_data['error']) . "</p></div>";
     } elseif ($holders_data && !empty($holders_data['holders'])) {
         $total_holders = count($holders_data['holders']);
         $paginated_holders = array_slice($holders_data['holders'], $offset, $holders_per_page);
 
+        echo "<div class='result-section'>";
         echo "<h3>Results</h3>";
-        echo "<p>Total Holders: $total_holders (Page $page)</p>";
-        echo "<ul>";
+        echo "<p class='result-info'>Total Holders: $total_holders (Page $page)</p>";
+        echo "<ul class='holders-list'>";
         foreach ($paginated_holders as $holder) {
             echo "<li>" . htmlspecialchars($holder) . "</li>";
         }
@@ -39,21 +40,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         echo "<div class='pagination'>";
         $total_pages = ceil($total_holders / $holders_per_page);
         if ($page > 1) {
-            echo "<form method='POST' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit'>Previous</button></form>";
+            echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-btn'>Previous</button></form>";
         }
         for ($i = 1; $i <= $total_pages; $i++) {
             if ($i === $page) {
                 echo "<span class='active-page'>$i</span>";
             } else {
-                echo "<form method='POST' style='display:inline; margin-left: 5px;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit'>$i</button></form>";
+                echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit' class='page-btn'>$i</button></form>";
             }
         }
         if ($page < $total_pages) {
-            echo "<form method='POST' style='display:inline; margin-left: 10px;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit'>Next</button></form>";
+            echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-btn'>Next</button></form>";
         }
         echo "</div>";
+        echo "</div>";
     } else {
-        echo "<p>No holders found or invalid mint address.</p>";
+        echo "<div class='result-error'><p>No holders found or invalid mint address.</p></div>";
     }
 }
 
