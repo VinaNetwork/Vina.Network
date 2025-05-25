@@ -8,31 +8,42 @@ function debounce(func, wait) {
 }
 
 // Typewriter effect function
-function typewriterEffect(element, text, speed = 50) {
+function typewriterEffect(element, text, speed = 50, delay = 200) {
+    console.log('Starting typewriterEffect for:', element, text); // Debug
     let i = 0;
     element.textContent = ''; // Clear initial content
     element.style.borderRight = '2px solid #00d4ff'; // Add blinking cursor
 
-    function type() {
-        if (i < text.length) {
-            element.textContent += text[i];
-            i++;
-            setTimeout(type, speed);
-        } else {
-            // Start blinking cursor animation
-            setInterval(() => {
-                element.style.borderRight = element.style.borderRight ? '' : '2px solid #00d4ff';
-            }, 750); // Match CSS blinkCursor timing
+    setTimeout(() => {
+        function type() {
+            if (i < text.length) {
+                element.textContent += text[i];
+                i++;
+                setTimeout(type, speed);
+            } else {
+                console.log('Typewriter effect completed'); // Debug
+                // Start blinking cursor animation
+                setInterval(() => {
+                    element.style.borderRight = element.style.borderRight ? '' : '2px solid #00d4ff';
+                }, 750); // Match CSS blinkCursor timing
+            }
         }
-    }
-    type();
+        type();
+    }, delay);
 }
 
 // Activate fade-in and typewriter for initial elements when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const fadeElements = document.querySelectorAll('.fade-in');
     const heroP = document.querySelector('.hero-content p');
-    const isMobile = window.innerWidth <= 768;
+    console.log('Hero P element:', heroP); // Debug
+
+    if (heroP) {
+        // Apply typewriter effect immediately for hero p
+        typewriterEffect(heroP, '"Simplifying Crypto. Unlocking Web3"', 50, 200);
+    } else {
+        console.error('Hero P element not found'); // Debug
+    }
 
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
@@ -40,10 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const delay = parseInt(entry.target.getAttribute('data-delay') || 0);
                 setTimeout(() => {
                     entry.target.classList.add('visible');
-                    // Apply typewriter effect for hero p on mobile
-                    if (isMobile && entry.target === heroP) {
-                        typewriterEffect(heroP, '"Simplifying Crypto. Unlocking Web3"');
-                    }
                     observer.unobserve(entry.target); // Stop observing after displaying
                 }, delay);
             }
@@ -70,14 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 firstElement.classList.add('visible');
             }, delay);
         }
-    }
-
-    // Apply typewriter effect for hero p on desktop
-    if (!isMobile && heroP) {
-        heroP.style.borderRight = '2px solid #00d4ff';
-        setTimeout(() => {
-            heroP.style.borderRight = 'none'; // Remove cursor after typewriter completes
-        }, 4000); // Match desktop typewriter duration (4s)
     }
 });
 
