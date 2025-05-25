@@ -3,6 +3,8 @@
 include 'api-helper.php';
 
 $response = ['error' => null, 'html' => ''];
+
+// Xử lý khi có POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
     $mint_address = trim($_POST['mintAddress']);
     $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
@@ -12,20 +14,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         $params = ["mint" => $mint_address, "includeOffChain" => false, "limit" => 1000, "page" => $page];
         $data = callHeliusAPI('token-accounts', $params);
 
+        ob_start();
+        ?>
+        <h2>Check Solana NFT Holders</h2>
+        <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
+        <form id="nftHoldersForm" method="POST" action="">
+            <input type="text" name="mintAddress" id="mintAddressHolders" value="<?php echo htmlspecialchars($mint_address); ?>" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+            <button type="submit">Check Holders</button>
+        </form>
+        <?php
         if (!isset($data['error']) && isset($data['token_accounts'])) {
             $holders = array_unique(array_column($data['token_accounts'], 'owner'));
             $pagination = getPaginatedData($holders, $page, $holders_per_page);
             $holders = $pagination['data'];
             $total_holders = $pagination['total_items'];
 
-            ob_start();
             ?>
-            <h2>Check Solana NFT Holders</h2>
-            <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
-            <form id="nftHoldersForm" method="POST" action="">
-                <input type="text" name="mintAddress" id="mintAddressHolders" value="<?php echo htmlspecialchars($mint_address); ?>" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-                <button type="submit">Check Holders</button>
-            </form>
             <h3>Results</h3>
             <p>Total Holders: <?php echo $total_holders; ?> (Page <?php echo $page; ?>)</p>
             <ul>
@@ -62,20 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
                     <?php endif; ?>
                 </div>
             <?php endif;
-            $response['html'] = ob_get_clean();
         } else {
-            ob_start();
             ?>
-            <h2>Check Solana NFT Holders</h2>
-            <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
-            <form id="nftHoldersForm" method="POST" action="">
-                <input type="text" name="mintAddress" id="mintAddressHolders" value="<?php echo htmlspecialchars($mint_address); ?>" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-                <button type="submit">Check Holders</button>
-            </form>
             <p><?php echo htmlspecialchars($data['error'] ?? 'No holders found for this NFT.'); ?></p>
             <?php
-            $response['html'] = ob_get_clean();
         }
+        $response['html'] = ob_get_clean();
     } else {
         ob_start();
         ?>
