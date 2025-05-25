@@ -1,5 +1,6 @@
 <?php
 // Chức năng: Kiểm tra giá trị NFT
+include 'api-helper.php';
 ?>
 
 <h2>Check NFT Valuation</h2>
@@ -30,49 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressValuation'
 }
 
 function getNFTValuation($mintAddress) {
-    $apiKey = "8eb75cd9-015a-4e24-9de2-5be9ee0f1c63";
-    $url = "https://api.helius.xyz/v0/tokens?api-key=" . $apiKey;
-
     $payload = [
         "mintAddresses" => [$mintAddress]
     ];
 
-    $ch = curl_init();
-    if (!$ch) {
-        error_log("cURL initialization failed.");
-        return ['error' => 'Failed to initialize cURL.'];
+    $data = callHeliusAPI('tokens', $payload);
+    if (isset($data['error'])) {
+        return ['error' => $data['error']];
     }
 
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-
-    $response = curl_exec($ch);
-    if ($response === false) {
-        $curlError = curl_error($ch);
-        error_log("cURL error: $curlError");
-        curl_close($ch);
-        return ['error' => 'cURL error: ' . $curlError];
-    }
-
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-        error_log("API request failed with HTTP code: $httpCode");
-        return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
-    }
-
-    $data = json_decode($response, true);
-    if ($data === null) {
-        error_log("Failed to parse API response as JSON. Response: $response");
-        return ['error' => 'Failed to parse API response as JSON.'];
-    }
-
-    // Giả lập dữ liệu trả về (Helius API có thể không trả về đúng format này, cần điều chỉnh)
     if (isset($data[0])) {
         return [
             'floorPrice' => $data[0]['floorPrice'] ?? 'N/A',
@@ -83,3 +50,4 @@ function getNFTValuation($mintAddress) {
 
     return ['error' => 'No data found for this mint address.'];
 }
+?>
