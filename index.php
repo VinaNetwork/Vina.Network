@@ -54,18 +54,18 @@ include 'include/header.php';
             <div class="why-choose-cards">
                 <div class="why-choose-card fade-in" data-delay="200">
                     <i class="fas fa-shield"></i> <!-- Changed from fa-shield-alt -->
-                    <h3>Security First</h3>
-                    <p>Advanced encryption and decentralized protocols to protect your assets.</p>
+                    <h3>Community - Centric Approach</h3>
+                    <p>Vina Network places its community at the heart of development. From education to governance, users are empowered to shape the future of the ecosystem through transparency, participation, and incentives.</p>
                 </div>
                 <div class="why-choose-card fade-in" data-delay="400">
                     <i class="fas fa-globe"></i>
-                    <h3>Global Reach</h3>
-                    <p>Connect with a worldwide community of blockchain enthusiasts and developers.</p>
+                    <h3>Comprehensive Web3 Ecosystem</h3>
+                    <p>By integrating key crypto applications — like wallets, DEX, stablecoins, and on-chain tools — Vina Network offers a seamless and interconnected experience, enabling users to access the full power of Web3 in one place.</p>
                 </div>
                 <div class="why-choose-card fade-in" data-delay="600">
                     <i class="fas fa-rocket"></i>
-                    <h3>Innovative Solutions</h3>
-                    <p>Cutting-edge DeFi, NFTs, and stablecoins tailored for the Web3 era.</p>
+                    <h3>Visionary & Scalable Development</h3>
+                    <p>The products developed by Vina Network are designed with a long-term vision in mind. Its adaptable infrastructure and cross-chain compatibility ensure sustainability as blockchain technology continues to evolve.</p>
                 </div>
             </div>
         </div>
