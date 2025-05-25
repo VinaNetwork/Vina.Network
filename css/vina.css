@@ -61,6 +61,7 @@ li { list-style: none; }
     height: 56px;
     object-fit: contain;
     border-radius: 50%;
+    vertical-align: middle;
     transition: transform 0.3s ease;
 }
 
