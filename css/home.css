@@ -141,8 +141,8 @@ section h3 {
     .why-choose-card,
     .ecosystem-card {
         width: 100%;
-        max-width: 300px;
     }
+
     .crypto-widget {
         flex-direction: column;
         align-items: center;
