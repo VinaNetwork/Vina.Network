@@ -67,6 +67,9 @@ include $navbar_path;
             </a>
         </div>
 
+        <!-- Note -->
+        <p class="note">Note: Only supports checking on the Solana blockchain.</p>
+
         <!-- Nội dung chức năng -->
         <div class="tool-content">
             <?php
@@ -87,9 +90,6 @@ include $navbar_path;
             }
             ?>
         </div>
-
-        <!-- Thông báo -->
-        <p class="note">Note: Only supports checking on the Solana blockchain.</p>
     </div>
 </section>
 
