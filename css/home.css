@@ -24,15 +24,80 @@ section h3 {
     color: white;
     overflow-y: auto;
 }
+
 .hero-content h1 {
     font-weight: 700;
-    color: #00d4ff;
-    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+    font-size: 4.5em; /* Tăng kích thước chữ để nổi bật hơn */
+    background: linear-gradient(45deg, #00d4ff, #ff00ff, #00ffaa, #00d4ff);
+    background-size: 400%; /* Tăng kích thước gradient để tạo hiệu ứng chuyển động mượt */
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent; /* Làm chữ trong suốt để hiển thị gradient */
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+    animation: gradientText 8s ease infinite, zoomIn 1s ease-out forwards;
 }
+
 .hero-content p {
     font-weight: 400;
+    font-size: 1.5em; /* Tăng kích thước chữ để dễ đọc hơn */
     color: #e0e0e0;
     margin: 20px;
+    overflow: hidden; /* Ẩn phần chữ chưa được hiển thị */
+    white-space: nowrap; /* Giữ chữ trên một dòng */
+    animation: typewriter 4s steps(40, end) forwards, blinkCursor 0.75s step-end infinite, zoomIn 1s ease-out forwards 0.5s;
+}
+
+.hero-content h1:hover {
+    text-shadow: 0 0 15px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5);
+}
+
+.hero-content p:hover {
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
+}
+
+/* Keyframes cho hiệu ứng gradient chuyển động */
+@keyframes gradientText {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Keyframes cho hiệu ứng typewriter */
+@keyframes typewriter {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%;
+    }
+}
+
+/* Keyframes cho con trỏ nhấp nháy */
+@keyframes blinkCursor {
+    from, to {
+        border-right: 2px solid transparent;
+    }
+    50% {
+        border-right: 2px solid #00d4ff;
+    }
+}
+
+/* Keyframes cho hiệu ứng zoom-in */
+@keyframes zoomIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* About Section */
@@ -55,6 +120,7 @@ section h3 {
     max-width: 1200px;
     margin: 0 auto;
 }
+
 .about-card,
 .why-choose-card,
 .ecosystem-card {
@@ -66,6 +132,7 @@ section h3 {
     transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
     cursor: pointer;
 }
+
 .about-card:hover,
 .why-choose-card:hover,
 .ecosystem-card:hover {
@@ -73,16 +140,19 @@ section h3 {
     box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
     background-color: #e6f7ff;
 }
+
 .about-card:active,
 .why-choose-card:active,
 .ecosystem-card:active {
     transform: scale(0.95);
 }
+
 .about-card:active h3,
 .why-choose-card:active h3,
 .ecosystem-card:active h3 {
     color: #00d4ff;
 }
+
 .card-icon,
 .why-choose-card i,
 .ecosystem-card i {
@@ -94,6 +164,7 @@ section h3 {
     color: #00d4ff;
     transition: transform 0.5s ease;
 }
+
 .about-card:hover .card-icon,
 .why-choose-card:hover i,
 .ecosystem-card:hover i {
@@ -111,6 +182,7 @@ section h3 {
     gap: 2rem;
     flex-wrap: wrap;
 }
+
 .crypto-widget .coinmarketcap-currency-widget {
     flex: 1;
     min-width: 250px;
@@ -125,6 +197,14 @@ section h3 {
         background-attachment: scroll;
         padding-top: 64px;
     }
+    .hero-content h1 {
+        font-size: 2.5em; /* Giảm kích thước chữ trên mobile */
+        animation: gradientText 6s ease infinite, zoomIn 1s ease-out forwards;
+    }
+    .hero-content p {
+        font-size: 1.2em; /* Giảm kích thước chữ */
+        animation: typewriter 3s steps(30, end) forwards, blinkCursor 0.75s step-end infinite, zoomIn 1s ease-out forwards 0.5s;
+    }
     .about-cards,
     .why-choose-cards,
     .ecosystem-cards {
@@ -136,7 +216,6 @@ section h3 {
     .ecosystem-card {
         width: 100%;
     }
-
     .crypto-widget {
         flex-direction: column;
         align-items: center;
