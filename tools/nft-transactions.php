@@ -2,6 +2,11 @@
 // Chức năng: Kiểm tra lịch sử giao dịch NFT
 include 'api-helper.php';
 
+// Hàm kiểm tra mint address hợp lệ
+function validateMintAddress($mintAddress) {
+    return !empty($mintAddress) && strlen($mintAddress) > 20 && preg_match('/^[A-Za-z0-9]+$/', $mintAddress);
+}
+
 // Số lượng giao dịch mỗi trang
 $transactions_per_page = 10;
 
@@ -16,8 +21,9 @@ $mint_address = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
     $mint_address = trim($_POST['mint_address']);
     
-    // Kiểm tra mint address hợp lệ (đơn giản)
-    if (!empty($mint_address) && strlen($mint_address) > 20) {
+    if (!validateMintAddress($mint_address)) {
+        $transactions = ['error' => 'Invalid mint address. Please enter a valid Solana mint address (alphanumeric characters only).'];
+    } else {
         // Gọi API Helius để lấy lịch sử giao dịch
         $data = callHeliusAPI("addresses/{$mint_address}/transactions", [], 'GET');
 
@@ -70,8 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
         } else {
             $transactions = ['error' => 'No transactions found for this NFT.'];
         }
-    } else {
-        $transactions = ['error' => 'Invalid mint address. Please enter a valid Solana mint address.'];
     }
 }
 ?>
