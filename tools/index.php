@@ -75,22 +75,24 @@ include $navbar_path;
         <!-- Nội dung chức năng -->
         <div class="tool-content">
             <?php
-            // Include file tương ứng với chức năng được chọn
-            if ($tool === 'nft-holders') {
-                $tool_file = 'nft-holders.php';
-            } elseif ($tool === 'nft-valuation') {
-                $tool_file = 'nft-valuation.php';
-            } elseif ($tool === 'nft-transactions') {
-                $tool_file = 'nft-transactions.php';
-            }
+// Include file tương ứng với chức năng được chọn
+if ($tool === 'nft-holders') {
+    $tool_file = 'nft-holders.php';
+} elseif ($tool === 'nft-valuation') {
+    $tool_file = 'nft-valuation.php';
+} elseif ($tool === 'nft-transactions') {
+    $tool_file = 'nft-transactions.php';
+} elseif ($tool === 'wallet-analysis') {
+    $tool_file = 'wallet-analysis.php';
+}
 
-            // Kiểm tra và include file
-            if (isset($tool_file) && file_exists($tool_file)) {
-                include $tool_file;
-            } else {
-                echo "<p>Error: Tool not found.</p>";
-            }
-            ?>
+// Kiểm tra và include file
+if (isset($tool_file) && file_exists($tool_file)) {
+    include $tool_file;
+} else {
+    echo "<p>Error: Tool not found.</p>";
+}
+?>
         </div>
     </div>
 </section>
