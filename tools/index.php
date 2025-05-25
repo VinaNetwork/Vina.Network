@@ -138,6 +138,32 @@ document.querySelectorAll('.tab-link').forEach(link => {
         });
     });
 });
+
+// Xử lý submit form bằng AJAX
+document.addEventListener('submit', (e) => {
+    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form')) {
+        e.preventDefault(); // Ngăn chặn submit mặc định
+
+        const formData = new FormData(e.target);
+        const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
+
+        fetch(`/tools/load-tool.php?tool=${tool}`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.querySelector('.tool-content').innerHTML = data;
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+            document.querySelector('.tool-content').innerHTML = '<p>Error submitting form. Please try again.</p>';
+        });
+    }
+});
 </script>
 </body>
 </html>
