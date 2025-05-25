@@ -7,15 +7,43 @@ function debounce(func, wait) {
     };
 }
 
-// Activate fade-in for initial elements when DOM is loaded
+// Typewriter effect function
+function typewriterEffect(element, text, speed = 50) {
+    let i = 0;
+    element.textContent = ''; // Clear initial content
+    element.style.borderRight = '2px solid #00d4ff'; // Add blinking cursor
+
+    function type() {
+        if (i < text.length) {
+            element.textContent += text[i];
+            i++;
+            setTimeout(type, speed);
+        } else {
+            // Start blinking cursor animation
+            setInterval(() => {
+                element.style.borderRight = element.style.borderRight ? '' : '2px solid #00d4ff';
+            }, 750); // Match CSS blinkCursor timing
+        }
+    }
+    type();
+}
+
+// Activate fade-in and typewriter for initial elements when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     const fadeElements = document.querySelectorAll('.fade-in');
+    const heroP = document.querySelector('.hero-content p');
+    const isMobile = window.innerWidth <= 768;
+
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const delay = parseInt(entry.target.getAttribute('data-delay') || 0);
                 setTimeout(() => {
                     entry.target.classList.add('visible');
+                    // Apply typewriter effect for hero p on mobile
+                    if (isMobile && entry.target === heroP) {
+                        typewriterEffect(heroP, '"Simplifying Crypto. Unlocking Web3"');
+                    }
                     observer.unobserve(entry.target); // Stop observing after displaying
                 }, delay);
             }
@@ -44,13 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Đảm bảo thẻ p có border nhấp nháy khi hiệu ứng typewriter hoàn tất (chỉ trên desktop)
-    if (window.innerWidth > 768) {
-        const heroP = document.querySelector('.hero-content p');
+    // Apply typewriter effect for hero p on desktop
+    if (!isMobile && heroP) {
         heroP.style.borderRight = '2px solid #00d4ff';
         setTimeout(() => {
-            heroP.style.borderRight = 'none'; // Tắt border sau khi hiệu ứng hoàn tất
-        }, 4000); // Thời gian khớp với animation typewriter (4s)
+            heroP.style.borderRight = 'none'; // Remove cursor after typewriter completes
+        }, 4000); // Match desktop typewriter duration (4s)
     }
 });
 
@@ -75,11 +102,9 @@ burger.addEventListener('click', () => {
 const navLinksItems = document.querySelectorAll('.nav-link');
 navLinksItems.forEach(link => {
     link.addEventListener('click', (e) => {
-        // If it is a dropdown-toggle, do not close the burger menu immediately
         if (!link.classList.contains('dropdown-toggle')) {
             navLinksItems.forEach(item => item.classList.remove('active'));
             link.classList.add('active');
-            // Close burger menu when clicking a non-dropdown link
             if (navLinks.classList.contains('active')) {
                 burger.classList.remove('active');
                 navLinks.classList.remove('active');
@@ -95,10 +120,8 @@ dropdowns.forEach(dropdown => {
     const content = dropdown.querySelector('.dropdown-menu');
 
     toggle.addEventListener('click', (e) => {
-        e.preventDefault(); // Prevent default link behavior
-        // Toggle submenu
+        e.preventDefault();
         content.classList.toggle('active');
-        // Ensure other submenus are closed
         dropdowns.forEach(d => {
             if (d !== dropdown) {
                 d.querySelector('.dropdown-menu').classList.remove('active');
