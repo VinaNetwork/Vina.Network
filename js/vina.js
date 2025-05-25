@@ -13,8 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target); // Stop observing after displaying
+                const delay = parseInt(entry.target.getAttribute('data-delay') || 0); // Lấy giá trị data-delay, mặc định là 0
+                setTimeout(() => {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target); // Stop observing after displaying
+                }, delay);
             }
         });
     }, {
@@ -34,7 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const rect = firstElement.getBoundingClientRect();
         const windowHeight = window.innerHeight;
         if (rect.top >= 0 && rect.top < windowHeight) {
-            firstElement.classList.add('visible');
+            const delay = parseInt(firstElement.getAttribute('data-delay') || 0);
+            setTimeout(() => {
+                firstElement.classList.add('visible');
+            }, delay);
         }
     }
 
