@@ -7,7 +7,7 @@ $page_description = "Explore various tools on Vina Network, including NFT Holder
 $page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/"; // Sửa từ $page.canonical thành $page_canonical
+$page_canonical = "https://vina.network/tools/"; // Đã sửa từ $page.canonical
 $page_css = ['tools.css'];
 
 // Kiểm tra và include header.php
@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultTool = '<?php echo isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders'; ?>';
 
     function loadTool(tool) {
+        console.log('Loading tool:', tool); // Debug log
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'GET',
             headers: {
@@ -84,15 +85,16 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error('Network response was not ok: ' + response.statusText);
             }
             return response.json();
         })
         .then(data => {
+            console.log('Received data:', data); // Debug log
             if (data.error) {
                 toolContent.innerHTML = `<p>${data.error}</p>`;
             } else {
-                toolContent.innerHTML = data.html;
+                toolContent.innerHTML = data.html; // Render HTML
             }
         })
         .catch(error => {
@@ -113,11 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Tải tool mặc định khi trang load
     loadTool(defaultTool);
 
+    // Xử lý form submit bằng AJAX
     document.addEventListener('submit', (e) => {
         if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form')) {
             e.preventDefault();
+            console.log('Form submitted:', e.target); // Debug log
 
             const formData = new FormData(e.target);
             const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
@@ -129,8 +134,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Form response:', data); // Debug log
                 if (data.error) {
                     toolContent.innerHTML = `<p>${data.error}</p>`;
                 } else {
