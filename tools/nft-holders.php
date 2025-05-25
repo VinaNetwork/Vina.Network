@@ -1,111 +1,86 @@
 <?php
-// Chức năng: Kiểm tra NFT Holders
-?>
+// nft-holders.php
+include 'api-helper.php';
 
-<h2>Check Solana NFT Holders</h2>
-<p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
-
-<form id="nftHoldersForm" method="POST" action="">
-    <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-    <button type="submit">Check Holders</button>
-</form>
-
-<?php
+$response = ['error' => null, 'html' => ''];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
-    $mintAddress = trim($_POST['mintAddress']);
+    $mint_address = trim($_POST['mintAddress']);
     $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
-    $holders_per_page = 10; // Số holders hiển thị mỗi trang
-    $offset = ($page - 1) * $holders_per_page;
+    $holders_per_page = 10;
 
-    // Gọi API để lấy danh sách holders
-    $holders_data = getNFTHolders($mintAddress, $page);
+    if (validateMintAddress($mint_address)) {
+        $params = ["mint" => $mint_address, "includeOffChain" => false, "limit" => 1000, "page" => $page];
+        $data = callHeliusAPI('token-accounts', $params);
 
-    if (isset($holders_data['error'])) {
-        echo "<p>" . htmlspecialchars($holders_data['error']) . "</p>";
-    } elseif ($holders_data && !empty($holders_data['holders'])) {
-        $total_holders = count($holders_data['holders']);
-        $paginated_holders = array_slice($holders_data['holders'], $offset, $holders_per_page);
+        if (!isset($data['error']) && isset($data['token_accounts'])) {
+            $holders = array_unique(array_column($data['token_accounts'], 'owner'));
+            $pagination = getPaginatedData($holders, $page, $holders_per_page);
+            $holders = $pagination['data'];
+            $total_holders = $pagination['total_items'];
 
-        echo "<h3>Results</h3>";
-        echo "<p>Total Holders: $total_holders (Page $page)</p>";
-        echo "<ul>";
-        foreach ($paginated_holders as $holder) {
-            echo "<li>" . htmlspecialchars($holder) . "</li>";
+            ob_start();
+            ?>
+            <h2>Check Solana NFT Holders</h2>
+            <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
+            <form id="nftHoldersForm" method="POST" action="">
+                <input type="text" name="mintAddress" id="mintAddressHolders" value="<?php echo htmlspecialchars($mint_address); ?>" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+                <button type="submit">Check Holders</button>
+            </form>
+            <h3>Results</h3>
+            <p>Total Holders: <?php echo $total_holders; ?> (Page <?php echo $page; ?>)</p>
+            <ul>
+                <?php foreach ($holders as $holder): ?>
+                    <li><?php echo htmlspecialchars($holder); ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <?php if ($total_holders > $holders_per_page): ?>
+                <div class="pagination">
+                    <?php if ($page > 1): ?>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mint_address); ?>">
+                            <input type="hidden" name="page" value="<?php echo $page - 1; ?>">
+                            <button type="submit">Previous</button>
+                        </form>
+                    <?php endif; ?>
+                    <?php for ($i = 1; $i <= ceil($total_holders / $holders_per_page); $i++): ?>
+                        <?php if ($i === $page): ?>
+                            <span class="active-page"><?php echo $i; ?></span>
+                        <?php else: ?>
+                            <form method="POST" style="display:inline; margin-left: 5px;">
+                                <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mint_address); ?>">
+                                <input type="hidden" name="page" value="<?php echo $i; ?>">
+                                <button type="submit"><?php echo $i; ?></button>
+                            </form>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                    <?php if ($page < ceil($total_holders / $holders_per_page)): ?>
+                        <form method="POST" style="display:inline; margin-left: 10px;">
+                            <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mint_address); ?>">
+                            <input type="hidden" name="page" value="<?php echo $page + 1; ?>">
+                            <button type="submit">Next</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            <?php endif;
+            $response['html'] .= ob_get_clean();
+        } else {
+            $response['error'] = $data['error'] ?? 'No holders found for this NFT.';
         }
-        echo "</ul>";
-
-        // Phân trang
-        echo "<div class='pagination'>";
-        $total_pages = ceil($total_holders / $holders_per_page);
-        if ($page > 1) {
-            echo "<form method='POST' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit'>Previous</button></form>";
-        }
-        for ($i = 1; $i <= $total_pages; $i++) {
-            if ($i === $page) {
-                echo "<span class='active-page'>$i</span>";
-            } else {
-                echo "<form method='POST' style='display:inline; margin-left: 5px;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit'>$i</button></form>";
-            }
-        }
-        if ($page < $total_pages) {
-            echo "<form method='POST' style='display:inline; margin-left: 10px;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit'>Next</button></form>";
-        }
-        echo "</div>";
     } else {
-        echo "<p>No holders found or invalid mint address.</p>";
+        $response['error'] = 'Invalid mint address. Please enter a valid Solana mint address.';
     }
+} else {
+    ob_start();
+    ?>
+    <h2>Check Solana NFT Holders</h2>
+    <p>Enter the mint address of the NFT to see the number of holders and their wallet addresses.</p>
+    <form id="nftHoldersForm" method="POST" action="">
+        <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Mint Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+        <button type="submit">Check Holders</button>
+    </form>
+    <?php
+    $response['html'] = ob_get_clean();
 }
 
-function getNFTHolders($mintAddress, $page = 1) {
-    $apiKey = "8eb75cd9-015a-4e24-9de2-5be9ee0f1c63";
-    $url = "https://api.helius.xyz/v0/token-accounts?api-key=" . $apiKey;
-
-    $payload = [
-        "mint" => $mintAddress,
-        "includeOffChain" => false,
-        "limit" => 1000, // Giới hạn API trả về 1000 holders mỗi lần
-        "page" => $page
-    ];
-
-    $ch = curl_init();
-    if (!$ch) {
-        error_log("cURL initialization failed.");
-        return ['error' => 'Failed to initialize cURL.'];
-    }
-
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-
-    $response = curl_exec($ch);
-    if ($response === false) {
-        $curlError = curl_error($ch);
-        error_log("cURL error: $curlError");
-        curl_close($ch);
-        return ['error' => 'cURL error: ' . $curlError];
-    }
-
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-        error_log("API request failed with HTTP code: $httpCode");
-        return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
-    }
-
-    $data = json_decode($response, true);
-    if ($data === null) {
-        error_log("Failed to parse API response as JSON. Response: $response");
-        return ['error' => 'Failed to parse API response as JSON.'];
-    }
-
-    if (isset($data['token_accounts'])) {
-        $holders = array_unique(array_column($data['token_accounts'], 'owner'));
-        return ['holders' => $holders];
-    }
-
-    return ['error' => 'No data found for this mint address.'];
-}
+echo json_encode($response);
+?>
