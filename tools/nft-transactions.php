@@ -1,6 +1,6 @@
 <?php
-// Định nghĩa API Key Helius
-$helius_api_key = '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63';
+// Chức năng: Kiểm tra lịch sử giao dịch NFT
+include 'api-helper.php';
 
 // Số lượng giao dịch mỗi trang
 $transactions_per_page = 10;
@@ -19,73 +19,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
     // Kiểm tra mint address hợp lệ (đơn giản)
     if (!empty($mint_address) && strlen($mint_address) > 20) {
         // Gọi API Helius để lấy lịch sử giao dịch
-        $url = "https://api.helius.xyz/v0/addresses/{$mint_address}/transactions?api-key={$helius_api_key}";
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        $response = curl_exec($ch);
-        
-        if (curl_errno($ch)) {
-            $error_msg = curl_error($ch);
-            error_log("cURL error in nft-transactions.php: $error_msg");
-            $transactions = ['error' => 'Error fetching transaction history. Please check your connection or try again later.'];
-        } else {
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            if ($http_code === 200) {
-                $data = json_decode($response, true);
-                if (!empty($data)) {
-                    // Lọc các giao dịch liên quan đến NFT (chuyển NFT, mua/bán)
-                    $filtered_transactions = [];
-                    foreach ($data as $tx) {
-                        $is_nft_related = false;
-                        $price = null;
-                        $buyer = null;
-                        $seller = null;
-                        
-                        // Kiểm tra nếu giao dịch có liên quan đến NFT
-                        if (isset($tx['type']) && in_array($tx['type'], ['NFT_SALE', 'NFT_TRANSFER'])) {
-                            $is_nft_related = true;
-                            if ($tx['type'] === 'NFT_SALE') {
-                                $price = isset($tx['amount']) ? $tx['amount'] / 1e9 : null; // Chuyển từ lamports sang SOL
-                                $buyer = $tx['buyer'] ?? null;
-                                $seller = $tx['seller'] ?? null;
-                            } elseif ($tx['type'] === 'NFT_TRANSFER') {
-                                $buyer = $tx['to'] ?? null;
-                                $seller = $tx['from'] ?? null;
-                            }
-                        }
+        $data = callHeliusAPI("addresses/{$mint_address}/transactions", [], 'GET');
 
-                        if ($is_nft_related) {
-                            $filtered_transactions[] = [
-                                'timestamp' => isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A',
-                                'type' => $tx['type'] ?? 'Unknown',
-                                'price' => $price ? number_format($price, 2) . ' SOL' : 'N/A',
-                                'buyer' => $buyer ?? 'N/A',
-                                'seller' => $seller ?? 'N/A',
-                                'signature' => $tx['signature'] ?? 'N/A'
-                            ];
-                        }
+        if (isset($data['error'])) {
+            $transactions = ['error' => $data['error']];
+        } elseif (!empty($data)) {
+            // Lọc các giao dịch liên quan đến NFT (chuyển NFT, mua/bán)
+            $filtered_transactions = [];
+            foreach ($data as $tx) {
+                $is_nft_related = false;
+                $price = null;
+                $buyer = null;
+                $seller = null;
+                
+                if (isset($tx['type']) && in_array($tx['type'], ['NFT_SALE', 'NFT_TRANSFER'])) {
+                    $is_nft_related = true;
+                    if ($tx['type'] === 'NFT_SALE') {
+                        $price = isset($tx['amount']) ? $tx['amount'] / 1e9 : null;
+                        $buyer = $tx['buyer'] ?? null;
+                        $seller = $tx['seller'] ?? null;
+                    } elseif ($tx['type'] === 'NFT_TRANSFER') {
+                        $buyer = $tx['to'] ?? null;
+                        $seller = $tx['from'] ?? null;
                     }
-
-                    // Lưu tổng số giao dịch
-                    $total_transactions = count($filtered_transactions);
-                    
-                    // Phân trang: chỉ lấy dữ liệu cho trang hiện tại
-                    $transactions = array_slice($filtered_transactions, $offset, $transactions_per_page);
-
-                    if (empty($transactions) && $total_transactions > 0) {
-                        $transactions = ['error' => 'No more transactions to display on this page.'];
-                    } elseif ($total_transactions == 0) {
-                        $transactions = ['error' => 'No transactions found for this NFT.'];
-                    }
-                } else {
-                    $transactions = ['error' => 'No transactions found for this NFT.'];
                 }
-            } else {
-                $transactions = ['error' => "API error (HTTP $http_code). Please try again later."];
+
+                if ($is_nft_related) {
+                    $filtered_transactions[] = [
+                        'timestamp' => isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A',
+                        'type' => $tx['type'] ?? 'Unknown',
+                        'price' => $price ? number_format($price, 2) . ' SOL' : 'N/A',
+                        'buyer' => $buyer ?? 'N/A',
+                        'seller' => $seller ?? 'N/A',
+                        'signature' => $tx['signature'] ?? 'N/A'
+                    ];
+                }
             }
+
+            // Lưu tổng số giao dịch
+            $total_transactions = count($filtered_transactions);
+            
+            // Phân trang: chỉ lấy dữ liệu cho trang hiện tại
+            $transactions = array_slice($filtered_transactions, $offset, $transactions_per_page);
+
+            if (empty($transactions) && $total_transactions > 0) {
+                $transactions = ['error' => 'No more transactions to display on this page.'];
+            } elseif ($total_transactions == 0) {
+                $transactions = ['error' => 'No transactions found for this NFT.'];
+            }
+        } else {
+            $transactions = ['error' => 'No transactions found for this NFT.'];
         }
-        curl_close($ch);
     } else {
         $transactions = ['error' => 'Invalid mint address. Please enter a valid Solana mint address.'];
     }
@@ -153,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mint_address'])) {
                             <form method="POST" style="display:inline; margin-left: 5px;">
                                 <input type="hidden" name="mint_address" value="<?php echo htmlspecialchars($mint_address); ?>">
                                 <input type="hidden" name="page" value="<?php echo $i; ?>">
-                                <button type="submit"><?php echo $i; ?></button>
+                                <button type="submit">$i</button>
                             </form>
                         <?php endif; ?>
                     <?php endfor; ?>
