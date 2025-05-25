@@ -37,6 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
             firstElement.classList.add('visible');
         }
     }
+
+    // Đảm bảo thẻ p có border nhấp nháy khi hiệu ứng typewriter hoàn tất
+    const heroP = document.querySelector('.hero-content p');
+    heroP.style.borderRight = '2px solid #00d4ff';
+    setTimeout(() => {
+        heroP.style.borderRight = 'none'; // Tắt border sau khi hiệu ứng hoàn tất
+    }, 4000); // Thời gian khớp với animation typewriter (4s)
 });
 
 // Change navbar style on scroll with debounce
