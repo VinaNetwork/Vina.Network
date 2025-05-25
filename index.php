@@ -41,7 +41,7 @@ include 'include/header.php';
                 <div class="about-card fade-in" data-delay="400">
                     <img src="img/stages.png" alt="Stages Icon" class="card-icon">
                     <h3>Development Roadmap</h3>
-                    <p>From community building to launching DeFi products and expanding partnerships, we’re shaping the future of blockchain.</p>
+                    <p>Vina Network is developing a strategic roadmap that begins with building a strong community and foundational platform. It will gradually launch core products such as a Web3 wallet, DEX, and stablecoin protocol, while expanding into areas like NFT, GameFi, and educational partnerships - laying the groundwork for a robust and scalable Web3 ecosystem.</p>
                 </div>
             </div>
         </div>
