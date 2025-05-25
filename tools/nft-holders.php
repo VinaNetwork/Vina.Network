@@ -80,3 +80,13 @@ function getNFTHolders($mintAddress, $page = 1) {
     return ['error' => 'No data found for this mint address.'];
 }
 ?>
+
+<!-- Thêm mô tả chi tiết chức năng của tab -->
+<div class="feature-description">
+    <h3>About NFT Holders Checker</h3>
+    <p>
+        The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT by entering its mint address. 
+        It retrieves a list of wallet addresses that currently hold the NFT, with pagination to browse through the results easily. 
+        This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of an NFT on the Solana blockchain.
+    </p>
+</div>
