@@ -34,9 +34,7 @@ include 'include/header.php';
                 <div class="about-card fade-in" data-delay="600">
                     <img src="img/financial.png" alt="Financial Icon" class="card-icon">
                     <h3>Financial Ecosystem</h3>
-                    <p>Vina Network aims to build a comprehensive crypto ecosystem, including Web3 wallets, decentralized exchanges (DEX), stablecoins, on-chain analytics tools, NFT platforms, GameFi, and DeFi services. This ecosystem will connect a global community and drive blockchain adoption through transparent, user-friendly, and accessible Web3 applications.
-
-</p>
+                    <p>Vina Network aims to build a comprehensive crypto ecosystem, including Web3 wallets, decentralized exchanges (DEX), stablecoins, on-chain analytics tools, NFT platforms, GameFi, and DeFi services. This ecosystem will connect a global community and drive blockchain adoption through transparent, user-friendly, and accessible Web3 applications.</p>
                 </div>
                 <div class="about-card fade-in" data-delay="400">
                     <img src="img/stages.png" alt="Stages Icon" class="card-icon">
@@ -77,12 +75,12 @@ include 'include/header.php';
             <h2 class="fade-in" data-delay="0">Our Ecosystem</h2>
             <div class="ecosystem-cards">
                 <div class="ecosystem-card fade-in" data-delay="200">
-                    <i class="fas fa-coins"></i>
+                    <i class="fas fa-wallet"></i>
                     <h3>Vina Wallet</h3>
                     <p>Vina Wallet is a user-friendly, non-custodial Web3 wallet developed by Vina Network. It allows users to securely store, send, and receive cryptocurrencies, interact with decentralized applications (DApps), and manage NFTs - all in one streamlined interface. Designed for both beginners and advanced users, Vina Wallet prioritizes security, simplicity, and seamless integration across multiple blockchain networks.</p>
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="400">
-                    <i class="fas fa-exchange-alt"></i>
+                    <i class="fas fa-balance-scale"></i>
                     <h3>Vina Stablecoin</h3>
                     <p>Vina Stablecoin is a core component of the Vina Network ecosystem, providing a reliable, value-stable medium of exchange for users and DeFi platforms. It is designed to support seamless transactions, lending, and cross-border payments. It is backed by digital assets and other highly liquid assets, ensuring stability, transparency, and trust in a decentralized environment.</p>
                 </div>
@@ -97,7 +95,7 @@ include 'include/header.php';
                     <p>Vina DeFi is a decentralized finance platform within the Vina Network ecosystem, offering services such as staking, lending, borrowing, and yield farming. Designed to be accessible and transparent, Vina DeFi empowers users to earn passive income, participate in governance, and interact with DeFi protocols - all while maintaining full control of their assets in a trustless environment.</p>
                 </div>
                 <div class="ecosystem-card fade-in" data-delay="400">
-                    <i class="fas fa-exchange-alt"></i>
+                    <i class="fas fa-gamepad"></i>
                     <h3>Vina GameFi</h3>
                     <p>Vina GameFi is an innovative platform that merges blockchain technology with gaming, enabling players to earn rewards through play-to-earn mechanics. Integrated with NFTs and DeFi elements, Vina GameFi offers immersive gameplay experiences while allowing users to truly own, trade, and monetize in-game assets within the Vina Network ecosystem.</p>
                 </div>
