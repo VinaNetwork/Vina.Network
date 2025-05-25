@@ -100,16 +100,10 @@ section h3 {
     transform: scale(1.1) rotate(15deg);
 }
 
-.about-card p,
-.why-choose-card p,
-.ecosystem-card p {
-    color: #666;
-}
-
 /* Crypto Widget */
 .crypto-widget {
     text-align: center;
-    padding: 2rem 1rem;
+    padding: 20px;
     background-color: rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: row;
@@ -149,6 +143,5 @@ section h3 {
     }
     .crypto-widget .coinmarketcap-currency-widget {
         width: 100%;
-        max-width: 350px;
     }
 }
