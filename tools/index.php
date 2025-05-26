@@ -16,8 +16,8 @@ error_reporting(E_ALL);
 // Định nghĩa biến trước khi sử dụng
 $root_path = '../';
 $page_title = "Vina Network - Tools";
-$page_description = "Explore tools on Vina Network, including NFT Holders Checker, NFT Valuation, and NFT Transactions.";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
+$page_description = "Explore tools on Vina Network, including NFT Holders Checker, NFT Valuation, NFT Transactions, and Wallet Analysis.";
+$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, wallet analysis, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/";
@@ -34,7 +34,7 @@ include $header_path;
 // Xác định chức năng được chọn (mặc định là nft-holders)
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 error_log("index.php: tool = $tool"); // Debug
-if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
     $tool = 'nft-holders';
     error_log("index.php: Invalid tool, defaulted to nft-holders");
 }
@@ -67,6 +67,9 @@ include $navbar_path;
             <a href="?tool=nft-transactions" class="tab-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
                 <i class="fas fa-history"></i> NFT Transactions
             </a>
+            <a href="?tool=wallet-analysis" class="tab-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
+                <i class="fas fa-user"></i> Wallet Analysis
+            </a>
         </div>
 
         <!-- Note -->
@@ -82,6 +85,8 @@ include $navbar_path;
                 $tool_file = 'nft-valuation.php';
             } elseif ($tool === 'nft-transactions') {
                 $tool_file = 'nft-transactions.php';
+            } elseif ($tool === 'wallet-analysis') {
+                $tool_file = 'wallet-analysis.php';
             }
 
             // Kiểm tra và include file
@@ -177,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Xử lý submit form bằng AJAX
 document.addEventListener('submit', (e) => {
-    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form')) {
+    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
         e.preventDefault();
 
         const formData = new FormData(e.target);
