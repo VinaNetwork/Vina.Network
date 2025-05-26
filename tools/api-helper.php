@@ -1,4 +1,7 @@
 <?php
+error_log("api-helper.php: PHP version: " . phpversion());
+error_log("api-helper.php: cURL version: " . curl_version()['version']);
+
 // Include file cấu hình
 $config_path = dirname(__DIR__) . '/config/config.php'; // Đường dẫn tương đối từ tools/
 if (!file_exists($config_path)) {
