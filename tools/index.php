@@ -112,15 +112,27 @@ include $footer_path;
 
 <script>
 // Đồng bộ trạng thái tab khi tải trang
-window.addEventListener('load', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const tool = urlParams.get('tool') || 'nft-holders';
-    console.log('Current tool:', tool); // Debug
-    document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
-    const activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
+    const tool = urlParams.get('tool')?.trim() || 'nft-holders'; // Xử lý khoảng trắng và mặc định
+    console.log('URL Tool Parameter:', tool); // Debug
+
+    // Danh sách các tool hợp lệ
+    const validTools = ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'];
+    const selectedTool = validTools.includes(tool) ? tool : 'nft-holders';
+
+    // Xóa class active khỏi tất cả các tab
+    const tabs = document.querySelectorAll('.tab-link');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    console.log('Tabs found:', tabs.length); // Debug
+
+    // Thêm class active cho tab tương ứng
+    const activeTab = document.querySelector(`.tab-link[data-tool="${selectedTool}"]`);
     if (activeTab) {
         activeTab.classList.add('active');
+        console.log('Active tab set to:', selectedTool); // Debug
     } else {
+        console.error('No tab found for tool:', selectedTool); // Debug
         document.querySelector('.tab-link[data-tool="nft-holders"]').classList.add('active');
     }
 });
@@ -132,6 +144,7 @@ document.querySelectorAll('.tab-link').forEach(link => {
         document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
         this.classList.add('active');
         const tool = this.getAttribute('data-tool');
+        console.log('Tab clicked, loading tool:', tool); // Debug
         history.pushState({}, '', `?tool=${tool}`);
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'GET',
@@ -139,9 +152,13 @@ document.querySelectorAll('.tab-link').forEach(link => {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return response.text();
+        })
         .then(data => {
             document.querySelector('.tool-content').innerHTML = data;
+            console.log('Content loaded for tool:', tool); // Debug
         })
         .catch(error => {
             console.error('Error loading tool content:', error);
@@ -156,6 +173,7 @@ document.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
+        console.log('Form submitted for tool:', tool); // Debug
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'POST',
             body: formData,
@@ -163,9 +181,13 @@ document.addEventListener('submit', (e) => {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return response.text();
+        })
         .then(data => {
             document.querySelector('.tool-content').innerHTML = data;
+            console.log('Form content loaded for tool:', tool); // Debug
         })
         .catch(error => {
             console.error('Error submitting form:', error);
@@ -173,6 +195,6 @@ document.addEventListener('submit', (e) => {
         });
     }
 });
-    </script>
+</script>
 </body>
 </html>
