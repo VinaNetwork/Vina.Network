@@ -1,6 +1,4 @@
 <?php
-// api-helper.php
-
 // Include file cấu hình
 $config_path = dirname(__DIR__) . '/config/config.php'; // Đường dẫn tương đối từ tools/
 if (!file_exists($config_path)) {
@@ -53,6 +51,44 @@ function callHeliusAPI($endpoint, $params = [], $method = 'POST') {
         return ['error' => 'Failed to parse API response as JSON.'];
     }
 
+    return $data;
+}
+
+// Solscan API
+function callSolscanAPI($endpoint, $params = []) {
+    $base_url = 'https://pro-api.solscan.io/v2.0/';
+    $url = $base_url . $endpoint;
+    
+    // Thêm query params nếu có
+    if (!empty($params)) {
+        $url .= '?' . http_build_query($params);
+    }
+    
+    $api_key = 'YOUR_SOLSCAN_API_KEY'; // Thay bằng key từ pro-api.solscan.io
+    error_log("api-helper.php: Calling Solscan API - URL: $url"); // Debug
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        "Authorization: Bearer $api_key"
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($http_code !== 200) {
+        error_log("api-helper.php: Solscan API error - HTTP $http_code, Response: $response");
+        return ['error' => "Solscan API error: HTTP $http_code"];
+    }
+    
+    $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("api-helper.php: Solscan API JSON decode error - Response: $response");
+        return ['error' => 'Invalid JSON response'];
+    }
+    
+    error_log("api-helper.php: Solscan API success - Endpoint: $endpoint");
     return $data;
 }
 ?>
