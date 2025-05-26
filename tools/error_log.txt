@@ -7,3 +7,155 @@
 [26-May-2025 08:54:13 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
 [26-May-2025 08:54:15 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
 [26-May-2025 09:05:51 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 11:55:54 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 11:56:01 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 11:56:01 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 11:56:52 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 11:56:52 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 11:57:41 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 11:57:41 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 11:59:19 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 11:59:19 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 11:59:23 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 11:59:23 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 11:59:33 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 11:59:34 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-valuation
+[26-May-2025 11:59:37 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-transactions
+[26-May-2025 11:59:37 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:05:28 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 12:11:57 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:11:57 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:12:02 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 12:16:59 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:17:02 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 12:17:07 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:17:07 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:19:40 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:19:40 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:19:46 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-valuation
+[26-May-2025 12:19:48 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 12:19:50 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-transactions
+[26-May-2025 12:19:50 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:26:59 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:27:03 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 12:27:06 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:27:06 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:31:07 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:31:07 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:31:21 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-valuation
+[26-May-2025 12:31:25 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:31:28 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 12:32:07 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:32:22 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-valuation
+[26-May-2025 12:32:29 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-transactions
+[26-May-2025 12:32:29 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:44:03 Asia/Ho_Chi_Minh] index.php: tool = wallet-analysis
+[26-May-2025 12:44:03 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 12:44:09 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:44:09 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:44:12 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 12:44:15 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:44:50 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-transactions
+[26-May-2025 12:44:50 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:44:52 Asia/Ho_Chi_Minh] load-tool.php: tool = wallet-analysis
+[26-May-2025 12:44:52 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 12:47:42 Asia/Ho_Chi_Minh] index.php: tool = wallet-analysis
+[26-May-2025 12:47:42 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 12:50:09 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:50:11 Asia/Ho_Chi_Minh] index.php: tool = wallet-analysis
+[26-May-2025 12:50:11 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 12:50:16 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 12:50:20 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:50:20 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:55:32 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:55:35 Asia/Ho_Chi_Minh] index.php: tool = wallet-analysis
+[26-May-2025 12:55:35 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 12:55:39 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 12:55:42 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 12:55:42 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:55:53 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-transactions
+[26-May-2025 12:55:53 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 12:55:55 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-valuation
+[26-May-2025 12:55:57 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 12:56:04 Asia/Ho_Chi_Minh] load-tool.php: tool = wallet-analysis
+[26-May-2025 12:56:04 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 12:57:14 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:57:26 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 12:57:32 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 13:18:36 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 14:16:44 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 14:16:44 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 14:17:44 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 14:17:44 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 14:17:44 Asia/Ho_Chi_Minh] nft-holders.php: Calling Solscan API for holders - mintAddress: Arj3N1nHbt7ysP8V24k2GjRoCA3KvYP1rQQSynofyXKB, offset: 0, size: 10
+[26-May-2025 14:17:44 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan API - URL: https://pro-api.solscan.io/v2.0/token/holders?tokenAddress=Arj3N1nHbt7ysP8V24k2GjRoCA3KvYP1rQQSynofyXKB&offset=0&size=10
+[26-May-2025 14:17:46 Asia/Ho_Chi_Minh] api-helper.php: Solscan API error - HTTP 401, Response: {"error_message":"Token is missing"}
+[26-May-2025 14:17:46 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan API error: HTTP 401
+[26-May-2025 15:04:41 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 15:04:41 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 15:05:14 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 15:05:14 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 15:05:14 Asia/Ho_Chi_Minh] nft-holders.php: Calling Solscan API for holders - mintAddress: Arj3N1nHbt7ysP8V24k2GjRoCA3KvYP1rQQSynofyXKB, offset: 0, size: 10
+[26-May-2025 15:05:14 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan API - URL: https://pro-api.solscan.io/v2.0/token/holders?tokenAddress=Arj3N1nHbt7ysP8V24k2GjRoCA3KvYP1rQQSynofyXKB&offset=0&size=10
+[26-May-2025 15:05:15 Asia/Ho_Chi_Minh] api-helper.php: Solscan API error - HTTP 401, Response: {"error_message":"Token is missing"}
+[26-May-2025 15:05:15 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan API error: HTTP 401
+[26-May-2025 15:06:47 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 15:06:47 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 15:06:51 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 15:06:51 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 15:06:51 Asia/Ho_Chi_Minh] nft-holders.php: Calling Solscan API for holders - mintAddress: 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt, offset: 0, size: 10
+[26-May-2025 15:06:51 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan API - URL: https://pro-api.solscan.io/v2.0/token/holders?tokenAddress=4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt&offset=0&size=10
+[26-May-2025 15:06:52 Asia/Ho_Chi_Minh] api-helper.php: Solscan API error - HTTP 401, Response: {"error_message":"Token is missing"}
+[26-May-2025 15:06:52 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan API error: HTTP 401
+[26-May-2025 15:11:29 Asia/Ho_Chi_Minh] index.php: tool = wallet-analysis
+[26-May-2025 15:11:29 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 15:11:33 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 15:11:33 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 15:11:37 Asia/Ho_Chi_Minh] index.php: tool = nft-valuation
+[26-May-2025 15:11:39 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[26-May-2025 15:11:39 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 15:35:25 Asia/Ho_Chi_Minh] index.php: tool = nft-transactions
+[26-May-2025 15:35:25 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 15:35:46 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-transactions
+[26-May-2025 15:35:46 Asia/Ho_Chi_Minh] nft-transactions.php loaded
+[26-May-2025 15:35:46 Asia/Ho_Chi_Minh] nft-transactions.php: Fetching transactions for mintAddress = 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt, page = 1
+[26-May-2025 15:35:46 Asia/Ho_Chi_Minh] nft-transactions.php: Calling Helius API for mintAddress = 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt, page = 1
+[26-May-2025 15:35:49 Asia/Ho_Chi_Minh] nft-transactions.php: No transaction data found for 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt
+[26-May-2025 15:35:49 Asia/Ho_Chi_Minh] nft-transactions.php: Error - No transaction data found for this mint address.
+[26-May-2025 15:36:15 Asia/Ho_Chi_Minh] load-tool.php: tool = wallet-analysis
+[26-May-2025 15:36:15 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 15:36:43 Asia/Ho_Chi_Minh] load-tool.php: tool = wallet-analysis
+[26-May-2025 15:36:43 Asia/Ho_Chi_Minh] wallet-analysis.php loaded
+[26-May-2025 15:36:43 Asia/Ho_Chi_Minh] wallet-analysis.php: Analyzing walletAddress = Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM
+[26-May-2025 15:36:43 Asia/Ho_Chi_Minh] wallet-analysis.php: Calling Helius API for balances, walletAddress = Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM
+[26-May-2025 15:36:44 Asia/Ho_Chi_Minh] API request failed with HTTP code: 400
+[26-May-2025 15:36:44 Asia/Ho_Chi_Minh] wallet-analysis.php: Balance API error - Failed to fetch data from API. HTTP Code: 400
+[26-May-2025 15:36:44 Asia/Ho_Chi_Minh] wallet-analysis.php: Error - Failed to fetch data from API. HTTP Code: 400
+[26-May-2025 15:38:32 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 15:38:32 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 15:38:40 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[26-May-2025 15:38:40 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[26-May-2025 15:38:40 Asia/Ho_Chi_Minh] nft-holders.php: Calling Solscan API for holders - mintAddress: Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM, offset: 0, size: 10
+[26-May-2025 15:38:40 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan API - URL: https://pro-api.solscan.io/v2.0/token/holders?tokenAddress=Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM&offset=0&size=10
+[26-May-2025 15:38:40 Asia/Ho_Chi_Minh] api-helper.php: Solscan API error - HTTP 401, Response: {"error_message":"Token is missing"}
+[26-May-2025 15:38:40 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan API error: HTTP 401
+[27-May-2025 03:58:03 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[27-May-2025 03:58:03 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[27-May-2025 03:58:43 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[27-May-2025 03:58:43 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[27-May-2025 03:58:43 Asia/Ho_Chi_Minh] nft-holders.php: Calling Solscan API for holders - mintAddress: 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt, offset: 0, size: 10
+[27-May-2025 03:58:43 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan API - URL: https://pro-api.solscan.io/v2.0/token/holders?tokenAddress=4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt&offset=0&size=10
+[27-May-2025 03:58:43 Asia/Ho_Chi_Minh] api-helper.php: Solscan API error - HTTP 401, Response: {"error_message":"Token is missing"}
+[27-May-2025 03:58:43 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan API error: HTTP 401
+[27-May-2025 04:44:03 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[27-May-2025 04:44:03 Asia/Ho_Chi_Minh] api-helper.php: PHP version: 8.0.28
+[27-May-2025 04:44:03 Asia/Ho_Chi_Minh] api-helper.php: cURL version: 7.87.0
+[27-May-2025 04:44:03 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[27-May-2025 04:45:47 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[27-May-2025 04:45:47 Asia/Ho_Chi_Minh] api-helper.php: PHP version: 8.0.28
+[27-May-2025 04:45:47 Asia/Ho_Chi_Minh] api-helper.php: cURL version: 7.87.0
+[27-May-2025 04:45:47 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[27-May-2025 04:45:47 Asia/Ho_Chi_Minh] nft-holders.php: Calling Solscan API for holders - mintAddress: 42kHp7MpjCvLFLKH7YgxdCT3i9mAwS814Q5Cf9vKrP4T, offset: 0, size: 10
+[27-May-2025 04:45:47 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan API - URL: https://pro-api.solscan.io/v2.0/token/holders?tokenAddress=42kHp7MpjCvLFLKH7YgxdCT3i9mAwS814Q5Cf9vKrP4T&offset=0&size=10
+[27-May-2025 04:45:48 Asia/Ho_Chi_Minh] api-helper.php: Solscan API error - HTTP 401, Response: {"error_message":"Token is missing"}
+[27-May-2025 04:45:48 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan API error: HTTP 401
