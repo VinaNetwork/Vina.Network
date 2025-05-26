@@ -16,8 +16,8 @@ error_reporting(E_ALL);
 // Định nghĩa biến trước khi sử dụng
 $root_path = '../';
 $page_title = "Vina Network - Tools";
-$page_description = "Explore tools on Vina Network, including NFT Holders Checker and NFT Valuation.";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, blockchain, VINA";
+$page_description = "Explore tools on Vina Network, including NFT Holders Checker, NFT Valuation, and NFT Transactions.";
+$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, blockchain, VINA";
 $page_og_title = "Vina Network - Tools";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/";
@@ -33,8 +33,10 @@ include $header_path;
 
 // Xác định chức năng được chọn (mặc định là nft-holders)
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-if (!in_array($tool, ['nft-holders', 'nft-valuation'])) {
+error_log("index.php: tool = $tool"); // Debug
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
     $tool = 'nft-holders';
+    error_log("index.php: Invalid tool, defaulted to nft-holders");
 }
 ?>
 
@@ -62,6 +64,9 @@ include $navbar_path;
             <a href="?tool=nft-valuation" class="tab-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
                 <i class="fas fa-chart-line"></i> NFT Valuation
             </a>
+            <a href="?tool=nft-transactions" class="tab-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
+                <i class="fas fa-history"></i> NFT Transactions
+            </a>
         </div>
 
         <!-- Note -->
@@ -75,6 +80,8 @@ include $navbar_path;
                 $tool_file = 'nft-holders.php';
             } elseif ($tool === 'nft-valuation') {
                 $tool_file = 'nft-valuation.php';
+            } elseif ($tool === 'nft-transactions') {
+                $tool_file = 'nft-transactions.php';
             }
 
             // Kiểm tra và include file
@@ -101,43 +108,56 @@ include $footer_path;
 <script src="../js/vina.js"></script>
     
 <script>
-// Xử lý chuyển tab bằng AJAX
-document.querySelectorAll('.tab-link').forEach(link => {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    let tool = urlParams.get('tool')?.trim().toLowerCase() || 'nft-holders';
+    
+    // Đặt active tab dựa trên URL
+    document.querySelectorAll('.tab-link').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-tool') === tool) {
+            tab.classList.add('active');
+        }
+    });
 
-        // Cập nhật trạng thái active của tab
-        document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
-        this.classList.add('active');
+    // Xử lý chuyển tab bằng AJAX
+    document.querySelectorAll('.tab-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
 
-        // Lấy giá trị tool từ data-tool
-        const tool = this.getAttribute('data-tool');
-        
-        // Cập nhật URL mà không làm mới trang
-        history.pushState({}, '', `?tool=${tool}`);
+            // Cập nhật trạng thái active của tab
+            document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
+            this.classList.add('active');
 
-        // Tải nội dung mới qua AJAX
-        fetch(`/tools/load-tool.php?tool=${tool}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.text())
-        .then(data => {
-            // Cập nhật nội dung trong tool-content
-            document.querySelector('.tool-content').innerHTML = data;
-        })
-        .catch(error => {
-            console.error('Error loading tool content:', error);
-            document.querySelector('.tool-content').innerHTML = '<p>Error loading content. Please try again.</p>';
+            // Lấy giá trị tool từ data-tool
+            const tool = this.getAttribute('data-tool');
+            
+            // Cập nhật URL mà không làm mới trang
+            history.pushState({}, '', `?tool=${tool}`);
+
+            // Tải nội dung mới qua AJAX
+            fetch(`/tools/load-tool.php?tool=${tool}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(data => {
+                // Cập nhật nội dung trong tool-content
+                document.querySelector('.tool-content').innerHTML = data;
+            })
+            .catch(error => {
+                console.error('Error loading tool content:', error);
+                document.querySelector('.tool-content').innerHTML = '<p>Error loading content. Please try again.</p>';
+            });
         });
     });
 });
 
 // Xử lý submit form bằng AJAX
 document.addEventListener('submit', (e) => {
-    if (e.target.matches('#nftHoldersForm, #nftValuationForm')) {
+    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form')) {
         e.preventDefault();
 
         const formData = new FormData(e.target);
