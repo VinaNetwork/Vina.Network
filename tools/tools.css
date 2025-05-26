@@ -223,3 +223,35 @@
     /* Đảm bảo .tools-tabs luôn ngang */
     .tools-tabs {flex-direction: row;} /* Đảm bảo không chuyển thành cột */
 }
+
+/* Thêm kiểu cho bảng giao dịch responsive */
+.nft-transaction-results table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.nft-transaction-results th,
+.nft-transaction-results td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.nft-transaction-results th {
+    background-color: #f4f4f4;
+}
+
+@media screen and (max-width: 768px) {
+    .nft-transaction-results table {
+        font-size: 0.9em;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .nft-transaction-results th,
+    .nft-transaction-results td {
+        padding: 5px;
+        min-width: 100px;
+    }
+}
