@@ -22,3 +22,15 @@
 [27-May-2025 05:02:52 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan API - URL: https://pro-api.solscan.io/v2.0/token/holders?tokenAddress=42kHp7MpjCvLFLKH7YgxdCT3i9mAwS814Q5Cf9vKrP4T&offset=0&size=10, Key: eyJhbGciOi...
 [27-May-2025 05:02:52 Asia/Ho_Chi_Minh] api-helper.php: Solscan API error - HTTP 401, Response: {"error_message":"Token is missing"}
 [27-May-2025 05:02:52 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan API error: HTTP 401
+[27-May-2025 05:41:50 Asia/Ho_Chi_Minh] index.php: tool = nft-holders
+[27-May-2025 05:41:50 Asia/Ho_Chi_Minh] api-helper.php: PHP version: 8.0.28
+[27-May-2025 05:41:50 Asia/Ho_Chi_Minh] api-helper.php: cURL version: 7.87.0
+[27-May-2025 05:41:50 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[27-May-2025 05:42:29 Asia/Ho_Chi_Minh] load-tool.php: tool = nft-holders
+[27-May-2025 05:42:29 Asia/Ho_Chi_Minh] api-helper.php: PHP version: 8.0.28
+[27-May-2025 05:42:29 Asia/Ho_Chi_Minh] api-helper.php: cURL version: 7.87.0
+[27-May-2025 05:42:29 Asia/Ho_Chi_Minh] nft-holders.php loaded
+[27-May-2025 05:42:29 Asia/Ho_Chi_Minh] nft-holders.php: Calling Solscan API for holders - mintAddress: 42kHp7MpjCvLFLKH7YgxdCT3i9mAwS814Q5Cf9vKrP4T, offset: 0, size: 10
+[27-May-2025 05:42:29 Asia/Ho_Chi_Minh] api-helper.php: Calling Solscan Public API - URL: https://public-api.solscan.io/token/holders?tokenAddress=42kHp7MpjCvLFLKH7YgxdCT3i9mAwS814Q5Cf9vKrP4T&offset=0&size=10
+[27-May-2025 05:42:30 Asia/Ho_Chi_Minh] api-helper.php: Solscan Public API error - HTTP 404, Response: 
+[27-May-2025 05:42:30 Asia/Ho_Chi_Minh] nft-holders.php: Solscan API error - Solscan Public API error: HTTP 404
