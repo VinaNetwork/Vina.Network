@@ -1,6 +1,8 @@
 <?php
 // Chức năng: Kiểm tra lịch sử giao dịch NFT
 include 'api-helper.php';
+
+error_log("nft-transactions.php loaded"); // Debug
 ?>
 
 <div class="nft-transactions-content">
@@ -22,10 +24,12 @@ include 'api-helper.php';
         $offset = ($page - 1) * $transactions_per_page;
 
         // Gọi API để lấy lịch sử giao dịch
+        error_log("nft-transactions.php: Fetching transactions for mintAddress = $mintAddress, page = $page"); // Debug
         $transactions_data = getNFTTransactions($mintAddress, $page);
 
         if (isset($transactions_data['error'])) {
             echo "<div class='result-error'><p>" . htmlspecialchars($transactions_data['error']) . "</p></div>";
+            error_log("nft-transactions.php: Error - {$transactions_data['error']}"); // Debug
         } elseif ($transactions_data && !empty($transactions_data['transactions'])) {
             $total_transactions = count($transactions_data['transactions']);
             $paginated_transactions = array_slice($transactions_data['transactions'], $offset, $transactions_per_page);
@@ -65,6 +69,7 @@ include 'api-helper.php';
             echo "</div>";
         } else {
             echo "<div class='result-error'><p>No transaction history found or invalid mint address.</p></div>";
+            error_log("nft-transactions.php: No transactions found for $mintAddress"); // Debug
         }
     }
     ?>
@@ -88,15 +93,19 @@ function getNFTTransactions($mintAddress, $page = 1) {
         "page" => $page
     ];
 
+    error_log("nft-transactions.php: Calling Helius API for mintAddress = $mintAddress, page = $page"); // Debug
     $data = callHeliusAPI('transactions', $payload);
     if (isset($data['error'])) {
+        error_log("nft-transactions.php: Helius API error - {$data['error']}"); // Debug
         return ['error' => $data['error']];
     }
 
     if (isset($data['transactions'])) {
+        error_log("nft-transactions.php: Retrieved " . count($data['transactions']) . " transactions"); // Debug
         return ['transactions' => $data['transactions']];
     }
 
+    error_log("nft-transactions.php: No transaction data found for $mintAddress"); // Debug
     return ['error' => 'No transaction data found for this mint address.'];
 }
 ?>
