@@ -121,9 +121,11 @@
     border-radius: 4px;
 }
 
-.holders-list li {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+.holders-list li { 
+    padding: 10px; 
+    border-bottom: 1px solid #eee; 
+    display: flex; 
+    justify-content: space-between; 
 }
 
 .transaction-table,
