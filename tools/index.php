@@ -32,12 +32,9 @@ if (!file_exists($header_path)) {
 include $header_path;
 
 // Xác định chức năng được chọn (mặc định là nft-holders)
-// Trong index.php, ngay sau phần xác định $tool
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-error_log("index.php: tool = $tool"); // Debug
 if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
-    $tool = 'nft-holders';
-    error_log("index.php: Invalid tool, defaulted to nft-holders");
+    $tool = 'nft-holders'; // Hỗ trợ cả 4 tab
 }
 ?>
 
@@ -112,78 +109,34 @@ include $footer_path;
 ?>
 
 <script src="../js/vina.js"></script>
-
+    
 <script>
-function setActiveTab() {
-    console.log('setActiveTab called at:', new Date().toISOString()); // Debug
-    const urlParams = new URLSearchParams(window.location.search);
-    let tool = urlParams.get('tool')?.trim().toLowerCase() || 'nft-holders';
-    console.log('URL Tool Parameter:', tool); // Debug
-
-    const validTools = ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'];
-    if (!validTools.includes(tool)) {
-        console.warn('Invalid tool parameter, defaulting to nft-holders:', tool);
-        tool = 'nft-holders';
-    }
-
-    const tabs = document.querySelectorAll('.tab-link');
-    console.log('Tabs found:', tabs.length, 'Tab values:', Array.from(tabs).map(t => t.getAttribute('data-tool'))); // Debug
-
-    if (tabs.length === 0) {
-        console.error('No tabs found, retrying in 100ms');
-        setTimeout(setActiveTab, 100); // Retry if tabs not loaded
-        return;
-    }
-
-    tabs.forEach(tab => tab.classList.remove('active'));
-    const activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
-    if (activeTab) {
-        activeTab.classList.add('active');
-        console.log('Active tab set to:', tool); // Debug
-    } else {
-        console.error('No tab found for tool:', tool);
-        const defaultTab = document.querySelector('.tab-link[data-tool="nft-holders"]');
-        if (defaultTab) {
-            defaultTab.classList.add('active');
-            console.log('Defaulted to nft-holders tab');
-        } else {
-            console.error('Default tab (nft-holders) not found');
-        }
-    }
-}
-
-// Chạy khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOMContentLoaded triggered at:', new Date().toISOString()); // Debug
-    setActiveTab();
-});
-
-// Chạy lại khi window load
-window.addEventListener('load', () => {
-    console.log('Window load triggered at:', new Date().toISOString()); // Debug
-    setActiveTab();
-});
-
 // Xử lý chuyển tab bằng AJAX
 document.querySelectorAll('.tab-link').forEach(link => {
     link.addEventListener('click', function(e) {
-        e.preventDefault();
+        e.preventDefault(); // Ngăn chặn làm mới trang
+
+        // Cập nhật trạng thái active của tab
         document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
         this.classList.add('active');
+
+        // Lấy giá trị tool từ data-tool
         const tool = this.getAttribute('data-tool');
-        console.log('Tab clicked, loading tool:', tool); // Debug
+        
+        // Cập nhật URL mà không làm mới trang
         history.pushState({}, '', `?tool=${tool}`);
+
+        // Tải nội dung mới qua AJAX
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            return response.text();
-        })
+        .then(response => response.text())
         .then(data => {
+            // Cập nhật nội dung trong tool-content
             document.querySelector('.tool-content').innerHTML = data;
-            console.log('Content loaded for tool:', tool); // Debug
         })
         .catch(error => {
             console.error('Error loading tool content:', error);
@@ -195,22 +148,21 @@ document.querySelectorAll('.tab-link').forEach(link => {
 // Xử lý submit form bằng AJAX
 document.addEventListener('submit', (e) => {
     if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
-        e.preventDefault();
+        e.preventDefault(); // Ngăn chặn submit mặc định
+
         const formData = new FormData(e.target);
-        const tool = document.querySelector('.tab-link.active')?.getAttribute('data-tool') || 'nft-holders';
-        console.log('Form submitted for tool:', tool); // Debug
+        const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
+
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'POST',
             body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            return response.text();
-        })
+        .then(response => response.text())
         .then(data => {
             document.querySelector('.tool-content').innerHTML = data;
-            console.log('Form content loaded for tool:', tool); // Debug
         })
         .catch(error => {
             console.error('Error submitting form:', error);
@@ -219,6 +171,5 @@ document.addEventListener('submit', (e) => {
     }
 });
 </script>
-
 </body>
 </html>
