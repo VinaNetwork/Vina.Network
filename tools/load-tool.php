@@ -18,14 +18,18 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQ
 
 // Xác định chức năng được chọn
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-if (!in_array($tool, ['nft-holders', 'nft-valuation'])) {
+error_log("load-tool.php: tool = $tool"); // Debug
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions'])) {
     $tool = 'nft-holders';
+    error_log("load-tool.php: Invalid tool '$tool', defaulting to nft-holders");
 }
 
 if ($tool === 'nft-holders') {
     $tool_file = 'nft-holders.php';
 } elseif ($tool === 'nft-valuation') {
     $tool_file = 'nft-valuation.php';
+} elseif ($tool === 'nft-transactions') {
+    $tool_file = 'nft-transactions.php';
 }
 
 // Kiểm tra và include file
