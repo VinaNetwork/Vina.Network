@@ -1,6 +1,6 @@
 <?php
 // Cấu hình log lỗi
-$config_path = '../config/config.php'; // Đường dẫn tương đối từ tools/
+$config_path = '../config/config.php';
 if (!file_exists($config_path)) {
     error_log("Error: config.php not found at $config_path");
     die('Internal Server Error: Missing config.php');
@@ -18,16 +18,14 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQ
 
 // Xác định chức năng được chọn
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
-    $tool = 'nft-holders'; // Hỗ trợ cả 4 tab
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'wallet-analysis'])) {
+    $tool = 'nft-holders';
 }
 
 if ($tool === 'nft-holders') {
     $tool_file = 'nft-holders.php';
 } elseif ($tool === 'nft-valuation') {
     $tool_file = 'nft-valuation.php';
-} elseif ($tool === 'nft-transactions') {
-    $tool_file = 'nft-transactions.php';
 } elseif ($tool === 'wallet-analysis') {
     $tool_file = 'wallet-analysis.php';
 }
