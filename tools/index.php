@@ -2,12 +2,12 @@
 <html lang="en">
 <?php
 // Cấu hình log lỗi
-$config_path = '../config/config.php';
+$config_path = '../config/config.php'; // Đường dẫn tương đối từ tools/
 if (!file_exists($config_path)) {
     error_log("Error: config.php not found at $config_path");
     die('Internal Server Error: Missing config.php');
 }
-include_once $config_path; // Thay include bằng include_once
+include $config_path;
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
@@ -109,56 +109,34 @@ include $footer_path;
 ?>
 
 <script src="../js/vina.js"></script>
-
+    
 <script>
-// Đồng bộ trạng thái tab khi tải trang
-document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tool = urlParams.get('tool')?.trim() || 'nft-holders'; // Xử lý khoảng trắng và mặc định
-    console.log('URL Tool Parameter:', tool); // Debug
-
-    // Danh sách các tool hợp lệ
-    const validTools = ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'];
-    const selectedTool = validTools.includes(tool) ? tool : 'nft-holders';
-
-    // Xóa class active khỏi tất cả các tab
-    const tabs = document.querySelectorAll('.tab-link');
-    tabs.forEach(tab => tab.classList.remove('active'));
-    console.log('Tabs found:', tabs.length); // Debug
-
-    // Thêm class active cho tab tương ứng
-    const activeTab = document.querySelector(`.tab-link[data-tool="${selectedTool}"]`);
-    if (activeTab) {
-        activeTab.classList.add('active');
-        console.log('Active tab set to:', selectedTool); // Debug
-    } else {
-        console.error('No tab found for tool:', selectedTool); // Debug
-        document.querySelector('.tab-link[data-tool="nft-holders"]').classList.add('active');
-    }
-});
-
 // Xử lý chuyển tab bằng AJAX
 document.querySelectorAll('.tab-link').forEach(link => {
     link.addEventListener('click', function(e) {
-        e.preventDefault();
+        e.preventDefault(); // Ngăn chặn làm mới trang
+
+        // Cập nhật trạng thái active của tab
         document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
         this.classList.add('active');
+
+        // Lấy giá trị tool từ data-tool
         const tool = this.getAttribute('data-tool');
-        console.log('Tab clicked, loading tool:', tool); // Debug
+        
+        // Cập nhật URL mà không làm mới trang
         history.pushState({}, '', `?tool=${tool}`);
+
+        // Tải nội dung mới qua AJAX
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            return response.text();
-        })
+        .then(response => response.text())
         .then(data => {
+            // Cập nhật nội dung trong tool-content
             document.querySelector('.tool-content').innerHTML = data;
-            console.log('Content loaded for tool:', tool); // Debug
         })
         .catch(error => {
             console.error('Error loading tool content:', error);
@@ -170,10 +148,11 @@ document.querySelectorAll('.tab-link').forEach(link => {
 // Xử lý submit form bằng AJAX
 document.addEventListener('submit', (e) => {
     if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
-        e.preventDefault();
+        e.preventDefault(); // Ngăn chặn submit mặc định
+
         const formData = new FormData(e.target);
         const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
-        console.log('Form submitted for tool:', tool); // Debug
+
         fetch(`/tools/load-tool.php?tool=${tool}`, {
             method: 'POST',
             body: formData,
@@ -181,13 +160,9 @@ document.addEventListener('submit', (e) => {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            return response.text();
-        })
+        .then(response => response.text())
         .then(data => {
             document.querySelector('.tool-content').innerHTML = data;
-            console.log('Form content loaded for tool:', tool); // Debug
         })
         .catch(error => {
             console.error('Error submitting form:', error);

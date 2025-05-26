@@ -5,12 +5,13 @@ include 'api-helper.php';
 
 <div class="nft-holders-content">
     <div class="nft-checkbox">
-        <h2>Check NFT Holders</h2>
-        <p>Enter the address of the NFT to see the number of holders and their wallet addresses.</p>
-        <form id="nftHoldersForm" method="POST" action="">
-            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-            <button type="submit">Check Holders</button>
-        </form>
+    <h2>Check NFT Holders</h2>
+    <p>Enter the address of the NFT to see the number of holders and their wallet addresses.</p>
+
+    <form id="nftHoldersForm" method="POST" action="">
+        <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+        <button type="submit">Check Holders</button>
+    </form>
     </div>
 
     <?php

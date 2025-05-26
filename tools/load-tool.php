@@ -1,11 +1,11 @@
 <?php
 // Cấu hình log lỗi
-$config_path = '../config/config.php';
+$config_path = '../config/config.php'; // Đường dẫn tương đối từ tools/
 if (!file_exists($config_path)) {
     error_log("Error: config.php not found at $config_path");
     die('Internal Server Error: Missing config.php');
 }
-include_once $config_path; // Thay include bằng include_once
+include $config_path;
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
