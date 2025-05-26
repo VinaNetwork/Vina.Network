@@ -64,7 +64,7 @@ function callSolscanAPI($endpoint, $params = []) {
         $url .= '?' . http_build_query($params);
     }
     
-    $api_key = 'YOUR_SOLSCAN_API_KEY'; // Thay bằng key từ pro-api.solscan.io
+    $api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3NDgyNDAyMDY0OTEsImVtYWlsIjoibjl1OTNuQGdtYWlsLmNvbSIsImFjdGlvbiI6InRva2VuLWFwaSIsImFwaVZlcnNpb24iOiJ2MiIsImlhdCI6MTc0ODI0MDIwNn0.ziJs2-hgxu9qGQHvf-8taYZxEV3rvIM0HcBrfALJi3s'; // Thay bằng key từ pro-api.solscan.io
     error_log("api-helper.php: Calling Solscan API - URL: $url"); // Debug
     
     $ch = curl_init($url);
