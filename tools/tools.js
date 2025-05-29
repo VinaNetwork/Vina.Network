@@ -1,17 +1,7 @@
 // public_html/tools/tools.js
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    let tool = urlParams.get('tool')?.trim().toLowerCase() || 'nft-holders';
-    
-    // Đặt active tab dựa trên URL
-    document.querySelectorAll('.tab-link').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.getAttribute('data-tool') === tool) {
-            tab.classList.add('active');
-        }
-    });
-
-    // Cuộn đến tab active trên di động
+    // Không cần đặt lại active tab, vì PHP đã xử lý đúng trong index.php
+    // Chỉ cuộn đến tab active trên di động
     const tabsContainer = document.querySelector('.tools-tabs');
     const activeTab = document.querySelector('.tab-link.active');
     if (tabsContainer && activeTab) {
@@ -19,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerRect = tabsContainer.getBoundingClientRect();
         tabsContainer.scrollTo({
             left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
-            behavior: 'reload'
+            behavior: 'smooth' // Sửa từ 'reload' thành 'smooth'
         });
     }
 
@@ -33,12 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.add('active');
 
             // Cuộn đến tab vừa click
-            const tabRect = this.getBoundingClientRect();
-            const containerRect = tabsContainer.getBoundingClientRect();
-            tabsContainer.scrollTo({
-                left: this.offsetLeft - (containerRect.width - tabRect.width) / 2,
-                behavior: 'reload'
-            });
+            if (tabsContainer) {
+                const tabRect = this.getBoundingClientRect();
+                const containerRect = tabsContainer.getBoundingClientRect();
+                tabsContainer.scrollTo({
+                    left: this.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                    behavior: 'smooth'
+                });
+            }
 
             // Lấy giá trị tool từ data-tool
             const tool = this.getAttribute('data-tool');
@@ -47,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
             // Tải nội dung mới qua AJAX
-            fetch(`/tools/load-data.php?tool=${encodeURIComponent(tool)}`, {
+            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -60,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.text();
             })
             .then(data => {
-                // Cập nhật nội dung trong tool-content
                 document.querySelector('.tool-content').innerHTML = data;
             })
             .catch(error => {
@@ -79,7 +70,7 @@ document.addEventListener('submit', (e) => {
         const formData = new FormData(e.target);
         const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
 
-        fetch(`/tools/load-data.php?tool=${encodeURIComponent(tool)}`, {
+        fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
             method: 'POST',
             body: formData,
             headers: {
