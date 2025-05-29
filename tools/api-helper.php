@@ -68,17 +68,27 @@ function callSolscanAPI($endpoint, $params = []) {
     }
     
     $api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3NDg1MDAxMDUzODcsImVtYWlsIjoibjl1OTNuMUBnbWFpbC5jb20iLCJhY3Rpb24iOiJ0b2tlbi1hcGkiLCJhcGlWZXJzaW9uIjoidjIiLCJpYXQiOjE3NDg1MDAxMDV9.yCQy7KZHUdQXBWG7bmSpb5I3vbRBghDQZaG0tH6D3QE'; // Thay bằng key từ pro-api.solscan.io
+    $server_ip = gethostbyname(gethostname()); // Debug IP
+    error_log("api-helper.php: Server IP: $server_ip"); // Debug IP
     error_log("api-helper.php: Calling Solscan API - URL: $url"); // Debug
     
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer $api_key"
+        "Authorization: Bearer $api_key",
+        "Content-Type: application/json" // Thêm Content-Type để chuẩn hóa
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Bật xác minh SSL
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_error = curl_error($ch);
     curl_close($ch);
+    
+    if ($curl_error) {
+        error_log("api-helper.php: cURL error - $curl_error");
+        return ['error' => "cURL error: $curl_error"];
+    }
     
     if ($http_code !== 200) {
         error_log("api-helper.php: Solscan API error - HTTP $http_code, Response: $response");
