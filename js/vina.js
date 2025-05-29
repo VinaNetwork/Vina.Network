@@ -121,9 +121,11 @@ dropdowns.forEach(dropdown => {
     toggle.addEventListener('click', (e) => {
         e.preventDefault();
         content.classList.toggle('active');
+        toggle.classList.toggle('active'); // Thêm/xóa lớp active cho dropdown-toggle
         dropdowns.forEach(d => {
             if (d !== dropdown) {
                 d.querySelector('.dropdown-menu').classList.remove('active');
+                d.querySelector('.dropdown-toggle').classList.remove('active');
             }
         });
     });
@@ -135,6 +137,7 @@ document.addEventListener('click', (e) => {
     dropdowns.forEach(dropdown => {
         if (!dropdown.contains(e.target)) {
             dropdown.querySelector('.dropdown-menu').classList.remove('active');
+            dropdown.querySelector('.dropdown-toggle').classList.remove('active');
         }
     });
 });
