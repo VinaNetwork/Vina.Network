@@ -12,12 +12,12 @@
                 <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="https://www.vina.network/docs/ " class="dropdown-item"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
-                <li><a href="https://www.vina.network/docs/" class="dropdown-item"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
-                <li><a href="https://www.vina.network/docs/ " class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
-                <li><a href="https://www.vina.network/docs/ " class="dropdown-item"><i class="fas fa-link"></i> Vina DeFi</a></li>
-                <li><a href="https://www.vina.network/docs/" class="dropdown-item"><i class="fas fa-gamepad"></i> Vina GameFi</a></li>
-                <li><a href="https://www.vina.network/docs/" class="dropdown-item"><i class="fas fa-image"></i> NFT Marketplace</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-link"></i> Vina DeFi</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-gamepad"></i> Vina GameFi</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-image"></i> NFT Marketplace</a></li>
             </ul>
         </li>
         <li class="dropdown">
@@ -39,7 +39,7 @@
                 <li><a href="https://kimo.vina.network/token/" class="dropdown-item"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
         </li>
-        <li><a href="https://www.vina.network/" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
+        <li><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
     </ul>
     <div class="burger" aria-label="Menu toggle">
         <div class="line1"></div>
