@@ -1,4 +1,4 @@
-// tools.js
+// public_html/tools/tools.js
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     let tool = urlParams.get('tool')?.trim().toLowerCase() || 'nft-holders';
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerRect = tabsContainer.getBoundingClientRect();
         tabsContainer.scrollTo({
             left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
-            behavior: 'smooth'
+            behavior: 'reload'
         });
     }
 
@@ -37,23 +37,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const containerRect = tabsContainer.getBoundingClientRect();
             tabsContainer.scrollTo({
                 left: this.offsetLeft - (containerRect.width - tabRect.width) / 2,
-                behavior: 'smooth'
+                behavior: 'reload'
             });
 
             // Lấy giá trị tool từ data-tool
             const tool = this.getAttribute('data-tool');
             
             // Cập nhật URL mà không làm mới trang
-            history.pushState({}, '', `?tool=${tool}`);
+            history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
             // Tải nội dung mới qua AJAX
-            fetch(`/tools/load-tool.php?tool=${tool}`, {
+            fetch(`/tools/load-data.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();
+            })
             .then(data => {
                 // Cập nhật nội dung trong tool-content
                 document.querySelector('.tool-content').innerHTML = data;
@@ -74,14 +79,19 @@ document.addEventListener('submit', (e) => {
         const formData = new FormData(e.target);
         const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
 
-        fetch(`/tools/load-tool.php?tool=${tool}`, {
+        fetch(`/tools/load-data.php?tool=${encodeURIComponent(tool)}`, {
             method: 'POST',
             body: formData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.text();
+        })
         .then(data => {
             document.querySelector('.tool-content').innerHTML = data;
         })
