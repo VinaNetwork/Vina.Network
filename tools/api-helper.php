@@ -67,7 +67,7 @@ function callSolscanAPI($endpoint, $params = []) {
         $url .= '?' . http_build_query($params);
     }
     
-    $api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3NDgyNDcyMjI3OTgsImVtYWlsIjoibjl1OTNuQGdtYWlsLmNvbSIsImFjdGlvbiI6InRva2VuLWFwaSIsImFwaVZlcnNpb24iOiJ2MiIsImlhdCI6MTc0ODI0NzIyMn0.ukV8lKST8a1G46dA8rc3yu-CtZ90nxDI50o0q4xvgMk'; // Thay bằng key từ pro-api.solscan.io
+    $api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3NDg1MDAxMDUzODcsImVtYWlsIjoibjl1OTNuMUBnbWFpbC5jb20iLCJhY3Rpb24iOiJ0b2tlbi1hcGkiLCJhcGlWZXJzaW9uIjoidjIiLCJpYXQiOjE3NDg1MDAxMDV9.yCQy7KZHUdQXBWG7bmSpb5I3vbRBghDQZaG0tH6D3QE'; // Thay bằng key từ pro-api.solscan.io
     error_log("api-helper.php: Calling Solscan API - URL: $url"); // Debug
     
     $ch = curl_init($url);
