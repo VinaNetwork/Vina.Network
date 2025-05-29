@@ -1,4 +1,4 @@
-// public_html/js/tools.js
+// tools.js
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     let tool = urlParams.get('tool')?.trim().toLowerCase() || 'nft-holders';
