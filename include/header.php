@@ -10,7 +10,7 @@ $page_og_image = isset($page_og_image) ? $page_og_image : 'https://vina.network/
 $page_og_url = isset($page_og_url) ? $page_og_url : 'https://vina.network';
 $page_og_type = isset($page_og_type) ? $page_og_type : 'website';
 $page_css = isset($page_css) ? $page_css : [];
-$page_theme_color = isset($page_theme_color) ? $page_theme_color : '#f5f5f5';
+$page_theme_color = isset($page_theme_color) ? $page_theme_color : '#1a1a1a'; // Đổi từ #f5f5f5 thành #1a1a1a
 $root_path = isset($root_path) ? $root_path : '';
 
 // Thêm canonical URL để tránh nội dung trùng lặp
@@ -22,6 +22,9 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
     <meta name="robots" content="index, follow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="<?php echo htmlspecialchars($page_theme_color); ?>">
+    <meta name="msapplication-navbutton-color" content="<?php echo htmlspecialchars($page_theme_color); ?>"> <!-- Cho Windows Phone -->
+    <meta name="apple-mobile-web-app-capable" content="yes"> <!-- Cho Safari iOS -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <!-- Cho Safari iOS -->
     <title><?php echo htmlspecialchars($page_title); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($page_description); ?>">
     <meta name="keywords" content="<?php echo htmlspecialchars($page_keywords); ?>">
@@ -62,14 +65,12 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
         ]
     }
     </script>
-
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-9PX6BGXB5N"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-
         gtag('config', 'G-9PX6BGXB5N');
     </script>
 </head>
