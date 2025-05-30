@@ -17,6 +17,7 @@ h2 { font: 2em/2.2 sans-serif; }
 h3 { font: 1.5em/1.8 sans-serif; }
 h4 { font: 1.2em/1.8 sans-serif; }
 p, a { font: 1.1em/1.8 sans-serif; }
+p:not(:last-child) {margin-bottom: 30px;}
 a { text-decoration: none; }
 li { list-style: none; }
 
@@ -324,6 +325,7 @@ footer {
     h2 { font-size: 1.6em; }
     h3 { font-size: 1.3em; }
     p, a { font-size: 1.05em; }
+    p:not(:last-child) {margin-bottom: 20px;}
 
     .nav-links {
         display: none;
