@@ -22,17 +22,11 @@
     transform: translateY(-5px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
-.notification-content i {
-    font-size: 3rem;
-    color: #00d4ff;
-    transition: transform 0.5s ease;
-}
-.notification-content:hover i {transform: rotate(15deg) scale(1.1);}
+
 .notification-content h1 {color: #00d4ff;}
 .notification-content p {color: #fff;}
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .notification-section {margin-top: 64px;}
-    .notification-content i {font-size: 2rem;}
 }
