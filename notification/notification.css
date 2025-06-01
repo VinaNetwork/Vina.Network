@@ -25,12 +25,9 @@
 .notification-content i {
     font-size: 3rem;
     color: #00d4ff;
-    margin-bottom: 1.5rem;
     transition: transform 0.5s ease;
 }
-.notification-content:hover i {
-    transform: rotate(15deg) scale(1.1);
-}
+.notification-content:hover i {transform: rotate(15deg) scale(1.1);}
 .notification-content h1 {color: #00d4ff;}
 .notification-content p {color: #fff;}
 
