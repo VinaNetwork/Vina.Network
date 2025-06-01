@@ -1,11 +1,7 @@
 /* Common Section Styles */
-section h2 {
-    font-weight: 700;
-    color: #1a1a1a;
-}
+section h2 {color: #1a1a1a;}
 
 section h3 {
-    font-weight: 600;
     color: #007bff;
     transition: color 0.3s ease;
 }
@@ -13,7 +9,7 @@ section h3 {
 /* Hero Section */
 .hero {
     min-height: 100vh;
-    padding-top: 72px;
+    margin-top: 72px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     background: cover center fixed;
     display: flex;
@@ -30,7 +26,6 @@ section h3 {
 }
 
 .hero-content h1 {
-    font: 700 4.5em sans-serif;
     background: linear-gradient(45deg, #00d4ff, #ff00ff, #00ffaa, #00d4ff) 0/400%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -40,19 +35,13 @@ section h3 {
 }
 
 .hero-content p {
-    font: 400 1.5em sans-serif;
     color: #e0e0e0;
     margin: 20px;
     animation: zoomIn 1s ease-out forwards 0.5s;
 }
 
-.hero-content h1:hover {
-    text-shadow: 0 0 15px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5);
-}
-
-.hero-content p:hover {
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
-}
+.hero-content h1:hover {text-shadow: 0 0 15px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5);}
+.hero-content p:hover {text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);}
 
 /* Keyframes */
 @keyframes gradientText {
@@ -66,16 +55,18 @@ section h3 {
 }
 
 /* Card Sections */
-.about-section, .why-choose-section, .ecosystem-section {
+.about-section, 
+.why-choose-section, 
+.ecosystem-section {
     padding: 20px;
     text-align: center;
 }
 
-.why-choose-section {
-    background: #c3c7c4;
-}
+.why-choose-section {background: #c3c7c4;}
 
-.about-cards, .why-choose-cards, .ecosystem-cards {
+.about-cards, 
+.why-choose-cards, 
+.ecosystem-cards {
     display: flex;
     justify-content: center;
     gap: 2rem;
@@ -84,7 +75,9 @@ section h3 {
     margin: 0 auto;
 }
 
-.about-card, .why-choose-card, .ecosystem-card {
+.about-card, 
+.why-choose-card, 
+.ecosystem-card {
     background: #fff;
     border-radius: 15px;
     padding: 20px;
@@ -94,21 +87,29 @@ section h3 {
     cursor: pointer;
 }
 
-.about-card:hover, .why-choose-card:hover, .ecosystem-card:hover {
+.about-card:hover, 
+.why-choose-card:hover, 
+.ecosystem-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
     background: #e6f7ff;
 }
 
-.about-card:active, .why-choose-card:active, .ecosystem-card:active {
+.about-card:active, 
+.why-choose-card:active, 
+.ecosystem-card:active {
     transform: scale(0.95);
 }
 
-.about-card:active h3, .why-choose-card:active h3, .ecosystem-card:active h3 {
+.about-card:active h3, 
+.why-choose-card:active h3, 
+.ecosystem-card:active h3 {
     color: #00d4ff;
 }
 
-.card-icon, .why-choose-card i, .ecosystem-card i {
+.card-icon, 
+.why-choose-card i, 
+.ecosystem-card i {
     width: 50px;
     height: 50px;
     margin-bottom: 1rem;
@@ -117,7 +118,10 @@ section h3 {
     transition: transform 0.5s ease;
 }
 
-.about-card:hover .card-icon, .why-choose-card:hover i, .ecosystem-card:hover i {
+.about-card:hover 
+.card-icon, 
+.why-choose-card:hover i, 
+.ecosystem-card:hover i {
     transform: scale(1.1) rotate(15deg);
 }
 
@@ -145,25 +149,27 @@ section h3 {
 @media screen and (max-width: 768px) {
     .hero {
         background-attachment: scroll;
-        padding-top: 64px;
+        margin-top: 64px;
     }
     .hero-content h1 {
-        font-size: 2em;
         white-space: normal;
         word-wrap: break-word;
         animation: gradientText 6s ease infinite, zoomIn 1s ease-out forwards;
     }
     .hero-content p {
-        font-size: 1em;
         white-space: normal;
         word-wrap: break-word;
         animation: zoomIn 1s ease-out forwards 0.5s;
     }
-    .about-cards, .why-choose-cards, .ecosystem-cards {
+    .about-cards, 
+    .why-choose-cards, 
+    .ecosystem-cards {
         flex-direction: column;
         align-items: center;
     }
-    .about-card, .why-choose-card, .ecosystem-card {
+    .about-card, 
+    .why-choose-card, 
+    .ecosystem-card {
         width: 100%;
     }
     .crypto-widget {
