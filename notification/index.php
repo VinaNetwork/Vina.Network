@@ -14,7 +14,7 @@ include '../include/header.php';
 
     <section class="notification-section">
         <div class="notification-content">
-            <i class="fas fa-tools"></i>
+            <h1><i class="fas fa-tools"></i></h1>
             <h1>Products Under Development</h1>
             <p>We’re sorry, but our products are currently under development. Our team is working hard to bring you the best experience. Stay tuned for updates!</p>
             <a href="https://www.vina.network/" class="cta-button">Back to Home</a>
