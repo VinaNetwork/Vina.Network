@@ -4,13 +4,13 @@
 <?php
 $page_canonical = 'https://vina.network';
 $page_css = ['css/home.css'];
-include 'include/header.php';
+include __DIR__ . '/include/header.php';
 ?>
 
 <!-- body -->
 <body>
     <!-- Include Header -->
-    <?php include 'include/navbar.php'; ?>
+    <?php include __DIR__ . 'include/navbar.php'; ?>
 
     <!-- Hero Section -->
     <section id="home" class="hero">
@@ -119,11 +119,11 @@ include 'include/header.php';
     </section>
 
     <!-- Join Our Community Section -->
-    <?php include 'include/community.php'; ?>
+    <?php include __DIR__ . 'include/community.php'; ?>
     <!-- Include Crypto Widget -->
-    <?php include 'include/crypto_widget.php'; ?>
+    <?php include __DIR__ . 'include/crypto_widget.php'; ?>
     <!-- Include Footer -->
-    <?php include 'include/footer.php'; ?>
+    <?php include __DIR__ . 'include/footer.php'; ?>
     <!-- Back to Top -->
     <button id="back-to-top" title="Back to top">
         <i class="fas fa-arrow-up"></i>
