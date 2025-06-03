@@ -79,8 +79,8 @@ FileETag None
 
 # Prevent image hotlinking (allow only from localhost and vina.network)
 RewriteCond %{HTTP_REFERER} !^$
-RewriteCond %{HTTP_REFERER} !^http://(www\.)?localhost/.*$ [NC]
-RewriteCond %{HTTP_REFERER} !^http://(www\.)?vina.network/.*$ [NC]
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?localhost/.*$ [NC]
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?vina.network/.*$ [NC]
 RewriteRule \.(jpg|jpeg|png|gif|webp)$ - [F] # Added webp to hotlink protection
 
 # End of .htaccess configuration
