@@ -2,7 +2,7 @@
 <nav class="navbar" role="navigation" aria-label="Main navigation">
     <div class="logo">
         <a href="https://www.vina.network/" aria-label="Vina Network Home">
-            <img src="https://www.vina.network/img/logo.png" alt="Vina Network Logo">
+            <img href="https://www.vina.network/img/logo.png" alt="Vina Network Logo">
         </a>
     </div>
     <ul class="nav-links">
