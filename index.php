@@ -10,7 +10,7 @@ include __DIR__ . '/include/header.php';
 <!-- body -->
 <body>
     <!-- Include Header -->
-    <?php include __DIR__ . 'include/navbar.php'; ?>
+    <?php include __DIR__ . '/include/navbar.php'; ?>
 
     <!-- Hero Section -->
     <section id="home" class="hero">
@@ -119,11 +119,11 @@ include __DIR__ . '/include/header.php';
     </section>
 
     <!-- Join Our Community Section -->
-    <?php include __DIR__ . 'include/community.php'; ?>
+    <?php include __DIR__ . '/include/community.php'; ?>
     <!-- Include Crypto Widget -->
-    <?php include __DIR__ . 'include/crypto_widget.php'; ?>
+    <?php include __DIR__ . '/include/crypto_widget.php'; ?>
     <!-- Include Footer -->
-    <?php include __DIR__ . 'include/footer.php'; ?>
+    <?php include __DIR__ . '/include/footer.php'; ?>
     <!-- Back to Top -->
     <button id="back-to-top" title="Back to top">
         <i class="fas fa-arrow-up"></i>
