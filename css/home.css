@@ -150,6 +150,7 @@ section h3 {
     .hero {
         background-attachment: scroll;
         margin-top: 64px;
+        height: 420px;
     }
     .hero-content h1 {
         white-space: normal;
