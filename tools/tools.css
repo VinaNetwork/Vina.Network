@@ -1,4 +1,9 @@
 /* Cấu trúc chung */
+h1,
+h2 {
+    text-align: center;
+}
+
 .tools-section {
     margin-top: 72px;
 }
@@ -6,10 +11,7 @@
 .tools-content {
     max-width: 1000px;
     padding: 20px;
-}
-.tools-content h1,
-.tools-content h2 {
-    text-align: center;
+    margin: 0 auto;
 }
 
 /* Tab điều hướng */
