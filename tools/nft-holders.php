@@ -1,6 +1,6 @@
 <?php
 // nft-holders.php
-// Chức năng: Kiểm tra NFT Holders
+// Chức năng: Kiểm tra NFT Holders với Helius API
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
@@ -33,12 +33,12 @@ error_log("nft-holders.php loaded"); // Debug
             echo "<div class='result-error'><p>Invalid mint address. Please enter a valid Solana mint address (32-44 characters, base58).</p></div>";
             error_log("nft-holders.php: Invalid mint address format - $mintAddress"); // Debug
         } else {
-            // Gọi Solscan API
+            // Gọi Helius API
             $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
 
             if (isset($holders_data['error'])) {
                 echo "<div class='result-error'><p>" . htmlspecialchars($holders_data['error']) . "</p></div>";
-                error_log("nft-holders.php: Solscan API error - {$holders_data['error']}"); // Debug
+                error_log("nft-holders.php: Helius API error - {$holders_data['error']}"); // Debug
             } elseif ($holders_data && !empty($holders_data['holders'])) {
                 $total_holders = $holders_data['total'];
                 $paginated_holders = $holders_data['holders'];
@@ -55,14 +55,14 @@ error_log("nft-holders.php loaded"); // Debug
                 echo "</ul>";
 
                 // Phân trang
-                echo "<div class='pagination'>";
+                echo "<div class='pagination-btn'>";
                 $total_pages = ceil($total_holders / $holders_per_page);
                 if ($page > 1) {
                     echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-btn'>Previous</button></form>";
                 }
                 for ($i = 1; $i <= $total_pages; $i++) {
                     if ($i === $page) {
-                        echo "<span class='active-page'>$i</span>";
+                        echo "<span class='page-btn active'>$i</span>";
                     } else {
                         echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit' class='page-btn'>$i</button></form>";
                     }
@@ -72,7 +72,7 @@ error_log("nft-holders.php loaded"); // Debug
                 }
                 echo "</div>";
                 echo "</div>";
-                error_log("nft-holders.php: Retrieved $total_holders holders, showing page $page"); // Debug
+                error_log("nft-holders.php: Retrieved $total_holders holders, page $page"); // Debug
             } else {
                 echo "<div class='result-error'><p>No holders found or invalid mint address.</p></div>";
                 error_log("nft-holders.php: No holders found for $mintAddress"); // Debug
@@ -93,24 +93,33 @@ error_log("nft-holders.php loaded"); // Debug
 
 <?php
 function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
-    // Gọi Solscan API
+    // Gọi Helius API
     $params = [
-        'tokenAddress' => $mintAddress,
-        'offset' => $offset,
-        'size' => $size
+        'groupKey' => 'collection',
+        'groupValue' => $mintAddress,
+        'page' => ceil(($offset + $size) / $size), // Helius page bắt đầu từ 1
+        'limit' => $size
     ];
-    error_log("nft-holders.php: Calling Solscan API for holders - mintAddress: $mintAddress, offset: $offset, size: $size"); // Debug
     
-    $data = callSolscanAPI('token/holders', $params);
+    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress}, offset: ${offset}, size: ${size}, page: {$params['page']}"); // Debug
+    
+    $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
     
     if (isset($data['error'])) {
         return ['error' => $data['error']];
     }
     
-    if (isset($data['data']) && !empty($data['data'])) {
+    if (isset($data['result']['items']) && !empty($data['result']['items'])) {
+        $holders = array_map(function($item) {
+            return [
+                'owner' => $item['ownership']['owner'] ?? 'unknown',
+                'amount' => 1 // Mỗi NFT có amount là 1
+            ];
+        }, $data['result']['items']);
+        
         return [
-            'holders' => $data['data'],
-            'total' => $data['total'] ?? count($data['data'])
+            'holders' => $holders,
+            'total' => $data['result']['total'] ?? count($holders)
         ];
     }
     
