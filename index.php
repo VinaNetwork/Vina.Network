@@ -15,9 +15,9 @@ include __DIR__ . '/include/header.php';
     <!-- Hero Section -->
     <section id="home" class="hero">
         <div class="hero-content">
-            <h1>Vina Network</h1> <!-- Loại bỏ fade-in để tránh trùng lặp hiệu ứng -->
-            <p>"Simplifying Crypto. Unlocking Web3"</p> <!-- Loại bỏ fade-in -->
-            <a href="#about" class="cta-button fade-in" data-delay="600">Discover More</a> <!-- Tăng delay lên 600ms -->
+            <h1>Vina Network</h1>
+            <p>"Simplifying Crypto. Unlocking Web3"</p>
+            <a href="#about" class="cta-button fade-in" data-delay="600">Discover More</a>
         </div>
     </section>
 
