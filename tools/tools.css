@@ -5,7 +5,10 @@
 }
 
 .tools-content {padding: 20px;}
-.tools-content h1 {text-algin: center;}
+.tools-content h1,
+.tools-content h2 {
+    text-algin: center;
+}
 
 /* Tab điều hướng */
 .tools-tabs {
