@@ -103,21 +103,35 @@
 }
 
 /* Danh sách và bảng */
-.holders-list {
-    list-style: none;
-    padding: 0;
-    text-align: left;
-    overflow-y: auto;
-    margin: 20px;
-    border: 1px solid #eee;
-    border-radius: 5px;
+.holders-table {
+    margin: 20px auto;
+    border-collapse: collapse;
+    background: #fff;
+    width: 100%;
 }
 
-.holders-list li { 
-    padding: 10px; 
-    border-bottom: 1px solid #eee; 
-    display: flex; 
-    justify-content: space-between; 
+.holders-table th,
+.holders-table td {
+    padding: 10px 5px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.holders-table th {
+    background: #f4f4f4;
+    font-weight: bold;
+}
+
+.holders-table td:first-child {
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 0; /* Cho phép cột Address chiếm không gian tối đa */
+    width: 80%; /* Đảm bảo cột Address rộng hơn */
+}
+
+.holders-table td:last-child {
+    text-align: center;
+    width: 20%; /* Cột Amount nhỏ hơn */
 }
 
 .transaction-table,
@@ -163,9 +177,9 @@
 
 .result-info {
     color: #333;
-    overflow-wrap: break-word; /* Ngắt dòng tự động cho văn bản dài */
-    word-break: break-all; /* Đảm bảo ngắt ở mọi ký tự nếu cần */
-    max-width: 100%; /* Giới hạn chiều rộng */
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
 }
 
 .result-error {
@@ -226,13 +240,15 @@
         width: 100%;
         max-width: 300px;
     }
-    .holders-list,
+    .holders-table,
     .transaction-table,
     .nft-transaction-results table {
         display: block;
         overflow-x: auto;
         white-space: nowrap;
     }
+    .holders-table th,
+    .holders-table td,
     .transaction-table th,
     .transaction-table td,
     .nft-transaction-results td {
