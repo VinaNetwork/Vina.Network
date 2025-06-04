@@ -111,7 +111,7 @@ section h3 {
     color: #00d4ff;
 }
 
-.card-icon, 
+.about-card img,
 .why-choose-card i, 
 .ecosystem-card i {
     width: 50px;
@@ -120,6 +120,7 @@ section h3 {
     font-size: 2.5rem;
     color: #00d4ff;
     transition: transform 0.5s ease;
+    display: flex;
     justify-content: center;
     align-items: center;
 }
