@@ -1,4 +1,10 @@
 /* Common Section Styles */
+section h1,
+section h2,
+section h3 {
+    text-align: center;
+}
+
 section h2 {color: #1a1a1a;}
 
 section h3 {
@@ -21,8 +27,7 @@ section h3 {
 }
 
 .hero-content {
-    max-width: 90%;
-    padding: 0 10px;
+    padding: 10px;
 }
 
 .hero-content h1 {
@@ -59,7 +64,6 @@ section h3 {
 .why-choose-section, 
 .ecosystem-section {
     padding: 20px;
-    text-align: center;
 }
 
 .why-choose-section {background: #c3c7c4;}
