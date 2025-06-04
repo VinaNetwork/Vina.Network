@@ -52,7 +52,7 @@ include $navbar_path;
 ?>
 
 <section class="tools-section">
-    <div class="tools-content fade-in">
+    <div class="tools-content">
         <h1>Vina Network Tools</h1>
         <p>Select a tool to explore its features.</p>
 
