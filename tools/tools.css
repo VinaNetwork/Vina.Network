@@ -113,12 +113,10 @@
     list-style: none;
     padding: 0;
     text-align: left;
-    max-height: 300px;
     overflow-y: auto;
-    margin: 0 auto;
-    width: 80%;
+    margin: 20px;
     border: 1px solid #eee;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
 .holders-list li { 
@@ -130,7 +128,6 @@
 
 .transaction-table,
 .nft-transaction-results table {
-    width: 90%;
     margin: 20px auto;
     border-collapse: collapse;
     background: #fff;
@@ -168,11 +165,6 @@
     padding: 15px;
     border-radius: 5px;
     margin-top: 20px;
-}
-
-.result-info {
-    font-size: 1.1em;
-    margin: 5px 0;
 }
 
 .result-error {
@@ -217,9 +209,7 @@
 
 /* Responsive */
 @media screen and (max-width: 768px) {
-    .tools-section {
-        padding: 64px 0 0;
-    }
+    .tools-section {margin-top: 64px;}
     .tools-tabs {
         gap: 10px;
         flex-direction: row;
@@ -250,17 +240,7 @@
     .page-btn,
     .active-page {
         padding: 6px 12px;
-        font-size: 0.9em;
     }
-    .result-section {
-        padding: 10px;
-        font-size: 0.9em;
-    }
-    .result-info {
-        font-size: 1em;
-        margin: 8px 0;
-    }
-    .nft-checkbox {
-        padding: 15px;
-    }
+    .result-section {padding: 10px;}
+    .nft-checkbox {padding: 15px;}
 }
