@@ -27,22 +27,22 @@ include __DIR__ . '/include/header.php';
             <h2 class="fade-in" data-delay="0">About Vina Network</h2>
             <div class="about-cards">
                 <div class="about-card fade-in" data-delay="400">
-                    <img src="/img/vision.png" alt="Vision Icon" class="card-icon">
+                    <img src="/img/vision.png" alt="Vision Icon">
                     <h3>Vision & Mission</h3>
                     <p>Vina Network envisions becoming a leading crypto-focused ecosystem that serves a global user base. Its mission is to connect, educate, and accelerate the growth of blockchain adoption through innovative Web3 products, stablecoins, decentralized finance (DeFi), and community-driven initiatives.</p>
                 </div>
                 <div class="about-card fade-in" data-delay="550">
-                    <img src="/img/financial.png" alt="Financial Icon" class="card-icon">
+                    <img src="/img/financial.png" alt="Financial Icon">
                     <h3>Financial Ecosystem</h3>
                     <p>Vina Network aims to build a comprehensive crypto ecosystem, including Web3 wallets, decentralized exchanges (DEX), stablecoins, on-chain analytics tools, NFT platforms, GameFi, and DeFi services. This ecosystem will connect a global community and drive blockchain adoption through transparent, user-friendly, and accessible Web3 applications.</p>
                 </div>
                 <div class="about-card fade-in" data-delay="700">
-                    <img src="/img/core-values.png" alt="Core Values Icon" class="card-icon">
+                    <img src="/img/core-values.png" alt="Core Values Icon">
                     <h3>Core Values</h3>
                     <p>Vina Network is guided by three core principles: transparency, innovation, and community empowerment. These values shape the way we build products, collaborate with partners, and grow the ecosystem—ensuring that every step forward benefits users and strengthens the future of Web3.</p>
                 </div>
                 <div class="about-card fade-in" data-delay="850">
-                    <img src="/img/stages.png" alt="Stages Icon" class="card-icon">
+                    <img src="/img/stages.png" alt="Stages Icon">
                     <h3>Development Roadmap</h3>
                     <p>Vina Network is developing a strategic roadmap that begins with building a strong community and foundational platform. It will gradually launch core products such as a Web3 wallet, DEX, and stablecoin protocol, while expanding into areas like NFT, GameFi, and educational partnerships - laying the groundwork for a robust and scalable Web3 ecosystem.</p>
                 </div>
