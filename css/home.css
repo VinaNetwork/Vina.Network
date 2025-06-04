@@ -1,15 +1,9 @@
 /* Common Section Styles */
-section h1,
 section h2,
-section h3 {
-    text-align: center;
-}
-
-section h2 {color: #1a1a1a;}
-
 section h3 {
     color: #007bff;
     transition: color 0.3s ease;
+    text-align: center;
 }
 
 /* Hero Section */
