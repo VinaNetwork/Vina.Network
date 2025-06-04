@@ -45,6 +45,7 @@ error_log("nft-holders.php loaded"); // Debug
 
                 echo "<div class='result-section'>";
                 echo "<h3>Results</h3>";
+                echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
                 echo "<p class='result-info'>Total Holders: $total_holders (Page $page)</p>";
                 echo "<ul class='holders-list'>";
                 foreach ($paginated_holders as $holder) {
@@ -72,7 +73,7 @@ error_log("nft-holders.php loaded"); // Debug
                 }
                 echo "</div>";
                 echo "</div>";
-                error_log("nft-holders.php: Retrieved $total_holders holders, page $page"); // Debug
+                error_log("nft-holders.php: Retrieved $total_holders holders, page $page for address $mintAddress"); // Debug
             } else {
                 echo "<div class='result-error'><p>No holders found or invalid collection address.</p></div>";
                 error_log("nft-holders.php: No holders found for $mintAddress"); // Debug
@@ -93,35 +94,6 @@ error_log("nft-holders.php loaded"); // Debug
 
 <?php
 function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
-    // Kiểm tra xem mintAddress có phải là collection address không
-    $assetData = callHeliusAPI('getAsset', ['id' => $mintAddress], 'POST');
-    
-    error_log("nft-holders.php: Checking if $mintAddress is a collection address"); // Debug
-    
-    if (isset($assetData['error'])) {
-        error_log("nft-holders.php: getAsset error - {$assetData['error']}"); // Debug
-        return ['error' => $assetData['error']];
-    }
-    
-    // Kiểm tra xem có phải là collection address không
-    if (!isset($assetData['result']) || !isset($assetData['result']['grouping'])) {
-        error_log("nft-holders.php: No grouping found for $mintAddress"); // Debug
-        return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-    }
-    
-    $isCollection = false;
-    foreach ($assetData['result']['grouping'] as $group) {
-        if ($group['group_key'] === 'collection' && $group['group_value'] === $mintAddress) {
-            $isCollection = true;
-            break;
-        }
-    }
-    
-    if (!$isCollection) {
-        error_log("nft-holders.php: $mintAddress is not a collection address"); // Debug
-        return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-    }
-    
     // Gọi Helius API để lấy holders
     $params = [
         'groupKey' => 'collection',
@@ -136,7 +108,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
     
     if (isset($data['error'])) {
         error_log("nft-holders.php: getAssetsByGroup error - {$data['error']}"); // Debug
-        return ['error' => $data['error']];
+        return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
     }
     
     if (isset($data['result']['items']) && !empty($data['result']['items'])) {
@@ -153,7 +125,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
         ];
     }
     
-    error_log("nft-holders.php: No holders found for collection $mintAddress"); // Debug
-    return ['error' => 'No holders found for this collection address.'];
+    error_log("nft-holders.php: No holders found for address $mintAddress"); // Debug
+    return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
 }
 ?>
