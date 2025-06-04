@@ -47,13 +47,16 @@ error_log("nft-holders.php loaded"); // Debug
                 echo "<h3>Results</h3>";
                 echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
                 echo "<p class='result-info'>Total Holders: $total_holders (Page $page)</p>";
-                echo "<ul class='holders-list'>";
+                echo "<table class='holders-table'>";
+                echo "<thead><tr><th>Address</th><th>Amount</th></tr></thead>";
+                echo "<tbody>";
                 foreach ($paginated_holders as $holder) {
                     $address = htmlspecialchars($holder['owner'] ?? 'N/A');
                     $amount = htmlspecialchars($holder['amount'] ?? 'N/A');
-                    echo "<li>$address - Amount: $amount</li>";
+                    echo "<tr><td>$address</td><td>$amount</td></tr>";
                 }
-                echo "</ul>";
+                echo "</tbody>";
+                echo "</table>";
 
                 // Phân trang
                 echo "<div class='pagination-btn'>";
