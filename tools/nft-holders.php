@@ -14,9 +14,9 @@ error_log("nft-holders.php loaded"); // Debug
 <div class="nft-holders-content">
     <div class="nft-checkbox">
         <h2>Check NFT Holders</h2>
-        <p>Enter the address of the NFT to see the number of holders and their wallet addresses.</p>
+        <p>Enter the <strong>On-chain Collection</strong> address of the NFT collection to see the number of holders and their wallet addresses. Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
-            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter On-chain Collection Address (e.g., C7on9fL8YFp5W6M7a6SvehMKBppauZXu2eYDTZG4BN2i)" required>
             <button type="submit">Check Holders</button>
         </form>
     </div>
@@ -30,7 +30,7 @@ error_log("nft-holders.php loaded"); // Debug
 
         // Kiểm tra định dạng mint address
         if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-            echo "<div class='result-error'><p>Invalid mint address. Please enter a valid Solana mint address (32-44 characters, base58).</p></div>";
+            echo "<div class='result-error'><p>Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).</p></div>";
             error_log("nft-holders.php: Invalid mint address format - $mintAddress"); // Debug
         } else {
             // Gọi Helius API
@@ -74,7 +74,7 @@ error_log("nft-holders.php loaded"); // Debug
                 echo "</div>";
                 error_log("nft-holders.php: Retrieved $total_holders holders, page $page"); // Debug
             } else {
-                echo "<div class='result-error'><p>No holders found or invalid mint address.</p></div>";
+                echo "<div class='result-error'><p>No holders found or invalid collection address.</p></div>";
                 error_log("nft-holders.php: No holders found for $mintAddress"); // Debug
             }
         }
@@ -84,9 +84,9 @@ error_log("nft-holders.php loaded"); // Debug
     <div class="feature-description">
         <h3>About NFT Holders Checker</h3>
         <p>
-            The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT by entering its mint address. 
-            It retrieves a list of wallet addresses that currently hold the NFT, with pagination to browse through the results easily. 
-            This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of an NFT on the Solana blockchain.
+            The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT collection by entering its On-chain Collection address. 
+            It retrieves a list of wallet addresses that currently hold NFTs in the collection, with pagination to browse through the results easily. 
+            This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of a collection on the Solana blockchain.
         </p>
     </div>
 </div>
@@ -101,7 +101,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
         'limit' => $size
     ];
     
-    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress}, offset: ${offset}, size: ${size}, page: {$params['page']}"); // Debug
+    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}"); // Debug
     
     $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
     
@@ -123,6 +123,6 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
         ];
     }
     
-    return ['error' => 'No holders found for this mint address.'];
+    return ['error' => 'No holders found for this collection address.'];
 }
 ?>
