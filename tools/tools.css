@@ -4,9 +4,8 @@
     max-width: 1000px;
 }
 
-.tools-content {
-    padding: 20px;
-}
+.tools-content {padding: 20px;}
+.tools-title {text-algin: center;}
 
 /* Tab điều hướng */
 .tools-tabs {
