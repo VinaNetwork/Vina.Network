@@ -73,7 +73,7 @@ function callSolscanAPI($endpoint, $params = []) {
     
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer $api_key",
+        "token: $api_key", // Sửa từ Authorization: Bearer
         "Content-Type: application/json"
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
