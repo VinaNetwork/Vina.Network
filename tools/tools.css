@@ -110,7 +110,7 @@
 
 .holders-table th,
 .holders-table td {
-    padding: 10px 5px;
+    padding: 10px;
     border: 1px solid #ddd;
     text-align: left;
 }
@@ -128,7 +128,7 @@
 
 .holders-table td:last-child {
     text-align: center;
-    width: 60px;
+    max-width: 60px;
 }
 
 .transaction-table,
@@ -247,12 +247,12 @@
     }
     
     .holders-table td:last-child {
-        width: 30px; /* Giảm chiều rộng cột Amount */
+        max-width: 30px; /* Giảm chiều rộng cột Amount */
     }
     .page-btn,
     .active-page {
         padding: 6px 12px;
     }
-    .result-section {padding: 10px;}
+    
     .nft-checkbox {padding: 15px;}
 }
