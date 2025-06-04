@@ -108,6 +108,7 @@
     border-collapse: collapse;
     background: #fff;
     width: 100%;
+    table-layout: fixed; /* Kiểm soát chiều rộng cột */
 }
 
 .holders-table th,
@@ -125,13 +126,13 @@
 .holders-table td:first-child {
     overflow-wrap: break-word;
     word-break: break-all;
-    max-width: 0; /* Cho phép cột Address chiếm không gian tối đa */
-    width: 80%; /* Đảm bảo cột Address rộng hơn */
+    white-space: normal; /* Buộc ngắt dòng */
+    max-width: 500px; /* Giới hạn chiều rộng ô */
 }
 
 .holders-table td:last-child {
     text-align: center;
-    width: 20%; /* Cột Amount nhỏ hơn */
+    width: 100px; /* Cột Amount cố định */
 }
 
 .transaction-table,
@@ -243,9 +244,7 @@
     .holders-table,
     .transaction-table,
     .nft-transaction-results table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
+        width: 100%; /* Đảm bảo không vượt khung */
     }
     .holders-table th,
     .holders-table td,
@@ -254,6 +253,12 @@
     .nft-transaction-results td {
         padding: 5px;
         min-width: 100px;
+    }
+    .holders-table td:first-child {
+        max-width: 250px; /* Giảm chiều rộng trên di động */
+    }
+    .holders-table td:last-child {
+        width: 80px; /* Giảm chiều rộng cột Amount */
     }
     .page-btn,
     .active-page {
