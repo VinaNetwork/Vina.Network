@@ -12,7 +12,6 @@ include $config_path;
 
 // Hàm gọi API Helius
 function callHeliusAPI($endpoint, $params = [], $method = 'POST') {
-    global $helius_api_key; // Xóa định nghĩa trực tiếp, dùng hằng số từ config
     $url = "https://api.helius.xyz/v0/{$endpoint}?api-key=" . HELIUS_API_KEY;
 
     $ch = curl_init();
@@ -67,15 +66,15 @@ function callSolscanAPI($endpoint, $params = []) {
         $url .= '?' . http_build_query($params);
     }
     
-    $api_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3NDg1MDAxMDUzODcsImVtYWlsIjoibjl1OTNuMUBnbWFpbC5jb20iLCJhY3Rpb24iOiJ0b2tlbi1hcGkiLCJhcGlWZXJzaW9uIjoidjIiLCJpYXQiOjE3NDg1MDAxMDV9.yCQy7KZHUdQXBWG7bmSpb5I3vbRBghDQZaG0tH6D3QE'; // Thay bằng key từ pro-api.solscan.io
+    $api_key = SOLSCAN_API_KEY; // Sử dụng hằng số từ config.php
     $server_ip = gethostbyname(gethostname()); // Debug IP
     error_log("api-helper.php: Server IP: $server_ip"); // Debug IP
-    error_log("api-helper.php: Calling Solscan API - URL: $url"); // Debug
+    error_log("api-helper.php: Calling Solscan API - URL: $url, Key: " . substr($api_key, 0, 10) . "..."); // Debug, che một phần API Key
     
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         "Authorization: Bearer $api_key",
-        "Content-Type: application/json" // Thêm Content-Type để chuẩn hóa
+        "Content-Type: application/json"
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
