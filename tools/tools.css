@@ -105,7 +105,6 @@ h2 {
     border-collapse: collapse;
     background: #fff;
     width: 100%;
-    table-layout: fixed; /* Kiểm soát chiều rộng cột */
 }
 
 .holders-table th,
@@ -114,11 +113,7 @@ h2 {
     border: 1px solid #ddd;
 }
 
-.holders-table th {
-    background: #f4f4f4;
-    font-weight: bold;
-    padding: 10px;
-}
+.holders-table th {background: #c3c7c4;}
 
 .holders-table td:first-child {
     overflow-wrap: break-word;
@@ -128,7 +123,6 @@ h2 {
 
 .holders-table td:last-child {
     text-align: center;
-    max-width: 60px;
 }
 
 .transaction-table,
@@ -238,12 +232,8 @@ h2 {
     .transaction-table td,
     .nft-transaction-results td {
         padding: 5px;
-        min-width: 100px;
     }
     
-    .holders-table td:last-child {
-        max-width: 30px; /* Giảm chiều rộng cột Amount */
-    }
     .page-btn,
     .active-page {
         padding: 6px;
