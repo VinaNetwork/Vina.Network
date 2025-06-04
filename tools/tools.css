@@ -81,12 +81,11 @@
 }
 
 .tool-content button {
-    padding: 10px 20px;
-    font-size: 1em;
+    padding: 10px;
     background: #007bff;
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -145,7 +144,7 @@
 .transaction-table td,
 .nft-transaction-results th,
 .nft-transaction-results td {
-    padding: 10px 5px;
+    padding: 10px;
     border: 1px solid #ddd;
     text-align: left;
 }
@@ -168,12 +167,7 @@
 }
 
 /* Kết quả */
-.result-section {
-    background: #f9f9f9;
-    padding: 15px;
-    border-radius: 5px;
-    margin-top: 20px;
-}
+.result-section {margin: 20px 0;}
 
 .result-info {
     color: #333;
@@ -187,7 +181,7 @@
     color: #c62828;
     padding: 12px;
     border-radius: 5px;
-    margin-top: 10px;
+    margin: 20px 0;
 }
 
 /* Phân trang */
