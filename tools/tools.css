@@ -1,18 +1,12 @@
 /* Cấu trúc chung */
 .tools-section {
-    padding: 72px 0 0;
+    margin-top: 72px;
     text-align: center;
     max-width: 1000px;
-    margin: 0 auto;
 }
 
 .tools-content {
     padding: 20px;
-}
-
-.note {
-    text-align: left;
-    font-style: italic;
 }
 
 .feature-description {
@@ -209,7 +203,10 @@
 
 /* Responsive */
 @media screen and (max-width: 768px) {
-    .tools-section {margin-top: 64px;}
+    .tools-section {
+        margin-top: 64px;
+        max-width: 100%;
+    }
     .tools-tabs {
         gap: 10px;
         flex-direction: row;
@@ -225,8 +222,6 @@
     .holders-list,
     .transaction-table,
     .nft-transaction-results table {
-        width: 95%;
-        font-size: 0.9em;
         display: block;
         overflow-x: auto;
         white-space: nowrap;
