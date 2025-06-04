@@ -14,9 +14,9 @@ error_log("nft-holders.php loaded"); // Debug
 <div class="nft-holders-content">
     <div class="nft-checkbox">
         <h2>Check NFT Holders</h2>
-        <p>Enter the <strong>On-chain Collection</strong> address of the NFT collection to see the number of holders and their wallet addresses. Find this address on MagicEden under "Details" > "On-chain Collection".</p>
+        <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
-            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter On-chain Collection Address (e.g., C7on9fL8YFp5W6M7a6SvehMKBppauZXu2eYDTZG4BN2i)" required>
+            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required>
             <button type="submit">Check Holders</button>
         </form>
     </div>
