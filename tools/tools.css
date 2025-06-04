@@ -161,6 +161,13 @@
     margin-top: 20px;
 }
 
+.result-info {
+    color: #333;
+    overflow-wrap: break-word; /* Ngắt dòng tự động cho văn bản dài */
+    word-break: break-all; /* Đảm bảo ngắt ở mọi ký tự nếu cần */
+    max-width: 100%; /* Giới hạn chiều rộng */
+}
+
 .result-error {
     background: #ffebee;
     color: #c62828;
