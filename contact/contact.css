@@ -1,18 +1,11 @@
 /* Contact Info Section */
 .contact-info {
-    padding-top: 72px;
-    background: linear-gradient(135deg, #f4f7fc, #e8f0fe);
+    margin-top: 72px;
     text-align: center;
 }
-.info-content {
-    margin: 20px;
-}
-.info-content h1 {
-    font-weight: 600;
-    color: #4a90e2;
-}
+.info-content {padding: 20px;}
+.info-content h1 {color: #4a90e2;}
 .contact-methods {
-    margin-top: 20px;
     display: flex;
     justify-content: center;
     gap: 30px;
@@ -35,16 +28,9 @@
     color: #ff6f91;
     margin-bottom: 15px;
 }
-.method-card h2 {
-    font-weight: 600;
-    color: #4a90e2;
-}
-.method-card p {
-    font-weight: 400;
-    color: #666;
-}
+.method-card h2 {color: #4a90e2;}
+.method-card p {color: #666;}
 .method-card a {
-    font-weight: 600;
     color: #ff6f91;
     transition: color 0.3s;
 }
@@ -54,6 +40,6 @@
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-    .contact-info { padding-top: 64px; }
+    .contact-info { margin-top: 64px; }
     .method-card { width: 100%; }
 }
