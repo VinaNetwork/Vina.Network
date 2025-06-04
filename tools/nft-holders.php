@@ -44,7 +44,7 @@ error_log("nft-holders.php loaded"); // Debug
                 $paginated_holders = $holders_data['holders'];
 
                 echo "<div class='result-section'>";
-                echo "<h3>Results</h3>";
+                echo "<h2>Results</h2>";
                 echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
                 echo "<p class='result-info'>Total Holders: $total_holders (Page $page)</p>";
                 echo "<table class='holders-table'>";
@@ -86,7 +86,7 @@ error_log("nft-holders.php loaded"); // Debug
     ?>
 
     <div class="feature-description">
-        <h3>About NFT Holders Checker</h3>
+        <h2>About NFT Holders Checker</h2>
         <p>
             The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT collection by entering its On-chain Collection address. 
             It retrieves a list of wallet addresses that currently hold NFTs in the collection, with pagination to browse through the results easily. 
