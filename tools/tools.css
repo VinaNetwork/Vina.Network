@@ -126,13 +126,12 @@
 .holders-table td:first-child {
     overflow-wrap: break-word;
     word-break: break-all;
-    white-space: normal; /* Buộc ngắt dòng */
-    max-width: 500px; /* Giới hạn chiều rộng ô */
+    white-space: normal;
 }
 
 .holders-table td:last-child {
     text-align: center;
-    width: 100px; /* Cột Amount cố định */
+    width: 60px;
 }
 
 .transaction-table,
@@ -254,11 +253,9 @@
         padding: 5px;
         min-width: 100px;
     }
-    .holders-table td:first-child {
-        max-width: 250px; /* Giảm chiều rộng trên di động */
-    }
+    
     .holders-table td:last-child {
-        width: 80px; /* Giảm chiều rộng cột Amount */
+        width: 30px; /* Giảm chiều rộng cột Amount */
     }
     .page-btn,
     .active-page {
