@@ -164,8 +164,6 @@ h2 {
 }
 
 /* Kết quả */
-.result-section {margin: 20px 0;}
-
 .result-info {
     overflow-wrap: break-word;
     word-break: break-all;
@@ -194,8 +192,7 @@ h2 {
 
 .page-btn,
 .active-page {
-    padding: 8px;
-    font-size: 1em;
+    padding: 6px 12px;
     background: #007bff;
     color: #fff;
     border: none;
