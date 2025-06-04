@@ -45,7 +45,6 @@ error_log("nft-holders.php loaded"); // Debug
 
                 echo "<div class='result-section'>";
                 echo "<h3>Results</h3>";
-                echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
                 echo "<p class='result-info'>Total Holders: $total_holders (Page $page)</p>";
                 echo "<ul class='holders-list'>";
                 foreach ($paginated_holders as $holder) {
