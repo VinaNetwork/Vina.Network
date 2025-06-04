@@ -51,7 +51,7 @@ error_log("nft-holders.php loaded"); // Debug
                 foreach ($paginated_holders as $holder) {
                     $address = htmlspecialchars($holder['owner'] ?? 'N/A');
                     $amount = htmlspecialchars($holder['amount'] ?? 'N/A');
-                    echo "<li>Owner: $address - Amount: $amount</li>";
+                    echo "<li>$address - Amount: $amount</li>";
                 }
                 echo "</ul>";
 
