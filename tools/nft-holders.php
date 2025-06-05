@@ -6,17 +6,17 @@ ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-include 'tools/api-helper.php';
+include 'api-helper.php';
 
 error_log("nft-holders.php loaded"); // Debug
 ?>
 
-<div class="nftters-content">
+<div class="nft-holders-content">
     <div class="nft-checkbox">
         <h2>Check NFT Holders</h2>
         <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
-            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT collection address" required>
+            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required>
             <button type="submit">Check Holders</button>
         </form>
     </div>
@@ -25,7 +25,7 @@ error_log("nft-holders.php loaded"); // Debug
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         $mintAddress = trim($_POST['mintAddress']);
         $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
-        $holders_per_page = 50; // Số holders mỗi trang
+        $holders_per_page = 10;
         $offset = ($page - 1) * $holders_per_page;
 
         // Kiểm tra định dạng mint address
@@ -43,19 +43,15 @@ error_log("nft-holders.php loaded"); // Debug
                 $total_holders = $holders_data['total'];
                 $paginated_holders = $holders_data['holders'];
 
-                // Tính số holders hiển thị đến trang hiện tại
-                $current_holders = min($page * $holders_per_page, $total_holders);
-                $percentage = number_format(($current_holders / $total_holders) * 100, 1);
-
                 echo "<div class='result-section'>";
                 echo "<h2>Results</h2>";
-                echo "<p class='result-info'>Checking address: <span>" . htmlspecialchars($mintAddress) . "</span></p>";
-                echo "<p class='result-info'>Owners: $current_holders/$total_holders ($percentage%) (Page $page)</p>";
+                echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
+                echo "<p class='result-info'>Total Holders: $total_holders (Page $page)</p>";
                 echo "<table class='holders-table'>";
-                echo "<tr><th>Address</th><th>Amount</th></tr>";
+                echo "<thead><tr><th>Address</th><th>Amount</th></tr></thead>";
                 echo "<tbody>";
                 foreach ($paginated_holders as $holder) {
-                    $address = htmlspecialchars($holder['owner'] ?? '');
+                    $address = htmlspecialchars($holder['owner'] ?? 'N/A');
                     $amount = htmlspecialchars($holder['amount'] ?? 'N/A');
                     echo "<tr><td>$address</td><td>$amount</td></tr>";
                 }
@@ -68,42 +64,22 @@ error_log("nft-holders.php loaded"); // Debug
                 if ($page > 1) {
                     echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-btn'>Previous</button></form>";
                 }
-                $max_pages_to_show = 10; // Giới hạn số trang hiển thị
-                $start_page = max(1, $page - floor($max_pages_to_show / 2));
-                $end_page = min($total_pages, $start_page + $max_pages_to_show - 2);
-                if ($end_page - $start_page < $max_pages_to_show - 1 && $total_pages > $max_pages_to_show) {
-                    $start_page = max(1, $end_page - $max_pages_to_show + 1);
-                }
-
-                if ($start_page > 1) {
-                    echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-btn'>1</button></form>";
-                    if ($start_page > 2) {
-                        echo "<span class='page-btn'>...</span>";
-                    }
-                }
-
-                for ($i = $start_page; $i <= $end_page; $i++) {
+                for ($i = 1; $i <= $total_pages; $i++) {
                     if ($i === $page) {
                         echo "<span class='page-btn active'>$i</span>";
                     } else {
                         echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit' class='page-btn'>$i</button></form>";
                     }
                 }
-
-                if ($end_page < $total_pages) {
-                    if ($end_page < $total_pages - 1) {
-                        echo "<span class='page-btn'>...</span>";
-                    }
-                    echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-btn'>$total_pages</button></form>";
-                }
                 if ($page < $total_pages) {
                     echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-btn'>Next</button></form>";
                 }
                 echo "</div>";
+                echo "</div>";
                 error_log("nft-holders.php: Retrieved $total_holders holders, page $page for address $mintAddress"); // Debug
             } else {
                 echo "<div class='result-error'><p>No holders found or invalid collection address.</p></div>";
-                error_log("nft-holders.php: No owners found for address $mintAddress"); // Debug
+                error_log("nft-holders.php: No holders found for $mintAddress"); // Debug
             }
         }
     }
@@ -120,7 +96,7 @@ error_log("nft-holders.php loaded"); // Debug
 </div>
 
 <?php
-function getNFTHolders($mintAddress, $offset = 0, $size = 50) { // Số holders mỗi trang
+function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
     // Gọi Helius API để lấy holders
     $params = [
         'groupKey' => 'collection',
