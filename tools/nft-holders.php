@@ -8,13 +8,6 @@ error_reporting(E_ALL);
 
 include 'api-helper.php';
 
-session_start(); // Bắt đầu session
-// Xóa cache session cho mintAddress để đảm bảo lấy total mới
-if (isset($_POST['mintAddress'])) {
-    $mintAddress = trim($_POST['mintAddress']);
-    unset($_SESSION['total_holders'][$mintAddress]);
-}
-
 error_log("nft-holders.php loaded"); // Debug
 ?>
 
@@ -31,6 +24,7 @@ error_log("nft-holders.php loaded"); // Debug
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
+            $mintAddress = trim($_POST['mintAddress']);
             error_log("nft-holders.php: Form submitted with mintAddress=$mintAddress"); // Debug
 
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
@@ -47,7 +41,7 @@ error_log("nft-holders.php loaded"); // Debug
                     'groupKey' => 'collection',
                     'groupValue' => $mintAddress,
                     'page' => 1,
-                    'limit' => 50 // Đảm bảo total đúng
+                    'limit' => 1000 // Tăng limit để đảm bảo total đúng
                 ];
                 $total_data = callHeliusAPI('getAssetsByGroup', $total_params, 'POST');
                 error_log("nft-holders.php: Total API response - " . json_encode($total_data)); // Debug
@@ -59,9 +53,12 @@ error_log("nft-holders.php loaded"); // Debug
                     $total_holders = $total_data['result']['total'] ?? 0;
                     error_log("nft-holders.php: Total holders = $total_holders for $mintAddress"); // Debug
 
-                    if ($total_holders <= 1) {
-                        echo "<div class='result-error'><p>Collection has $total_holders holder(s). This may be incorrect. Please verify the collection address.</p></div>";
-                        error_log("nft-holders.php: Suspiciously low total_holders ($total_holders) for $mintAddress"); // Debug
+                    if ($total_holders === 0) {
+                        echo "<div class='result-error'><p>No holders found or invalid collection address.</p></div>";
+                        error_log("nft-holders.php: Zero holders for $mintAddress"); // Debug
+                    } elseif ($total_holders == $holders_per_page) {
+                        echo "<div class='result-error'><p>Warning: Total holders ($total_holders) equals page size. This may be incorrect. Please verify the collection address.</p></div>";
+                        error_log("nft-holders.php: Suspicious total_holders ($total_holders) equals holders_per_page for $mintAddress"); // Debug
                     }
 
                     // Gọi API để lấy holders cho trang hiện tại
