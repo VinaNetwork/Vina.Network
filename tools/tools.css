@@ -175,11 +175,13 @@ h2 {
     justify-content: center;
     align-items: center;
     gap: 8px;
-    margin: 0 auto;
+    margin: 20px 0;
 }
 
 .page-form {
-    display: inline-block;
+    display: inline-flex; /* Thay inline-block để căn giữa tốt hơn */
+    align-items: center;
+    margin: 0; /* Loại bỏ margin thừa */
 }
 
 .page-btn {
@@ -190,6 +192,11 @@ h2 {
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.2s;
+    min-height: 32px; /* Đảm bảo chiều cao đồng đều */
+    line-height: 1.5; /* Căn giữa chữ theo chiều dọc */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .page-btn:hover {
@@ -209,6 +216,11 @@ h2 {
     border: none;
     color: #333;
     cursor: default;
+    min-height: 32px; /* Đồng bộ chiều cao với .page-btn */
+    line-height: 1.5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Responsive */
@@ -242,14 +254,15 @@ h2 {
         padding: 5px;
     }
     
+    .nft-checkbox {padding: 15px;}
+
     .page-btn {
         padding: 5px 8px;
         font-size: 14px;
+        min-height: 28px; /* Giảm chiều cao trên mobile */
     }
-    
     .page-btn.ellipsis {
         padding: 5px;
+        min-height: 28px; /* Đồng bộ với .page-btn */
     }
-    
-    .nft-checkbox {padding: 15px;}
 }
