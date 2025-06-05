@@ -63,7 +63,6 @@ error_log("nft-holders.php loaded"); // Debug
                     $total_holders += $item_count;
                     error_log("nft-holders.php: Page $api_page added $item_count holders, total_holders = $total_holders"); // Debug
 
-                    // Nếu số items nhỏ hơn limit, không còn trang nào nữa
                     if ($item_count < $limit) {
                         $has_more = false;
                     } else {
@@ -110,22 +109,49 @@ error_log("nft-holders.php loaded"); // Debug
                     echo "</tbody>";
                     echo "</table>";
 
-                    // Phân trang
+                    // Phân trang style [1] ... [Previous] <current> [Next] ... [<last>]
                     echo "<div class='pagination-btn'>";
                     $total_pages = ceil($total_holders / $holders_per_page);
+
+                    // Nút [1]
+                    if ($page > 1) {
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-btn'>1</button></form>";
+                    } else {
+                        echo "<span class='page-btn active'>1</span>";
+                    }
+
+                    // Dấu "..." nếu trang hiện tại > 2
+                    if ($page > 2) {
+                        echo "<span class='page-btn ellipsis'>...</span>";
+                    }
+
+                    // Nút Previous
                     if ($page > 1) {
                         echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-btn'>Previous</button></form>";
                     }
-                    for ($i = 1; $i <= $total_pages; $i++) {
-                        if ($i === $page) {
-                            echo "<span class='page-btn active'>$i</span>";
-                        } else {
-                            echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit' class='page-btn'>$i</button></form>";
-                        }
+
+                    // Nút trang hiện tại (chỉ hiển thị trang này)
+                    if ($page > 1 && $page < $total_pages) {
+                        echo "<span class='page-btn active'>$page</span>";
                     }
+
+                    // Nút Next
                     if ($page < $total_pages) {
                         echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-btn'>Next</button></form>";
                     }
+
+                    // Dấu "..." nếu trang hiện tại < total_pages - 1
+                    if ($page < $total_pages - 1) {
+                        echo "<span class='page-btn ellipsis'>...</span>";
+                    }
+
+                    // Nút [<last>]
+                    if ($page < $total_pages) {
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-btn'>$total_pages</button></form>";
+                    } else {
+                        echo "<span class='page-btn active'>$total_pages</span>";
+                    }
+
                     echo "</div>";
                     echo "</div>";
                     error_log("nft-holders.php: Retrieved " . count($paginated_holders) . " holders, page $page for address $mintAddress"); // Debug
