@@ -169,9 +169,10 @@ h2 {
 }
 
 /* Phân trang */
-.pagination {
+.pagination-btn {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 8px;
     margin: 20px 0;
 }
@@ -180,22 +181,32 @@ h2 {
     display: inline-block;
 }
 
-.page-btn,
-.active-page {
+.page-btn {
     padding: 6px 12px;
-    background: #007bff;
-    color: #fff;
-    border: none;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.2s;
 }
 
 .page-btn:hover {
-    background: #0056b3;
+    background: #f0f0f0;
 }
 
-.active-page {
+.page-btn.active {
+    background: #007bff;
+    color: #fff;
+    border-color: #007bff;
+    cursor: default;
+}
+
+.page-btn.ellipsis {
+    padding: 6px;
+    background: none;
+    border: none;
+    color: #333;
     cursor: default;
 }
 
@@ -220,7 +231,7 @@ h2 {
     .holders-table,
     .transaction-table,
     .nft-transaction-results table {
-        width: 100%; /* Đảm bảo không vượt khung */
+        width: 100%;
     }
     .holders-table th,
     .holders-table td,
@@ -230,9 +241,13 @@ h2 {
         padding: 5px;
     }
     
-    .page-btn,
-    .active-page {
-        padding: 6px;
+    .page-btn {
+        padding: 5px 8px;
+        font-size: 14px;
+    }
+    
+    .page-btn.ellipsis {
+        padding: 5px;
     }
     
     .nft-checkbox {padding: 15px;}
