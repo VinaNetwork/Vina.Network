@@ -25,7 +25,7 @@ error_log("nft-holders.php loaded"); // Debug
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         $mintAddress = trim($_POST['mintAddress']);
         $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
-        $holders_per_page = 10;
+        $holders_per_page = 50; // Tăng từ 10 lên 50
         $offset = ($page - 1) * $holders_per_page;
 
         // Kiểm tra định dạng mint address
@@ -96,7 +96,7 @@ error_log("nft-holders.php loaded"); // Debug
 </div>
 
 <?php
-function getNFTHolders($mintAddress, $offset = 0, $size = 10) {
+function getNFTHolders($mintAddress, $offset = 0, $size = 50) { // Tăng từ 10 lên 50
     // Gọi Helius API để lấy holders
     $params = [
         'groupKey' => 'collection',
