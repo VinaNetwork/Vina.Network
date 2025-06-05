@@ -7,8 +7,7 @@ h2 {
 .tools-section {margin-top: 72px;}
 .tools-content {
     max-width: 1000px;
-    background: #dcdbdb;
-    padding: 20px;
+    padding: 40px;
     margin: 0 auto;
 }
 
@@ -23,40 +22,42 @@ h2 {
 }
 
 .tools-tabs::-webkit-scrollbar {
-    height: 5px;
+    height: 4px;
 }
 
 .tools-tabs::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 5px;
+    background: #007bff;
+    border-radius: 4px;
 }
 
 .tools-tabs::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #333;
 }
 
-.tab-link {
+.nav-link {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     padding: 10px 20px;
-    color: #333;
+    color: #007bff;
     border-bottom: 2px solid transparent;
     transition: all 0.3s;
     flex-shrink: 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
 }
 
-.tab-link i {
+.nav-link i {
     font-size: 1.2em;
 }
 
-.tab-link:hover,
-.tab-link.active {
+.nav-link:hover,
+.nav-link.active {
     color: #007bff;
-    border-bottom-color: #007bff;
+    border-bottom: 2px solid #007bff;
 }
 
-.tab-link.active {
+.nav-link.active {
     font-weight: bold;
 }
 
@@ -71,18 +72,25 @@ h2 {
 .tool-content input {
     padding: 10px;
     width: 600px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: #333;
+    background-color: #f8f9fa;
 }
 
 .tool-content button {
-    padding: 10px;
+    padding: 10px 20px;
     background: #007bff;
     color: #fff;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
     transition: background 0.2s;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 .tool-content button:hover {
@@ -102,15 +110,24 @@ h2 {
     border-collapse: collapse;
     background: #fff;
     width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .holders-table th,
 .holders-table td {
     padding: 10px;
     border: 1px solid #ddd;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
 }
 
-.holders-table th {background: #c3c7c4;}
+.holders-table th {
+    background: #007bff;
+    color: #fff;
+    font-weight: 600;
+}
 
 .holders-table td:first-child {
     overflow-wrap: break-word;
@@ -127,6 +144,10 @@ h2 {
     margin: 20px auto;
     border-collapse: collapse;
     background: #fff;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .transaction-table th,
@@ -135,22 +156,29 @@ h2 {
 .nft-transaction-results td {
     padding: 10px;
     border: 1px solid #ddd;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
 }
 
 .transaction-table th {
     background: #007bff;
     color: #fff;
+    font-weight: 600;
 }
 
 .nft-transaction-results th {
     background: #f4f4f4;
+    font-weight: 600;
 }
 
 .transaction-table a {
     color: #007bff;
+    text-decoration: none;
+    transition: color 0.2s;
 }
 
 .transaction-table a:hover {
+    color: #0056b3;
     text-decoration: underline;
 }
 
@@ -159,14 +187,21 @@ h2 {
     overflow-wrap: break-word;
     word-break: break-all;
     max-width: 100%;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: #333;
+    margin: 10px 0;
 }
 
 .result-error {
     background: #ffebee;
     color: #c62828;
     padding: 12px;
-    border-radius: 5px;
+    border-radius: 10px;
     margin: 20px 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    border: 1px solid #ef9a9a;
 }
 
 /* Phân trang */
@@ -179,9 +214,10 @@ h2 {
 }
 
 .page-form {
-    display: inline-flex; /* Thay inline-block để căn giữa tốt hơn */
+    display: inline-flex;
     align-items: center;
-    margin: 0; /* Loại bỏ margin thừa */
+    vertical-align: middle;
+    margin: 0;
 }
 
 .page-btn {
@@ -192,11 +228,14 @@ h2 {
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.2s;
-    min-height: 32px; /* Đảm bảo chiều cao đồng đều */
-    line-height: 1.5; /* Căn giữa chữ theo chiều dọc */
-    display: inline-flex;
+    height: 32px;
+    display: flex;
     align-items: center;
     justify-content: center;
+    vertical-align: middle;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
 }
 
 .page-btn:hover {
@@ -211,16 +250,19 @@ h2 {
 }
 
 .page-btn.ellipsis {
-    padding: 6px;
+    padding: 6px 12px;
     background: none;
     border: none;
     color: #333;
     cursor: default;
-    min-height: 32px; /* Đồng bộ chiều cao với .page-btn */
-    line-height: 1.5;
-    display: inline-flex;
+    height: 32px;
+    display: flex;
     align-items: center;
     justify-content: center;
+    vertical-align: middle;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
 }
 
 /* Responsive */
@@ -252,17 +294,28 @@ h2 {
     .transaction-table td,
     .nft-transaction-results td {
         padding: 5px;
+        font-size: 12px;
     }
-    
-    .nft-checkbox {padding: 15px;}
-
     .page-btn {
         padding: 5px 8px;
-        font-size: 14px;
-        min-height: 28px; /* Giảm chiều cao trên mobile */
+        font-size: 12px;
+        height: 28px;
     }
     .page-btn.ellipsis {
-        padding: 5px;
-        min-height: 28px; /* Đồng bộ với .page-btn */
+        padding: 5px 8px;
+        height: 28px;
+    }
+    .nft-checkbox {
+        padding: 15px;
+    }
+    .tool-content input {
+        font-size: 14px;
+    }
+    .tool-content button {
+        font-size: 14px;
+    }
+    .result-info,
+    .result-error {
+        font-size: 14px;
     }
 }
