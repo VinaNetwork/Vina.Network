@@ -282,6 +282,7 @@ h2 {
     .tool-content input {
         width: 100%;
         max-width: 300px;
+        font-size: 14px;
     }
     .holders-table,
     .transaction-table,
@@ -296,6 +297,15 @@ h2 {
         padding: 5px;
         font-size: 12px;
     }
+    
+    .nft-checkbox {padding: 15px;}
+    
+    .tool-content button,
+    .result-info,
+    .result-error {
+        font-size: 14px;
+    }
+
     .page-btn {
         padding: 5px 8px;
         font-size: 12px;
@@ -304,18 +314,5 @@ h2 {
     .page-btn.ellipsis {
         padding: 5px 8px;
         height: 28px;
-    }
-    .nft-checkbox {
-        padding: 15px;
-    }
-    .tool-content input {
-        font-size: 14px;
-    }
-    .tool-content button {
-        font-size: 14px;
-    }
-    .result-info,
-    .result-error {
-        font-size: 14px;
     }
 }
