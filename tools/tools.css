@@ -7,6 +7,7 @@ h2 {
 .tools-section {margin-top: 72px;}
 .tools-content {
     max-width: 1000px;
+    background: #dcdbdb;
     padding: 20px;
     margin: 0 auto;
 }
