@@ -135,54 +135,54 @@ error_log("nft-holders.php loaded"); // Debug
                     echo "<thead><tr><th>Address</th><th>Amount</th></tr></thead>";
                     echo "<tbody>";
                     foreach ($paginated_holders as $holder) {
-                        $address = htmlspecialchars($holder['owner']);
-                        $amount = htmlspecialchars($holder['amount']);
+                        $address = htmlspecialchars($holder['owner'] ?? 'N/A');
+                        $amount = htmlspecialchars($holder['amount'] ?? 'N/A');
                         echo "<tr><td>$address</td><td>$amount</td></tr>";
                     }
                     echo "</tbody>";
                     echo "</table>";
 
-                    // Phân trang style [1] ... [Previous] [n] [Next] ... [<last>]
-                    echo "<div class='pagination-btn'>";
+                    // Phân trang style [1] ... [Previous] <current> [Next] ... [<last>]
+                    echo "<div class='pagination'>";
                     $total_pages = ceil($total_holders / $holders_per_page);
 
                     // Nút [1]
                     if ($page > 1) {
-                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number'>1</button></form>";
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' id='page-first'>1</button></form>";
                     } else {
-                        echo "<span class='page-button active' data-type='number'>1</span>";
+                        echo "<span class='page-button active' data-type='number' id='page-first-active'>1</span>";
                     }
 
                     // Dấu "..."
                     if ($page > 2) {
-                        echo "<span class='page-button ellipsis' data-type='ellipsis'>...</span>";
+                        echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-start'>...</span>";
                     }
 
                     // Nút Previous
                     if ($page > 1) {
-                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button long' data-type='nav'>Previous</button></form>";
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev'>Previous</button></form>";
                     }
 
                     // Nút trang hiện tại
                     if ($page > 1 && $page < $total_pages) {
-                        echo "<span class='page-button active' data-type='number'>$page</span>";
+                        echo "<span class='page-button active' data-type='number' id='page-current'>$page</span>";
                     }
 
                     // Nút Next
                     if ($page < $total_pages) {
-                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button long' data-type='nav'>Next</button></form>";
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next'>Next</button></form>";
                     }
 
                     // Dấu "..."
                     if ($page < $total_pages - 1) {
-                        echo "<span class='page-button ellipsis' data-type='ellipsis'>...</span>";
+                        echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-end'>...</span>";
                     }
 
                     // Nút [<last>]
                     if ($page < $total_pages) {
-                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number'>$total_pages</button></form>";
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' id='page-last'>$total_pages</button></form>";
                     } else {
-                        echo "<span class='page-button active' data-type='number'>$total_pages</span>";
+                        echo "<span class='page-button active' data-type='number' id='page-last-active'>$total_pages</span>";
                     }
 
                     echo "</div>";
