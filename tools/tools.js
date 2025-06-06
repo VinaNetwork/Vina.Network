@@ -1,9 +1,19 @@
 // public_html/tools/tools.js
 document.addEventListener('DOMContentLoaded', () => {
-    // Không cần đặt lại active tab, vì PHP đã xử lý đúng trong index.php
-    // Chỉ cuộn đến tab active trên di động
+    // Lấy tool từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const tool = urlParams.get('tool');
     const tabsContainer = document.querySelector('.tools-tabs');
-    const activeTab = document.querySelector('.tab-link.active');
+    let activeTab = document.querySelector('.tab-link.active');
+
+    // Nếu không có tab active (truy cập trực tiếp), kích hoạt tab dựa trên URL
+    if (!activeTab && tool) {
+        activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+        }
+    }
+
     if (tabsContainer && activeTab) {
         const tabRect = activeTab.getBoundingClientRect();
         const containerRect = tabsContainer.getBoundingClientRect();
