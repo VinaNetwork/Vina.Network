@@ -267,17 +267,19 @@ h2 {
 
 /* Export Section */
 .export-section {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
     margin: 20px 0;
 }
 
 .export-form {
     display: flex;
-    gap: 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.export-controls {
+    display: flex;
     align-items: center;
+    gap: 10px;
 }
 
 .export-format {
@@ -288,6 +290,9 @@ h2 {
     font-size: 14px;
     background-color: #f8f9fa;
     cursor: pointer;
+    height: 36px;
+    box-sizing: border-box;
+    min-width: 100px;
 }
 
 .export-btn {
@@ -300,6 +305,12 @@ h2 {
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
     transition: background 0.2s;
+    height: 36px;
+    box-sizing: border-box;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .export-btn:hover {
@@ -309,7 +320,7 @@ h2 {
 /* Progress Bar */
 .progress-container {
     margin: 10px 0;
-    text-align: center;
+    text-align: left;
 }
 
 .progress-bar {
@@ -319,7 +330,7 @@ h2 {
     background: #f0f0f0;
     border-radius: 10px;
     overflow: hidden;
-    margin: 10px auto;
+    margin: 10px 0;
 }
 
 .progress-bar-fill {
@@ -382,21 +393,26 @@ h2 {
     }
 
     .export-section {
-        flex-direction: column;
+        margin: 10px 0;
     }
 
     .export-form {
         flex-direction: column;
+        align-items: flex-start;
         width: 100%;
         max-width: 300px;
     }
 
-    .export-format {
+    .export-controls {
+        flex-direction: column;
         width: 100%;
+        gap: 8px;
     }
 
+    .export-format,
     .export-btn {
         width: 100%;
-        text-align: center;
+        min-width: unset;
+        height: 40px;
     }
 }
