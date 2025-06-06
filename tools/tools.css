@@ -265,6 +265,69 @@ h2 {
     font-size: 14px;
 }
 
+/* Export Section */
+.export-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.export-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.export-format {
+    padding: 8px;
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.export-btn {
+    padding: 8px 16px;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.export-btn:hover {
+    background: #218838;
+}
+
+/* Progress Bar */
+.progress-container {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    max-width: 600px;
+    height: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px auto;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: #28a745;
+    transition: width 0.3s ease;
+}
+
 /* Responsive */
 @media screen and (max-width: 768px) {
     .tools-section {
@@ -302,7 +365,9 @@ h2 {
     
     .tool-content button,
     .result-info,
-    .result-error {
+    .result-error,
+    .export-format,
+    .export-btn {
         font-size: 14px;
     }
 
@@ -314,5 +379,24 @@ h2 {
     .page-btn.ellipsis {
         padding: 5px 8px;
         height: 28px;
+    }
+
+    .export-section {
+        flex-direction: column;
+    }
+
+    .export-form {
+        flex-direction: column;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .export-format {
+        width: 100%;
+    }
+
+    .export-btn {
+        width: 100%;
+        text-align: center;
     }
 }
