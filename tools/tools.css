@@ -1,32 +1,14 @@
-/* Reset mặc định */
-* {box-sizing: border-box;}
-
-button, span, i {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-    font: inherit;
-    line-height: 1;
-    vertical-align: middle;
-    box-sizing: border-box;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-}
-
-/* Cấu trúc chung */
-h1.tools-title {text-align: center;}
+/* Cấu hình chung */
+h1.toolsContainer {text-align: center;}
 .tools-section {margin-top: 72px;}
 
 .tools-content {
     max-width: 1200px;
-    padding: 40px;
+    padding: 20px;
     margin: 0 auto;
-    min-width: 0;
 }
 
-/* Tab điều hướng */
+/* Tab điều chỉnh */
 div.tools-tabs {
     display: flex !important;
     gap: 20px;
@@ -41,21 +23,23 @@ div.tools-tabs::-webkit-scrollbar {
 }
 
 div.tools-tabs::-webkit-scrollbar-thumb {
-    background-color: #007bff;
+    background-color: #333;
     border-radius: 4px;
 }
 
 div.tools-tabs::-webkit-scrollbar-track {
-    background: #333;
+    background: #ddd;
 }
 
 .nav-link {
     display: flex;
     align-items: center;
+    justify-content: center; /* Căn giữa nội dung */
     gap: 10px;
     padding: 10px 20px;
+    position: relative; /* Để gạch dưới định vị */
     color: #007bff;
-    border-bottom: 2px solid transparent;
+    border-bottom: none; /* Xóa border-bottom cũ */
     transition: all 0.3s;
     flex-shrink: 0;
     font-family: 'Poppins', sans-serif;
@@ -69,11 +53,21 @@ div.tools-tabs::-webkit-scrollbar-track {
 .nav-link:hover,
 .nav-link.active {
     color: #007bff;
-    border-bottom: 2px solid #007bff;
 }
 
 .nav-link.active {
     font-weight: bold;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%); /* Căn giữa gạch */
+    width: 30px; /* Độ dài gạch cố định */
+    height: 2px;
+    background: #007bff;
 }
 
 /* Box Form */
@@ -83,6 +77,26 @@ div.tools-tabs::-webkit-scrollbar-track {
     gap: 10px;
     margin-bottom: 20px;
     position: relative;
+}
+
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    z-index: 1000;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 .tool-content input {
@@ -101,9 +115,9 @@ div.tools-tabs::-webkit-scrollbar-track {
     background: #007bff;
     color: #fff;
     border: none;
-    border-radius: 10px;
+    border-radius: 5px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.3s;
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
     font-weight: 500;
@@ -113,42 +127,24 @@ div.tools-tabs::-webkit-scrollbar-track {
     background: #0056b3;
 }
 
-.loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    animation: spin 1s linear infinite;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: none;
-    z-index: 1000; /* Đảm bảo hiển thị trên các phần tử khác */
-}
-
-@keyframes spin {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-.nft-checkbox {
+.nft-container {
     margin: 20px auto;
     padding: 20px;
-    border-radius: 10px;
-    background: #c3c7c4;
-    position: relative;
+    border-radius: 5px;
+    background: #ddd;
 }
 
 /* Danh sách và bảng */
+.result-section {
+    margin-top: 20px;
+}
+
 .holders-table {
-    margin: 20px auto;
-    border-collapse: collapse;
-    background: #fff;
     width: 100%;
+    border-collapse: collapse;
+    margin: 20px auto;
+    background: #fff;
     border-radius: 10px;
-    overflow: hidden;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
@@ -176,14 +172,12 @@ div.tools-tabs::-webkit-scrollbar-track {
     text-align: center;
 }
 
-.transaction-table,
-.nft-transaction-results table {
-    margin: 20px auto;
-    border-collapse: collapse;
-    background: #fff;
+.transaction-table {
     width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
+    margin: 20px auto;
+    border-collapse:  collapse;
+    background: #fff;
+    border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
@@ -211,7 +205,7 @@ div.tools-tabs::-webkit-scrollbar-track {
 .transaction-table a {
     color: #007bff;
     text-decoration: none;
-    transition: color 0.2s;
+    transition: color 0.3s;
 }
 
 .transaction-table a:hover {
@@ -219,7 +213,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     text-decoration: underline;
 }
 
-/* Kết quả */
+/* Result */
 .result-info {
     overflow-wrap: break-word;
     word-break: break-all;
@@ -234,14 +228,14 @@ div.tools-tabs::-webkit-scrollbar-track {
     background: #ffebee;
     color: #c62828;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 5px;
     margin: 20px 0;
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
-    border: 1px solid #ef9a9a;
+    border: 1px solid #ef5350;
 }
 
-/* Phân trang */
+/* Pagination */
 .pagination {
     display: flex;
     justify-content: center;
@@ -250,8 +244,8 @@ div.tools-tabs::-webkit-scrollbar-track {
     margin: 20px 0;
     flex-wrap: nowrap;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 10px;
+    -webkit-flex-wrap: nowrap;
+    padding: 0 5px;
 }
 
 .page-form {
@@ -279,7 +273,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     line-height: 1;
     margin: 0;
     padding: 0;
-    transition: background 0.2s, color 0.2s;
+    transition: border-color 0.3s, background-color 0.3s;
 }
 
 .page-button i {
@@ -330,11 +324,11 @@ div.tools-tabs::-webkit-scrollbar-track {
     padding: 0;
 }
 
-.page-button.nav {
+.page-button.nav-button {
     width: 28px;
 }
 
-/* Export Section */
+/* Export section */
 .export-section {
     margin: 20px 0;
 }
@@ -354,11 +348,11 @@ div.tools-tabs::-webkit-scrollbar-track {
 .export-format {
     padding: 8px;
     border: 2px solid #007bff;
-    border-radius: 10px;
+    border-radius: 5px;
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
     background-color: #f8f9fa;
-    cursor: pointer;
+    cursor: select;
     height: 36px;
     box-sizing: border-box;
     min-width: 100px;
@@ -369,11 +363,11 @@ div.tools-tabs::-webkit-scrollbar-track {
     background: #28a745;
     color: #fff;
     border: none;
-    border-radius: 10px;
+    border-radius: 5px;
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
-    transition: background 0.2s;
+    transition: background-color 0.3s;
     height: 28px;
     box-sizing: border-box;
     min-width: 120px;
@@ -397,7 +391,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     max-width: 600px;
     height: 20px;
     background: #f0f0f0;
-    border-radius: 10px;
+    border-radius: 5px;
     overflow: hidden;
     margin: 10px 0;
 }
@@ -414,23 +408,28 @@ div.tools-tabs::-webkit-scrollbar-track {
         margin-top: 64px;
         max-width: 100%;
     }
+
     div.tools-tabs {
         gap: 10px;
     }
+
     .tool-content form {
         flex-direction: column;
         align-items: center;
     }
+
     .tool-content input {
         width: 100%;
         max-width: 300px;
         font-size: 14px;
     }
+
     .holders-table,
     .transaction-table,
     .nft-transaction-results table {
         width: 100%;
     }
+
     .holders-table th,
     .holders-table td,
     .transaction-table th,
@@ -439,11 +438,11 @@ div.tools-tabs::-webkit-scrollbar-track {
         padding: 5px;
         font-size: 12px;
     }
-    
-    .nft-checkbox {
+
+    .nft-container {
         padding: 15px;
     }
-    
+
     .tool-content button,
     .result-info,
     .result-error,
@@ -460,7 +459,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     .page-button,
     .page-button.active,
     .page-button.ellipsis,
-    .page-button.nav {
+    .page-button.nav-button {
         width: 26px;
         height: 26px;
         font-size: 11px;
@@ -483,7 +482,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     .export-controls {
         flex-direction: column;
         width: 100%;
-        gap: 8px;
+        gap: 0px;
     }
 
     .export-format,
