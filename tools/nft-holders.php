@@ -110,6 +110,25 @@ error_log("nft-holders.php loaded"); // Debug
                     echo "<h2>Results</h2>";
                     echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
                     echo "<p class='result-info'>Owners: $current_holders/$total_holders ($percentage%) (Page $page)</p>";
+
+                    // Thêm form export
+                    echo "<div class='export-section'>";
+                    echo "<form method='POST' action='export-holders.php' class='export-form'>";
+                    echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
+                    echo "<input type='hidden' name='page' value='$page'>";
+                    echo "<select name='export_format' class='export-format'>";
+                    echo "<option value='csv'>CSV</option>";
+                    echo "<option value='json'>JSON</option>";
+                    echo "</select>";
+                    echo "<button type='submit' name='export_type' value='all' class='export-btn' id='export-all-btn'>Export All Holders</button>";
+                    echo "<button type='submit' name='export_type' value='current' class='export-btn'>Export Current Page</button>";
+                    echo "</form>";
+                    echo "<div class='progress-container' style='display: none;'>";
+                    echo "<p>Exporting... Please wait.</p>";
+                    echo "<div class='progress-bar'><div class='progress-bar-fill' style='width: 0%;'></div></div>";
+                    echo "</div>";
+                    echo "</div>";
+
                     echo "<table class='holders-table'>";
                     echo "<thead><tr><th>Address</th><th>Amount</th></tr></thead>";
                     echo "<tbody>";
