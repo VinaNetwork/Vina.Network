@@ -9,7 +9,6 @@ error_reporting(E_ALL);
 
 include 'api-helper.php';
 
-// Ghi log khi file được load
 file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 ?>
@@ -21,8 +20,8 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
         <form id="nftHoldersForm" method="POST" action="">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required>
             <button type="submit">Check Holders</button>
-            <div class="loader" style="display: none;"></div> <!-- Loader ẩn mặc định -->
         </form>
+        <div class="loader" style="display: none;"></div> <!-- Đặt ngoài form để dễ quản lý -->
     </div>
 
     <?php
@@ -35,13 +34,12 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
             $holders_per_page = 50;
             $offset = ($page - 1) * $holders_per_page;
-            $limit = 1000; // Định nghĩa $limit ở đây để tránh lỗi undefined
+            $limit = 1000;
 
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
 
-            // Reset session cache nếu địa chỉ mới
             if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
                 if (isset($_SESSION['total_holders'][$mintAddress])) {
                     unset($_SESSION['total_holders'][$mintAddress]);
@@ -93,7 +91,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 
             if ($total_holders === 0) {
                 throw new Exception("No holders found or invalid collection address.");
-            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) { // Kiểm tra $limit trước
+            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) {
                 error_log("nft-holders.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress at " . date('Y-m-d H:i:s'));
                 echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
             }
@@ -145,43 +143,35 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
                 echo "</tbody>";
                 echo "</table>";
 
-                // Phân trang
                 echo "<div class='pagination'>";
                 $total_pages = ceil($total_holders / $holders_per_page);
 
-                // Nút [1]
                 if ($page > 1) {
                     echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' id='page-first'>1</button></form>";
                 } else {
                     echo "<span class='page-button active' data-type='number' id='page-first-active'>1</span>";
                 }
 
-                // Dấu "..."
                 if ($page > 2) {
                     echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-start'>...</span>";
                 }
 
-                // Nút Previous (Icon)
                 if ($page > 1) {
                     echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'><i class='fa-solid fa-chevron-left'></i></button></form>";
                 }
 
-                // Nút trang hiện tại
                 if ($page > 1 && $page < $total_pages) {
                     echo "<span class='page-button active' data-type='number' id='page-current'>$page</span>";
                 }
 
-                // Nút Next (Icon)
                 if ($page < $total_pages) {
                     echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'><i class='fa-solid fa-chevron-right'></i></button></form>";
                 }
 
-                // Dấu "..."
                 if ($page < $total_pages - 1) {
                     echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-end'>...</span>";
                 }
 
-                // Nút [<last>]
                 if ($page < $total_pages) {
                     echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' id='page-last'>$total_pages</button></form>";
                 } else {
