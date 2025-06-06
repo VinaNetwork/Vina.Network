@@ -30,7 +30,9 @@ h1.tools-title {text-align: center;}
 div.tools-tabs {
     display: flex !important;
     gap: 20px;
-    margin: 20px 0 !important;    white-space: nowrap !important;    overflow-x: auto !important;
+    margin: 20px 0 !important;
+    white-space: nowrap !important;
+    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
 }
 
@@ -80,6 +82,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     justify-content: center;
     gap: 10px;
     margin-bottom: 20px;
+    position: relative; /* Để loader có thể absolute bên trong */
 }
 
 .tool-content input {
@@ -108,6 +111,25 @@ div.tools-tabs::-webkit-scrollbar-track {
 
 .tool-content button:hover {
     background: #0056b3;
+}
+
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none; /* Mặc định ẩn */
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 .nft-checkbox {
@@ -202,7 +224,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     max-width: 100%;
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
-    font-color: #333;
+    color: #333;
     margin: 10px 0;
 }
 
@@ -227,9 +249,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    }
-
-padding: 0 10px;
+    padding: 0 10px;
 }
 
 .page-form {
