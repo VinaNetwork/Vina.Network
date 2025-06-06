@@ -1,12 +1,10 @@
 <?php
 // nft-holders.php
-// Chức năng: Kiểm tra NFT Holders với Helium API, dùng session cache
+// Chức năng: Kiểm tra NFT Holders với Helius API, dùng session cache
 session_start();
-//include 'header.php'; // Đã được gọi trong load-tool.php
 ini_set('log_errors', true);
 ini_set('error_log', '/var/www/vinanetwork/public_html/tools/error_log.txt');
 ini_set('display_errors', false);
-error_log('display_errors', false);
 error_reporting(E_ALL);
 
 include 'api-helper.php';
@@ -20,13 +18,11 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 <div class="nft-holders-content">
     <div class="nft-checkbox">
         <h2>Check NFT Holders</h2>
-        <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details".</p>
+        <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required>
             <button type="submit">Check Holders</button>
-            <button>
-        </div>
-        <div class="loader"></div> <!-- Spinner loading -->
+        </form>
     </div>
 
     <?php
@@ -39,7 +35,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
             $holders_per_page = 50;
             $offset = ($page - 1) * $holders_per_page;
-            $limit = 1000;
+            $limit = 1000; // Định nghĩa $limit ở đây để tránh lỗi undefined
 
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
@@ -97,7 +93,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 
             if ($total_holders === 0) {
                 throw new Exception("No holders found or invalid collection address.");
-            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) {
+            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) { // Kiểm tra $limit trước
                 error_log("nft-holders.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress at " . date('Y-m-d H:i:s'));
                 echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
             }
@@ -216,18 +212,6 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
         </p>
     </div>
 </div>
-
-<script>
-// JavaScript để điều khiển spinner loading
-document.getElementById('nftHoldersForm').addEventListener('submit', function() {
-    document.querySelector('.nft-holders-content').classList.add('loading');
-});
-
-// Ẩn spinner khi kết quả được hiển thị hoặc lỗi xảy ra
-window.addEventListener('load', function() {
-    document.querySelector('.nft-holders-content').classList.remove('loading');
-});
-</script>
 
 <?php
 function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
