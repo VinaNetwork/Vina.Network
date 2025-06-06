@@ -12,7 +12,6 @@ include 'api-helper.php';
 // Ghi log khi file được load
 file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
-
 ?>
 
 <div class="nft-holders-content">
@@ -22,6 +21,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
         <form id="nftHoldersForm" method="POST" action="">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required>
             <button type="submit">Check Holders</button>
+            <div class="loader" style="display: none;"></div> <!-- Loader ẩn mặc định -->
         </form>
     </div>
 
