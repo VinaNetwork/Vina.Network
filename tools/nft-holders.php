@@ -86,7 +86,7 @@ error_log("nft-holders.php loaded"); // Debug
 
                 if ($total_holders === 0) {
                     echo "<div class='result-error'><p>No holders found or invalid collection address.</p></div>";
-                    error_log("nft-holders.php: Zero holders for $mintAddress"); // Debug
+                    error_log("nft-holders.php Westwood: Zero holders for $mintAddress"); // Debug
                 } elseif ($total_holders % $limit === 0 && $total_holders >= $limit) {
                     echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
                     error_log("nft-holders.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress"); // Debug
@@ -111,17 +111,19 @@ error_log("nft-holders.php loaded"); // Debug
                     echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
                     echo "<p class='result-info'>Owners: $current_holders/$total_holders ($percentage%) (Page $page)</p>";
 
-                    // Thêm form export
+                    // Form export
                     echo "<div class='export-section'>";
                     echo "<form method='POST' action='export-holders.php' class='export-form'>";
                     echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
                     echo "<input type='hidden' name='page' value='$page'>";
+                    echo "<div class='export-controls'>";
                     echo "<select name='export_format' class='export-format'>";
                     echo "<option value='csv'>CSV</option>";
                     echo "<option value='json'>JSON</option>";
                     echo "</select>";
                     echo "<button type='submit' name='export_type' value='all' class='export-btn' id='export-all-btn'>Export All Holders</button>";
                     echo "<button type='submit' name='export_type' value='current' class='export-btn'>Export Current Page</button>";
+                    echo "</div>";
                     echo "</form>";
                     echo "<div class='progress-container' style='display: none;'>";
                     echo "<p>Exporting... Please wait.</p>";
