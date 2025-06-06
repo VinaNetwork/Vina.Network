@@ -9,9 +9,9 @@ if (!defined('SOLSCAN_API_KEY')) {
     define('SOLSCAN_API_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3NDgyNDcyMjI3OTgsImVtYWlsIjoibjl1OTNuQGdtYWlsLmNvbSIsImFjdGlvbiI6InRva2VuLWFwaSIsImFwaVZlcnNpb24iOiJ2MiIsImlhdCI6MTc0ODI0NzIyMn0.ukV8lKST8a1G46dA8rc3yu-CtZ90nxDI50o0q4xvgMk'); // API Key Solscan
 }
 if (!defined('ERROR_LOG_PATH')) {
-    define('ERROR_LOG_PATH', '/home/hthxhyqf/domains/vina.network/public_html/tools/error_log.txt'); // Đường dẫn log lỗi
+    define('ERROR_LOG_PATH', '/var/www/vinanetwork/public_html/tools/error_log.txt'); // Đường dẫn log lỗi (đã sửa)
 }
 if (!defined('BASE_PATH')) {
-    define('BASE_PATH', '/home/hthxhyqf/domains/vina.network/'); // Đường dẫn gốc của ứng dụng
+    define('BASE_PATH', '/var/www/vinanetwork/public_html/'); // Đường dẫn gốc của ứng dụng (đã sửa)
 }
 ?>
