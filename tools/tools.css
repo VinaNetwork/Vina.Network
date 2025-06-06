@@ -1,11 +1,16 @@
 /* Reset mặc định */
+* {
+    box-sizing: border-box;
+}
+
 button, span, i {
     margin: 0;
     padding: 0;
     border: none;
     background: none;
+    font: inherit;
     line-height: 1;
-    vertical-align: baseline;
+    vertical-align: middle; /* Căn giữa dọc */
     box-sizing: border-box;
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -265,6 +270,7 @@ h1.tools-title {
 .page-button i {
     font-size: 12px;
     line-height: 1;
+    vertical-align: middle; /* Căn giữa icon */
 }
 
 .page-button:hover {
@@ -353,7 +359,7 @@ h1.tools-title {
     font-family: 'Poppins', sans-serif;
     font-size: 14px;
     transition: background 0.2s;
-    height: 36px;
+    height: 28px;
     box-sizing: border-box;
     min-width: 120px;
     display: flex;
@@ -458,7 +464,6 @@ h1.tools-title {
         flex-direction: column;
         align-items: flex-start;
         width: 100%;
-        max-width: 300px;
     }
 
     .export-controls {
