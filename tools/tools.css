@@ -70,7 +70,7 @@ h2 {
 }
 
 .tool-content input {
-    padding: 10px;
+    padding: 8px;
     width: 600px;
     border: 2px solid #007bff;
     border-radius: 10px;
@@ -81,7 +81,7 @@ h2 {
 }
 
 .tool-content button {
-    padding: 10px 20px;
+    padding: 8px 20px;
     background: #007bff;
     color: #fff;
     border: none;
@@ -100,7 +100,7 @@ h2 {
 .nft-checkbox {
     margin: 20px auto;
     padding: 20px;
-    border-radius: 10px;
+    border-radius: 4px;
     background: #c3c7c4;
 }
 
@@ -112,7 +112,7 @@ h2 {
     width: 100%;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .holders-table th,
@@ -147,7 +147,7 @@ h2 {
     width: 100%;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .transaction-table th,
@@ -197,11 +197,11 @@ h2 {
     background: #ffebee;
     color: #c62828;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 4px;
     margin: 20px 0;
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
-    border: 1px solid #ef9a9a;
+    border-bottom: 2px solid #ef4a5a;
 }
 
 /* Phân trang */
@@ -209,69 +209,84 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     margin: 20px 0;
-    flex-wrap: wrap; /* Cho phép xuống dòng nếu quá nhiều nút */
+    flex-wrap: nowrap; /* Ngăn xuống dòng để giữ hàng ngang */
+    overflow-x: auto; /* Cho phép cuộn ngang nếu cần */
+    -webkit-overflow-scrolling: touch;
+    padding: 0 10px; /* Thêm padding để tránh sát cạnh */
 }
 
 .page-form {
     display: inline-flex;
     align-items: center;
     margin: 0;
+    padding: 0;
 }
 
 .page-btn {
-    padding: 6px 12px;
+    padding: 0 10px;
     background: #fff;
     color: #333;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    border: 1px solid #007bff;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
-    height: 32px;
-    min-width: 40px; /* Đảm bảo nút không quá nhỏ */
+    transition: background 0.2s ease, color: 0.2s ease;
+    height: 30px;
+    min-width: 36px; /* Kích thước tối thiểu cho nút nhỏ */
     display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
-    font-size: 14px;
-    line-height: 1; /* Đảm bảo căn giữa dọc */
+    font-size: 13px;
+    line-height: 1;
     text-align: center;
+    margin: 0; /* Loại bỏ margin để tránh lệch */
 }
 
 .page-btn:hover {
-    background: #f0f0f0;
+    background: #e6f0ff;
+    color: #007bff;
 }
 
 .page-btn.active {
     background: #007bff;
     color: #fff;
-    border-color: #007bff;
+    border: 1px solid #007bff;
     cursor: default;
-    min-width: 40px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    line-height: 1;
-}
-
-.page-btn.ellipsis {
-    background: none;
-    border: none;
-    color: #333;
-    cursor: default;
-    min-width: 40px;
-    height: 32px;
+    height: 30px;
+    min-width: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1;
+    margin: 0;
+}
+
+.page-btn.ellipsis {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: default;
+    height: 30px;
+    min-width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    font-size: 13px;
+    line-height: 1;
+    margin: 0;
+}
+
+/* Nút dài như Previous/Next */
+.page-btn.long {
+    min-width: 80px; /* Kích thước lớn hơn cho nút dài */
 }
 
 /* Export Section */
@@ -381,7 +396,9 @@ h2 {
         font-size: 12px;
     }
     
-    .nft-checkbox {padding: 15px;}
+    .nft-checkbox {
+        padding: 15px;
+    }
     
     .tool-content button,
     .result-info,
@@ -391,21 +408,24 @@ h2 {
         font-size: 14px;
     }
 
+    .pagination-btn {
+        gap: 5px;
+        flex-wrap: nowrap; /* Giữ hàng ngang */
+        padding: 0 5px;
+    }
+
     .page-btn,
     .page-btn.active,
     .page-btn.ellipsis {
-        padding: 5px 8px;
+        padding: 0 8px;
         font-size: 12px;
         height: 28px;
-        min-width: 36px; /* Nhỏ hơn trên di động */
+        min-width: 32px; /* Nhỏ hơn trên di động */
         line-height: 1;
     }
 
-    .pagination-btn {
-        gap: 6px;
-        flex-wrap: wrap; /* Đảm bảo xuống dòng nếu quá nhiều nút */
-        overflow-x: auto; /* Cho phép cuộn ngang nếu cần */
-        -webkit-overflow-scrolling: touch;
+    .page-btn.long {
+        min-width: 70px; /* Nhỏ hơn trên di động */
     }
 
     .export-section {
@@ -416,6 +436,7 @@ h2 {
         flex-direction: column;
         align-items: flex-start;
         width: 100%;
+        max-width: 300px;
     }
 
     .export-controls {
