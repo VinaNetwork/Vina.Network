@@ -1,18 +1,20 @@
-/* Reset mặc định để loại bỏ style trình duyệt */
+/* Reset mặc định cho button và span */
 button, span {
     margin: 0;
     padding: 0;
     border: none;
     background: none;
     font: inherit;
-    line-height: normal;
+    line-height: 1;
     vertical-align: baseline;
     box-sizing: border-box;
+    -webkit-appearance: none; /* Loại bỏ style mặc định trên Safari */
+    -moz-appearance: none;
+    appearance: none;
 }
 
 /* Cấu trúc chung */
-h1,
-h2 {
+h1, h2 {
     text-align: center;
 }
 
@@ -220,7 +222,7 @@ h2 {
 }
 
 /* Phân trang */
-.pagination-btn {
+.pagination {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -240,14 +242,13 @@ h2 {
 }
 
 .page-button {
-    padding: 0 10px;
+    width: 32px; /* Cố định chiều rộng cho nút số và ellipsis */
+    height: 28px;
     background: #fff;
     color: #333;
     border: 1px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
-    height: 28px;
-    min-width: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -258,7 +259,9 @@ h2 {
     line-height: 1;
     text-align: center;
     margin: 0;
+    padding: 0;
     transition: background 0.2s, color 0.2s;
+    /* outline: 1px solid red; /* Tạm bật để debug lệch pixel */
 }
 
 .page-button:hover {
@@ -270,8 +273,8 @@ h2 {
     color: #fff;
     border: 1px solid #007bff;
     cursor: default;
+    width: 32px;
     height: 28px;
-    min-width: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -281,6 +284,7 @@ h2 {
     font-weight: 500;
     line-height: 1;
     margin: 0;
+    padding: 0;
 }
 
 .page-button.ellipsis {
@@ -288,8 +292,8 @@ h2 {
     border: none;
     color: #666;
     cursor: default;
+    width: 32px;
     height: 28px;
-    min-width: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -299,10 +303,11 @@ h2 {
     font-weight: 500;
     line-height: 1;
     margin: 0;
+    padding: 0;
 }
 
-.page-button.long {
-    min-width: 80px;
+.page-button.nav {
+    width: 80px; /* Chiều rộng lớn hơn cho Previous/Next */
 }
 
 /* Export Section */
@@ -424,24 +429,23 @@ h2 {
         font-size: 14px;
     }
 
-    .pagination-btn {
+    .pagination {
         gap: 5px;
-        flex-wrap: nowrap;
         padding: 0 5px;
     }
 
     .page-button,
     .page-button.active,
     .page-button.ellipsis {
-        padding: 0 8px;
+        width: 28px;
         height: 26px;
-        min-width: 28px;
         font-size: 11px;
         line-height: 1;
+        padding: 0;
     }
 
-    .page-button.long {
-        min-width: 70px;
+    .page-button.nav {
+        width: 70px;
     }
 
     .export-section {
@@ -452,7 +456,6 @@ h2 {
         flex-direction: column;
         align-items: flex-start;
         width: 100%;
-        max-width: 300px;
     }
 
     .export-controls {
