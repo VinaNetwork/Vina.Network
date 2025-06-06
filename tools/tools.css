@@ -23,28 +23,29 @@ h1.tools-title {text-align: center;}
     max-width: 1200px;
     padding: 40px;
     margin: 0 auto;
+    min-width: 0; /* Đảm bảo không bị co lại */
 }
 
 /* Tab điều hướng */
-.tools-tabs {
-    display: inline-flex;
+div.tools-tabs {
+    display: inline-flex !important;
     gap: 20px;
     margin: 20px 0;
-    white-space: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    white-space: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
 }
 
-.tools-tabs::-webkit-scrollbar {
+div.tools-tabs::-webkit-scrollbar {
     height: 4px;
 }
 
-.tools-tabs::-webkit-scrollbar-thumb {
+div.tools-tabs::-webkit-scrollbar-thumb {
     background-color: #007bff;
     border-radius: 4px;
 }
 
-.tools-tabs::-webkit-scrollbar-track {
+div.tools-tabs::-webkit-scrollbar-track {
     background: #333;
 }
 
@@ -392,9 +393,8 @@ h1.tools-title {text-align: center;}
         margin-top: 64px;
         max-width: 100%;
     }
-    .tools-tabs {
+    div.tools-tabs {
         gap: 10px;
-        flex-direction: row;
     }
     .tool-content form {
         flex-direction: column;
