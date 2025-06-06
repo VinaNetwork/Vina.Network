@@ -1,25 +1,15 @@
 // public_html/tools/tools.js
 document.addEventListener('DOMContentLoaded', () => {
-    // Lấy tool từ URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const tool = urlParams.get('tool');
+    // Không cần đặt lại active tab, vì PHP đã xử lý đúng trong index.php
+    // Chỉ cuộn đến tab active trên di động
     const tabsContainer = document.querySelector('.tools-tabs');
-    let activeTab = document.querySelector('.tab-link.active');
-
-    // Nếu không có tab active (truy cập trực tiếp), kích hoạt tab dựa trên URL
-    if (!activeTab && tool) {
-        activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
-        if (activeTab) {
-            activeTab.classList.add('active');
-        }
-    }
-
+    const activeTab = document.querySelector('.tab-link.active');
     if (tabsContainer && activeTab) {
         const tabRect = activeTab.getBoundingClientRect();
         const containerRect = tabsContainer.getBoundingClientRect();
         tabsContainer.scrollTo({
             left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
-            behavior: 'smooth'
+            behavior: 'smooth' // Sửa từ 'reload' thành 'smooth'
         });
     }
 
@@ -70,61 +60,35 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+});
 
-    // Xử lý submit form
-    document.addEventListener('submit', (e) => {
-        if (e.target.matches('.export-form')) {
-            // Xử lý form export
-            const exportType = e.target.querySelector('[name="export_type"]').value;
-            if (exportType === 'all') {
-                // Hiển thị progress bar khi export toàn bộ holders
-                const progressContainer = document.querySelector('.progress-container');
-                const progressBarFill = document.querySelector('.progress-bar-fill');
-                if (progressContainer && progressBarFill) {
-                    progressContainer.style.display = 'block';
-                    // Giả lập tiến trình (không thể lấy chính xác từ server)
-                    let progress = 0;
-                    const interval = setInterval(() => {
-                        progress += 10;
-                        progressBarFill.style.width = `${progress}%`;
-                        if (progress >= 100) {
-                            clearInterval(interval);
-                            // Ẩn progress bar sau khi hoàn tất (giả lập)
-                            setTimeout(() => {
-                                progressContainer.style.display = 'none';
-                                progressBarFill.style.width = '0%';
-                            }, 1000);
-                        }
-                    }, 500); // Cập nhật mỗi 500ms
-                }
+// Xử lý submit form bằng AJAX
+document.addEventListener('submit', (e) => {
+    if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
+
+        fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
-            // Không chặn submit để trình duyệt xử lý tải file
-            return;
-        }
-        if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
-            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(data => {
-                document.querySelector('.tool-content').innerHTML = data;
-            })
-            .catch(error => {
-                console.error('Error submitting form:', error);
-                document.querySelector('.tool-content').innerHTML = '<p>Error submitting form. Please try again.</p>';
-            });
-        }
-    });
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(data => {
+            document.querySelector('.tool-content').innerHTML = data;
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+            document.querySelector('.tool-content').innerHTML = '<p>Error submitting form. Please try again.</p>';
+        });
+    }
 });

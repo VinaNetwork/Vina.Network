@@ -1,18 +1,15 @@
 <?php
 // nft-holders.php
 // Chức năng: Kiểm tra NFT Holders với Helius API, dùng session cache
-session_start();
-ini_set('log_errors', true);
-ini_set('error_log', '/var/www/vinanetwork/public_html/tools/error_log.txt');
-ini_set('display_errors', false);
+session_start(); // Khởi tạo session
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 include 'api-helper.php';
 
-// Ghi log khi file được load
-file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
-error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
-
+error_log("nft-holders.php loaded"); // Debug
 ?>
 
 <div class="nft-holders-content">
@@ -29,176 +26,155 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
             $mintAddress = trim($_POST['mintAddress']);
-            file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Form submitted with mintAddress=$mintAddress\n", FILE_APPEND);
-            error_log("nft-holders.php: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set') . " at " . date('Y-m-d H:i:s'));
+            error_log("nft-holders.php: Form submitted with mintAddress=$mintAddress"); // Debug
 
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
-            $holders_per_page = 50;
+            $holders_per_page = 50; // Số holders mỗi trang
             $offset = ($page - 1) * $holders_per_page;
-            $limit = 1000; // Định nghĩa $limit ở đây để tránh lỗi undefined
 
+            // Kiểm tra định dạng mint address
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-                throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
-            }
+                echo "<div class='result-error'><p>Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).</p></div>";
+                error_log("nft-holders.php: Invalid mint address format - $mintAddress"); // Debug
+            } else {
+                // Kiểm tra session cache cho $total_holders
+                if (!isset($_SESSION['total_holders'][$mintAddress])) {
+                    // Tính $total_holders nếu chưa có trong cache
+                    $total_holders = 0;
+                    $api_page = 1;
+                    $limit = 1000; // Giới hạn tối đa của Helius API
+                    $has_more = true;
 
-            // Reset session cache nếu địa chỉ mới
-            if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
-                if (isset($_SESSION['total_holders'][$mintAddress])) {
-                    unset($_SESSION['total_holders'][$mintAddress]);
-                    error_log("nft-holders.php: Cleared session cache for new mintAddress=$mintAddress at " . date('Y-m-d H:i:s'));
-                }
-                $_SESSION['last_mintAddress'] = $mintAddress;
-            }
+                    while ($has_more) {
+                        $total_params = [
+                            'groupKey' => 'collection',
+                            'groupValue' => $mintAddress,
+                            'page' => $api_page,
+                            'limit' => $limit
+                        ];
+                        $total_data = callHeliusAPI('getAssetsByGroup', $total_params, 'POST');
+                        error_log("nft-holders.php: Total API response (page $api_page) - " . json_encode($total_data)); // Debug
 
-            if (!isset($_SESSION['total_holders'][$mintAddress])) {
-                $total_holders = 0;
-                $api_page = 1;
-                $has_more = true;
+                        if (isset($total_data['error'])) {
+                            echo "<div class='result-error'><p>" . htmlspecialchars($total_data['error']) . "</p></div>";
+                            error_log("nft-holders.php: Helius API error for total (page $api_page) - {$total_data['error']}"); // Debug
+                            break;
+                        }
 
-                while ($has_more) {
-                    $total_params = [
-                        'groupKey' => 'collection',
-                        'groupValue' => $mintAddress,
-                        'page' => $api_page,
-                        'limit' => $limit
-                    ];
-                    $total_data = callHeliusAPI('getAssetsByGroup', $total_params, 'POST');
-                    file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Total API response (page $api_page): " . json_encode($total_data) . "\n", FILE_APPEND);
-                    error_log("nft-holders.php: Total API response (page $api_page) - " . json_encode($total_data) . " at " . date('Y-m-d H:i:s'));
+                        $items = $total_data['result']['items'] ?? [];
+                        $item_count = count($items);
+                        $total_holders += $item_count;
+                        error_log("nft-holders.php: Page $api_page added $item_count holders, total_holders = $total_holders"); // Debug
 
-                    if (isset($total_data['error'])) {
-                        throw new Exception("Helius API error: " . $total_data['error']);
+                        if ($item_count < $limit) {
+                            $has_more = false;
+                        } else {
+                            $api_page++;
+                        }
                     }
 
-                    $items = $total_data['result']['items'] ?? [];
-                    $item_count = count($items);
-                    $total_holders += $item_count;
-                    error_log("nft-holders.php: Page $api_page added $item_count holders, total_holders = $total_holders at " . date('Y-m-d H:i:s'));
+                    // Lưu vào session cache
+                    $_SESSION['total_holders'][$mintAddress] = $total_holders;
+                    error_log("nft-holders.php: Cached total_holders = $total_holders for $mintAddress"); // Debug
+                } else {
+                    // Lấy từ session cache
+                    $total_holders = $_SESSION['total_holders'][$mintAddress];
+                    error_log("nft-holders.php: Retrieved total_holders = $total_holders from cache for $mintAddress"); // Debug
+                }
 
-                    if ($item_count < $limit) {
-                        $has_more = false;
+                error_log("nft-holders.php: Final total holders = $total_holders for $mintAddress"); // Debug
+
+                if ($total_holders === 0) {
+                    echo "<div class='result-error'><p>No holders found or invalid collection address.</p></div>";
+                    error_log("nft-holders.php: Zero holders for $mintAddress"); // Debug
+                } elseif ($total_holders % $limit === 0 && $total_holders >= $limit) {
+                    echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
+                    error_log("nft-holders.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress"); // Debug
+                }
+
+                // Gọi API để lấy holders cho trang hiện tại
+                $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
+                error_log("nft-holders.php: Holders API response - " . json_encode($holders_data)); // Debug
+
+                if (isset($holders_data['error'])) {
+                    echo "<div class='result-error'><p>" . htmlspecialchars($holders_data['error']) . "</p></div>";
+                    error_log("nft-holders.php: Helius API error - {$holders_data['error']}"); // Debug
+                } elseif ($holders_data && !empty($holders_data['holders'])) {
+                    $paginated_holders = $holders_data['holders'];
+
+                    // Tính số holders hiển thị đến trang hiện tại
+                    $current_holders = min($page * $holders_per_page, $total_holders);
+                    $percentage = $total_holders > 0 ? number_format(($current_holders / $total_holders) * 100, 1) : 0;
+
+                    echo "<div class='result-section'>";
+                    echo "<h2>Results</h2>";
+                    echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
+                    echo "<p class='result-info'>Owners: $current_holders/$total_holders ($percentage%) (Page $page)</p>";
+                    echo "<table class='holders-table'>";
+                    echo "<thead><tr><th>Address</th><th>Amount</th></tr></thead>";
+                    echo "<tbody>";
+                    foreach ($paginated_holders as $holder) {
+                        $address = htmlspecialchars($holder['owner'] ?? 'N/A');
+                        $amount = htmlspecialchars($holder['amount'] ?? 'N/A');
+                        echo "<tr><td>$address</td><td>$amount</td></tr>";
+                    }
+                    echo "</tbody>";
+                    echo "</table>";
+
+                    // Phân trang style [1] ... [Previous] <current> [Next] ... [<last>]
+                    echo "<div class='pagination-btn'>";
+                    $total_pages = ceil($total_holders / $holders_per_page);
+
+                    // Nút [1]
+                    if ($page > 1) {
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-btn'>1</button></form>";
                     } else {
-                        $api_page++;
+                        echo "<span class='page-btn active'>1</span>";
                     }
-                }
 
-                $_SESSION['total_holders'][$mintAddress] = $total_holders;
-                error_log("nft-holders.php: Cached total_holders = $total_holders for $mintAddress at " . date('Y-m-d H:i:s'));
-            } else {
-                $total_holders = $_SESSION['total_holders'][$mintAddress];
-                error_log("nft-holders.php: Retrieved total_holders = $total_holders from cache for $mintAddress at " . date('Y-m-d H:i:s'));
-            }
+                    // Dấu "..." nếu trang hiện tại > 2
+                    if ($page > 2) {
+                        echo "<span class='page-btn ellipsis'>...</span>";
+                    }
 
-            error_log("nft-holders.php: Final total holders = $total_holders for $mintAddress at " . date('Y-m-d H:i:s'));
+                    // Nút Previous
+                    if ($page > 1) {
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-btn'>Previous</button></form>";
+                    }
 
-            if ($total_holders === 0) {
-                throw new Exception("No holders found or invalid collection address.");
-            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) { // Kiểm tra $limit trước
-                error_log("nft-holders.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress at " . date('Y-m-d H:i:s'));
-                echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
-            }
+                    // Nút trang hiện tại
+                    if ($page > 1 && $page < $total_pages) {
+                        echo "<span class='page-btn active'>$page</span>";
+                    }
 
-            $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
-            file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Holders API response: " . json_encode($holders_data) . "\n", FILE_APPEND);
-            error_log("nft-holders.php: Holders API response - " . json_encode($holders_data) . " at " . date('Y-m-d H:i:s'));
+                    // Nút Next
+                    if ($page < $total_pages) {
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-btn'>Next</button></form>";
+                    }
 
-            if (isset($holders_data['error'])) {
-                throw new Exception("Helius API error: " . $holders_data['error']);
-            } elseif ($holders_data && !empty($holders_data['holders'])) {
-                $paginated_holders = $holders_data['holders'];
+                    // Dấu "..." nếu trang hiện tại < total_pages - 1
+                    if ($page < $total_pages - 1) {
+                        echo "<span class='page-btn ellipsis'>...</span>";
+                    }
 
-                $current_holders = min($page * $holders_per_page, $total_holders);
-                $percentage = $total_holders > 0 ? number_format(($current_holders / $total_holders) * 100, 1) : 0;
+                    // Nút [<last>]
+                    if ($page < $total_pages) {
+                        echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-btn'>$total_pages</button></form>";
+                    } else {
+                        echo "<span class='page-btn active'>$total_pages</span>";
+                    }
 
-                echo "<div class='result-section'>";
-                echo "<h2>Results</h2>";
-                echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
-                echo "<p class='result-info'>Owners: $current_holders/$total_holders ($percentage%) (Page $page)</p>";
-
-                echo "<div class='export-section'>";
-                echo "<form method='POST' action='export-holders.php' class='export-form'>";
-                echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
-                echo "<input type='hidden' name='page' value='$page'>";
-                echo "<div class='export-controls'>";
-                echo "<select name='export_format' class='export-format'>";
-                echo "<option value='csv'>CSV</option>";
-                echo "<option value='json'>JSON</option>";
-                echo "</select>";
-                echo "<button type='submit' name='export_type' value='all' class='export-btn' id='export-all-btn'>Export All Holders</button>";
-                echo "<button type='submit' name='export_type' value='current' class='export-btn'>Export Current Page</button>";
-                echo "</div>";
-                echo "</form>";
-                echo "<div class='progress-container' style='display: none;'>";
-                echo "<p>Exporting... Please wait.</p>";
-                echo "<div class='progress-bar'><div class='progress-bar-fill' style='width: 0%;'></div></div>";
-                echo "</div>";
-                echo "</div>";
-
-                echo "<table class='holders-table'>";
-                echo "<thead><tr><th>Address</th><th>Amount</th></tr></thead>";
-                echo "<tbody>";
-                foreach ($paginated_holders as $holder) {
-                    $address = htmlspecialchars($holder['owner'] ?? 'N/A');
-                    $amount = htmlspecialchars($holder['amount'] ?? 'N/A');
-                    echo "<tr><td>$address</td><td>$amount</td></tr>";
-                }
-                echo "</tbody>";
-                echo "</table>";
-
-                // Phân trang
-                echo "<div class='pagination'>";
-                $total_pages = ceil($total_holders / $holders_per_page);
-
-                // Nút [1]
-                if ($page > 1) {
-                    echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' id='page-first'>1</button></form>";
+                    echo "</div>";
+                    echo "</div>";
+                    error_log("nft-holders.php: Retrieved " . count($paginated_holders) . " holders, page $page for address $mintAddress"); // Debug
                 } else {
-                    echo "<span class='page-button active' data-type='number' id='page-first-active'>1</span>";
+                    echo "<div class='result-error'><p>No holders found for this page or invalid collection address.</p></div>";
+                    error_log("nft-holders.php: No holders found for page $page, address $mintAddress"); // Debug
                 }
-
-                // Dấu "..."
-                if ($page > 2) {
-                    echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-start'>...</span>";
-                }
-
-                // Nút Previous (Icon)
-                if ($page > 1) {
-                    echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'><i class='fa-solid fa-chevron-left'></i></button></form>";
-                }
-
-                // Nút trang hiện tại
-                if ($page > 1 && $page < $total_pages) {
-                    echo "<span class='page-button active' data-type='number' id='page-current'>$page</span>";
-                }
-
-                // Nút Next (Icon)
-                if ($page < $total_pages) {
-                    echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'><i class='fa-solid fa-chevron-right'></i></button></form>";
-                }
-
-                // Dấu "..."
-                if ($page < $total_pages - 1) {
-                    echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-end'>...</span>";
-                }
-
-                // Nút [<last>]
-                if ($page < $total_pages) {
-                    echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' id='page-last'>$total_pages</button></form>";
-                } else {
-                    echo "<span class='page-button active' data-type='number' id='page-last-active'>$total_pages</span>";
-                }
-
-                echo "</div>";
-                echo "</div>";
-                error_log("nft-holders.php: Retrieved " . count($paginated_holders) . " holders, page $page for address $mintAddress at " . date('Y-m-d H:i:s'));
-            } else {
-                throw new Exception("No holders found for this page or invalid collection address.");
             }
         } catch (Exception $e) {
-            $error_msg = "Error processing request: " . $e->getMessage();
-            file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - $error_msg\n", FILE_APPEND);
-            echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
-            error_log("nft-holders.php: Exception - $error_msg at " . date('Y-m-d H:i:s'));
+            echo "<div class='result-error'><p>Error processing request. Please try again.</p></div>";
+            error_log("nft-holders.php: Exception - {$e->getMessage()}"); // Debug
         }
     }
     ?>
@@ -215,20 +191,20 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 
 <?php
 function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
+    // Gọi Helius API để lấy holders
     $params = [
         'groupKey' => 'collection',
         'groupValue' => $mintAddress,
-        'page' => ceil(($offset + $size) / $size),
+        'page' => ceil(($offset + $size) / $size), // Helius page bắt đầu từ 1
         'limit' => $size
     ];
     
-    file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
-    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
+    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}"); // Debug
     
     $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
     
     if (isset($data['error'])) {
-        error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
+        error_log("nft-holders.php: getAssetsByGroup error - {$data['error']}"); // Debug
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
     }
     
@@ -236,14 +212,14 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         $holders = array_map(function($item) {
             return [
                 'owner' => $item['ownership']['owner'] ?? 'unknown',
-                'amount' => 1
+                'amount' => 1 // Mỗi NFT có amount là 1
             ];
         }, $data['result']['items']);
         
         return ['holders' => $holders];
     }
     
-    error_log("nft-holders.php: No holders found for address $mintAddress at " . date('Y-m-d H:i:s'));
+    error_log("nft-holders.php: No holders found for address $mintAddress"); // Debug
     return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
 }
 ?>
