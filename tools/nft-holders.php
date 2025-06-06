@@ -9,7 +9,8 @@ error_reporting(E_ALL);
 
 include 'api-helper.php';
 
-error_log('nft-holders.php loaded');
+error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
+
 ?>
 
 <div class="nft-holders-content">
@@ -26,7 +27,7 @@ error_log('nft-holders.php loaded');
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
             $mintAddress = trim($_POST['mintAddress']);
-            error_log("nft-holders.php: Form submitted with mintAddress=$mintAddress");
+            error_log("nft-holders.php: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set'));
 
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
             $holders_per_page = 50;
@@ -36,6 +37,15 @@ error_log('nft-holders.php loaded');
                 echo "<div class='result-error'><p>Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).</p></div>";
                 error_log("nft-holders.php: Invalid mint address format - $mintAddress");
             } else {
+                // Reset session cache nếu địa chỉ mới
+                if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
+                    if (isset($_SESSION['total_holders'][$mintAddress])) {
+                        unset($_SESSION['total_holders'][$mintAddress]);
+                        error_log("nft-holders.php: Cleared session cache for new mintAddress=$mintAddress");
+                    }
+                    $_SESSION['last_mintAddress'] = $mintAddress;
+                }
+
                 if (!isset($_SESSION['total_holders'][$mintAddress])) {
                     $total_holders = 0;
                     $api_page = 1;
@@ -53,9 +63,7 @@ error_log('nft-holders.php loaded');
                         error_log("nft-holders.php: Total API response (page $api_page) - " . json_encode($total_data));
 
                         if (isset($total_data['error'])) {
-                            echo "<div class='result-error'><p>" . htmlspecialchars($total_data['error']) . "</p></div>";
-                            error_log("nft-holders.php: Helius API error for total (page $api_page) - {$total_data['error']}");
-                            break;
+                            throw new Exception("Helius API error: " . $total_data['error']);
                         }
 
                         $items = $total_data['result']['items'] ?? [];
@@ -91,8 +99,7 @@ error_log('nft-holders.php loaded');
                 error_log("nft-holders.php: Holders API response - " . json_encode($holders_data));
 
                 if (isset($holders_data['error'])) {
-                    echo "<div class='result-error'><p>" . htmlspecialchars($holders_data['error']) . "</p></div>";
-                    error_log("nft-holders.php: Helius API error - {$holders_data['error']}");
+                    throw new Exception("Helius API error: " . $holders_data['error']);
                 } elseif ($holders_data && !empty($holders_data['holders'])) {
                     $paginated_holders = $holders_data['holders'];
 
@@ -186,8 +193,9 @@ error_log('nft-holders.php loaded');
                 }
             }
         } catch (Exception $e) {
-            echo "<div class='result-error'><p>Error processing request. Please try again.</p></div>";
-            error_log("nft-holders.php: Exception - {$e->getMessage()}");
+            $error_msg = "Error processing request: " . $e->getMessage();
+            echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
+            error_log("nft-holders.php: Exception - $error_msg at " . date('Y-m-d H:i:s'));
         }
     }
     ?>
@@ -211,12 +219,12 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         'limit' => $size
     ];
     
-    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}");
+    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
     
     $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
     
     if (isset($data['error'])) {
-        error_log("nft-holders.php: getAssetsByGroup error - {$data['error']}");
+        error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
     }
     
@@ -231,7 +239,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         return ['holders' => $holders];
     }
     
-    error_log("nft-holders.php: No holders found for address $mintAddress");
+    error_log("nft-holders.php: No holders found for address $mintAddress at " . date('Y-m-d H:i:s'));
     return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
 }
 ?>
