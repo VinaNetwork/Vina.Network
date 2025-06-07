@@ -246,13 +246,12 @@ h1, h2 {text-align: center;}
 }
 
 .page-button {
-    width: 28px;
-    height: 28px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    transition: background 0.2s, color 0.2s;
 }
 
 .page-button:hover {background: #f0f0f0;}
@@ -261,6 +260,7 @@ h1, h2 {text-align: center;}
     background: #74787c;
     color: #fff;
     cursor: default;
+    border-radius: 10px;
 }
 
 .page-button.ellipsis {
