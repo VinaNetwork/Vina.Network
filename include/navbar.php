@@ -39,7 +39,7 @@
                 <li><a href="https://kimo.vina.network/token/" class="dropdown-item"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
         </li>
-        <li class="nav-1"><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
+        <li class="nav-1"><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact</a></li>
     </ul>
     <div class="burger" aria-label="Menu toggle">
         <div class="line1"></div>
