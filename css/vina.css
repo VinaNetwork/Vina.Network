@@ -79,6 +79,7 @@ li { list-style: none; }
     margin-left: 2.5rem;
     position: relative;
 }
+.nav-links .nav-1 {margin-left: 2.5rem;}
 
 .nav-link {
     color: #fff;
