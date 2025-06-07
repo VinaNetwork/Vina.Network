@@ -16,27 +16,20 @@
     white-space: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Ẩn thanh trượt trên Firefox */
+    -ms-overflow-style: none; /* Ẩn thanh trượt trên IE/Edge */
 }
 
 .tools-tabs::-webkit-scrollbar {
-    height: 4px;
+    display: none; /* Ẩn thanh trượt trên WebKit (Chrome, Safari) */
 }
 
-.tools-tabs::-webkit-scrollbar-thumb {
-    background-color: #FF0000;
-    border-radius: 4px;
-}
-
-.tools-tabs::-webkit-scrollbar-track {
-    background: #333;
-}
-
-/* Tab Link */
 .tab-link {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px 20px;
+    color: #007bff;
     border-bottom: 2px solid transparent;
     transition: all 0.3s;
     flex-shrink: 0;
@@ -47,15 +40,14 @@
     font-size: 1.2em;
 }
 
-.tab-link:hover {
+.tab-link:hover,
+.tab-link.active {
     color: #007bff;
     border-bottom: 2px solid #007bff;
 }
 
 .tab-link.active {
     font-weight: bold;
-    color: #007bff;
-    border-bottom: 2px solid #007bff;
 }
 
 /* Box Form */
@@ -385,23 +377,16 @@
         max-width: 100%;
     }
     .tools-content {padding: 20px;}
-    
     .tools-tabs {
         gap: 10px;
-        overflow-x: auto; /* Giữ cuộn ngang */
-        -webkit-overflow-scrolling: touch; /* Khôi phục cuộn mượt */
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Ẩn thanh trượt trên Firefox */
+        -ms-overflow-style: none; /* Ẩn thanh trượt trên IE/Edge */
     }
     .tools-tabs::-webkit-scrollbar {
-        height: 4px; /* Giữ kích thước */
+        display: none; /* Ẩn thanh trượt trên WebKit */
     }
-    .tools-tabs::-webkit-scrollbar-thumb {
-        background-color: #007bff; /* Giữ màu xanh */
-        border-radius: 4px;
-    }
-    .tools-tabs::-webkit-scrollbar-track {
-        background: #333; /* Giữ màu nền */
-    }
-    
     .tool-content form {
         flex-direction: column;
         align-items: center;
