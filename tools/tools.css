@@ -79,14 +79,14 @@ div.tools-tabs::-webkit-scrollbar-track {
     content: '';
     position: absolute;
     bottom: -2px;
-    inset-inline: 20px; /* Tạo khoảng cách đều hai bên, tự động căn giữa */
-    width: auto; /* Để gạch tự co giãn theo nội dung còn lại */
-    max-width: 60px; /* Giới hạn tối đa */
+    left: 0;
+    right: 0;
+    margin: 0 auto; /* Căn giữa hoàn toàn */
+    width: 50%; /* Độ dài gạch */
+    max-width: 50px; /* Giới hạn tối đa */
     height: 2px;
     background: #007bff;
     transition: all 0.3s;
-    display: block;
-    margin: 0 auto; /* Đảm bảo căn giữa */
 }
 
 /* Box Form */
