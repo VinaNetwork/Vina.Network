@@ -336,6 +336,11 @@ footer {
         transform: translateY(0);
     }
 
+    .nav-links li {
+        margin: 1rem 0 1rem 1rem;
+        width: 100%;
+    }
+
     .nav-link {
         justify-content: flex-start;
         width: 100%;
@@ -356,7 +361,8 @@ footer {
     .dropdown-menu.active {display: block;}
 
     .dropdown-item {
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0 0.5rem 1rem;
+        color: #e0e0e0;
         justify-content: flex-start;
     }
 
