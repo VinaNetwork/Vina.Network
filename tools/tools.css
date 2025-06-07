@@ -393,8 +393,6 @@ h1, h2 {text-align: center;}
     .export-format,
     .export-btn {
         width: 100%;
-        min-width: unset;
-        height: 40px;
     }
 
     .progress-bar {
