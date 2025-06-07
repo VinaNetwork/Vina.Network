@@ -51,7 +51,6 @@ h1, h2 {text-align: center;}
     justify-content: center;
     gap: 10px;
     position: relative;
-    margin-bottom: 20px;
 }
 
 .tool-content input {
@@ -97,6 +96,7 @@ h1, h2 {text-align: center;}
     background: #c3c7c4;
     position: relative;
 }
+.nft-checkbox form {margin-bottom: 20px;}
 .nft-checkbox input {width: 600px;}
 
 .loader {
