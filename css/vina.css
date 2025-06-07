@@ -145,6 +145,8 @@ li { list-style: none; }
     transform: rotate(180deg);
 }
 
+.dropdown-menu li {margin-left: 1rem;}
+
 .dropdown-item {
     color: #fff;
     padding: 0.5rem 1rem;
