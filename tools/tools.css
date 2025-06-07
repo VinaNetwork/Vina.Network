@@ -121,7 +121,7 @@ h1, h2 {text-align: center;}
     border: 1px solid #ef9a9a;
 }
 
-/* Export Section */
+/* NFT Holders: Export Section */
 .export-section {margin: 20px 0;}
 
 .export-form {
@@ -153,7 +153,7 @@ h1, h2 {text-align: center;}
 }
 .export-btn:hover {background: #218838;}
 
-/* Danh sách và bảng */
+/* NFT Holders: List of wallets */
 .holders-table {
     border-collapse: collapse;
     background: #fff;
@@ -185,6 +185,7 @@ h1, h2 {text-align: center;}
     text-align: center;
 }
 
+/* NFT Transaction */
 .transaction-table,
 .nft-transaction-results table {
     margin: 20px auto;
@@ -227,7 +228,7 @@ h1, h2 {text-align: center;}
     text-decoration: underline;
 }
 
-/* Phân trang */
+/* Pagination */
 .pagination {
     display: flex;
     justify-content: center;
