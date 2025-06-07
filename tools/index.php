@@ -15,13 +15,14 @@ error_reporting(E_ALL);
 
 // Định nghĩa biến trước khi sử dụng
 $root_path = '../';
-$page_title = "Vina Network - Tools";
+$page_title = "Vina Network - Solana NFT Tools & Holders Checker";
 $page_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
-$page_keywords = "Vina Network, Solana NFT, NFT holders, NFT valuation, NFT transactions, wallet analysis, blockchain";
-$page_og_title = "Vina Network - Solana NFT Tools";
+$page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT valuation, blockchain, VINA";
+$page_og_title = "Vina Network - Solana NFT Tools & Holders Checker";
 $page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
+$page_og_image = "https://vina.network/img/tools-og.png"; // Thêm hình ảnh OG cụ thể
 $page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/";
+$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
 $page_css = ['tools.css'];
 
 // Kiểm tra và include header.php
@@ -31,14 +32,6 @@ if (!file_exists($header_path)) {
     die('Internal Server Error: Missing header.php');
 }
 include $header_path;
-
-// Xác định chức năng được chọn (mặc định là nft-holders)
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-error_log("index.php: tool = $tool"); // Debug
-if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
-    $tool = 'nft-holders';
-    error_log("index.php: Invalid tool, defaulted to nft-holders");
-}
 ?>
 
 <body>
@@ -79,6 +72,12 @@ include $navbar_path;
         <div class="tool-content">
             <?php
             // Include file tương ứng với chức năng được chọn
+            $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
+            error_log("index.php: tool = $tool"); // Debug
+            if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
+                $tool = 'nft-holders';
+                error_log("index.php: Invalid tool, defaulted to nft-holders");
+            }
             if ($tool === 'nft-holders') {
                 $tool_file = 'nft-holders.php';
             } elseif ($tool === 'nft-valuation') {
@@ -109,6 +108,24 @@ if (!file_exists($footer_path)) {
 }
 include $footer_path;
 ?>
+
+<!-- Schema Markup -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Vina Network Tools",
+    "operatingSystem": "All",
+    "applicationCategory": "http://schema.org/FinanceApplication",
+    "description": "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.",
+    "url": "https://vina.network/tools/",
+    "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+    }
+}
+</script>
 
 <script src="../js/vina.js"></script>
 <script src="tools.js"></script>
