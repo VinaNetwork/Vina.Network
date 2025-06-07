@@ -258,16 +258,9 @@ h1, h2 {text-align: center;}
 .page-button:hover {background: #f0f0f0;}
 
 .page-button.active {
-    background: #007bff;
+    background: #74787c;
     color: #fff;
-    border: 1px solid #007bff;
     cursor: default;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
 }
 
 .page-button.ellipsis {
@@ -275,12 +268,6 @@ h1, h2 {text-align: center;}
     border: none;
     color: #666;
     cursor: default;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
 }
 
 /* Progress Bar */
