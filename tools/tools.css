@@ -1,4 +1,5 @@
 /* Cấu trúc chung */
+h1, h2 {text-align: center;}
 .tools-section {margin-top: 72px;}
 
 .tools-content {
@@ -6,7 +7,6 @@
     padding: 30px;
     margin: 0 auto;
 }
-.tools-content h1 {text-align: center;}
 
 /* Tab điều hướng */
 .tools-tabs {
@@ -33,19 +33,17 @@
     font-size: 16px;
 }
 
-.tab-link i {
-    font-size: 1.2em;
-}
+.tab-link i {font-size: 1.2em;}
 
 .tab-link:hover {
     color: #007bff;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 4px solid #007bff;
 }
 
 .tab-link.active {
     font-weight: bold;
     color: #007bff;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 4px solid #007bff;
 }
 
 /* Box Form */
@@ -61,7 +59,6 @@
     width: 600px;
     border: 2px solid #007bff;
     border-radius: 10px;
-    font-size: 16px;
     color: #333;
     background-color: #f8f9fa;
 }
@@ -74,13 +71,9 @@
     border-radius: 10px;
     cursor: pointer;
     transition: background 0.2s;
-    font-size: 16px;
     font-weight: 500;
 }
-
-.tool-content button:hover {
-    background: #0056b3;
-}
+.tool-content button:hover {background: #0056b3;}
 
 .loader {
     border: 4px solid #f3f3f3;
@@ -139,7 +132,6 @@
     word-break: break-all;
     white-space: normal;
 }
-
 .holders-table td:last-child {
     text-align: center;
 }
@@ -292,14 +284,10 @@
     padding: 0;
 }
 
-.page-button.nav {
-    width: 28px;
-}
+.page-button.nav {width: 28px;}
 
 /* Export Section */
-.export-section {
-    margin: 20px 0;
-}
+.export-section {margin: 20px 0;}
 
 .export-form {
     display: flex;
@@ -341,10 +329,7 @@
     align-items: center;
     justify-content: center;
 }
-
-.export-btn:hover {
-    background: #218838;
-}
+.export-btn:hover {background: #218838;}
 
 /* Progress Bar */
 .progress-container {
@@ -380,10 +365,8 @@
         flex-direction: column;
         align-items: center;
     }
-    .tool-content input {
-        width: 100%;
-        font-size: 14px;
-    }
+    .tool-content input {width: 100%;}
+    
     .holders-table,
     .transaction-table,
     .nft-transaction-results table {
@@ -420,13 +403,8 @@
         font-size: 11px;
     }
 
-    .page-button i {
-        font-size: 11px;
-    }
-
-    .export-section {
-        margin: 10px 0;
-    }
+    .page-button i {font-size: 11px;}
+    .export-section {margin: 10px 0;}
 
     .export-form {
         flex-direction: column;
