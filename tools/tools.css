@@ -288,7 +288,6 @@
     padding: 8px;
     border: 2px solid #007bff;
     border-radius: 10px;
-    font-size: 14px;
     background-color: #f8f9fa;
     cursor: pointer;
     height: 36px;
@@ -303,7 +302,6 @@
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 14px;
     transition: background 0.2s;
     height: 28px;
     box-sizing: border-box;
@@ -345,7 +343,7 @@
         margin-top: 64px;
         max-width: 100%;
     }
-    div.tools-tabs {
+    .tools-tabs {
         gap: 10px;
     }
     .tool-content form {
@@ -354,7 +352,6 @@
     }
     .tool-content input {
         width: 100%;
-        font-size: 14px;
     }
     .holders-table,
     .transaction-table,
@@ -381,13 +378,8 @@
     .page-button.active,
     .page-button.ellipsis,
     .page-button.nav {
-        width: 26px;
-        height: 26px;
-        font-size: 11px;
-    }
-
-    .page-button i {
-        font-size: 11px;
+        width: 30px;
+        height: 30px;
     }
 
     .export-section {
