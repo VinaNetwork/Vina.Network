@@ -18,14 +18,8 @@
     -webkit-overflow-scrolling: touch;
 }
 
-.tools-tabs::-webkit-scrollbar {
-    height: 4px;
-}
-
-.tools-tabs::-webkit-scrollbar-track {
-    background: #333;
-    height: 2px;
-}
+.tools-tabs::-webkit-scrollbar {height: 2px;}
+.tools-tabs::-webkit-scrollbar-track {background: #333;}
 
 /* Tab Link */
 .tab-link {
