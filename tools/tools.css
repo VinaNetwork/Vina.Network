@@ -228,7 +228,7 @@ h1, h2 {text-align: center;}
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 30px;
     margin: 20px;
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -262,15 +262,7 @@ h1, h2 {text-align: center;}
     transition: background 0.2s, color 0.2s;
 }
 
-.page-button i {
-    font-size: 12px;
-    line-height: 1;
-    vertical-align: middle;
-}
-
-.page-button:hover {
-    background: #f0f0f0;
-}
+.page-button:hover {background: #f0f0f0;}
 
 .page-button.active {
     background: #007bff;
@@ -283,11 +275,6 @@ h1, h2 {text-align: center;}
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
 }
 
 .page-button.ellipsis {
@@ -301,11 +288,6 @@ h1, h2 {text-align: center;}
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
 }
 
 .page-button.nav {width: 28px;}
@@ -360,21 +342,7 @@ h1, h2 {text-align: center;}
     }
 
     /* Phân trang */
-    .pagination {
-        gap: 5px;
-        padding: 0 5px;
-    }
-
-    .page-button,
-    .page-button.active,
-    .page-button.ellipsis,
-    .page-button.nav {
-        width: 26px;
-        height: 26px;
-        font-size: 11px;
-    }
-
-    .page-button i {font-size: 11px;}
+    .pagination {gap: 20px;}
     .export-section {margin: 10px 0;}
 
     .export-form {
@@ -386,7 +354,7 @@ h1, h2 {text-align: center;}
     .export-controls {
         flex-direction: column;
         width: 100%;
-        gap: 8px;
+        gap: 20px;
     }
 
     .export-format,
