@@ -22,11 +22,6 @@
     height: 4px;
 }
 
-.tools-tabs::-webkit-scrollbar-thumb {
-    background-color: #007bff;
-    border-radius: 4px;
-}
-
 .tools-tabs::-webkit-scrollbar-track {
     background: #333;
 }
