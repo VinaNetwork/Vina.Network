@@ -133,8 +133,8 @@ h1, h2 {text-align: center;}
 }
 
 .export-format {
-    padding: 8px;
-    border: 2px solid #007bff;
+    padding: 9px;
+    border: 1px solid #007bff;
     border-radius: 10px;
     background-color: #f8f9fa;
     cursor: pointer;
