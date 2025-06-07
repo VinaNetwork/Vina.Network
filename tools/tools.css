@@ -248,11 +248,6 @@ h1, h2 {text-align: center;}
 .page-button {
     width: 28px;
     height: 28px;
-    background: #fff;
-    color: #333;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -287,8 +282,6 @@ h1, h2 {text-align: center;}
     justify-content: center;
     box-sizing: border-box;
 }
-
-.page-button.nav {width: 28px;}
 
 /* Progress Bar */
 .progress-container {
