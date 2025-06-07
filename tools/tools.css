@@ -29,7 +29,7 @@ div.tools-tabs {
     white-space: nowrap !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    position: relative; /* Đảm bảo context cho gạch */
+    position: relative;
 }
 
 div.tools-tabs::-webkit-scrollbar {
@@ -37,7 +37,7 @@ div.tools-tabs::-webkit-scrollbar {
 }
 
 div.tools-tabs::-webkit-scrollbar-thumb {
-    background-color: #333; /* Giữ màu cho scrollbar */
+    background-color: #333;
     border-radius: 4px;
 }
 
@@ -46,19 +46,19 @@ div.tools-tabs::-webkit-scrollbar-track {
 }
 
 .nav-link {
-    display: inline-flex; /* Giới hạn chiều rộng theo nội dung */
+    display: inline-flex;
     align-items: center;
-    justify-content: center; /* Căn giữa nội dung */
+    justify-content: center;
     gap: 10px;
     padding: 10px 20px;
-    position: relative; /* Để gạch dưới định vị */
+    position: relative;
     color: #007bff;
-    border-bottom: none; /* Xóa border-bottom cũ */
+    border-bottom: none;
     transition: all 0.3s;
     flex-shrink: 0;
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
-    white-space: nowrap; /* Đảm bảo chữ không bị ngắt dòng */
+    white-space: nowrap;
 }
 
 .nav-link i {
@@ -77,14 +77,15 @@ div.tools-tabs::-webkit-scrollbar-track {
 .nav-link.active::after {
     content: '';
     position: absolute;
-    bottom: -2px; /* Điều chỉnh vị trí gạch gần sát dưới */
-    left: 50%;
-    transform: translateX(-50%); /* Căn giữa gạch */
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    margin: 0 auto; /* Căn giữa hoàn toàn */
     width: 50%; /* Độ dài gạch là 50% chiều rộng của .nav-link */
     max-width: 50px; /* Giới hạn tối đa 50px */
     height: 2px;
-    background: #007bff; /* Khôi phục màu xanh */
-    transition: all 0.3s; /* Thêm hiệu ứng mượt */
+    background: #007bff;
+    transition: all 0.3s;
 }
 
 /* Box Form */
