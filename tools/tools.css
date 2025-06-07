@@ -257,11 +257,6 @@ h1, h2 {text-align: center;}
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
     transition: background 0.2s, color 0.2s;
 }
 
