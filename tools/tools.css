@@ -24,6 +24,7 @@
 
 .tools-tabs::-webkit-scrollbar-track {
     background: #333;
+    height: 2px;
 }
 
 /* Tab Link */
