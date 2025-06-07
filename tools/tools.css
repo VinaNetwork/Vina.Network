@@ -71,6 +71,24 @@ h1, h2 {text-align: center;}
 }
 .tool-content button:hover {background: #0056b3;}
 
+/* Result */
+.result-info {
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
+    color: #333;
+    margin: 10px 0;
+}
+
+.result-error {
+    background: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border: 1px solid #ef9a9a;
+}
+
 /* NFT Checkbox */
 .nft-checkbox {
     margin: 20px auto;
@@ -99,24 +117,6 @@ h1, h2 {text-align: center;}
 @keyframes spin {
     0% { transform: translate(-50%, -50%) rotate(0deg); }
     100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* Kết quả */
-.result-info {
-    overflow-wrap: break-word;
-    word-break: break-all;
-    max-width: 100%;
-    color: #333;
-    margin: 10px 0;
-}
-
-.result-error {
-    background: #ffebee;
-    color: #c62828;
-    padding: 10px;
-    border-radius: 10px;
-    margin: 20px 0;
-    border: 1px solid #ef9a9a;
 }
 
 /* NFT Holders: Export Section */
