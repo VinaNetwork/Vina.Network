@@ -388,11 +388,18 @@
     
     .tools-tabs {
         gap: 10px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: auto;
+        overflow-x: auto; /* Giữ cuộn ngang */
+        -webkit-overflow-scrolling: touch; /* Khôi phục cuộn mượt */
     }
     .tools-tabs::-webkit-scrollbar {
-        display: none; /* Ẩn thanh trượt mặc định */
+        height: 4px; /* Giữ kích thước */
+    }
+    .tools-tabs::-webkit-scrollbar-thumb {
+        background-color: #007bff; /* Giữ màu xanh */
+        border-radius: 4px;
+    }
+    .tools-tabs::-webkit-scrollbar-track {
+        background: #333; /* Giữ màu nền */
     }
     
     .tool-content form {
