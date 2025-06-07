@@ -4,9 +4,8 @@ h1.tools-title {text-align: center;}
 
 .tools-content {
     max-width: 1200px;
-    padding: 40px;
+    padding: 20px;
     margin: 0 auto;
-    min-width: 0;
 }
 
 /* Tab điều hướng */
@@ -396,9 +395,7 @@ div.tools-tabs::-webkit-scrollbar-track {
         font-size: 12px;
     }
     
-    .nft-checkbox {
-        padding: 15px;
-    }
+    .nft-checkbox {padding: 20px;}
     
     .tool-content button,
     .result-info,
