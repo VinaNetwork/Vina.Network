@@ -31,12 +31,10 @@
     background: #333;
 }
 
-/* Box Form */
 .tool-content form {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 20px;
     position: relative;
 }
 
@@ -45,8 +43,6 @@
     width: 600px;
     border: 2px solid #007bff;
     border-radius: 10px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 16px;
     color: #333;
     background-color: #f8f9fa;
 }
@@ -59,9 +55,6 @@
     border-radius: 10px;
     cursor: pointer;
     transition: background 0.2s;
-    font-family: 'Poppins', sans-serif;
-    font-size: 16px;
-    font-weight: 500;
 }
 
 .tool-content button:hover {
@@ -111,7 +104,6 @@
 .holders-table td {
     padding: 10px;
     border: 1px solid #ddd;
-    font-family: 'Poppins', sans-serif;
     font-size: 14px;
 }
 
@@ -148,7 +140,6 @@
 .nft-transaction-results td {
     padding: 10px;
     border: 1px solid #ddd;
-    font-family: 'Poppins', sans-serif;
     font-size: 14px;
 }
 
