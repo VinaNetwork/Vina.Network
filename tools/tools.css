@@ -30,10 +30,9 @@ h1, h2 {text-align: center;}
     border-bottom: 2px solid transparent;
     transition: all 0.3s;
     flex-shrink: 0;
-    font-size: 16px;
 }
 
-.tab-link i {font-size: 1.2em;}
+.tab-link i {font-size: 1.1em;}
 
 .tab-link:hover {
     color: #007bff;
@@ -87,7 +86,7 @@ h1, h2 {text-align: center;}
     left: 50%;
     transform: translate(-50%, -50%);
     display: none;
-    z-index: 1000; /* Đảm bảo hiển thị trên các phần tử khác */
+    z-index: 1000;
 }
 
 @keyframes spin {
@@ -183,7 +182,6 @@ h1, h2 {text-align: center;}
     overflow-wrap: break-word;
     word-break: break-all;
     max-width: 100%;
-    font-size: 16px;
     color: #333;
     margin: 10px 0;
 }
@@ -191,10 +189,9 @@ h1, h2 {text-align: center;}
 .result-error {
     background: #ffebee;
     color: #c62828;
-    padding: 12px;
+    padding: 10px;
     border-radius: 10px;
     margin: 20px 0;
-    font-size: 16px;
     border: 1px solid #ef9a9a;
 }
 
@@ -381,9 +378,6 @@ h1, h2 {text-align: center;}
         font-size: 12px;
     }
     
-    .tool-content button,
-    .result-info,
-    .result-error,
     .export-format,
     .export-btn {
         font-size: 14px;
