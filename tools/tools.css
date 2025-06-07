@@ -59,6 +59,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
     white-space: nowrap;
+    text-align: center; /* Đảm bảo nội dung căn giữa */
 }
 
 .nav-link i {
@@ -78,11 +79,10 @@ div.tools-tabs::-webkit-scrollbar-track {
     content: '';
     position: absolute;
     bottom: -2px;
-    left: 0;
-    right: 0;
-    margin: 0 auto; /* Căn giữa hoàn toàn */
-    width: 50%; /* Độ dài gạch là 50% chiều rộng của .nav-link */
-    max-width: 50px; /* Giới hạn tối đa 50px */
+    left: 50%;
+    transform: translateX(-50%); /* Căn giữa dựa trên chính giữa phần tử */
+    width: 60%; /* Điều chỉnh độ dài gạch để phù hợp với nội dung */
+    max-width: 60px; /* Giới hạn tối đa */
     height: 2px;
     background: #007bff;
     transition: all 0.3s;
