@@ -102,6 +102,67 @@ h1, h2 {text-align: center;}
     position: relative;
 }
 
+/* Kết quả */
+.result-info {
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
+    color: #333;
+    margin: 10px 0;
+}
+
+.result-error {
+    background: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border: 1px solid #ef9a9a;
+}
+
+/* Export Section */
+.export-section {margin: 20px 0;}
+
+.export-form {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.export-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.export-format {
+    padding: 8px;
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    height: 36px;
+    box-sizing: border-box;
+    min-width: 100px;
+}
+
+.export-btn {
+    padding: 8px 16px;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    height: 28px;
+    box-sizing: border-box;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.export-btn:hover {background: #218838;}
+
 /* Danh sách và bảng */
 .holders-table {
     margin: 20px auto;
@@ -175,24 +236,6 @@ h1, h2 {text-align: center;}
 .transaction-table a:hover {
     color: #0056b3;
     text-decoration: underline;
-}
-
-/* Kết quả */
-.result-info {
-    overflow-wrap: break-word;
-    word-break: break-all;
-    max-width: 100%;
-    color: #333;
-    margin: 10px 0;
-}
-
-.result-error {
-    background: #ffebee;
-    color: #c62828;
-    padding: 10px;
-    border-radius: 10px;
-    margin: 20px 0;
-    border: 1px solid #ef9a9a;
 }
 
 /* Phân trang */
@@ -283,51 +326,6 @@ h1, h2 {text-align: center;}
 
 .page-button.nav {width: 28px;}
 
-/* Export Section */
-.export-section {margin: 20px 0;}
-
-.export-form {
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-}
-
-.export-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.export-format {
-    padding: 8px;
-    border: 2px solid #007bff;
-    border-radius: 10px;
-    font-size: 14px;
-    background-color: #f8f9fa;
-    cursor: pointer;
-    height: 36px;
-    box-sizing: border-box;
-    min-width: 100px;
-}
-
-.export-btn {
-    padding: 8px 16px;
-    background: #28a745;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.2s;
-    height: 28px;
-    box-sizing: border-box;
-    min-width: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.export-btn:hover {background: #218838;}
-
 /* Progress Bar */
 .progress-container {
     margin: 10px 0;
@@ -362,8 +360,7 @@ h1, h2 {text-align: center;}
         flex-direction: column;
         align-items: center;
     }
-    .tool-content input {width: 100%;}
-    
+    .tool-content input
     .holders-table,
     .transaction-table,
     .nft-transaction-results table {
@@ -376,11 +373,6 @@ h1, h2 {text-align: center;}
     .nft-transaction-results td {
         padding: 5px;
         font-size: 12px;
-    }
-    
-    .export-format,
-    .export-btn {
-        font-size: 14px;
     }
 
     .pagination {
