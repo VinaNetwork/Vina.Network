@@ -336,11 +336,6 @@ footer {
         transform: translateY(0);
     }
 
-    .nav-links li {
-        margin: 1rem 0 1rem 1rem;
-        width: 100%;
-    }
-
     .nav-link {
         justify-content: flex-start;
         width: 100%;
