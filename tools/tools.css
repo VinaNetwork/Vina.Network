@@ -163,7 +163,7 @@ h1, h2 {text-align: center;}
 
 .holders-table th,
 .holders-table td {
-    padding: 10px;
+    padding: 5px 10px;
     border: 1px solid #ddd;
     font-size: 14px;
 }
@@ -315,7 +315,6 @@ h1, h2 {text-align: center;}
     .transaction-table th,
     .transaction-table td,
     .nft-transaction-results td {
-        padding: 5px;
         font-size: 12px;
     }
 
