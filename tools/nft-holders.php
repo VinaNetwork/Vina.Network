@@ -110,8 +110,8 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 
                 echo "<div class='result-section'>";
                 echo "<h2>Results</h2>";
-                echo "<p class='result-info'>Checking address: " . htmlspecialchars($mintAddress) . "</p>";
-                echo "<p class='result-info'>Owners: $current_holders/$total_holders ($percentage%) (Page $page)</p>";
+                echo "<p class='result-info'>NFT Collection address: " . htmlspecialchars($mintAddress) . "</p>";
+                echo "<p class='result-info'>Page $page: $current_holders/$total_holders ($percentage%)</p>";
 
                 echo "<div class='export-section'>";
                 echo "<form method='POST' action='export-holders.php' class='export-form'>";
