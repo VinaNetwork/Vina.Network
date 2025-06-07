@@ -31,12 +31,12 @@
     background: #333;
 }
 
+/* Tab Link */
 .tab-link {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px 20px;
-    color: #007bff;
     border-bottom: 2px solid transparent;
     transition: all 0.3s;
     flex-shrink: 0;
@@ -47,14 +47,15 @@
     font-size: 1.2em;
 }
 
-.tab-link:hover,
-.tab-link.active {
+.tab-link:hover {
     color: #007bff;
     border-bottom: 2px solid #007bff;
 }
 
 .tab-link.active {
     font-weight: bold;
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
 }
 
 /* Box Form */
