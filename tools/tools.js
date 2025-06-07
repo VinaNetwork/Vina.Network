@@ -1,3 +1,4 @@
+// public_html/tools/tools.js
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
@@ -17,9 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const tabRect = activeTab.getBoundingClientRect();
             const containerRect = tabsContainer.getBoundingClientRect();
-            const scrollOffset = activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2;
             tabsContainer.scrollTo({
-                left: scrollOffset,
+                left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
                 behavior: 'smooth'
             });
         }, 100);
@@ -34,9 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabsContainer) {
                 const tabRect = this.getBoundingClientRect();
                 const containerRect = tabsContainer.getBoundingClientRect();
-                const scrollOffset = this.offsetLeft - (containerRect.width - tabRect.width) / 2;
                 tabsContainer.scrollTo({
-                    left: scrollOffset,
+                    left: this.offsetLeft - (containerRect.width - tabRect.width) / 2,
                     behavior: 'smooth'
                 });
             }
@@ -87,10 +86,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
             const form = e.target;
-            const loader = document.querySelector('.loader');
-            console.log('Loader element:', loader);
+            const loader = document.querySelector('.loader'); // Tìm loader trong toàn bộ DOM
+            console.log('Loader element:', loader); // Debug
             if (loader) {
-                loader.style.display = 'block';
+                loader.style.display = 'block'; // Hiển thị loader
                 console.log('Loader activated');
             } else {
                 console.error('Loader not found in DOM');
@@ -110,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 document.querySelector('.tool-content').innerHTML = data;
                 if (loader) {
-                    loader.style.display = 'none';
+                    loader.style.display = 'none'; // Ẩn loader sau khi load xong
                     console.log('Loader deactivated');
                 }
             })
@@ -118,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error submitting form:', error);
                 document.querySelector('.tool-content').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) {
-                    loader.style.display = 'none';
+                    loader.style.display = 'none'; // Ẩn loader nếu có lỗi
                 }
             });
         }
