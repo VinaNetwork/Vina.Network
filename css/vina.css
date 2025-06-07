@@ -361,12 +361,7 @@ footer {
     }
     .dropdown-menu.active {display: block;}
 
-    .dropdown-item {
-        padding: 0.5rem 0 0.5rem 1rem;
-        color: #e0e0e0;
-        justify-content: flex-start;
-    }
-
+    .dropdown-item {justify-content: flex-start;}
     .dropdown-item:hover {
         background: none;
         color: #00d4ff;
