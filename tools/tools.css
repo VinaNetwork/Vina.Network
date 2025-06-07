@@ -61,14 +61,13 @@ h1, h2 {text-align: center;}
 }
 
 .tool-content button {
-    padding: 10px 20px;
+    padding: 10px;
     background: #007bff;
     color: #fff;
     border: none;
     border-radius: 10px;
     cursor: pointer;
     transition: background 0.2s;
-    font-weight: 500;
 }
 .tool-content button:hover {background: #0056b3;}
 
@@ -139,22 +138,11 @@ h1, h2 {text-align: center;}
     border-radius: 10px;
     background-color: #f8f9fa;
     cursor: pointer;
-    height: 36px;
     box-sizing: border-box;
-    min-width: 100px;
 }
 
 .export-btn {
-    padding: 8px 16px;
-    background: #28a745;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.2s;
-    height: 28px;
     box-sizing: border-box;
-    min-width: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
