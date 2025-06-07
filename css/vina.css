@@ -144,6 +144,8 @@ li { list-style: none; }
     transition: background 0.3s ease, color 0.3s ease;
 }
 
+.dropdown-menu i {margin-right: 6px;}
+
 .nav-link:hover .dropdown-icon, .nav-link.active .dropdown-icon {
     color: #00d4ff;
 }
