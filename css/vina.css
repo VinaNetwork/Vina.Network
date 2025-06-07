@@ -75,10 +75,7 @@ li { list-style: none; }
     align-items: center;
 }
 
-.nav-links li {
-    margin-left: 2.5rem;
-    position: relative;
-}
+.nav-links li {position: relative;}
 .nav-links .nav-1 {margin-left: 2.5rem;}
 
 .nav-link {
