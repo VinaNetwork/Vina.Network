@@ -336,8 +336,9 @@ footer {
         transform: translateY(0);
     }
 
-    .nav-links li {
-        margin: 1rem 0 1rem 1rem;
+    .nav-links .nav-1 {
+        margin: unset;
+        padding: 5px 10px;
         width: 100%;
     }
 
