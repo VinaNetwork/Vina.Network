@@ -6,8 +6,8 @@
         </a>
     </div>
     <ul class="nav-links">
-        <li><a href="https://www.vina.network/" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
-        <li class="dropdown">
+        <li class="nav-1"><a href="https://www.vina.network/" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+        <li class="nav-1 dropdown">
             <a href="#" class="nav-link dropdown-toggle">
                 <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
@@ -20,7 +20,7 @@
                 <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-image"></i> NFT Marketplace</a></li>
             </ul>
         </li>
-        <li class="dropdown">
+        <li class="nav-1 dropdown">
             <a href="#" class="nav-link dropdown-toggle">
                 <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
@@ -31,7 +31,7 @@
                 <li><a href="https://www.vina.network/tools/?tool=wallet-analysis" class="dropdown-item"><i class="fas fa-search"></i> Wallet Analysis</a></li>
             </ul>
         </li>
-        <li class="dropdown">
+        <li class="nav-1 dropdown">
             <a href="#" class="nav-link dropdown-toggle">
                 <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
@@ -39,7 +39,7 @@
                 <li><a href="https://kimo.vina.network/token/" class="dropdown-item"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
         </li>
-        <li><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
+        <li class="nav-1"><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact Us</a></li>
     </ul>
     <div class="burger" aria-label="Menu toggle">
         <div class="line1"></div>
