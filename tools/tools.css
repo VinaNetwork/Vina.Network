@@ -59,7 +59,7 @@ div.tools-tabs::-webkit-scrollbar-track {
     font-family: 'Poppins', sans-serif;
     font-size: 16px;
     white-space: nowrap;
-    text-align: center; /* Đảm bảo nội dung căn giữa */
+    text-align: center;
 }
 
 .nav-link i {
@@ -79,13 +79,14 @@ div.tools-tabs::-webkit-scrollbar-track {
     content: '';
     position: absolute;
     bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%); /* Căn giữa dựa trên chính giữa phần tử */
-    width: 60%; /* Điều chỉnh độ dài gạch để phù hợp với nội dung */
+    inset-inline: 20px; /* Tạo khoảng cách đều hai bên, tự động căn giữa */
+    width: auto; /* Để gạch tự co giãn theo nội dung còn lại */
     max-width: 60px; /* Giới hạn tối đa */
     height: 2px;
     background: #007bff;
     transition: all 0.3s;
+    display: block;
+    margin: 0 auto; /* Đảm bảo căn giữa */
 }
 
 /* Box Form */
