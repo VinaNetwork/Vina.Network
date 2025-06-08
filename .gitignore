@@ -1,0 +1,50 @@
+# Các file/folder thường loại trừ cho dự án PHP/Web
+
+# Thư mục hệ thống
+.DS_Store
+Thumbs.db
+
+# Log file
+*.log
+
+# Thư mục cache
+cache/
+tmp/
+temp/
+
+# Composer
+/vendor/
+/composer.lock
+
+# Node (nếu có dùng npm/yarn)
+/node_modules/
+/package-lock.json
+/yarn.lock
+
+# Thư mục build, dist
+/dist/
+/build/
+
+# Thư mục chứa file upload
+uploads/
+files/
+data/
+
+# File môi trường
+.env
+.env.*
+
+# Thư mục IDE/editor
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Các file backup hoặc tạm
+*~
+*.swp
+*.bak
+*.tmp
+
+# Các thư mục khác của VSCode, PHPStorm...
+/nbproject/
