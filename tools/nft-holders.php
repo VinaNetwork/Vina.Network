@@ -25,7 +25,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required>
             <button type="submit">Check Holders</button>
         </form>
-        <div class="loader" style="display: none;"></div> <!-- Đặt ngoài form để dễ quản lý -->
+        <div class="loader" style="display: none;"></div>
     </div>
 
     <?php
