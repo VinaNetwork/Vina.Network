@@ -28,7 +28,6 @@ li { list-style: none; }
     color: #fff;
     padding: .6rem 1rem;
     border-radius: 50px;
-    font: 500 1rem sans-serif;
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
