@@ -49,7 +49,7 @@ if (!file_exists($navbar_path)) {
 include $navbar_path;
 ?>
 
-<section class="tools-section">
+<section class="t-1">
     <div class="tools-content">
         <h1>Vina Network Tools</h1>
 
