@@ -209,27 +209,15 @@ li { list-style: none; }
     flex-wrap: wrap;
     margin-top: 20px;
 }
-
-.community-4 {
+community-3 .cta-button {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: linear-gradient(45deg, #00d4ff, #007bff);
-    color: #fff;
-    padding: 0.8rem 1.5rem;
-    border-radius: 50px;
-    font: 500 1.1rem sans-serif;
-    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.community-4:hover {
+.cta-button:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
-}
-
-.community-4 i {
-    font-size: 1.2rem;
 }
 
 /* Footer */
@@ -370,7 +358,6 @@ footer {
     .logo img {height: 48px;}
     
     .community-1 {padding: 20px;}
-    .community-4 {padding: 0.6rem 1.2rem;}
     
     .footer-1 {flex-direction: column;}
     .footer-2 {margin: .5rem 0;}
