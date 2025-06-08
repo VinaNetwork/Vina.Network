@@ -34,6 +34,16 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
     <meta property="og:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
     <meta property="og:url" content="<?php echo htmlspecialchars($page_og_url); ?>">
     <meta property="og:type" content="<?php echo htmlspecialchars($page_og_type); ?>">
+
+    <!-- Thêm Twitter Card SEO (dưới phần Open Graph) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($page_og_description); ?>">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
+
+    <!-- Nếu muốn robots động -->
+    <meta name="robots" content="<?php echo isset($page_robots) ? htmlspecialchars($page_robots) : 'index, follow'; ?>">
+    
     <link rel="canonical" href="<?php echo htmlspecialchars($page_canonical); ?>">
     <link rel="icon" type="image/x-icon" href="<?php echo $root_path; ?>img/favicon.ico">
     <link rel="stylesheet" href="<?php echo $root_path; ?>css/vina.css">
