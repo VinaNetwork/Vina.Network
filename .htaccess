@@ -3,6 +3,11 @@
 # Enable URL rewrite engine
 RewriteEngine On
 
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
 # -------- REDIRECTS --------
 # Redirect /dogcat to subdomain
 RewriteCond %{HTTP_HOST} ^(www\.)?vina\.network$ [NC]
