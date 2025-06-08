@@ -367,6 +367,14 @@ footer {
         color: #00d4ff;
     }
 
+    .dropdown-toggle .dropdown-icon {
+        transition: transform 0.3s cubic-bezier(.46,1.48,.74,.96);
+        display: inline-block;
+    }
+    .dropdown-toggle.active .dropdown-icon {
+        transform: rotate(90deg);
+    }
+
     .burger {display: block;}
     .logo img {height: 48px;}
     
