@@ -36,11 +36,6 @@ section h3 {
 }
 .h-2 h1:hover {text-shadow: 0 0 15px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5);}
 .h-2 p:hover {text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);}
-.h-2 .cta-button {
-    padding: 1.2rem 2.5rem;
-    border-radius: 50px;
-    font: 600 1.2rem sans-serif;
-}
 
 /* Keyframes */
 @keyframes gradientText {
