@@ -254,12 +254,7 @@ footer {
     min-width: 200px;
     margin: 1rem;
 }
-
-.footer-2 h3 {
-    font: 600 1.5em sans-serif;
-    color: #00d4ff;
-}
-
+.footer-2 h3 {color: #00d4ff;}
 .footer-2 p a, 
 .footer-3 a, 
 .footer-4 a {
@@ -267,22 +262,16 @@ footer {
     transition: color 0.3s ease;
 }
 
-.footer-3 li {
-    padding: 10px;
-}
+.footer-3 li {padding: 5px 10px;}
 
 .footer-4 {
     display: flex;
     gap: 1.5rem;
 }
 
-.footer-4 i {
-    font-size: 1.2rem;
-}
-
 .footer-5 {
     text-align: center;
-    padding-top: 2rem;
+    padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
