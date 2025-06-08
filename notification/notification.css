@@ -1,5 +1,5 @@
 /* Notification Section */
-.notification-section {
+.no-1 {
     min-height: 100vh;
     margin-top: 72px;
     display: flex;
@@ -8,7 +8,7 @@
     text-align: center;
 }
 
-.notification-content {
+.n-2 {
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     border-radius: 15px;
     padding: 2rem;
@@ -18,17 +18,17 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.notification-content:hover {
+.no-2:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
-.notification-content h1 {color: #00d4ff;}
-.notification-content p {color: #fff;}
+.n-2 h1 {color: #00d4ff;}
+.n-2 p {color: #fff;}
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-    .notification-section {
+    .n-1 {
         margin-top: 64px;
         min-height: unset;
     }
