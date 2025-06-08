@@ -1,11 +1,11 @@
 <!-- Footer -->
 <footer>
-    <div class="footer-container">
-        <div class="footer-column">
+    <div class="footer-1">
+        <div class="footer-2">
             <h3>Vina Network</h3>
             <p>A leading Web3 ecosystem focused on cryptocurrencies, stablecoins, and DeFi.</p>
         </div>
-        <div class="footer-column">
+        <div class="footer-2">
             <h3>Quick Links</h3>
             <ul class="footer-links">
                 <li><a href="https://www.vina.network/"><i class="fas fa-home"></i> Home</a></li>
@@ -13,7 +13,7 @@
                 <li><a href="https://www.vina.network/contact/"><i class="fas fa-envelope"></i> Contact</a></li>
             </ul>
         </div>
-        <div class="footer-column">
+        <div class="footer-2">
             <h3>Follow Us</h3>
             <div class="social-links">
                 <a href="https://x.com/Vina_Network" target="_blank" rel="nofollow noopener noreferrer"><i class="fab fa-x-twitter"></i> Twitter</a>
@@ -21,7 +21,7 @@
             </div>
         </div>
     </div>
-    <div class="footer-bottom">
+    <div class="footer-2">
         <p>© 2025 Vina Network. All rights reserved.</p>
     </div>
     <!-- Structured Data for SEO -->
@@ -31,7 +31,7 @@
         "@type": "Organization",
         "name": "Vina Network",
         "url": "https://vina.network",
-        "logo": "https://vina.network/logo.png",
+        "logo": "https://vina.network/img/logo.png",
         "sameAs": [
             "https://x.com/Vina_Network",
             "https://t.me/VinaNetworks"
