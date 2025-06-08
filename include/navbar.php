@@ -21,9 +21,7 @@
             </ul>
         </li>
         <li class="nav-2 dropdown">
-            <a href="#" class="nav-link dropdown-toggle">
-                <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
-            </a>
+            <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
                 <li><a href="https://www.vina.network/tools/?tool=nft-holders" class="dropdown-link"><i class="fas fa-wallet"></i> NFT Holders</a></li>
                 <li><a href="https://www.vina.network/tools/?tool=nft-valuation" class="dropdown-link"><i class="fas fa-chart-line"></i> NFT Valuation</a></li>
@@ -32,9 +30,7 @@
             </ul>
         </li>
         <li class="nav-2 dropdown">
-            <a href="#" class="nav-link dropdown-toggle">
-                <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
-            </a>
+            <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
                 <li><a href="https://kimo.vina.network/token/" class="dropdown-link"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
