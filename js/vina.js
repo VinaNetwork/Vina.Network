@@ -92,9 +92,35 @@ document.addEventListener('scroll', debounce(() => {
 // Burger menu toggle
 const burger = document.querySelector('.burger');
 const navLinks = document.querySelector('.nav-links');
+
 burger.addEventListener('click', () => {
     burger.classList.toggle('active');
     navLinks.classList.toggle('active');
+    document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+});
+
+// Đóng khi bấm vào 1 link
+document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+        if(navLinks.classList.contains('active')) {
+            burger.classList.remove('active');
+            navLinks.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+});
+
+// Đóng khi bấm ra ngoài menu (optional)
+document.addEventListener('click', (e) => {
+    if (
+        navLinks.classList.contains('active') &&
+        !navLinks.contains(e.target) &&
+        !burger.contains(e.target)
+    ) {
+        burger.classList.remove('active');
+        navLinks.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 });
 
 // Active state for nav links
