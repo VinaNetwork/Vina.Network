@@ -1,7 +1,6 @@
 <?php
 // config.php
 // Yêu cầu bắt buộc muốn include file config.php thì phải có VINANETWORK_ENTRY
-<?php
 if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct script access allowed!');
