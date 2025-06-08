@@ -18,8 +18,8 @@ include '../include/header.php';
     <?php include '../include/navbar.php'; ?>
 
     <!-- Contact Info Section -->
-    <section class="contact-info">
-        <div class="info-content">
+    <section class="c-1">
+        <div class="c-2">
             <h1 class="fade-in" data-delay="0">Contact Us</h1>
             <p class="fade-in" data-delay="200">We'd love to hear from you! Reach out to Vina Network via X, Telegram, or Email.</p>
             <div class="contact-methods">
