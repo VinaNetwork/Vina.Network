@@ -188,18 +188,18 @@ li { list-style: none; }
 }
 
 /* Community Section */
-.community-section {
+.community-1 {
     padding: 30px;
     background: #c3c7c4;
     text-align: center;
 }
 
-.community-content h2 {
+.community-2 h2 {
     font: 700 2em sans-serif;
     color: #1a1a1a;
 }
 
-.community-links {
+.community-3 {
     display: flex;
     justify-content: center;
     gap: 1.5rem;
@@ -378,7 +378,7 @@ footer {
     .burger {display: block;}
     .logo img {height: 48px;}
     
-    .community-section {padding: 20px;}
+    .community-1 {padding: 20px;}
     .community-link {padding: 0.6rem 1.2rem;}
     
     .footer-container {flex-direction: column;}
