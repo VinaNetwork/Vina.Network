@@ -131,6 +131,7 @@ include $footer_path;
 </script>
 
 <script src="../js/vina.js"></script>
+<script src="../js/navbar.js"></script>
 <script src="tools.js"></script>
 </body>
 </html>
