@@ -1,5 +1,5 @@
 /* Notification Section */
-.no-1 {
+.n-1 {
     min-height: 100vh;
     margin-top: 72px;
     display: flex;
@@ -18,7 +18,7 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.no-2:hover {
+.n-2:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
