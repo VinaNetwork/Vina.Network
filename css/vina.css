@@ -209,15 +209,9 @@ li { list-style: none; }
     flex-wrap: wrap;
     margin-top: 20px;
 }
-community-3 .cta-button {
+.community-3 .cta-button {
     display: inline-flex;
-    align-items: center;
     gap: 0.5rem;
-}
-
-.cta-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
 }
 
 /* Footer */
