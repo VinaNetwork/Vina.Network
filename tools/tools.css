@@ -1,7 +1,7 @@
 /* Tools CSS */
 h1, h2 {text-align: center;}
 .t-1 {margin-top: 72px;}
-.tools-content {
+.t-2 {
     max-width: 1000px;
     background: #ffffff;
     padding: 30px;
@@ -298,7 +298,7 @@ h1, h2 {text-align: center;}
         margin-top: 64px;
         max-width: 100%;
     }
-    .tools-content {padding: 20px;}
+    .t-2 {padding: 20px;}
     .tools-tabs {gap: 6px;}
     .tool-content form {
         flex-direction: column;
