@@ -192,15 +192,12 @@ li { list-style: none; }
 
 /* Community Section */
 .community-1 {
-    padding: 30px;
+    padding: 20px;
     background: #c3c7c4;
     text-align: center;
 }
 
-.community-2 h2 {
-    font: 700 2em sans-serif;
-    color: #1a1a1a;
-}
+.community-2 p {margin-bottom: 20px;}
 
 .community-3 {
     display: flex;
@@ -350,8 +347,6 @@ footer {
 
     .burger {display: block;}
     .logo img {height: 48px;}
-    
-    .community-1 {padding: 20px;}
     
     .footer-1 {flex-direction: column;}
     .footer-2 {margin: .5rem 0;}
