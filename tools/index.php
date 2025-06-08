@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-// Định nghĩa hằng số để xác nhận truy cập hợp lệ vào config.php
-define('VINANETWORK_ENTRY', true);
-
 // Cấu hình log lỗi
 $config_path = '../config/config.php';
 if (!file_exists($config_path)) {
