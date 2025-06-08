@@ -99,9 +99,27 @@ burger.addEventListener('click', () => {
     document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
 });
 
-// Đóng khi bấm vào 1 link
-document.querySelectorAll('.nav-links a').forEach(link => {
-    link.addEventListener('click', () => {
+// Đóng menu khi bấm vào link thường (KHÔNG phải dropdown-toggle)
+document.querySelectorAll('.nav-links .nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        // Nếu là dropdown-toggle trên mobile, thì chỉ xổ menu con, không đóng menu chính
+        if (window.innerWidth <= 768 && link.classList.contains('dropdown-toggle')) {
+            e.preventDefault();
+            // Toggle dropdown-menu
+            const parentDropdown = link.closest('.dropdown');
+            const dropdownMenu = parentDropdown.querySelector('.dropdown-menu');
+            dropdownMenu.classList.toggle('active');
+            link.classList.toggle('active');
+            // Đóng các dropdown khác
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (menu !== dropdownMenu) menu.classList.remove('active');
+            });
+            document.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+                if (toggle !== link) toggle.classList.remove('active');
+            });
+            return;
+        }
+        // Nếu không phải dropdown-toggle thì đóng menu mobile
         if(navLinks.classList.contains('active')) {
             burger.classList.remove('active');
             navLinks.classList.remove('active');
@@ -110,9 +128,10 @@ document.querySelectorAll('.nav-links a').forEach(link => {
     });
 });
 
-// Đóng khi bấm ra ngoài menu (optional)
+// Đóng menu khi bấm ra ngoài (chỉ trên mobile)
 document.addEventListener('click', (e) => {
     if (
+        window.innerWidth <= 768 &&
         navLinks.classList.contains('active') &&
         !navLinks.contains(e.target) &&
         !burger.contains(e.target)
@@ -120,6 +139,9 @@ document.addEventListener('click', (e) => {
         burger.classList.remove('active');
         navLinks.classList.remove('active');
         document.body.style.overflow = '';
+        // Ẩn tất cả dropdown-menu khi đóng menu mobile
+        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
+        document.querySelectorAll('.dropdown-toggle').forEach(toggle => toggle.classList.remove('active'));
     }
 });
 
