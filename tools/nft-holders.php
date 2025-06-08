@@ -113,9 +113,11 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
                 $percentage = $total_holders > 0 ? number_format(($current_holders / $total_holders) * 100, 1) : 0;
 
                 echo "<div class='result-section'>";
+                echo "<div class=''>";
                 echo "<h2>Results</h2>";
                 echo "<p class='result-info'>NFT Collection address: " . htmlspecialchars($mintAddress) . "</p>";
                 echo "<p class='result-info'>Page $page: $current_holders/$total_holders ($percentage%)</p>";
+                echo "</div>";
 
                 echo "<div class='export-section'>";
                 echo "<form method='POST' action='export-holders.php' class='export-form'>";
