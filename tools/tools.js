@@ -123,3 +123,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Chuyển trang chỉ tải phần nội dung
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('page-link')) {
+        e.preventDefault();
+        const page = e.target.getAttribute('data-page');
+        // Đảm bảo lấy đúng tool hiện tại
+        const tool = document.querySelector('.tab-link.active').getAttribute('data-tool') || 'nft-holders';
+        // Hiển thị loading nếu muốn
+        const holdersList = document.getElementById('holders-list');
+        holdersList.innerHTML = '<div class="loader">Loading...</div>';
+        fetch(`/tools/nft-holders.php?tool=${encodeURIComponent(tool)}&page=${page}`, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(res => res.text())
+        .then(html => {
+            holdersList.innerHTML = html;
+        })
+        .catch(() => {
+            holdersList.innerHTML = '<p>Error loading page. Please try again.</p>';
+        });
+    }
+});
