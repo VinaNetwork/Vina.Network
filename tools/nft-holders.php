@@ -1,5 +1,9 @@
 <?php
 // nft-holders.php
+// Điều kiện để truy cập config.php
+define('VINANETWORK_ENTRY', true);
+require_once '../config/config.php';
+
 // Chức năng: Kiểm tra NFT Holders với Helius API, dùng session cache
 session_start();
 ini_set('log_errors', true);
