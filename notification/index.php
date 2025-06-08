@@ -12,8 +12,8 @@ include '../include/header.php';
 <body>
     <?php include '../include/navbar.php'; ?>
 
-    <section class="notification-section">
-        <div class="notification-content">
+    <section class="n-1">
+        <div class="n-2">
             <h1><i class="fas fa-tools"></i></h1>
             <h1>Products Under Development</h1>
             <p>We’re sorry, but our products are currently under development. Our team is working hard to bring you the best experience. Stay tuned for updates!</p>
