@@ -1,10 +1,10 @@
 /* Contact Info Section */
-.contact-info {
+.c-1 {
     margin-top: 72px;
     text-align: center;
 }
-.info-content {padding: 20px;}
-.info-content h1 {color: #4a90e2;}
+.c-2 {padding: 20px;}
+.c-2 h1 {color: #4a90e2;}
 .contact-methods {
     display: flex;
     justify-content: center;
@@ -40,6 +40,6 @@
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-    .contact-info { margin-top: 64px; }
+    .c-1 { margin-top: 64px; }
     .method-card { width: 100%; }
 }
