@@ -35,7 +35,7 @@ section h3 {
 
 .h-2 p {
     color: #e0e0e0;
-    margin: 20px 10px;
+    margin-bottom: 20px;
     animation: zoomIn 1s ease-out forwards 0.5s;
 }
 
