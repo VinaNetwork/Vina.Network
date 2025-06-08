@@ -89,13 +89,14 @@ li { list-style: none; }
     transition: transform 0.3s ease;
 }
 
-.nav-link:hover i, .dropdown-item:hover i {
+.nav-link:hover i, 
+.dropdown-link:hover i {
     transform: scale(1.2);
 }
 
 .nav-link:hover, 
 .nav-link.active, 
-.dropdown-item:hover, 
+.dropdown-link:hover, 
 .footer-2 p a:hover, 
 .footer-3 a:hover, 
 .footer-4 a:hover {
@@ -113,7 +114,8 @@ li { list-style: none; }
     transition: width 0.3s ease;
 }
 
-.nav-link:hover::after, .nav-link.active::after {
+.nav-link:hover::after, 
+.nav-link.active::after {
     width: 100%;
 }
 
@@ -138,7 +140,7 @@ li { list-style: none; }
 .dropdown-menu.active {display: block;}
 .dropdown-menu.active + .dropdown-icon {transform: rotate(180deg);}
 
-.dropdown-item {
+.dropdown-link {
     color: #fff;
     padding: 0.5rem 1rem;
     display: flex;
@@ -149,7 +151,8 @@ li { list-style: none; }
 
 .dropdown-menu i {margin-right: 6px;}
 
-.nav-link:hover .dropdown-icon, .nav-link.active .dropdown-icon {
+.nav-link:hover .dropdown-icon, 
+.nav-link.active .dropdown-icon {
     color: #00d4ff;
 }
 
@@ -166,17 +169,9 @@ li { list-style: none; }
     transition: all 0.3s ease;
 }
 
-.burger.active .line1 {
-    transform: rotate(45deg) translate(5px, 5px);
-}
-
-.burger.active .line2 {
-    opacity: 0;
-}
-
-.burger.active .line3 {
-    transform: rotate(-45deg) translate(5px, -5px);
-}
+.burger.active .line1 {transform: rotate(45deg) translate(5px, 5px);}
+.burger.active .line2 {opacity: 0;}
+.burger.active .line3 {transform: rotate(-45deg) translate(5px, -5px);}
 
 /* Fade-in Animation */
 .fade-in {
@@ -318,13 +313,11 @@ footer {
         display: none;
     }
     .dropdown-menu.active {display: block;}
-
-    .dropdown-item {justify-content: flex-start;}
-    .dropdown-item:hover {
+    .dropdown-link {justify-content: flex-start;}
+    .dropdown-link:hover {
         background: none;
         color: #00d4ff;
     }
-
     .dropdown-toggle .dropdown-icon {
         transition: transform 0.3s cubic-bezier(.46,1.48,.74,.96);
         display: inline-block;
@@ -332,7 +325,6 @@ footer {
     .dropdown-toggle.active .dropdown-icon {
         transform: rotate(90deg);
     }
-
     .burger {display: block;}
     .logo img {height: 48px;}
     
