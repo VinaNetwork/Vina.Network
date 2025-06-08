@@ -52,8 +52,8 @@ navLinksItems.forEach(link => {
     });
 });
 
-// Khi click vào dropdown-item trên mobile, đóng menu luôn
-document.querySelectorAll('.dropdown-item').forEach(item => {
+// Khi click vào dropdown-link trên mobile, đóng menu luôn
+document.querySelectorAll('.dropdown-link').forEach(item => {
     item.addEventListener('click', () => {
         if(window.innerWidth <= 768) {
             burger.classList.remove('active');
