@@ -50,7 +50,7 @@ include $navbar_path;
 ?>
 
 <section class="t-1">
-    <div class="tools-content">
+    <div class="t-2">
         <h1>Vina Network Tools</h1>
 
         <!-- Tab để chọn chức năng -->
