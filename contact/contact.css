@@ -5,13 +5,13 @@
 }
 .c-2 {padding: 20px;}
 .c-2 h1 {color: #4a90e2;}
-.contact-methods {
+.c-3 {
     display: flex;
     justify-content: center;
     gap: 30px;
     flex-wrap: wrap;
 }
-.method-card {
+.c-4 {
     background-color: #fff;
     border-radius: 10px;
     padding: 20px;
@@ -19,27 +19,27 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.method-card:hover {
+.c-4:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-.method-card i {
+.c-4 i {
     font-size: 2em;
     color: #ff6f91;
     margin-bottom: 15px;
 }
-.method-card h2 {color: #4a90e2;}
-.method-card p {color: #666;}
-.method-card a {
+.c-4 h2 {color: #4a90e2;}
+.c-4 p {color: #666;}
+.c-4 a {
     color: #ff6f91;
     transition: color 0.3s;
 }
-.method-card a:hover {
+.c-4 a:hover {
     color: #ff85a1;
 }
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .c-1 { margin-top: 64px; }
-    .method-card { width: 100%; }
+    .c-4 { width: 100%; }
 }
