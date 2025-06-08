@@ -23,9 +23,9 @@ li { list-style: none; }
 
 /* CTA Button */
 .cta-button {
-    display: inline-block;
     background: linear-gradient(45deg, #00d4ff, #007bff);
     color: #fff;
+    align-items: center;
     padding: .6rem 1rem;
     border-radius: 50px;
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
