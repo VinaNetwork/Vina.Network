@@ -130,5 +130,6 @@ include __DIR__ . '/include/header.php';
     </button>
 
     <script src="js/vina.js"></script>
+    <script src="js/navbar.js"></script>
 </body>
 </html>
