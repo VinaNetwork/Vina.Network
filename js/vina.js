@@ -80,69 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Change navbar style on scroll with debounce
-document.addEventListener('scroll', debounce(() => {
-    if (window.scrollY > 50) {
-        document.querySelector('.navbar').classList.add('scrolled');
-    } else {
-        document.querySelector('.navbar').classList.remove('scrolled');
-    }
-}, 100));
-
-// Burger menu toggle
-const burger = document.querySelector('.burger');
-const navLinks = document.querySelector('.nav-links');
-burger.addEventListener('click', () => {
-    burger.classList.toggle('active');
-    navLinks.classList.toggle('active');
-});
-
-// Active state for nav links
-const navLinksItems = document.querySelectorAll('.nav-link');
-navLinksItems.forEach(link => {
-    link.addEventListener('click', (e) => {
-        if (!link.classList.contains('dropdown-toggle')) {
-            navLinksItems.forEach(item => item.classList.remove('active'));
-            link.classList.add('active');
-            if (navLinks.classList.contains('active')) {
-                burger.classList.remove('active');
-                navLinks.classList.remove('active');
-            }
-        }
-    });
-});
-
-// Toggle dropdown menu
-const dropdowns = document.querySelectorAll('.dropdown');
-dropdowns.forEach(dropdown => {
-    const toggle = dropdown.querySelector('.dropdown-toggle');
-    const content = dropdown.querySelector('.dropdown-menu');
-
-    toggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        content.classList.toggle('active');
-        toggle.classList.toggle('active'); // Thêm/xóa lớp active cho dropdown-toggle
-        dropdowns.forEach(d => {
-            if (d !== dropdown) {
-                d.querySelector('.dropdown-menu').classList.remove('active');
-                d.querySelector('.dropdown-toggle').classList.remove('active');
-            }
-        });
-    });
-});
-
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-    const dropdowns = document.querySelectorAll('.dropdown');
-    dropdowns.forEach(dropdown => {
-        if (!dropdown.contains(e.target)) {
-            dropdown.querySelector('.dropdown-menu').classList.remove('active');
-            dropdown.querySelector('.dropdown-toggle').classList.remove('active');
-        }
-    });
-});
-
-// Get the Back to Top button
+// Back to Top Button
 const backToTopButton = document.getElementById("back-to-top");
 
 // Show button when scrolling down 100px
