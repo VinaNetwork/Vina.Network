@@ -16,7 +16,7 @@ document.addEventListener('scroll', debounce(() => {
 
 // 4. Hiệu ứng menu mobile (Burger Menu)
 const burger = document.querySelector('.burger');
-const navLinks = document.querySelector('.nav-links');
+const navLinks = document.querySelector('.nav-1');
 burger.addEventListener('click', () => {
     burger.classList.toggle('active');
     navLinks.classList.toggle('active');
