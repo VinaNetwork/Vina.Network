@@ -199,18 +199,6 @@ li { list-style: none; }
 
 .community-2 p {margin-bottom: 20px;}
 
-.community-3 {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    margin-top: 20px;
-}
-.community-3 .cta-button {
-    display: inline-flex;
-    gap: 0.5rem;
-}
-
 /* Footer */
 footer {
     background: #1a1a1a;
