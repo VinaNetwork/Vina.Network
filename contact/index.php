@@ -49,6 +49,7 @@ include '../include/header.php';
     <?php include '../include/footer.php'; ?>
 
     <script src="../js/vina.js"></script>
+    <script src="../js/navbar.js"></script>
 
     <script type="application/ld+json">
         {
