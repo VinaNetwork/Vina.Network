@@ -1,12 +1,5 @@
 <?php
 // config.php
-
-// Ngăn truy cập trực tiếp vào file config.php
-if (!defined('VINANETWORK_ENTRY')) {
-    http_response_code(403);
-    exit('No direct script access allowed!');
-}
-
 // Định nghĩa hằng số cấu hình
 if (!defined('HELIUS_API_KEY')) {
     define('HELIUS_API_KEY', '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63'); // API Key Helius
