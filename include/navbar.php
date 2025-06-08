@@ -14,12 +14,12 @@
                 <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-link"></i> Vina DeFi</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-gamepad"></i> Vina GameFi</a></li>
-                <li><a href="https://www.vina.network/notification" class="dropdown-item"><i class="fas fa-image"></i> NFT Marketplace</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-link"></i> Vina DeFi</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-gamepad"></i> Vina GameFi</a></li>
+                <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-image"></i> NFT Marketplace</a></li>
             </ul>
         </li>
         <li class="nav-2 dropdown">
@@ -27,10 +27,10 @@
                 <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="https://www.vina.network/tools/?tool=nft-holders" class="dropdown-item"><i class="fas fa-wallet"></i> NFT Holders</a></li>
-                <li><a href="https://www.vina.network/tools/?tool=nft-valuation" class="dropdown-item"><i class="fas fa-chart-line"></i> NFT Valuation</a></li>
-                <li><a href="https://www.vina.network/tools/?tool=nft-transactions" class="dropdown-item"><i class="fas fa-history"></i> NFT Transactions</a></li>
-                <li><a href="https://www.vina.network/tools/?tool=wallet-analysis" class="dropdown-item"><i class="fas fa-search"></i> Wallet Analysis</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=nft-holders" class="dropdown-link"><i class="fas fa-wallet"></i> NFT Holders</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=nft-valuation" class="dropdown-link"><i class="fas fa-chart-line"></i> NFT Valuation</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=nft-transactions" class="dropdown-link"><i class="fas fa-history"></i> NFT Transactions</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=wallet-analysis" class="dropdown-link"><i class="fas fa-search"></i> Wallet Analysis</a></li>
             </ul>
         </li>
         <li class="nav-2 dropdown">
@@ -38,7 +38,7 @@
                 <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="https://kimo.vina.network/token/" class="dropdown-item"><i class="fas fa-paw"></i> Kimo</a></li>
+                <li><a href="https://kimo.vina.network/token/" class="dropdown-link"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
         </li>
         <li class="nav-2"><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact</a></li>
