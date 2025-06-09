@@ -129,6 +129,8 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
     </div>
 </div>
 
+<script src="tools.js"></script>
+
 <?php
 // Giữ lại hàm getNFTHolders ở cuối file để file include có thể dùng
 function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
