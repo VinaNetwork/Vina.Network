@@ -6,6 +6,7 @@ require_once '../config/config.php';
 session_start();
 include '../config/config.php';
 include '../api-helper.php';
+include 'nft-holders-helper.php';
 
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
