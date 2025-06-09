@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     || e.target.dataset.page;
                 var mint = holdersList.dataset.mint;
                 if (!page || !mint) return;
-                // AJAX load holders: sửa lại đường dẫn
+                // Sửa đường dẫn đúng thư mục con
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', 'nft-holders/nft-holders-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
