@@ -6,7 +6,7 @@ require_once '../../config/config.php';
 
 // ...
 session_start();
-include '../config/config.php';
+include '../../config/config.php';
 include '../api-helper.php';
 
 ini_set('log_errors', 1);
