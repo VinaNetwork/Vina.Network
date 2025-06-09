@@ -9,7 +9,7 @@ ini_set('error_log', '/var/www/vinanetwork/public_html/tools/error_log.txt');
 ini_set('display_errors', false);
 error_reporting(E_ALL);
 
-include 'api-helper.php';
+include '../api-helper.php';
 
 file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
@@ -98,11 +98,9 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
             }
 
             // Hiển thị danh sách holders + phân trang
-            // Lưu ý: chỉ include khi có POST (đã nhập địa chỉ)
             ?>
             <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress) ?>">
                 <?php
-                // include file AJAX hóa phần này
                 $ajax_page = 1;
                 if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
                 include 'nft-holders-list.php';
@@ -129,10 +127,9 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
     </div>
 </div>
 
-<script src="tools.js"></script>
+<script src="../tools.js"></script>
 
 <?php
-// Giữ lại hàm getNFTHolders ở cuối file để file include có thể dùng
 function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
     $params = [
         'groupKey' => 'collection',
