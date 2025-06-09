@@ -1,7 +1,12 @@
 <?php
 // nft-holders.php
 define('VINANETWORK_ENTRY', true);
-require_once '../../config/config.php';
+$configPath = __DIR__ . '/../../config/config.php';
+if (!file_exists($configPath)) {
+    echo "Config not found at: " . $configPath . " - Current dir: " . __DIR__;
+    exit;
+}
+require_once $configPath;
 
 session_start();
 ini_set('log_errors', true);
