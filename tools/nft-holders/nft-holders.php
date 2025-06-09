@@ -1,8 +1,5 @@
 <?php
 // nft-holders.php
-define('VINANETWORK_ENTRY', true);
-require_once '../../config/config.php';
-
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', '/var/www/vinanetwork/public_html/tools/error_log.txt');
