@@ -1,7 +1,5 @@
 <?php
 // nft-holders.php
-// Đảm bảo không có output trước session_start
-<?php
 session_start(); // Đặt ở đầu file, trước mọi output
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
