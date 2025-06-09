@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-// Điều kiện để truy cập config.php
-define('VINANETWORK_ENTRY', true);
-require_once '../config/config.php';
-
 // Cấu hình log lỗi
 $config_path = '../config/config.php';
 if (!file_exists($config_path)) {
