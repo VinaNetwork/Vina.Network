@@ -2,12 +2,11 @@
 // export-holders.php
 // Điều kiện để truy cập config.php
 define('VINANETWORK_ENTRY', true);
-require_once '../config/config.php';
+require_once '../../config/config.php';
 
 // ...
 session_start();
-include '../config/config.php';
-include 'api-helper.php';
+include '../api-helper.php';
 
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
