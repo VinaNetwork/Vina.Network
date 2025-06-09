@@ -9,6 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $page = isset($ajax_page) ? $ajax_page : 1;
 }
 
+include 'nft-holders-helper.php';
+
 $holders_per_page = 50;
 
 // Dùng session cache tổng số holders nếu có
