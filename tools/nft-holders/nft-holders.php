@@ -3,7 +3,7 @@
 define('VINANETWORK_ENTRY', true);
 $configPath = __DIR__ . '/../../config/config.php';
 if (!file_exists($configPath)) {
-    echo "Config not found at: " . $configPath . " - Current dir: " . __DIR__;
+    echo "Config not found at: " . $configPath . " - Current dir: " . __DIR__ . " - Realpath: " . realpath($configPath);
     exit;
 }
 require_once $configPath;
