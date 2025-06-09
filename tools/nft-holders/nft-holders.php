@@ -1,7 +1,7 @@
 <?php
 // nft-holders.php
 define('VINANETWORK_ENTRY', true);
-require_once '../config/config.php';
+require_once '../tools/config/config.php';
 
 session_start();
 ini_set('log_errors', true);
@@ -9,9 +9,9 @@ ini_set('error_log', '/var/www/vinanetwork/public_html/tools/error_log.txt');
 ini_set('display_errors', false);
 error_reporting(E_ALL);
 
-include 'api-helper.php';
+include '../api-helper.php';
 
-file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
+file_put_contents('../debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 ?>
 
