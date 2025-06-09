@@ -1,4 +1,5 @@
 <?php
+// Điều kiện để truy cập config.php
 define('VINANETWORK_ENTRY', true);
 require_once '../config/config.php';
 
@@ -28,7 +29,7 @@ if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'walle
 }
 
 if ($tool === 'nft-holders') {
-    $tool_file = 'nft-holders/nft-holders.php';
+    $tool_file = 'nft-holders.php';
 } elseif ($tool === 'nft-valuation') {
     $tool_file = 'nft-valuation.php';
 } elseif ($tool === 'nft-transactions') {

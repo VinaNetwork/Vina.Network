@@ -123,30 +123,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// NFT Holders AJAX pagination & scroll
-document.addEventListener('DOMContentLoaded', function() {
-    var holdersList = document.getElementById('holders-list');
-    if (holdersList) {
-        holdersList.addEventListener('click', function(e) {
-            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                e.preventDefault();
-                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
-                    || e.target.dataset.page;
-                var mint = holdersList.dataset.mint;
-                if (!page || !mint) return;
-                // Sửa đường dẫn đúng thư mục con
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders/nft-holders-list.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        holdersList.innerHTML = xhr.responseText;
-                        holdersList.scrollIntoView({behavior: 'smooth', block: 'start'});
-                    }
-                };
-                xhr.send('mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page));
-            }
-        });
-    }
-});
