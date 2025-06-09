@@ -19,7 +19,7 @@ $offset = ($page - 1) * $holders_per_page;
 $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
 
 echo "<div class='export-section'>";
-echo "<form method='POST' action='nft-holders/export-holders.php' class='export-form'>";
+echo "<form method='POST' action='export-holders.php' class='export-form'>";
 echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
 echo "<input type='hidden' name='page' value='$page'>";
 echo "<div class='export-controls'>";
