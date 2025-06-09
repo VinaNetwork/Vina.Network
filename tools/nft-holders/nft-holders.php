@@ -128,3 +128,5 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 </div>
 
 <script src="../tools.js"></script>
+<?php include 'nft-holders-helper.php'; ?>
+
