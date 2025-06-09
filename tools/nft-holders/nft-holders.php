@@ -1,6 +1,11 @@
 <?php
 // nft-holders.php
-define('VINANETWORK_ENTRY', true);
+// Đảm bảo không có output trước session_start
+<?php
+session_start(); // Đặt ở đầu file, trước mọi output
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
 $configPath = __DIR__ . '/../../config/config.php';
 if (!file_exists($configPath)) {
     echo "Config not found at: " . $configPath . " - Current dir: " . __DIR__ . " - Realpath: " . realpath($configPath);
@@ -8,9 +13,8 @@ if (!file_exists($configPath)) {
 }
 require_once $configPath;
 
-session_start();
 ini_set('log_errors', true);
-ini_set('error_log', '../error_log.txt');
+ini_set('error_log', '../error_log.txt'); // Đường dẫn tương đối từ nft-holders/
 ini_set('display_errors', false);
 error_reporting(E_ALL);
 
@@ -70,8 +74,8 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
                     file_put_contents('../error_log.txt', date('Y-m-d H:i:s') . " - Total API response (page $api_page): " . json_encode($total_data) . "\n", FILE_APPEND);
                     error_log("nft-holders.php: Total API response (page $api_page) - " . json_encode($total_data) . " at " . date('Y-m-d H:i:s'));
 
-                    if (isset($total_data['error'])) {
-                        throw new Exception("Helius API error: " . $total_data['error']);
+                    if (isset($total_data['error']) || empty($total_data) || !isset($total_data['result'])) {
+                        throw new Exception("Helius API error: " . (isset($total_data['error']) ? $total_data['error'] : 'No response'));
                     }
 
                     $items = $total_data['result']['items'] ?? [];
@@ -103,11 +107,9 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
             }
 
             // Hiển thị danh sách holders + phân trang
-            // Lưu ý: chỉ include khi có POST (đã nhập địa chỉ)
             ?>
-            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress) ?>">
+            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress); ?>">
                 <?php
-                // include file AJAX hóa phần này
                 $ajax_page = 1;
                 if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
                 include 'nft-holders-list.php';
@@ -158,6 +160,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Thêm xử lý submit form
+    var form = document.getElementById('nftHoldersForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var mintAddress = document.getElementById('mintAddressHolders').value;
+            var loader = document.querySelector('.loader');
+            loader.style.display = 'block';
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '', true); // Submit lại trang hiện tại
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    loader.style.display = 'none';
+                    if (xhr.status === 200) {
+                        document.querySelector('.nft-holders-content').innerHTML = xhr.responseText;
+                    } else {
+                        alert('Error submitting form. Please try again.');
+                    }
+                }
+            };
+            xhr.send('mintAddress=' + encodeURIComponent(mintAddress));
+        });
+    }
 });
 </script>
 
@@ -176,7 +203,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
     
     $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
     
-    if (isset($data['error'])) {
+    if (isset($data['error']) || empty($data) || !isset($data['result'])) {
         error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
     }
