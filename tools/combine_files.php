@@ -42,7 +42,6 @@ foreach ($files as $index => $file) {
     }
 }
 
-// Thêm thẻ <?php vào đầu nếu cần
 $combinedContent = '<?php\n' . $combinedContent;
 
 // Ghi nội dung vào file đầu ra
