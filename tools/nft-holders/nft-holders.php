@@ -1,7 +1,7 @@
 <?php
 // nft-holders.php
 define('VINANETWORK_ENTRY', true);
-require_once BASE_PATH . 'config/config.php';
+require_once '../config/config.php'; // Vẫn giữ ../ vì lùi từ tools/nft-holders lên config/
 
 session_start();
 ini_set('log_errors', true);
@@ -9,7 +9,7 @@ ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', false);
 error_reporting(E_ALL);
 
-include BASE_PATH . 'tools/api-helper.php';
+include '../api-helper.php'; // Lùi lên thư mục tools/
 
 file_put_contents(ERROR_LOG_PATH, date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
@@ -103,7 +103,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
                 <?php
                 $ajax_page = 1;
                 if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
-                include BASE_PATH . 'tools/nft-holders/nft-holders-list.php';
+                include 'nft-holders-list.php'; // Giữ tương đối trong nft-holders/
                 ?>
             </div>
             <?php
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!page || !mint) return;
                 // AJAX tải lại bảng holders
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', '<?php echo BASE_PATH . 'tools/nft-holders/nft-holders-list.php'; ?>', true);
+                xhr.open('POST', 'nft-holders-list.php', true); // Giữ tương đối
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4 && xhr.status === 200) {
@@ -155,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
-    // Giữ lại hàm getNFTHolders ở cuối file để file include có thể dùng
     function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         $params = [
             'groupKey' => 'collection',
