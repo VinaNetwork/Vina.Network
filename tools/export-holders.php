@@ -1,4 +1,4 @@
-// File: export-holders.php
+// tools/export-holders.php
 <?php
 // Điều kiện để truy cập config.php
 define('VINANETWORK_ENTRY', true);
