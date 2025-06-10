@@ -1,3 +1,4 @@
+// tools/nft-transactions.php
 <?php
 // Chức năng: Kiểm tra lịch sử giao dịch NFT
 include 'api-helper.php';
