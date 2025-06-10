@@ -54,17 +54,17 @@
 				<h1>Vina Network Tools</h1>
 
 				<!-- Tab để chọn chức năng -->
-				<div class="tools-tabs">
-					<a href="?tool=nft-holders" class="tab-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
+				<div class="t-3">
+					<a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
 						<i class="fas fa-wallet"></i> NFT Holders
 					</a>
-					<a href="?tool=nft-valuation" class="tab-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
+					<a href="?tool=nft-valuation" class="t-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
 						<i class="fas fa-chart-line"></i> NFT Valuation
 					</a>
-					<a href="?tool=nft-transactions" class="tab-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
+					<a href="?tool=nft-transactions" class="t-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
 						<i class="fas fa-history"></i> NFT Transactions
 					</a>
-					<a href="?tool=wallet-analysis" class="tab-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
+					<a href="?tool=wallet-analysis" class="t-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
 						<i class="fas fa-user"></i> Wallet Analysis
 					</a>
 				</div>
@@ -73,7 +73,7 @@
 				<p class="note">Note: Only supports checking on the Solana blockchain.</p>
 
 				<!-- Nội dung chức năng -->
-				<div class="tool-content">
+				<div class="t-4">
 					<?php
 						// Include file tương ứng với chức năng được chọn
 						$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
@@ -114,8 +114,7 @@
 		?>
 
 		<!-- Schema Markup -->
-		<script type="application/ld+json">
-		{
+		<script type="application/ld+json"> {
 			"@context": "https://schema.org",
 			"@type": "WebApplication",
 			"name": "Vina Network Tools",
