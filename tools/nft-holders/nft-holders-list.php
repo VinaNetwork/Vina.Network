@@ -1,3 +1,4 @@
+```php
 <?php
 // Nhận tham số
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,7 +20,7 @@ $offset = ($page - 1) * $holders_per_page;
 $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
 
 echo "<div class='export-section'>";
-echo "<form method='POST' action='export-holders.php' class='export-form'>"; // Chỉ trỏ trực tiếp
+echo "<form method='POST' action='export-holders.php' class='export-form'>";
 echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
 echo "<input type='hidden' name='page' value='$page'>";
 echo "<div class='export-controls'>";
@@ -58,6 +59,7 @@ if (isset($holders_data['error'])) {
     echo "</tbody>";
     echo "</table>";
 
+    // Phân trang
     echo "<div class='pagination'>";
     $total_pages = ceil($total_holders / $holders_per_page);
 
@@ -93,8 +95,8 @@ if (isset($holders_data['error'])) {
         echo "<span class='page-button active' data-type='number' id='page-last-active'>$total_pages</span>";
     }
 
-    echo "</div>";
-    echo "</div>";
+    echo "</div>"; // .pagination
+    echo "</div>"; // .result-section
 } else {
     echo "<div class='result-error'><p>No holders found for this page or invalid collection address.</p></div>";
 }
