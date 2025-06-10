@@ -1,4 +1,3 @@
-```php
 <?php
 // nft-holders.php
 if (!defined('VINANETWORK_ENTRY')) {
