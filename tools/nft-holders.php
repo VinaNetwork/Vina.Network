@@ -15,8 +15,8 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 ?>
 
-<div class="nft-holders-content">
-    <div class="nft-checkbox">
+<div class="t-6 nft-holders-content">
+    <div class="t-7">
         <h2>Check NFT Holders</h2>
         <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
@@ -119,7 +119,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
     }
     ?>
 
-    <div class="feature-description">
+    <div class="t-8">
         <h2>About NFT Holders Checker</h2>
         <p>
             The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT collection by entering its On-chain Collection address. 
@@ -157,37 +157,37 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
-// Giữ lại hàm getNFTHolders ở cuối file để file include có thể dùng
-function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
-    $params = [
-        'groupKey' => 'collection',
-        'groupValue' => $mintAddress,
-        'page' => ceil(($offset + $size) / $size),
-        'limit' => $size
-    ];
-    
-    file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
-    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
-    
-    $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
-    
-    if (isset($data['error'])) {
-        error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
-        return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-    }
-    
-    if (isset($data['result']['items']) && !empty($data['result']['items'])) {
-        $holders = array_map(function($item) {
-            return [
-                'owner' => $item['ownership']['owner'] ?? 'unknown',
-                'amount' => 1
-            ];
-        }, $data['result']['items']);
-        
-        return ['holders' => $holders];
-    }
-    
-    error_log("nft-holders.php: No holders found for address $mintAddress at " . date('Y-m-d H:i:s'));
-    return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-}
+	// Giữ lại hàm getNFTHolders ở cuối file để file include có thể dùng
+	function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
+		$params = [
+			'groupKey' => 'collection',
+			'groupValue' => $mintAddress,
+			'page' => ceil(($offset + $size) / $size),
+			'limit' => $size
+		];
+		
+		file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
+		error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
+		
+		$data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
+		
+		if (isset($data['error'])) {
+			error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
+			return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
+		}
+		
+		if (isset($data['result']['items']) && !empty($data['result']['items'])) {
+			$holders = array_map(function($item) {
+				return [
+					'owner' => $item['ownership']['owner'] ?? 'unknown',
+					'amount' => 1
+				];
+			}, $data['result']['items']);
+			
+			return ['holders' => $holders];
+		}
+		
+		error_log("nft-holders.php: No holders found for address $mintAddress at " . date('Y-m-d H:i:s'));
+		return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
+	}
 ?>
