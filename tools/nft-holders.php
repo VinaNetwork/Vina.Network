@@ -119,7 +119,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
     }
     ?>
 
-    <div class="t-8">
+    <div class="t-9">
         <h2>About NFT Holders Checker</h2>
         <p>
             The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT collection by entering its On-chain Collection address. 
