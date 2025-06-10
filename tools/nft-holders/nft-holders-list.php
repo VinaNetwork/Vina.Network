@@ -19,7 +19,7 @@ $offset = ($page - 1) * $holders_per_page;
 $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
 
 echo "<div class='export-section'>";
-echo "<form method='POST' action='export-holders.php' class='export-form'>";
+echo "<form method='POST' action='export-holders.php' class='export-form'>"; // Chỉ trỏ trực tiếp
 echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
 echo "<input type='hidden' name='page' value='$page'>";
 echo "<div class='export-controls'>";
@@ -58,7 +58,6 @@ if (isset($holders_data['error'])) {
     echo "</tbody>";
     echo "</table>";
 
-    // Phân trang
     echo "<div class='pagination'>";
     $total_pages = ceil($total_holders / $holders_per_page);
 
@@ -73,7 +72,7 @@ if (isset($holders_data['error'])) {
     }
 
     if ($page > 1) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'>&lt;</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'><</button></form>";
     }
 
     if ($page > 1 && $page < $total_pages) {
@@ -81,7 +80,7 @@ if (isset($holders_data['error'])) {
     }
 
     if ($page < $total_pages) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'>&gt;</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'>></button></form>";
     }
 
     if ($page < $total_pages - 1) {
@@ -94,8 +93,8 @@ if (isset($holders_data['error'])) {
         echo "<span class='page-button active' data-type='number' id='page-last-active'>$total_pages</span>";
     }
 
-    echo "</div>"; // .pagination
-    echo "</div>"; // .result-section
+    echo "</div>";
+    echo "</div>";
 } else {
     echo "<div class='result-error'><p>No holders found for this page or invalid collection address.</p></div>";
 }
