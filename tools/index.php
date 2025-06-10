@@ -1,4 +1,4 @@
-<! index.php >
+<!DOCTYPE html>
 <html lang="en">
 	<?php
 		// Điều kiện để truy cập config.php
