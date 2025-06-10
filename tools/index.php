@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
+// index.php
 // Điều kiện để truy cập config.php
 define('VINANETWORK_ENTRY', true);
 require_once '../config/config.php';
