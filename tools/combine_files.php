@@ -1,9 +1,14 @@
 <?php
 // Định nghĩa danh sách file cần ghép (thay bằng đường dẫn thực tế của bạn)
 $files = [
-    'header.php',
-    'content.html',
-    'footer.php'
+    'index.php',
+    'load-tool.php',
+    'api-helper.php',
+    'nft-holders.php',
+    'export-holders.php',
+    'nft-holders-list.php',
+    'tools.css',
+    'tools.js'
 ];
 
 // File đầu ra
