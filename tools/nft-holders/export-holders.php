@@ -1,4 +1,3 @@
-```php
 <?php
 // export-holders.php
 if (!defined('VINANETWORK_ENTRY')) {
