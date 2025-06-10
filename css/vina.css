@@ -16,7 +16,8 @@ h2 { font: 2em/2.2 sans-serif; font-weight: 600;}
 h3 { font: 1.5em/1.8 sans-serif; font-weight: 500;}
 h4 { font: 1.2em/1.8 sans-serif; font-weight: 400;}
 p, a { font: 1.1em/1.8 sans-serif; }
-p:not(:last-child) {margin-bottom: 30px;}
+p { margin-bottom: 30px; }
+p:last-child {margin-bottom: unset;}
 a { text-decoration: none; }
 li { list-style: none; }
 .note {font-style: italic;}
