@@ -28,7 +28,7 @@ foreach ($files as $index => $file) {
         // Loại bỏ các thẻ <?php mở không cần thiết nếu không phải file đầu tiên
         if ($index > 0 && strpos($content, '<?php') === 0) {
             $content = preg_replace('/^\s*<\?php\s*/', '', $content, 1);
-        }
+        } // Đóng khối if này
         // Loại bỏ ?> đóng nếu có ở cuối file
         $content = preg_replace('/\s*\?>\s*$/', '', $content);
 
