@@ -1,7 +1,7 @@
 <?php
 // nft-holders.php
 define('VINANETWORK_ENTRY', true);
-require_once '../config/config.php'; // Lùi 2 cấp từ tools/nft-holders lên config/
+require_once '../config/config.php';
 
 session_start();
 ini_set('log_errors', true);
@@ -9,7 +9,7 @@ ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', false);
 error_reporting(E_ALL);
 
-include '../api-helper.php'; // Lùi 1 cấp lên tools/
+include '../api-helper.php';
 
 file_put_contents(ERROR_LOG_PATH, date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
