@@ -1,5 +1,5 @@
-// tools/nft-holders.php
 <?php
+// nft-holders.php
 define('VINANETWORK_ENTRY', true);
 require_once '../config/config.php';
 

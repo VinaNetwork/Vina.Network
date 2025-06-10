@@ -1,4 +1,3 @@
-// tools/api-helper.php
 <?php
 error_log("api-helper.php: PHP version: " . phpversion());
 error_log("api-helper.php: cURL version: " . curl_version()['version']);

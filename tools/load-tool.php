@@ -1,4 +1,3 @@
-// tools/load-tool.php
 <?php
 // Điều kiện để truy cập config.php
 define('VINANETWORK_ENTRY', true);
