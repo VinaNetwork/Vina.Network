@@ -89,15 +89,15 @@ h1, h2 {text-align: center;}
 }
 
 /* NFT Checkbox */
-.nft-checkbox {
+.t-7 {
     margin: 20px auto;
     padding: 20px;
     border-radius: 10px;
     background: #c3c7c4;
     position: relative;
 }
-.nft-checkbox form {margin-bottom: 20px;}
-.nft-checkbox input {width: 600px;}
+.t-7 form {margin-bottom: 20px;}
+.t-7 input {width: 600px;}
 
 .loader {
     border: 4px solid #f3f3f3;
