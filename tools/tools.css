@@ -2,14 +2,14 @@
 h1, h2 {text-align: center;}
 .t-1 {margin-top: 72px;}
 .t-2 {
-    max-width: 1000px;
-    background: #ffffff;
-    padding: 30px;
-    margin: 0 auto;
+	max-width: 1000px;
+	background: #ffffff;
+	padding: 30px;
+	margin: 0 auto;
 }
 
 /* Tab Tools */
-.tools-tabs {
+.t-3 {
     display: flex;
     gap: 20px;
     margin: 20px 0 10px;
@@ -19,10 +19,10 @@ h1, h2 {text-align: center;}
     -webkit-overflow-scrolling: touch;
 }
 
-.tools-tabs::-webkit-scrollbar {height: 2px;}
-.tools-tabs::-webkit-scrollbar-track {background: #333;}
+.t-3::-webkit-scrollbar {height: 2px;}
+.t-3::-webkit-scrollbar-track {background: #333;}
 
-.tab-link {
+.t-link {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -32,34 +32,34 @@ h1, h2 {text-align: center;}
     flex-shrink: 0;
 }
 
-.tab-link i {font-size: 1.1em;}
+.t-link i {font-size: 1.1em;}
 
-.tab-link:hover {
+.t-link:hover {
     color: #007bff;
     border-bottom: 4px solid #007bff;
 }
 
-.tab-link.active {
+.t-link.active {
     font-weight: bold;
     color: #007bff;
     border-bottom: 4px solid #007bff;
 }
 
 /* Box Form */
-.tool-content form {
+.t-4 form {
     display: flex;
     justify-content: center;
     gap: 10px;
     position: relative;
 }
 
-.tool-content input {
+.t-4 input {
     padding: 10px;
     border: 2px solid #007bff;
     border-radius: 8px;
 }
 
-.tool-content button {
+.t-4 button {
     padding: 10px;
     background: #007bff;
     color: #fff;
@@ -68,7 +68,7 @@ h1, h2 {text-align: center;}
     cursor: pointer;
     transition: background 0.2s;
 }
-.tool-content button:hover {background: #0056b3;}
+.t-4 button:hover {background: #0056b3;}
 
 /* Result */
 .result-info {
@@ -299,12 +299,12 @@ h1, h2 {text-align: center;}
         max-width: 100%;
     }
     .t-2 {padding: 20px;}
-    .tools-tabs {gap: 6px;}
-    .tool-content form {
+    .t-3 {gap: 6px;}
+    .t-4 form {
         flex-direction: column;
         align-items: center;
     }
-    .tool-content input {width: 100%;}
+    .t-4 input {width: 100%;}
     .holders-table,
     .transaction-table,
     .nft-transaction-results table {
