@@ -48,3 +48,5 @@ data/
 
 # Các thư mục khác của VSCode, PHPStorm...
 /nbproject/
+
+tools/error_log.txt
