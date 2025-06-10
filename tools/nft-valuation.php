@@ -37,7 +37,7 @@
     ?>
 
     <!-- Thêm mô tả chi tiết chức năng của tab -->
-    <div class="t-8">
+    <div class="t-9">
         <h3>About NFT Valuation Checker</h3>
         <p>
             The NFT Valuation Checker allows you to assess the market value of a specific Solana NFT by entering its mint address. 
