@@ -1,17 +1,20 @@
+```php
 <?php
 // nft-holders.php
-define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
 require_once '../config/config.php';
 
 session_start();
 ini_set('log_errors', true);
-ini_set('error_log', ERROR_LOG_PATH);
+ini_set('error_log', '/var/www/vinanetwork/public_html/tools/error_log.txt');
 ini_set('display_errors', false);
 error_reporting(E_ALL);
 
 include '../api-helper.php';
 
-file_put_contents(ERROR_LOG_PATH, date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
+file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 ?>
 
@@ -30,7 +33,7 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
             $mintAddress = trim($_POST['mintAddress']);
-            file_put_contents(ERROR_LOG_PATH, date('Y-m-d H:i:s') . " - Form submitted with mintAddress=$mintAddress\n", FILE_APPEND);
+            file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Form submitted with mintAddress=$mintAddress\n", FILE_APPEND);
             error_log("nft-holders.php: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set') . " at " . date('Y-m-d H:i:s'));
 
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
@@ -61,8 +64,9 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
                         'page' => $api_page,
                         'limit' => $limit
                     ];
+                    error_log("nft-holders.php: Calling Helius API for total holders, page=$api_page");
                     $total_data = callHeliusAPI('getAssetsByGroup', $total_params, 'POST');
-                    file_put_contents(ERROR_LOG_PATH, date('Y-m-d H:i:s') . " - Total API response (page $api_page): " . json_encode($total_data) . "\n", FILE_APPEND);
+                    file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Total API response (page $api_page): " . json_encode($total_data) . "\n", FILE_APPEND);
                     error_log("nft-holders.php: Total API response (page $api_page) - " . json_encode($total_data) . " at " . date('Y-m-d H:i:s'));
 
                     if (isset($total_data['error'])) {
@@ -101,16 +105,17 @@ error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
             ?>
             <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress) ?>">
                 <?php
+                // include file AJAX hóa phần này
                 $ajax_page = 1;
                 if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
-                include 'nft-holders-list.php'; // Giữ tương đối trong nft-holders/
+                include 'nft-holders-list.php';
                 ?>
             </div>
             <?php
 
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . $e->getMessage();
-            file_put_contents(ERROR_LOG_PATH, date('Y-m-d H:i:s') . " - $error_msg\n", FILE_APPEND);
+            file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - $error_msg\n", FILE_APPEND);
             echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
             error_log("nft-holders.php: Exception - $error_msg at " . date('Y-m-d H:i:s'));
         }
@@ -138,13 +143,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     || e.target.dataset.page;
                 var mint = holdersList.dataset.mint;
                 if (!page || !mint) return;
+                console.log('Sending AJAX request for page:', page, 'mint:', mint); // Debug
                 // AJAX tải lại bảng holders
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders/nft-holders-list.php', true); // Giữ tương đối
+                xhr.open('POST', 'nft-holders/nft-holders-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        holdersList.innerHTML = xhr.responseText;
+                    if (xhr.readyState === 4) {
+                        console.log('AJAX response status:', xhr.status); // Debug
+                        if (xhr.status === 200) {
+                            holdersList.innerHTML = xhr.responseText;
+                        } else {
+                            console.error('AJAX error:', xhr.statusText);
+                        }
                     }
                 };
                 xhr.send('mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page));
@@ -155,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
+    // Giữ lại hàm getNFTHolders ở cuối file để file include có thể dùng
     function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         $params = [
             'groupKey' => 'collection',
@@ -163,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'limit' => $size
         ];
         
-        file_put_contents(ERROR_LOG_PATH, date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
+        file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
         error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
         
         $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
