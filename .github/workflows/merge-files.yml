@@ -43,8 +43,8 @@ jobs:
 
     - name: Commit and push combined file
       run: |
-        git config --global user.name "Your Name"
-        git config --global user.email "your.email@example.com"
+        git config --global user.name "VinaNetwork"
+        git config --global user.email "n9u93n@gmail.com"
         git add combined_output.php
         git commit -m "Automatically merge files into combined_output.php"
         git push
