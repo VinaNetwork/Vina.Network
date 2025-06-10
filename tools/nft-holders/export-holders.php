@@ -1,11 +1,11 @@
 <?php
 // export-holders.php
 define('VINANETWORK_ENTRY', true);
-require_once '../../config/config.php'; // Lùi 2 cấp từ nft-holders lên config/
+require_once '../config/config.php';
 
 session_start();
-include '../../config/config.php';
-include '../api-helper.php'; // Lùi 1 cấp lên tools/
+include '../config/config.php';
+include '../api-helper.php';
 
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
