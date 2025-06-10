@@ -52,7 +52,7 @@
 		}
     ?>
 
-    <div class="t-8">
+    <div class="t-9">
         <h3>About Wallet Analysis</h3>
         <p>
             The Wallet Analysis tool allows you to analyze a Solana wallet by entering its address. 
