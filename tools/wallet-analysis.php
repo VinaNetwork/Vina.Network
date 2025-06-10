@@ -1,5 +1,5 @@
+// tools/wallet-analysis.php
 <?php
-// wallet-analysis.php
 // Cấu hình log lỗi
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
