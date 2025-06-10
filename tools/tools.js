@@ -2,11 +2,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
-    const tabsContainer = document.querySelector('.tools-tabs');
-    let activeTab = document.querySelector('.tab-link.active');
+    const tabsContainer = document.querySelector('.t-3');
+    let activeTab = document.querySelector('.t-link.active');
 
     if (!activeTab && tool) {
-        activeTab = document.querySelector(`.tab-link[data-tool="${tool}"]`);
+        activeTab = document.querySelector(`.t-link[data-tool="${tool}"]`);
         if (activeTab) {
             activeTab.classList.add('active');
         } else {
@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 
-    document.querySelectorAll('.tab-link').forEach(link => {
+    document.querySelectorAll('.t-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.t-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
             if (tabsContainer) {
@@ -51,10 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => document.querySelector('.tool-content').innerHTML = data)
+            .then(data => document.querySelector('.t-4').innerHTML = data)
             .catch(error => {
                 console.error('Error loading tool content:', error);
-                document.querySelector('.tool-content').innerHTML = '<p>Error loading content. Please try again.</p>';
+                document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
             });
         });
     });
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const formData = new FormData(form);
-            const tool = document.querySelector('.tab-link.active').getAttribute('data-tool');
+            const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
             fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'POST',
                 body: formData,
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.text();
             })
             .then(data => {
-                document.querySelector('.tool-content').innerHTML = data;
+                document.querySelector('.t-4').innerHTML = data;
                 if (loader) {
                     loader.style.display = 'none'; // Ẩn loader sau khi load xong
                     console.log('Loader deactivated');
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
-                document.querySelector('.tool-content').innerHTML = '<p>Error submitting form. Please try again.</p>';
+                document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) {
                     loader.style.display = 'none'; // Ẩn loader nếu có lỗi
                 }
