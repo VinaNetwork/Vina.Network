@@ -1,7 +1,7 @@
 <?php
 // nft-holders.php
 define('VINANETWORK_ENTRY', true);
-require_once '../../config/config.php'; // Lùi 2 cấp từ tools/nft-holders lên config/
+require_once '../config/config.php'; // Lùi 2 cấp từ tools/nft-holders lên config/
 
 session_start();
 ini_set('log_errors', true);
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!page || !mint) return;
                 // AJAX tải lại bảng holders
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders-list.php', true); // Giữ tương đối
+                xhr.open('POST', 'nft-holders/nft-holders-list.php', true); // Giữ tương đối
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4 && xhr.status === 200) {
