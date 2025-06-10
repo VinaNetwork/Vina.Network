@@ -1,4 +1,3 @@
-```php
 <?php
 ob_start(); // Bắt đầu output buffering
 // Điều kiện để truy cập config.php
