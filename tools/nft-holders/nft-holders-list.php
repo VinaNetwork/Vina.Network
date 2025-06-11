@@ -1,13 +1,13 @@
 <?php
 define('VINANETWORK_STATUS', true);
-require_once '../../tools/bootstrap.php';
+require_once '../bootstrap.php';
 
 session_start();
-log_message('nft-tools-list.php: Script started');
+log_message('nft-holders-list.php: Script started');
 
 $api_helper_path = TOOLS_PATH . 'api-helper.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft-tools-list.php: api-helper.php not found at $api_helper_path", 'error_log.txt', 'ERROR');
+    log_message("nft-holders-list.php: api-helper.php not found at $api_helper_path", 'error_log.txt', 'ERROR');
     die('Internal Server Error: Missing api-helper.php');
 }
 include $api_helper_path;
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $page = isset($ajax_page) ? $ajax_page : 1;
 }
 
-log_message("nft-tools-list.php: Processing - mintAddress=$mintAddress, page=$page");
+log_message("nft-holders-list.php: Processing - mintAddress=$mintAddress, page=$page");
 
 $holders_per_page = 50;
 $total_holders = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : 0;
