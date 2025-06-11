@@ -1,6 +1,6 @@
 <?php
 define('VINANETWORK_STATUS', true);
-require_once '../../tools/bootstrap.php';
+require_once '../bootstrap.php';
 
 session_start();
 log_message('export-holders.php: Script started');
