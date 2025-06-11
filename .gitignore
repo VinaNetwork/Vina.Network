@@ -1,5 +1,11 @@
 # Các file/folder thường loại trừ cho dự án PHP/Web
 
+# File thông báo lỗi
+tools/error_log.txt
+
+# Thư mục lưu tạm file tạm thời
+recycle-bin/
+
 # Thư mục hệ thống
 .DS_Store
 Thumbs.db
@@ -48,5 +54,3 @@ data/
 
 # Các thư mục khác của VSCode, PHPStorm...
 /nbproject/
-
-tools/error_log.txt
