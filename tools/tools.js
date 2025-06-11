@@ -1,19 +1,10 @@
+// tools.js
 document.addEventListener('DOMContentLoaded', () => {
-    // Lấy CSRF token từ PHP (được chèn vào DOM hoặc biến toàn cục)
-    const csrfToken = '<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>';
-    if (!csrfToken) {
-        console.error('CSRF token not found. Ensure session is active and token is set.');
-    } else {
-        console.log('CSRF token initialized:', csrfToken);
-    }
-
-    // Lấy tool từ URL
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
     const tabsContainer = document.querySelector('.t-3');
     let activeTab = document.querySelector('.t-link.active');
 
-    // Kích hoạt tab dựa trên URL
     if (!activeTab && tool) {
         activeTab = document.querySelector(`.t-link[data-tool="${tool}"]`);
         if (activeTab) {
@@ -23,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Cuộn đến tab đang active
     if (tabsContainer && activeTab) {
         setTimeout(() => {
             const tabRect = activeTab.getBoundingClientRect();
@@ -35,14 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 
-    // Xử lý click tab
     document.querySelectorAll('.t-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             document.querySelectorAll('.t-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
-            // Cuộn đến tab được click
             if (tabsContainer) {
                 const tabRect = this.getBoundingClientRect();
                 const containerRect = tabsContainer.getBoundingClientRect();
@@ -52,12 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Cập nhật URL
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
-            // AJAX load nội dung tab
-            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}&csrf_token=${encodeURIComponent(csrfToken)}`, {
+            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'GET',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
@@ -65,10 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => {
-                document.querySelector('.t-4').innerHTML = data;
-                console.log(`Loaded content for tool: ${tool}`);
-            })
+            .then(data => document.querySelector('.t-4').innerHTML = data)
             .catch(error => {
                 console.error('Error loading tool content:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
@@ -76,9 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Xử lý submit form
-    document.addEventListener('submit', e => {
-        // Xử lý form export
+    document.addEventListener('submit', (e) => {
         if (e.target.matches('.export-form')) {
             const exportType = e.target.querySelector('[name="export_type"]').value;
             if (exportType === 'all') {
@@ -100,35 +81,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 500);
                 }
             }
-            // Thêm CSRF token vào form data
-            const formData = new FormData(e.target);
-            formData.append('csrf_token', csrfToken);
             return;
         }
-
-        // Xử lý form NFT tools
         if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
             const form = e.target;
-            const loader = document.querySelector('.loader');
-            console.log('Loader element:', loader);
-
+            const loader = document.querySelector('.loader'); // Tìm loader trong toàn bộ DOM
+            console.log('Loader element:', loader); // Debug
             if (loader) {
-                loader.style.display = 'block';
+                loader.style.display = 'block'; // Hiển thị loader
                 console.log('Loader activated');
             } else {
                 console.error('Loader not found in DOM');
             }
 
             const formData = new FormData(form);
-            formData.append('csrf_token', csrfToken); // Thêm CSRF token
-            const tool = document.querySelector('.t-link.active')?.getAttribute('data-tool');
-            if (!tool) {
-                console.error('No active tool found');
-                if (loader) loader.style.display = 'none';
-                return;
-            }
-
+            const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
             fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'POST',
                 body: formData,
@@ -141,60 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) {
-                    loader.style.display = 'none';
+                    loader.style.display = 'none'; // Ẩn loader sau khi load xong
                     console.log('Loader deactivated');
                 }
-                console.log(`Form submitted successfully for tool: ${tool}`);
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) {
-                    loader.style.display = 'none';
-                    console.log('Loader deactivated due to error');
+                    loader.style.display = 'none'; // Ẩn loader nếu có lỗi
                 }
             });
         }
     });
-
-    // Xử lý phân trang AJAX cho NFT Holders
-    const holdersList = document.getElementById('holders-list');
-    if (holdersList) {
-        holdersList.addEventListener('click', e => {
-            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                e.preventDefault();
-                const page = e.target.closest('form')?.querySelector('input[name="page"]')?.value || e.target.dataset.page;
-                const mint = holdersList.dataset.mint;
-                if (!page || !mint || !csrfToken) {
-                    console.error('Missing page, mint, or CSRF token');
-                    return;
-                }
-                console.log('Sending AJAX request for page:', page, 'mint:', mint);
-
-                const formData = new FormData();
-                formData.append('mintAddress', mint);
-                formData.append('page', page);
-                formData.append('csrf_token', csrfToken);
-
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders/nft-holders-list.php', true);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                xhr.onreadystatechange = () => {
-                    if (xhr.readyState === 4) {
-                        console.log('AJAX response status:', xhr.status);
-                        if (xhr.status === 200) {
-                            holdersList.innerHTML = xhr.responseText;
-                            console.log('Pagination updated successfully');
-                        } else {
-                            console.error('AJAX error:', xhr.statusText);
-                            holdersList.innerHTML = '<p>Error loading page. Please try again.</p>';
-                        }
-                    }
-                };
-                // Chuyển FormData thành URL-encoded string
-                const params = new URLSearchParams(formData).toString();
-                xhr.send(params);
-            }
-        });
-    }
 });

@@ -1,23 +1,35 @@
 <?php
-// index.php
-require_once '/var/www/vinanetwork/public_html/tools/bootstrap.php';
-ob_start();
+ob_start(); // Bắt đầu output buffering để ngăn lỗi session
+// Điều kiện để truy cập config.php
+define('VINANETWORK_ENTRY', true);
+require_once '../config/config.php';
 
-// Định nghĩa biến
+// Cấu hình log lỗi
+$config_path = '../config/config.php';
+if (!file_exists($config_path)) {
+    error_log("Error: config.php not found at $config_path");
+    die('Internal Server Error: Missing config.php');
+}
+include $config_path;
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+// Định nghĩa biến trước khi sử dụng
 $root_path = '../';
 $page_title = "Vina Network - Solana NFT Tools & Holders Checker";
-$page_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.";
-$page_keywords = "Vina Network, Solana NFT, check Solana holders, NFT valuation, blockchain, NFT";
+$page_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
+$page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT valuation, blockchain, NFT";
 $page_og_title = "Vina Network - Solana NFT Tools & Holders Checker";
-$page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.";
-$page_og_image = "https://vina.network/tools/image/vinanetwork-tools.jpg";
+$page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
+$page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
 $page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] : '');
+$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
 $page_css = ['tools.css'];
 
-// Xác định tool
-$tool = isset($_GET['tool']) ? trim($_GET['tool']) : 'nft-holders';
-error_log("index.php: tool = $tool");
+// Định nghĩa $tool trước khi sử dụng
+$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 
 // Kiểm tra và include header.php
 $header_path = $root_path . 'include/header.php';
@@ -67,6 +79,8 @@ include $header_path;
             <!-- Nội dung chức năng -->
             <div class="t-4">
                 <?php
+                    // Include file tương ứng với chức năng được chọn
+                    error_log("index.php: tool = $tool"); // Debug
                     if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
                         $tool = 'nft-holders';
                         error_log("index.php: Invalid tool, defaulted to nft-holders");
@@ -81,6 +95,7 @@ include $header_path;
                         $tool_file = 'wallet-analysis.php';
                     }
 
+                    // Kiểm tra và include file
                     if (isset($tool_file) && file_exists($tool_file)) {
                         include $tool_file;
                     } else {
@@ -102,7 +117,7 @@ include $header_path;
     ?>
 
     <!-- Schema Markup -->
-    <script type="application/ld+json">{
+    <script type="application/ld+json"> {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Vina Network Tools",
@@ -115,11 +130,12 @@ include $header_path;
             "price": "0",
             "priceCurrency": "USD"
         }
-    }</script>
+    }
+    </script>
 
     <script src="../js/vina.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="tools.js"></script>
 </body>
 </html>
-<?php ob_end_flush(); ?>
+<?php ob_end_flush(); // Kết thúc output buffering ?>

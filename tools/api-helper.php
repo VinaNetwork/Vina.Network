@@ -1,9 +1,14 @@
 <?php
-// api-helper.php
-require_once '/var/www/vinanetwork/public_html/tools/bootstrap.php';
-
 error_log("api-helper.php: PHP version: " . phpversion());
 error_log("api-helper.php: cURL version: " . curl_version()['version']);
+
+// Include file cấu hình
+$config_path = dirname(__DIR__) . '/config/config.php';
+if (!file_exists($config_path)) {
+    error_log("Error: config.php not found at $config_path");
+    die('Internal Server Error: Missing config.php');
+}
+include $config_path;
 
 // Hàm gọi API Helius
 function callHeliusAPI($endpoint, $params = [], $method = 'POST') {
@@ -63,47 +68,5 @@ function callHeliusAPI($endpoint, $params = [], $method = 'POST') {
 
     error_log("api-helper.php: Helius API success - Endpoint: $endpoint");
     return $data;
-}
-
-// Hàm lấy toàn bộ holders
-function getAllHolders($mintAddress, &$total_holders = 0) {
-    $all_holders = [];
-    $api_page = 1;
-    $limit = 1000;
-    $has_more = true;
-
-    while ($has_more) {
-        $params = [
-            'groupKey' => 'collection',
-            'groupValue' => $mintAddress,
-            'page' => $api_page,
-            'limit' => $limit
-        ];
-        $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
-
-        if (isset($data['error'])) {
-            error_log("api-helper.php: getAllHolders error - " . json_encode($data));
-            return ['error' => $data['error']];
-        }
-
-        $items = $data['result']['items'] ?? [];
-        $item_count = count($items);
-        $total_holders += $item_count;
-
-        foreach ($items as $item) {
-            $all_holders[] = [
-                'owner' => $item['ownership']['owner'] ?? 'unknown',
-                'amount' => 1
-            ];
-        }
-
-        if ($item_count < $limit) {
-            $has_more = false;
-        } else {
-            $api_page++;
-        }
-    }
-
-    return ['holders' => $all_holders];
 }
 ?>
