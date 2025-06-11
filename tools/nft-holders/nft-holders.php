@@ -3,11 +3,11 @@ define('VINANETWORK_STATUS', true);
 require_once '../bootstrap.php';
 
 session_start();
-log_message('nft-holders.php: Script started');
+log_message('nft-tools.php: Script started');
 
 $api_helper_path = TOOLS_PATH . 'api-helper.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft-holders.php: api-helper.php not found at $api_helper_path", 'error_log.txt', 'ERROR');
+    log_message("nft-tools.php: api-helper.php not found at $api_helper_path", 'error_log.txt', 'ERROR');
     die('Internal Server Error: Missing api-helper.php');
 }
 include $api_helper_path;
@@ -15,7 +15,7 @@ include $api_helper_path;
 
 <div class="t-6 nft-holders-content">
     <div class="t-7">
-        <h2>Check NFT Holders</h2>
+        <h2>Check NFT Tools</h2>
         <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
@@ -28,7 +28,7 @@ include $api_helper_path;
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
             $mintAddress = trim($_POST['mintAddress']);
-            log_message("nft-holders.php: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set'));
+            log_message("nft-tools.php: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set'));
 
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
             $holders_per_page = 50;
@@ -41,7 +41,7 @@ include $api_helper_path;
             if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
                 if (isset($_SESSION['total_holders'][$mintAddress])) {
                     unset($_SESSION['total_holders'][$mintAddress]);
-                    log_message("nft-holders.php: Cleared session cache for new mintAddress=$mintAddress");
+                    log_message("nft-tools.php: Cleared session cache for new mintAddress=$mintAddress");
                 }
                 $_SESSION['last_mintAddress'] = $mintAddress;
             }
@@ -58,7 +58,7 @@ include $api_helper_path;
                         'page' => $api_page,
                         'limit' => $limit
                     ];
-                    log_message("nft-holders.php: Calling Helius API for total holders, page=$api_page");
+                    log_message("nft-tools.php: Calling Helius API for total holders, page=$api_page");
                     $total_data = callHeliusAPI('getAssetsByGroup', $total_params, 'POST');
 
                     if (isset($total_data['error'])) {
@@ -68,7 +68,7 @@ include $api_helper_path;
                     $items = $total_data['result']['items'] ?? [];
                     $item_count = count($items);
                     $total_holders += $item_count;
-                    log_message("nft-holders.php: Page $api_page added $item_count holders, total_holders = $total_holders");
+                    log_message("nft-tools.php: Page $api_page added $item_count holders, total_holders = $total_holders");
 
                     if ($item_count < $limit) {
                         $has_more = false;
@@ -78,18 +78,18 @@ include $api_helper_path;
                 }
 
                 $_SESSION['total_holders'][$mintAddress] = $total_holders;
-                log_message("nft-holders.php: Cached total_holders = $total_holders for $mintAddress");
+                log_message("nft-tools.php: Cached total_holders = $total_holders for $mintAddress");
             } else {
                 $total_holders = $_SESSION['total_holders'][$mintAddress];
-                log_message("nft-holders.php: Retrieved total_holders = $total_holders from cache for $mintAddress");
+                log_message("nft-tools.php: Retrieved total_holders = $total_holders from cache for $mintAddress");
             }
 
-            log_message("nft-holders.php: Final total holders = $total_holders for $mintAddress");
+            log_message("nft-tools.php: Final total holders = $total_holders for $mintAddress");
 
             if ($total_holders === 0) {
                 throw new Exception("No holders found or invalid collection address.");
             } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) {
-                log_message("nft-holders.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress", 'error_log.txt', 'WARNING');
+                log_message("nft-tools.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress", 'error_log.txt', 'WARNING');
                 echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
             }
 
@@ -98,14 +98,14 @@ include $api_helper_path;
                 <?php
                 $ajax_page = 1;
                 if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
-                include 'nft-holders-list.php';
+                include 'nft-tools-list.php';
                 ?>
             </div>
             <?php
 
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . $e->getMessage();
-            log_message("nft-holders.php: Exception - $error_msg", 'error_log.txt', 'ERROR');
+            log_message("nft-tools.php: Exception - $error_msg", 'error_log.txt', 'ERROR');
             echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
         }
     }
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!page || !mint) return;
                 console.log('Sending AJAX request for page:', page, 'mint:', mint);
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders-list.php', true);
+                xhr.open('POST', 'nft-tools-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
@@ -162,12 +162,12 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         'limit' => $size
     ];
     
-    log_message("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}");
+    log_message("nft-tools.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}");
     
     $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
     
     if (isset($data['error'])) {
-        log_message("nft-holders.php: getAssetsByGroup error - " . json_encode($data), 'error_log.txt', 'ERROR');
+        log_message("nft-tools.php: getAssetsByGroup error - " . json_encode($data), 'error_log.txt', 'ERROR');
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
     }
     
@@ -182,7 +182,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         return ['holders' => $holders];
     }
     
-    log_message("nft-holders.php: No holders found for address $mintAddress", 'error_log.txt', 'ERROR');
+    log_message("nft-tools.php: No holders found for address $mintAddress", 'error_log.txt', 'ERROR');
     return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
 }
 ?>
