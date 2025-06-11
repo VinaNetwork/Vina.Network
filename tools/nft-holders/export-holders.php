@@ -1,18 +1,7 @@
 <?php
 // export-holders.php
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-require_once '../../config/config.php';
-
-session_start();
-include '../../config/config.php';
-include '../api-helper.php';
-
-ini_set('log_errors', 1);
-ini_set('error_log', ERROR_LOG_PATH);
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
+require_once '../bootstrap.php';
+require_once '../api-helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die('Invalid request method');
@@ -60,7 +49,6 @@ function exportToJSON($holders, $filename) {
 }
 
 if ($export_type === 'current') {
-    // Export trang hiện tại
     $holders_per_page = 50;
     $offset = ($page - 1) * $holders_per_page;
     $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
@@ -80,52 +68,22 @@ if ($export_type === 'current') {
         exportToJSON($holders, $filename);
     }
 } else {
-    // Export toàn bộ holders
-    $all_holders = [];
-    $api_page = 1;
-    $limit = 1000;
-    $has_more = true;
-
-    while ($has_more) {
-        $params = [
-            'groupKey' => 'collection',
-            'groupValue' => $mintAddress,
-            'page' => $api_page,
-            'limit' => $limit
-        ];
-        $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
-        
-        if (isset($data['error'])) {
-            die('Error fetching holders: ' . htmlspecialchars($data['error']));
-        }
-        
-        $items = $data['result']['items'] ?? [];
-        foreach ($items as $item) {
-            $all_holders[] = [
-                'owner' => $item['ownership']['owner'] ?? 'unknown',
-                'amount' => 1
-            ];
-        }
-        
-        if (count($items) < $limit) {
-            $has_more = false;
-        } else {
-            $api_page++;
-        }
-    }
+    $total_holders = 0;
+    $holders_data = getAllHolders($mintAddress, $total_holders);
     
-    if (empty($all_holders)) {
+    if (isset($holders_data['error']) || empty($holders_data['holders'])) {
         die('No holders found');
     }
     
+    $holders = $holders_data['holders'];
     $filename = $export_format === 'csv' 
         ? "holders_all_{$mintAddress}.csv"
         : "holders_all_{$mintAddress}.json";
     
     if ($export_format === 'csv') {
-        exportToCSV($all_holders, $filename);
+        exportToCSV($holders, $filename);
     } else {
-        exportToJSON($all_holders, $filename);
+        exportToJSON($holders, $filename);
     }
 }
 ?>
