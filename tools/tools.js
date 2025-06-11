@@ -1,3 +1,4 @@
+// tools.js
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
