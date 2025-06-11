@@ -12,12 +12,12 @@ $page_description = "Discover Solana NFT tools on Vina Network: Check Holders, V
 $page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT valuation, blockchain, NFT";
 $page_og_title = "Vina Network - Solana NFT Tools & Holders Checker";
 $page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
-$page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
-$page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
+$page_og_image = "https://www.vina.network/tools/image/vina-network-tools.jpg";
+$page_og_url = "https://www.vina.network/tools/";
+$page_canonical = "https://www.vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
 $page_css = ['tools.css'];
 
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
+$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-tools';
 log_message("index.php: tool = $tool");
 
 $header_path = ROOT_PATH . 'include/header.php';
@@ -47,17 +47,8 @@ include $header_path;
 
             <!-- Tab để chọn chức năng -->
             <div class="t-3">
-                <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
-                    <i class="fas fa-wallet"></i> NFT Holders
-                </a>
-                <a href="?tool=nft-valuation" class="t-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
-                    <i class="fas fa-chart-line"></i> NFT Valuation
-                </a>
-                <a href="?tool=nft-transactions" class="t-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
-                    <i class="fas fa-history"></i> NFT Transactions
-                </a>
-                <a href="?tool=wallet-analysis" class="t-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
-                    <i class="fas fa-user"></i> Wallet Analysis
+                <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-tools' ? 'active' : ''; ?>" data-tool="nft-tools">
+                    <i class="fas fa-wallet"></i> NFT Tools
                 </a>
             </div>
 
@@ -67,18 +58,12 @@ include $header_path;
             <!-- Nội dung chức năng -->
             <div class="t-4">
                 <?php
-                    if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
-                        $tool = 'nft-holders';
-                        log_message("index.php: Invalid tool, defaulted to nft-holders", 'error_log.txt', 'ERROR');
+                    if (!in_array($tool, ['nft-tools'])) {
+                        $tool = 'nft-tools';
+                        log_message("index.php: Invalid tool, defaulted to nft-tools", 'error_log.txt', 'ERROR');
                     }
-                    if ($tool === 'nft-holders') {
-                        $tool_file = NFT_HOLDERS_PATH . 'nft-holders.php';
-                    } elseif ($tool === 'nft-valuation') {
-                        $tool_file = TOOLS_PATH . 'nft-valuation.php';
-                    } elseif ($tool === 'nft-transactions') {
-                        $tool_file = TOOLS_PATH . 'nft-transactions.php';
-                    } elseif ($tool === 'wallet-analysis') {
-                        $tool_file = TOOLS_PATH . 'wallet-analysis.php';
+                    if ($tool === 'nft-tools') {
+                        $tool_file = NFT_HOLDERS_PATH . 'nft-tools.php';
                     }
 
                     if (isset($tool_file) && file_exists($tool_file)) {
@@ -110,7 +95,7 @@ include $header_path;
         "operatingSystem": "All",
         "applicationCategory": "http://schema.org/FinanceApplication",
         "description": "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.",
-        "url": "https://vina.network/tools/",
+        "url": "https://www.vina.network/tools/",
         "offers": {
             "@type": "Offer",
             "price": "0",
