@@ -1,6 +1,6 @@
 <?php
 // nft-holders.php
-require_once '../bootstrap.php';
+require_once '/var/www/vinanetwork/public_html/tools/bootstrap.php';
 
 // Kiểm tra api-helper.php
 $api_helper_path = '/var/www/vinanetwork/public_html/tools/api-helper.php';
@@ -12,7 +12,7 @@ error_log("nft-holders.php: Including api-helper.php from $api_helper_path");
 require_once $api_helper_path;
 
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
-file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
+file_put_contents(DEBUG_LOG_PATH, date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
 ?>
 
 <div class="t-6 nft-holders-content">
@@ -20,6 +20,7 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
         <h2>Check NFT Holders</h2>
         <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
             <button type="submit">Check Holders</button>
         </form>
@@ -28,9 +29,13 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
 
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
+        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            throw new Exception("Invalid CSRF token.");
+        }
+
         try {
             $mintAddress = trim($_POST['mintAddress']);
-            file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Form submitted with mintAddress=$mintAddress\n", FILE_APPEND);
+            file_put_contents(DEBUG_LOG_PATH, date('Y-m-d H:i:s') . " - Form submitted with mintAddress=$mintAddress\n", FILE_APPEND);
             error_log("nft-holders.php: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set') . " at " . date('Y-m-d H:i:s'));
 
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
@@ -70,7 +75,7 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
             }
 
             ?>
-            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress) ?>">
+            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress); ?>">
                 <?php
                 $ajax_page = $page;
                 include 'nft-holders-list.php';
@@ -80,7 +85,7 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
 
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . $e->getMessage();
-            file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - $error_msg\n", FILE_APPEND);
+            file_put_contents(DEBUG_LOG_PATH, date('Y-m-d H:i:s') . " - $error_msg\n", FILE_APPEND);
             echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
             error_log("nft-holders.php: Exception - $error_msg at " . date('Y-m-d H:i:s'));
         }
@@ -96,70 +101,3 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
         </p>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var holdersList = document.getElementById('holders-list');
-    if (holdersList) {
-        holdersList.addEventListener('click', function(e) {
-            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                e.preventDefault();
-                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
-                    || e.target.dataset.page;
-                var mint = holdersList.dataset.mint;
-                if (!page || !mint) return;
-                console.log('Sending AJAX request for page:', page, 'mint:', mint);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders-list.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        console.log('AJAX response status:', xhr.status);
-                        if (xhr.status === 200) {
-                            holdersList.innerHTML = xhr.responseText;
-                        } else {
-                            console.error('AJAX error:', xhr.statusText);
-                        }
-                    }
-                };
-                xhr.send('mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page));
-            }
-        });
-    }
-});
-</script>
-
-<?php
-function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
-    $params = [
-        'groupKey' => 'collection',
-        'groupValue' => $mintAddress,
-        'page' => ceil(($offset + $size) / $size),
-        'limit' => $size
-    ];
-    
-    file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
-    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
-    
-    $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
-    
-    if (isset($data['error'])) {
-        error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
-        return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-    }
-    
-    if (isset($data['result']['items']) && !empty($data['result']['items'])) {
-        $holders = array_map(function($item) {
-            return [
-                'owner' => $item['ownership']['owner'] ?? 'unknown',
-                'amount' => 1
-            ];
-        }, $data['result']['items']);
-        
-        return ['holders' => $holders];
-    }
-    
-    error_log("nft-holders.php: No holders found for address $mintAddress at " . date('Y-m-d H:i:s'));
-    return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-}
-?>
