@@ -1,22 +1,22 @@
 <?php
 // index.php
-require_once 'bootstrap.php';
+require_once '/var/www/vinanetwork/public_html/tools/bootstrap.php';
 ob_start();
 
 // Định nghĩa biến
 $root_path = '../';
 $page_title = "Vina Network - Solana NFT Tools & Holders Checker";
-$page_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
-$page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT valuation, blockchain, NFT";
+$page_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.";
+$page_keywords = "Vina Network, Solana NFT, check Solana holders, NFT valuation, blockchain, NFT";
 $page_og_title = "Vina Network - Solana NFT Tools & Holders Checker";
-$page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
-$page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
+$page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.";
+$page_og_image = "https://vina.network/tools/image/vinanetwork-tools.jpg";
 $page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
+$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] : '');
 $page_css = ['tools.css'];
 
 // Xác định tool
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
+$tool = isset($_GET['tool']) ? trim($_GET['tool']) : 'nft-holders';
 error_log("index.php: tool = $tool");
 
 // Kiểm tra và include header.php
