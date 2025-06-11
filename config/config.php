@@ -15,3 +15,4 @@ if (!defined('ERROR_LOG_PATH')) {
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', ROOT_PATH);
 }
+?>
