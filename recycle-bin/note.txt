@@ -1,1 +1,3 @@
-
+** NOTICE: Temporary Storage Only **
+This "recycle-bin" directory is intended solely for storing temporary files and has no functional purpose on the web. 
+Do not rely on its contents for production use. Files here may be deleted at any time without notice.
