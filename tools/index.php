@@ -17,7 +17,7 @@ $page_og_url = "https://www.vina.network/tools/";
 $page_canonical = "https://www.vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
 $page_css = ['tools.css'];
 
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-tools';
+$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 log_message("index.php: tool = $tool");
 
 $header_path = ROOT_PATH . 'include/header.php';
@@ -47,8 +47,8 @@ include $header_path;
 
             <!-- Tab để chọn chức năng -->
             <div class="t-3">
-                <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-tools' ? 'active' : ''; ?>" data-tool="nft-tools">
-                    <i class="fas fa-wallet"></i> NFT Tools
+                <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
+                    <i class="fas fa-wallet"></i> NFT Holders
                 </a>
             </div>
 
@@ -58,12 +58,12 @@ include $header_path;
             <!-- Nội dung chức năng -->
             <div class="t-4">
                 <?php
-                    if (!in_array($tool, ['nft-tools'])) {
-                        $tool = 'nft-tools';
-                        log_message("index.php: Invalid tool, defaulted to nft-tools", 'error_log.txt', 'ERROR');
+                    if (!in_array($tool, ['nft-holders'])) {
+                        $tool = 'nft-holders';
+                        log_message("index.php: Invalid tool, defaulted to nft-holders", 'error_log.txt', 'ERROR');
                     }
-                    if ($tool === 'nft-tools') {
-                        $tool_file = NFT_HOLDERS_PATH . 'nft-tools.php';
+                    if ($tool === 'nft-holders') {
+                        $tool_file = NFT_HOLDERS_PATH . 'nft-holders.php';
                     }
 
                     if (isset($tool_file) && file_exists($tool_file)) {
