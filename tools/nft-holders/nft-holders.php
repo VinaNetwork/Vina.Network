@@ -1,24 +1,15 @@
 <?php
 // nft-holders.php
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-require_once '../config/config.php';
+require_once '../bootstrap.php';
 
-session_start();
-ini_set('log_errors', true);
-ini_set('error_log', '/var/www/vinanetwork/public_html/tools/error_log.txt');
-ini_set('display_errors', false);
-error_reporting(E_ALL);
-
-// Kiểm tra api-helper.php trước khi include
+// Kiểm tra api-helper.php
 $api_helper_path = '/var/www/vinanetwork/public_html/tools/api-helper.php';
 if (!file_exists($api_helper_path)) {
     error_log("nft-holders.php: api-helper.php not found at $api_helper_path");
     die('Internal Server Error: Missing api-helper.php');
 }
 error_log("nft-holders.php: Including api-helper.php from $api_helper_path");
-include $api_helper_path;
+require_once $api_helper_path;
 
 error_log('nft-holders.php loaded at ' . date('Y-m-d H:i:s'));
 file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - nft-holders.php loaded\n", FILE_APPEND);
@@ -44,7 +35,6 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
 
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
             $holders_per_page = 50;
-            $limit = 1000;
 
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
@@ -60,35 +50,10 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
 
             if (!isset($_SESSION['total_holders'][$mintAddress])) {
                 $total_holders = 0;
-                $api_page = 1;
-                $has_more = true;
+                $holders_data = getAllHolders($mintAddress, $total_holders);
 
-                while ($has_more) {
-                    $total_params = [
-                        'groupKey' => 'collection',
-                        'groupValue' => $mintAddress,
-                        'page' => $api_page,
-                        'limit' => $limit
-                    ];
-                    error_log("nft-holders.php: Calling Helius API for total holders, page=$api_page");
-                    $total_data = callHeliusAPI('getAssetsByGroup', $total_params, 'POST');
-                    file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Total API response (page $api_page): " . json_encode($total_data) . "\n", FILE_APPEND);
-                    error_log("nft-holders.php: Total API response (page $api_page) - " . json_encode($total_data) . " at " . date('Y-m-d H:i:s'));
-
-                    if (isset($total_data['error'])) {
-                        throw new Exception("Helius API error: " . $total_data['error']);
-                    }
-
-                    $items = $total_data['result']['items'] ?? [];
-                    $item_count = count($items);
-                    $total_holders += $item_count;
-                    error_log("nft-holders.php: Page $api_page added $item_count holders, total_holders = $total_holders at " . date('Y-m-d H:i:s'));
-
-                    if ($item_count < $limit) {
-                        $has_more = false;
-                    } else {
-                        $api_page++;
-                    }
+                if (isset($holders_data['error'])) {
+                    throw new Exception("Helius API error: " . $holders_data['error']);
                 }
 
                 $_SESSION['total_holders'][$mintAddress] = $total_holders;
@@ -102,18 +67,12 @@ file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('
 
             if ($total_holders === 0) {
                 throw new Exception("No holders found or invalid collection address.");
-            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) {
-                error_log("nft-holders.php: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress at " . date('Y-m-d H:i:s'));
-                echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
             }
 
-            // Hiển thị danh sách holders + phân trang
             ?>
             <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress) ?>">
                 <?php
-                // Include file AJAX hóa phần này
-                $ajax_page = 1;
-                if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
+                $ajax_page = $page;
                 include 'nft-holders-list.php';
                 ?>
             </div>
@@ -149,14 +108,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     || e.target.dataset.page;
                 var mint = holdersList.dataset.mint;
                 if (!page || !mint) return;
-                console.log('Sending AJAX request for page:', page, 'mint:', mint); // Debug
-                // AJAX tải lại bảng holders
+                console.log('Sending AJAX request for page:', page, 'mint:', mint);
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', 'nft-holders-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
-                        console.log('AJAX response status:', xhr.status); // Debug
+                        console.log('AJAX response status:', xhr.status);
                         if (xhr.status === 200) {
                             holdersList.innerHTML = xhr.responseText;
                         } else {
@@ -172,37 +130,36 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
-    // Giữ lại hàm getNFTHolders ở cuối file để file include có thể dùng
-    function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
-        $params = [
-            'groupKey' => 'collection',
-            'groupValue' => $mintAddress,
-            'page' => ceil(($offset + $size) / $size),
-            'limit' => $size
-        ];
-        
-        file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
-        error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
-        
-        $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
-        
-        if (isset($data['error'])) {
-            error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
-            return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-        }
-        
-        if (isset($data['result']['items']) && !empty($data['result']['items'])) {
-            $holders = array_map(function($item) {
-                return [
-                    'owner' => $item['ownership']['owner'] ?? 'unknown',
-                    'amount' => 1
-                ];
-            }, $data['result']['items']);
-            
-            return ['holders' => $holders];
-        }
-        
-        error_log("nft-holders.php: No holders found for address $mintAddress at " . date('Y-m-d H:i:s'));
+function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
+    $params = [
+        'groupKey' => 'collection',
+        'groupValue' => $mintAddress,
+        'page' => ceil(($offset + $size) / $size),
+        'limit' => $size
+    ];
+    
+    file_put_contents('/var/www/vinanetwork/public_html/tools/debug_log.txt', date('Y-m-d H:i:s') . " - Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}\n", FILE_APPEND);
+    error_log("nft-holders.php: Calling Helius API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']} at " . date('Y-m-d H:i:s'));
+    
+    $data = callHeliusAPI('getAssetsByGroup', $params, 'POST');
+    
+    if (isset($data['error'])) {
+        error_log("nft-holders.php: getAssetsByGroup error - " . json_encode($data) . " at " . date('Y-m-d H:i:s'));
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
     }
+    
+    if (isset($data['result']['items']) && !empty($data['result']['items'])) {
+        $holders = array_map(function($item) {
+            return [
+                'owner' => $item['ownership']['owner'] ?? 'unknown',
+                'amount' => 1
+            ];
+        }, $data['result']['items']);
+        
+        return ['holders' => $holders];
+    }
+    
+    error_log("nft-holders.php: No holders found for address $mintAddress at " . date('Y-m-d H:i:s'));
+    return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
+}
 ?>
