@@ -1,6 +1,6 @@
 <?php
 // api-helper.php
-require_once dirname(__DIR__) . '/tools/bootstrap.php';
+require_once '/var/www/vinanetwork/public_html/tools/bootstrap.php';
 
 error_log("api-helper.php: PHP version: " . phpversion());
 error_log("api-helper.php: cURL version: " . curl_version()['version']);
