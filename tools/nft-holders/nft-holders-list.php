@@ -1,10 +1,13 @@
 <?php
+// nft-holders-list.php
+require_once '../bootstrap.php';
+require_once '../api-helper.php';
+
 // Nhận tham số
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mintAddress = trim($_POST['mintAddress']);
     $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
 } else {
-    // Khi include từ file gốc
     $mintAddress = isset($mintAddress) ? $mintAddress : '';
     $page = isset($ajax_page) ? $ajax_page : 1;
 }
@@ -20,7 +23,7 @@ $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
 
 echo "<div class='export-section'>";
 echo "<form method='POST' action='export-holders.php' class='export-form'>";
-echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
+echo "<input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'>";
 echo "<input type='hidden' name='page' value='$page'>";
 echo "<div class='export-controls'>";
 echo "<select name='export_format' class='export-format'>";
@@ -63,39 +66,39 @@ if (isset($holders_data['error'])) {
     $total_pages = ceil($total_holders / $holders_per_page);
 
     if ($page > 1) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' id='page-first'>1</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' data-page='1'>1</button></form>";
     } else {
-        echo "<span class='page-button active' data-type='number' id='page-first-active'>1</span>";
+        echo "<span class='page-button active' data-type='number' data-page='1'>1</span>";
     }
 
     if ($page > 2) {
-        echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-start'>...</span>";
+        echo "<span class='page-button ellipsis' data-type='ellipsis'>...</span>";
     }
 
     if ($page > 1) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'><</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' data-page='" . ($page - 1) . "' title='Previous'><</button></form>";
     }
 
     if ($page > 1 && $page < $total_pages) {
-        echo "<span class='page-button active' data-type='number' id='page-current'>$page</span>";
+        echo "<span class='page-button active' data-type='number' data-page='$page'>$page</span>";
     }
 
     if ($page < $total_pages) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'>></button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' data-page='" . ($page + 1) . "' title='Next'>></button></form>";
     }
 
     if ($page < $total_pages - 1) {
-        echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-end'>...</span>";
+        echo "<span class='page-button ellipsis' data-type='ellipsis'>...</span>";
     }
 
     if ($page < $total_pages) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' id='page-last'>$total_pages</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' data-page='$total_pages'>$total_pages</button></form>";
     } else {
-        echo "<span class='page-button active' data-type='number' id='page-last-active'>$total_pages</span>";
+        echo "<span class='page-button active' data-type='number' data-page='$total_pages'>$total_pages</span>";
     }
 
-    echo "</div>"; // .pagination
-    echo "</div>"; // .result-section
+    echo "</div>";
+    echo "</div>";
 } else {
     echo "<div class='result-error'><p>No holders found for this page or invalid collection address.</p></div>";
 }
