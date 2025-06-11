@@ -2,36 +2,29 @@
 // tools/bootstrap.php
 if (!defined('VINANETWORK_STATUS')) {
     http_response_code(403);
-    exit('Forbidden: Direct access not allowed.');
-}
-
-// Đường dẫn tới config.php
-$config_path = dirname(__DIR__) . '/config/config.php';
-if (!file_exists($config_path)) {
-    error_log("Bootstrap: config.php not found at $config_path");
-    http_response_code(500);
-    exit('Internal Server Error: Missing config.php');
-}
-require_once $config_path;
-
-// Cấu hình error logging
-ini_set('log_errors', 1);
-ini_set('error_log', ERROR_LOG_PATH);
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-
-// Hàm ghi log
-function log_message($message, $file = 'debug_log.txt', $level = 'INFO') {
-    $log_path = dirname(__DIR__) . '/tools/' . $file;
-    $timestamp = date('Y-m-d H:i:s');
-    $log_entry = "[$timestamp] [$level] $message\n";
-    file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX);
-    if ($level === 'ERROR') {
-        error_log($message);
-    }
+    exit('No direct access allowed!');
 }
 
 // Định nghĩa hằng số đường dẫn
-define('TOOLS_PATH', dirname(__DIR__) . '/tools/');
+define('ROOT_PATH', '/var/www/vinanetwork/public_html/');
+define('TOOLS_PATH', ROOT_PATH . 'tools/');
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
-define('ROOT_PATH', dirname(__DIR__) . '/');
+
+// Include config
+require_once ROOT_PATH . 'config/config.php';
+
+// Hàm ghi log
+function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') {
+    $log_path = TOOLS_PATH . $log_file;
+    $timestamp = date('Y-m-d H:i:s');
+    $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
+
+    try {
+        if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
+            error_log("Failed to write log to $log_path: $message");
+        }
+    } catch (Exception $e) {
+        error_log("Log error: " . $e->getMessage());
+    }
+}
+?>
