@@ -1,25 +1,13 @@
 <?php
-error_log("api-helper.php: PHP version: " . phpversion());
-error_log("api-helper.php: cURL version: " . curl_version()['version']);
+require_once 'bootstrap.php';
 
-// Include file cấu hình
-$config_path = dirname(__DIR__) . '/config/config.php';
-if (!file_exists($config_path)) {
-    error_log("Error: config.php not found at $config_path");
-    die('Internal Server Error: Missing config.php');
-}
-include $config_path;
-
-// Hàm gọi API Helius
-function callHeliusAPI($endpoint, $params = [], $method = 'POST') {
-    $url = "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY;
-
+function callAPI($endpoint, $params = [], $method = 'POST') {
+    $url = "https://api.helius.xyz/v0/$endpoint?api-key=" . HELIUS_API_KEY;
     $ch = curl_init();
     if (!$ch) {
-        error_log("cURL initialization failed.");
+        log_message("api-helper: cURL initialization failed.", 'api_log.txt', 'ERROR');
         return ['error' => 'Failed to initialize cURL.'];
     }
-
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     if ($method === 'POST') {
@@ -32,41 +20,35 @@ function callHeliusAPI($endpoint, $params = [], $method = 'POST') {
                 'params' => $params
             ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-            error_log("api-helper.php: Helius API request - Endpoint: $endpoint, Params: " . substr($postData, 0, 100) . "...");
+            log_message("api-helper: API request - Endpoint: $endpoint, Params: " . substr($postData, 0, 100) . "...", 'api_log.txt');
         }
     }
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-
     $response = curl_exec($ch);
     if ($response === false) {
         $curlError = curl_error($ch);
-        error_log("cURL error: $curlError");
+        log_message("api-error: cURL error: $curlError", 'api_log.txt', 'ERROR');
         curl_close($ch);
         return ['error' => 'cURL error: ' . $curlError];
     }
-
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-
     if ($httpCode !== 200) {
-        error_log("api-helper.php: Helius API request failed with HTTP code: $httpCode, Response: $response");
+        log_message("api-error: API request failed - HTTP: $httpCode, Response: $response", 'api_log.txt', 'ERROR');
         return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
     }
-
     $data = json_decode($response, true);
     if ($data === null) {
-        error_log("api-helper.php: Failed to parse Helius API response as JSON. Response: $response");
+        log_message("api-error: Failed to parse API response as JSON. Response: $response", 'api_log.txt', 'ERROR');
         return ['error' => 'Failed to parse API response as JSON.'];
     }
-
     if (isset($data['error'])) {
-        error_log("api-helper.php: Helius API error - Code: {$data['error']['code']}, Message: {$data['error']['message']}");
+        log_message("api-error: API error - Code: {$data['error']['code']}, Message: {$data['error']['message']}", 'api_log.txt', 'ERROR');
         return ['error' => $data['error']['message']];
     }
-
-    error_log("api-helper.php: Helius API success - Endpoint: $endpoint");
+    log_message("api-success: API success - Endpoint: $endpoint", 'api_log.txt');
     return $data;
 }
 ?>
