@@ -1,23 +1,23 @@
 <?php
 // export-holders.php
-require_once '../bootstrap.php';
-require_once '../api-helper.php';
+require_once '/var/www/vinanetwork/public_html/tools/bootstrap.php';
+require_once '/var/www/vinanetwork/public_html/tools/api-helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die('Invalid request method');
 }
 
+if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    die('Invalid CSRF token');
+}
+
 $mintAddress = trim($_POST['mintAddress'] ?? '');
-$export_type = $_POST['export_type'] ?? 'current';
-$export_format = $_POST['export_format'] ?? 'csv';
-$page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
+$export_type = in_array($_POST['export_type'] ?? '', ['current', 'all']) ? $_POST['export_type'] : 'current';
+$export_format = in_array($_POST['export_format'] ?? '', ['csv', 'json']) ? $_POST['export_format'] : 'csv';
+$page = max(1, (int)($_POST['page'] ?? 1));
 
 if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
     die('Invalid collection address');
-}
-
-if (!in_array($export_format, ['csv', 'json'])) {
-    die('Invalid export format');
 }
 
 function exportToCSV($holders, $filename) {
