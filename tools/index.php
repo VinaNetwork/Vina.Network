@@ -1,22 +1,11 @@
 <?php
-ob_start(); // Bắt đầu output buffering để ngăn lỗi session
-// Điều kiện để truy cập config.php
-define('VINANETWORK_ENTRY', true);
-require_once '../config/config.php';
-
-// Cấu hình log lỗi
-$config_path = '../config/config.php';
-if (!file_exists($config_path)) {
-    error_log("Error: config.php not found at $config_path");
-    die('Internal Server Error: Missing config.php');
-}
-include $config_path;
+ob_start();
+define('VINANETWORK', true);
+require_once '../bootstrap.php';
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
-
-// Định nghĩa biến trước khi sử dụng
 $root_path = '../';
 $page_title = "Vina Network - Solana NFT Tools & Holders Checker";
 $page_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
@@ -26,38 +15,29 @@ $page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders
 $page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
-$page_css = ['tools.css'];
-
-// Định nghĩa $tool trước khi sử dụng
+$page_css = ['../css/vina.css', 'tools.css'];
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
-
-// Kiểm tra và include header.php
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    error_log("Error: header.php not found at $header_path");
+    log_message("index: header.php not found at $header_path", 'tools_log.txt', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 include $header_path;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <body>
-    <!-- Include Navbar -->
     <?php 
         $navbar_path = $root_path . 'include/navbar.php';
         if (!file_exists($navbar_path)) {
-            error_log("Error: navbar.php not found at $navbar_path");
+            log_message("index: navbar.php not found at $navbar_path", 'tools_log.txt', 'ERROR');
             die('Internal Server Error: Missing navbar.php');
         }
         include $navbar_path;
     ?>
-
     <section class="t-1">
         <div class="t-2">
             <h1>Vina Network Tools</h1>
-
-            <!-- Tab để chọn chức năng -->
             <div class="t-3">
                 <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
                     <i class="fas fa-wallet"></i> NFT Holders
@@ -72,18 +52,13 @@ include $header_path;
                     <i class="fas fa-user"></i> Wallet Analysis
                 </a>
             </div>
-
-            <!-- Note -->
             <p class="note">Note: Only supports checking on the Solana blockchain.</p>
-
-            <!-- Nội dung chức năng -->
             <div class="t-4">
                 <?php
-                    // Include file tương ứng với chức năng được chọn
-                    error_log("index.php: tool = $tool"); // Debug
+                    log_message("index: tool = $tool", 'tools_log.txt');
                     if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
                         $tool = 'nft-holders';
-                        error_log("index.php: Invalid tool, defaulted to nft-holders");
+                        log_message("index: Invalid tool, defaulted to nft-holders", 'tools_log.txt', 'ERROR');
                     }
                     if ($tool === 'nft-holders') {
                         $tool_file = 'nft-holders/nft-holders.php';
@@ -94,29 +69,24 @@ include $header_path;
                     } elseif ($tool === 'wallet-analysis') {
                         $tool_file = 'wallet-analysis.php';
                     }
-
-                    // Kiểm tra và include file
                     if (isset($tool_file) && file_exists($tool_file)) {
                         include $tool_file;
                     } else {
                         echo "<p>Error: Tool not found.</p>";
+                        log_message("index: Tool file not found: $tool_file", 'tools_log.txt', 'ERROR');
                     }
                 ?>
             </div>
         </div>
     </section>
-
-    <!-- Include Footer -->
     <?php 
         $footer_path = $root_path . 'include/footer.php';
         if (!file_exists($footer_path)) {
-            error_log("Error: footer.php not found at $footer_path");
+            log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
             die('Internal Server Error: Missing footer.php');
         }
         include $footer_path;
     ?>
-
-    <!-- Schema Markup -->
     <script type="application/ld+json"> {
         "@context": "https://schema.org",
         "@type": "WebApplication",
@@ -132,10 +102,9 @@ include $header_path;
         }
     }
     </script>
-
     <script src="../js/vina.js"></script>
     <script src="../js/navbar.js"></script>
     <script src="tools.js"></script>
 </body>
 </html>
-<?php ob_end_flush(); // Kết thúc output buffering ?>
+<?php ob_end_flush(); ?>
