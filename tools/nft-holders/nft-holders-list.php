@@ -1,36 +1,26 @@
 <?php
-define('VINANETWORK_STATUS', true);
-require_once '../bootstrap.php';
-
-session_start();
-log_message('nft-holders-list.php: Script started');
-
-$api_helper_path = TOOLS_PATH . 'api-helper.php';
-if (!file_exists($api_helper_path)) {
-    log_message("nft-holders-list.php: api-helper.php not found at $api_helper_path", 'error_log.txt', 'ERROR');
-    die('Internal Server Error: Missing api-helper.php');
-}
-include $api_helper_path;
-
+// Nhận tham số
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mintAddress = trim($_POST['mintAddress']);
     $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
 } else {
+    // Khi include từ file gốc
     $mintAddress = isset($mintAddress) ? $mintAddress : '';
     $page = isset($ajax_page) ? $ajax_page : 1;
 }
 
-log_message("nft-holders-list.php: Processing - mintAddress=$mintAddress, page=$page");
-
 $holders_per_page = 50;
+
+// Dùng session cache tổng số holders nếu có
 $total_holders = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : 0;
 
+// Lấy danh sách holders trang hiện tại
 $offset = ($page - 1) * $holders_per_page;
 $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
 
 echo "<div class='export-section'>";
 echo "<form method='POST' action='export-holders.php' class='export-form'>";
-echo "<input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'>";
+echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
 echo "<input type='hidden' name='page' value='$page'>";
 echo "<div class='export-controls'>";
 echo "<select name='export_format' class='export-format'>";
@@ -68,11 +58,12 @@ if (isset($holders_data['error'])) {
     echo "</tbody>";
     echo "</table>";
 
+    // Phân trang
     echo "<div class='pagination'>";
     $total_pages = ceil($total_holders / $holders_per_page);
 
     if ($page > 1) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' id='page-first'>1</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' id='page-first'>1</button></form>";
     } else {
         echo "<span class='page-button active' data-type='number' id='page-first-active'>1</span>";
     }
@@ -82,7 +73,7 @@ if (isset($holders_data['error'])) {
     }
 
     if ($page > 1) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'><</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'><</button></form>";
     }
 
     if ($page > 1 && $page < $total_pages) {
@@ -90,7 +81,7 @@ if (isset($holders_data['error'])) {
     }
 
     if ($page < $total_pages) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'>></button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'>></button></form>";
     }
 
     if ($page < $total_pages - 1) {
@@ -98,13 +89,13 @@ if (isset($holders_data['error'])) {
     }
 
     if ($page < $total_pages) {
-        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' id='page-last'>$total_pages</button></form>";
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' id='page-last'>$total_pages</button></form>";
     } else {
         echo "<span class='page-button active' data-type='number' id='page-last-active'>$total_pages</span>";
     }
 
-    echo "</div>";
-    echo "</div>";
+    echo "</div>"; // .pagination
+    echo "</div>"; // .result-section
 } else {
     echo "<div class='result-error'><p>No holders found for this page or invalid collection address.</p></div>";
 }
