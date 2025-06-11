@@ -1,6 +1,6 @@
 <?php
 // load-tool.php
-require_once 'bootstrap.php';
+require_once '/var/www/vinanetwork/public_html/tools/bootstrap.php';
 ob_start();
 
 // Kiểm tra nếu không phải là yêu cầu AJAX
@@ -9,7 +9,7 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQ
 }
 
 // Xác định chức năng được chọn
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
+$tool = isset($_GET['tool']) ? trim($_GET['tool']) : 'nft-holders';
 error_log("load-tool.php: tool = $tool");
 
 if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
