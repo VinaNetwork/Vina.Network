@@ -11,22 +11,16 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQ
     die('Direct access not allowed');
 }
 
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
+$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-tools';
 log_message("load-tool.php: tool = $tool");
 
-if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
-    $tool = 'nft-holders';
-    log_message("load-tool.php: Invalid tool '$tool', defaulted to nft-holders", 'error_log.txt', 'ERROR');
+if (!in_array($tool, ['nft-tools'])) {
+    $tool = 'nft-tools';
+    log_message("load-tool.php: Invalid tool '$tool', defaulted to nft-tools", 'error_log.txt', 'ERROR');
 }
 
-if ($tool === 'nft-holders') {
-    $tool_file = NFT_HOLDERS_PATH . 'nft-holders.php';
-} elseif ($tool === 'nft-valuation') {
-    $tool_file = TOOLS_PATH . 'nft-valuation.php';
-} elseif ($tool === 'nft-transactions') {
-    $tool_file = TOOLS_PATH . 'nft-transactions.php';
-} elseif ($tool === 'wallet-analysis') {
-    $tool_file = TOOLS_PATH . 'wallet-analysis.php';
+if ($tool === 'nft-tools') {
+    $tool_file = NFT_HOLDERS_PATH . 'nft-tools.php';
 }
 
 if (isset($tool_file) && file_exists($tool_file)) {
