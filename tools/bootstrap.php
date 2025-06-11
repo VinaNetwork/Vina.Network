@@ -1,12 +1,12 @@
 <?php
 // tools/bootstrap.php
-if (!defined('VINANETWORK_STATUS')) {
+if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct access allowed!');
 }
 
 // Định nghĩa hằng số đường dẫn
-define('ROOT_PATH', '/var/www/vinanetwork/public_html/');
+define('ROOT_PATH', dirname(__DIR__) . '/');
 define('TOOLS_PATH', ROOT_PATH . 'tools/');
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
 
