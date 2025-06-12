@@ -16,7 +16,7 @@ $page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders
 $page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
-$page_css = ['../css/vina.css', 'tools.css'];
+$page_css = ['/css/vina.css', '/tools/tools.css'];
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
@@ -105,9 +105,13 @@ include $header_path;
         }
     }
     </script>
-    <script src="/js/vina.js"></script>
-    <script src="/js/navbar.js"></script>
-    <script src="/tools/tools.js"></script>
+    <script>
+        // Debug JS loading
+        console.log('Attempting to load JS files...');
+    </script>
+    <script src="/js/vina.js" onerror="console.error('Failed to load /js/vina.js')"></script>
+    <script src="/js/navbar.js" onerror="console.error('Failed to load /js/navbar.js')"></script>
+    <script src="/tools/tools.js" onerror="console.error('Failed to load /tools/tools.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
