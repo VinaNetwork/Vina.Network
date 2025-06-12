@@ -150,14 +150,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 console.log('Sending AJAX request for page:', page, 'mint:', mint);
                 var loader = document.querySelector('.loader');
-                if (loader) loader.style.display = 'block'; // Bật loader
+                if (!loader) {
+                    console.error('Loader not found in DOM');
+                    return;
+                }
+                console.log('Loader found:', loader);
+                loader.style.display = 'block'; // Bật loader
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '/tools/nft-holders/nft-holders-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
                         console.log('AJAX response status:', xhr.status, 'Response:', xhr.responseText.substring(0, 200));
-                        if (loader) loader.style.display = 'none'; // Ẩn loader
+                        loader.style.display = 'none'; // Ẩn loader
                         if (xhr.status === 200) {
                             holdersList.innerHTML = xhr.responseText;
                         } else {
@@ -171,6 +176,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 xhr.send(data);
             }
         });
+    } else {
+        console.error('holders-list not found in DOM');
     }
 });
 </script>
