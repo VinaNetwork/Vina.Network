@@ -28,7 +28,7 @@ $page_css = ['../../css/vina.css', '../tools.css'];
 include $root_path . 'include/header.php';
 include $root_path . 'include/navbar.php';
 
-$api_helper_path = '../api-helper.php';
+$api_helper_path = dirname(__DIR__) . '/api-helper.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-holders: api-helper.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
     die('Internal Server Error: Missing api-helper.php');
