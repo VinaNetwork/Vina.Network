@@ -42,9 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
-            const loader = document.querySelector('.loader');
-            if (loader) loader.style.display = 'block';
-
             fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'GET',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -53,14 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => {
-                document.querySelector('.t-4').innerHTML = data;
-                if (loader) loader.style.display = 'none';
-            })
+            .then(data => document.querySelector('.t-4').innerHTML = data)
             .catch(error => {
                 console.error('Error loading tool content:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
-                if (loader) loader.style.display = 'none';
             });
         });
     });
@@ -92,13 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
             const form = e.target;
-            const loader = form.parentElement.querySelector('.loader');
-            console.log('Loader element:', loader);
+            const loader = document.querySelector('.loader'); // Tìm loader trong toàn bộ DOM
+            console.log('Loader element:', loader); // Debug
             if (loader) {
-                loader.style.display = 'block';
+                loader.style.display = 'block'; // Hiển thị loader
                 console.log('Loader activated');
             } else {
-                console.error('Loader not found in form parent');
+                console.error('Loader not found in DOM');
             }
 
             const formData = new FormData(form);
@@ -115,63 +108,17 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) {
-                    loader.style.display = 'none';
+                    loader.style.display = 'none'; // Ẩn loader sau khi load xong
                     console.log('Loader deactivated');
                 }
-                initPagination();
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) {
-                    loader.style.display = 'none';
+                    loader.style.display = 'none'; // Ẩn loader nếu có lỗi
                 }
             });
         }
     });
-
-    function initPagination() {
-        const holdersList = document.getElementById('holders-list');
-        if (holdersList) {
-            holdersList.addEventListener('click', function(e) {
-                if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                    e.preventDefault();
-                    const loader = document.querySelector('.loader');
-                    if (loader) loader.style.display = 'block';
-
-                    const page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
-                        || e.target.dataset.page;
-                    const mint = holdersList.dataset.mint;
-                    if (!page || !mint) {
-                        if (loader) loader.style.display = 'none';
-                        return;
-                    }
-                    console.log('Sending AJAX request for page:', page, 'mint:', mint);
-                    fetch('/tools/nft-holders/nft-holders-list.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: `mintAddress=${encodeURIComponent(mint)}&page=${encodeURIComponent(page)}`
-                    })
-                    .then(response => {
-                        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                        return response.text();
-                    })
-                    .then(data => {
-                        holdersList.innerHTML = data;
-                        if (loader) loader.style.display = 'none';
-                    })
-                    .catch(error => {
-                        console.error('AJAX error:', error);
-                        holdersList.innerHTML = '<p>Error loading holders. Please try again.</p>';
-                        if (loader) loader.style.display = 'none';
-                    });
-                }
-            });
-        }
-    }
-
-    initPagination();
 });
