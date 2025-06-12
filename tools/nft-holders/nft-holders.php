@@ -158,5 +158,9 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
     log_message("nft-holders: No holders found for address $mintAddress", 'nft_holders_log.txt', 'ERROR');
     return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
 }
-include $root_path . 'include/footer.php';
+if (!file_exists($footer_path)) {
+    log_message("nft-holders: footer.php not found at $footer_path", 'nft_holders_log.txt', 'ERROR');
+    die('Internal Server Error: Missing footer.php');
+}
+include $footer_path;
 ?>
