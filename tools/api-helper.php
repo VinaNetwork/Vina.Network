@@ -4,7 +4,7 @@ define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
-    $url = "https://api.helius.xyz/v0/rpc?api-key=" . HELIUS_API_KEY;
+    $url = "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY;
     $ch = curl_init();
     if (!$ch) {
         log_message("api-helper: cURL initialization failed.", 'api_log.txt', 'ERROR');
