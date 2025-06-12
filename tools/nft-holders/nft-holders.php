@@ -1,5 +1,5 @@
 <?php
-ini_set('display_errors', 0); // Tắt hiển thị lỗi trên production
+ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
@@ -102,14 +102,13 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             if ($total_holders === 0) {
                 throw new Exception("No holders found or invalid collection address.");
             } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) {
-                log_message("nft-holders: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress", 'nft_holders_log.txt', 'WARNING');
+                log_message("nft-holders: Suspicious total_holders ($total_holders) is a multiple of limit for $mintAddress", 'nft_holders_log.txt', 'WARNING');
                 echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
             }
             ?>
-            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress) ?>">
+            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress); ?>">
                 <?php
-                $ajax_page = 1;
-                if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
+                $ajax_page = $page;
                 log_message("nft-holders: Including nft-holders-list.php with page=$ajax_page", 'nft_holders_log.txt');
                 ob_start();
                 include 'nft-holders-list.php';
@@ -121,7 +120,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             <?php
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . $e->getMessage();
-            log_message("nft-holders_error: Exception - $error_msg", 'nft_holders_log.txt', 'ERROR');
+            log_message("nft-holders: Exception - $error_msg", 'nft_holders_log.txt', 'ERROR');
             echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
         }
     }
@@ -159,44 +158,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (xhr.status === 200) {
                             holdersList.innerHTML = xhr.responseText;
                         } else {
-                            console.error('AJAX error:', xhr.statusText);
+                            console.error('AJAX error:', xhr.status, xhr.statusText, 'Response:', xhr.responseText);
                             holdersList.innerHTML = '<div class="result-error"><p>Error loading holders. Status: ' + xhr.status + '. Please try again.</p></div>';
                         }
                     }
                 };
-                xhr.send('mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page));
+                var data = 'mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page);
+                console.log('AJAX data:', data);
+                xhr.send(data);
             }
         });
     }
 });
 </script>
 <?php
-function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
-    $params = [
-        'groupKey' => 'collection',
-        'groupValue' => $mintAddress,
-        'page' => ceil(($offset + $size) / $size),
-        'limit' => $size
-    ];
-    log_message("nft-holders: Calling API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}", 'nft_holders_log.txt');
-    $data = callAPI('getAssetsByGroup', $params, 'POST');
-    log_message("nft-holders: API response: " . json_encode($data), 'nft_holders_log.txt');
-    if (isset($data['error'])) {
-        log_message("nft-holders: getAssetsByGroup error - " . json_encode($data), 'nft_holders_log.txt', 'ERROR');
-        return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-    }
-    if (isset($data['result']['items']) && !empty($data['result']['items'])) {
-        $holders = array_map(function($item) {
-            return [
-                'owner' => $item['ownership']['owner'] ?? 'unknown',
-                'amount' => 1
-            ];
-        }, $data['result']['items']);
-        return ['holders' => $holders];
-    }
-    log_message("nft-holders: No holders found for address $mintAddress", 'nft_holders_log.txt', 'ERROR');
-    return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
-}
 ob_start();
 include $root_path . 'include/footer.php';
 $footer_output = ob_get_clean();
