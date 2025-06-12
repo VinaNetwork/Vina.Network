@@ -27,13 +27,15 @@ $page_description = 'Check NFT holders for a Solana collection address.';
 $page_css = ['../../css/vina.css', '../tools.css'];
 include $root_path . 'include/header.php';
 include $root_path . 'include/navbar.php';
-$api_helper_path = '../api-helper.php';
+
+$api_helper_path = __DIR__ . '/../api-helper.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-holders: api-helper.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
     die('Internal Server Error: Missing api-helper.php');
 }
 log_message("nft-holders: Including api-helper.php from $api_helper_path", 'nft_holders_log.txt');
 include $api_helper_path;
+
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
 <div class="t-6 nft-holders-content">
