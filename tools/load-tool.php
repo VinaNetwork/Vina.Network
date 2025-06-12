@@ -18,7 +18,7 @@ if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'walle
     log_message("load-tool: Invalid tool '$tool', defaulting to nft-holders", 'tools_log.txt', 'ERROR');
 }
 if ($tool === 'nft-holders') {
-    $tool_file = __DIR__ . 'nft-holders/nft-holders.php';
+    $tool_file = 'nft-holders/nft-holders.php';
 } elseif ($tool === 'nft-valuation') {
     $tool_file = 'nft-valuation.php';
 } elseif ($tool === 'nft-transactions') {
