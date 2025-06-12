@@ -111,7 +111,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 <?php
                 $ajax_page = 1;
                 if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
-                include 'nft-holders-list.php';
+                include '/tools/nft-holders/nft-holders-list.php';
                 ?>
             </div>
             <?php
