@@ -82,13 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
+        if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
             const form = e.target;
-            const loader = document.querySelector('.loader'); // Tìm loader trong toàn bộ DOM
-            console.log('Loader element:', loader); // Debug
+            const loader = document.querySelector('.loader');
+            console.log('Loader element:', loader);
             if (loader) {
-                loader.style.display = 'block'; // Hiển thị loader
+                loader.style.display = 'block';
                 console.log('Loader activated');
             } else {
                 console.error('Loader not found in DOM');
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) {
-                    loader.style.display = 'none'; // Ẩn loader sau khi load xong
+                    loader.style.display = 'none';
                     console.log('Loader deactivated');
                 }
             })
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error submitting form:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) {
-                    loader.style.display = 'none'; // Ẩn loader nếu có lỗi
+                    loader.style.display = 'none';
                 }
             });
         }
