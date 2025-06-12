@@ -2,7 +2,9 @@
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
+define('VINANETWORK_ENTRY', true);
 require_once '../bootstrap.php';
+
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
