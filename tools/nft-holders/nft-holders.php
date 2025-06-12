@@ -24,7 +24,7 @@ error_reporting(E_ALL);
 $root_path = '../../';
 $page_title = 'Check NFT Holders - Vina Network';
 $page_description = 'Check NFT holders for a Solana collection address.';
-$page_css = ['../../css/vina.css', '../tools.css'];
+$page_css = ['/css/vina.css', '/tools/tools.css']; // Giữ nguyên vì CSS đã nhận
 include $root_path . 'include/header.php';
 include $root_path . 'include/navbar.php';
 
@@ -79,9 +79,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     ];
                     log_message("nft-holders: Calling API for total holders, page=$api_page", 'nft_holders_log.txt');
                     $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
-                    log_message("nft-holders: Total API response (page $api_page): " . json_encode($total_data), 'nft_holders_log.txt');
+                    log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
                     if (isset($total_data['error'])) {
-                        throw new Exception("API error: " . $total_data['error']);
+                        throw new Exception("API error: " . $total_data['error']['message']);
                     }
                     $items = $total_data['result']['items'] ?? [];
                     $item_count = count($items);
@@ -111,7 +111,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 <?php
                 $ajax_page = 1;
                 if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
-                include 'nft-holders-list.php';
+                include __DIR__ . '/nft-holders-list.php';
                 ?>
             </div>
             <?php
@@ -131,37 +131,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         </p>
     </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var holdersList = document.getElementById('holders-list');
-    if (holdersList) {
-        holdersList.addEventListener('click', function(e) {
-            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                e.preventDefault();
-                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
-                    || e.target.dataset.page;
-                var mint = holdersList.dataset.mint;
-                if (!page || !mint) return;
-                console.log('Sending AJAX request for page:', page, 'mint:', mint);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders-list.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        console.log('AJAX response status:', xhr.status);
-                        if (xhr.status === 200) {
-                            holdersList.innerHTML = xhr.responseText;
-                        } else {
-                            console.error('AJAX error:', xhr.statusText);
-                        }
-                    }
-                };
-                xhr.send('mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page));
-            }
-        });
-    }
-});
-</script>
 <?php
 function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
     $params = [
@@ -172,6 +141,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
     ];
     log_message("nft-holders: Calling API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}", 'nft_holders_log.txt');
     $data = callAPI('getAssetsByGroup', $params, 'POST');
+    log_message("nft-holders: API response - URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($params) . ", Response=" . json_encode($data), 'nft_holders_log.txt');
     if (isset($data['error'])) {
         log_message("nft-holders: getAssetsByGroup error - " . json_encode($data), 'nft_holders_log.txt', 'ERROR');
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
