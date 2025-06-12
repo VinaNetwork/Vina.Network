@@ -1,4 +1,7 @@
 <?php
+<?php
+define('VINANETWORK', true);
+define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
