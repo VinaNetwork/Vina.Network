@@ -1,4 +1,7 @@
+console.log('tools.js loaded'); // Debug
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing tools.js');
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
     const tabsContainer = document.querySelector('.t-3');
@@ -27,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.t-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('Tab clicked:', this.getAttribute('data-tool'));
             document.querySelectorAll('.t-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
@@ -91,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
+            console.log('Form submitted:', e.target.id);
             const form = e.target;
             const loader = form.parentElement.querySelector('.loader');
             console.log('Loader element:', loader);
@@ -133,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initPagination() {
         const holdersList = document.getElementById('holders-list');
         if (holdersList) {
+            console.log('Initializing pagination for holders-list');
             holdersList.addEventListener('click', function(e) {
                 if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
                     e.preventDefault();
@@ -143,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         || e.target.dataset.page;
                     const mint = holdersList.dataset.mint;
                     if (!page || !mint) {
+                        console.error('Missing page or mint:', {page, mint});
                         if (loader) loader.style.display = 'none';
                         return;
                     }
@@ -170,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             });
+        } else {
+            console.error('holders-list not found');
         }
     }
 
