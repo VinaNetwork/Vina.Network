@@ -2,7 +2,9 @@
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
+define('VINANETWORK_ENTRY', true);
 require_once '../bootstrap.php';
+
 session_start();
 $headers_per_page = 50;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
