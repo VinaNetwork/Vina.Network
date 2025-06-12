@@ -82,13 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
+        if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
             const form = e.target;
-            const loader = document.querySelector('.loader'); // Tìm loader trong toàn bộ DOM
-            console.log('Loader element:', loader); // Debug
+            const loader = document.querySelector('.loader');
+            console.log('Loader element:', loader);
             if (loader) {
-                loader.style.display = 'block'; // Hiển thị loader
+                loader.style.display = 'block';
                 console.log('Loader activated');
             } else {
                 console.error('Loader not found in DOM');
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) {
-                    loader.style.display = 'none'; // Ẩn loader sau khi load xong
+                    loader.style.display = 'none';
                     console.log('Loader deactivated');
                 }
             })
@@ -116,9 +116,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error submitting form:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) {
-                    loader.style.display = 'none'; // Ẩn loader nếu có lỗi
+                    loader.style.display = 'none';
                 }
             });
         }
     });
+
+    // Xử lý phân trang cho #holders-list (chuyển từ nft-holders.php)
+    const holdersList = document.getElementById('holders-list');
+    if (holdersList) {
+        holdersList.addEventListener('click', function(e) {
+            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
+                e.preventDefault();
+                const page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
+                    || e.target.dataset.page;
+                const mint = holdersList.dataset.mint;
+                if (!page || !mint) return;
+                console.log('Sending AJAX request for page:', page, 'mint:', mint);
+                const loader = document.querySelector('.loader');
+                if (loader) {
+                    loader.style.display = 'block';
+                    console.log('Loader activated for pagination');
+                }
+                fetch('/tools/nft-holders/nft-holders-list.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `mintAddress=${encodeURIComponent(mint)}&page=${encodeURIComponent(page)}`
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    return response.text();
+                })
+                .then(data => {
+                    holdersList.innerHTML = data;
+                    if (loader) {
+                        loader.style.display = 'none';
+                        console.log('Loader deactivated for pagination');
+                    }
+                })
+                .catch(error => {
+                    console.error('AJAX error:', error);
+                    if (loader) {
+                        loader.style.display = 'none';
+                    }
+                    holdersList.innerHTML = '<div class="result-error"><p>Error loading page. Please try again.</p></div>';
+                });
+            }
+        });
+    }
 });
