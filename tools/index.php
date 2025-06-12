@@ -83,10 +83,10 @@ include $header_path;
         </div>
     </section>
     <?php 
-        $footer_path = $root_path . 'include/footer.php';
+        $footer_path = __DIR__ . '/../include/footer.php';
         if (!file_exists($footer_path)) {
-            log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
-            die('Internal Server Error: Missing footer.php');
+        log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
+        die('Internal Server Error: Missing footer.php');
         }
         include $footer_path;
     ?>
