@@ -78,12 +78,12 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                         'limit' => $limit
                     ];
                     log_message("nft-holders: Calling API for total holders, page=$api_page", 'nft_holders_log.txt');
-                    $total_data = callAPI('assets-by-group', $total_params, 'POST');
-                    log_message("nft-holders: Total API response (page $api_page): URL=https://api.helius.xyz/v0/assets-by-group?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
+                    $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
+                    log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
                     if (isset($total_data['error'])) {
-                        throw new Exception("API error: " . $total_data['error']);
+                        throw new Exception("API error: " . $data['error']['message']);
                     }
-                    $items = $total_data['items'] ?? [];
+                    $items = $total_data['result']['items'] ?? [];
                     $item_count = count($items);
                     $total_holders += $item_count;
                     log_message("nft-holders: Page $api_page added $item_count holders, total_holders = $total_holders", 'nft_holders_log.txt');
@@ -171,18 +171,19 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
         'limit' => $size
     ];
     log_message("nft-holders: Calling API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}", 'nft_holders_log.txt');
-    $data = callAPI('assets-by-group', $params, 'POST');
+    $data = callAPI('getAssetsByGroup', $params, 'POST');
+    log_message("nft-holders: API response - URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($params) . ", Response=" . json_encode($data), 'nft_holders_log.txt');
     if (isset($data['error'])) {
         log_message("nft-holders: getAssetsByGroup error - " . json_encode($data), 'nft_holders_log.txt', 'ERROR');
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
     }
-    if (isset($data['items']) && !empty($data['items'])) {
+    if (isset($data['result']['items']) && !empty($data['result']['items'])) {
         $holders = array_map(function($item) {
             return [
                 'owner' => $item['ownership']['owner'] ?? 'unknown',
                 'amount' => 1
             ];
-        }, $data['items']);
+        }, $data['result']['items']);
         return ['holders' => $holders];
     }
     log_message("nft-holders: No holders found for address $mintAddress", 'nft_holders_log.txt', 'ERROR');
