@@ -84,12 +84,14 @@ include $header_path;
     </section>
     <?php 
         $footer_path = __DIR__ . '/../include/footer.php';
+        log_message("index: Checking footer_path: $footer_path", 'tools_log.txt', 'DEBUG');
         if (!file_exists($footer_path)) {
-        log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
-        die('Internal Server Error: Missing footer.php');
+            log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
+            die('Internal Server Error: Missing footer.php');
         }
         include $footer_path;
     ?>
+
     <script type="application/ld+json"> {
         "@context": "https://schema.org",
         "@type": "WebApplication",
@@ -105,6 +107,7 @@ include $header_path;
         }
     }
     </script>
+
     <script>
         console.log('Attempting to load JS files...');
     </script>
