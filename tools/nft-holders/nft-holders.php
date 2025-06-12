@@ -134,6 +134,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         </p>
     </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var holdersList = document.getElementById('holders-list');
@@ -141,20 +142,22 @@ document.addEventListener('DOMContentLoaded', function() {
         holdersList.addEventListener('click', function(e) {
             if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
                 e.preventDefault();
-                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
-                    || e.target.dataset.page;
+                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value || e.target.dataset.page;
                 var mint = holdersList.dataset.mint;
                 if (!page || !mint) {
                     console.error('Missing page or mint:', { page, mint });
                     return;
                 }
                 console.log('Sending AJAX request for page:', page, 'mint:', mint);
+                var loader = document.querySelector('.loader');
+                if (loader) loader.style.display = 'block'; // Bật loader
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '/tools/nft-holders/nft-holders-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
                         console.log('AJAX response status:', xhr.status, 'Response:', xhr.responseText.substring(0, 200));
+                        if (loader) loader.style.display = 'none'; // Ẩn loader
                         if (xhr.status === 200) {
                             holdersList.innerHTML = xhr.responseText;
                         } else {
@@ -171,6 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
 <?php
 ob_start();
 include $root_path . 'include/footer.php';
