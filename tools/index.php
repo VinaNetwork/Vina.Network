@@ -62,13 +62,13 @@ include $header_path;
                         log_message("index: Invalid tool, defaulted to nft-holders", 'tools_log.txt', 'ERROR');
                     }
                     if ($tool === 'nft-holders') {
-                        $tool_file = 'nft-holders/nft-holders.php';
+                        $tool_file = __DIR__ . '/nft-holders/nft-holders.php';
                     } elseif ($tool === 'nft-valuation') {
-                        $tool_file = 'nft-valuation.php';
+                        $tool_file = __DIR__ . '/nft-valuation.php';
                     } elseif ($tool === 'nft-transactions') {
-                        $tool_file = 'nft-transactions.php';
+                        $tool_file = __DIR__ . '/nft-transactions.php';
                     } elseif ($tool === 'wallet-analysis') {
-                        $tool_file = 'wallet-analysis.php';
+                        $tool_file = __DIR__ . '/wallet-analysis.php';
                     }
                     if (isset($tool_file) && file_exists($tool_file)) {
                         include $tool_file;
