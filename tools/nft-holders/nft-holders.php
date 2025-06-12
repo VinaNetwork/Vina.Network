@@ -77,7 +77,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                         'page' => $api_page,
                         'limit' => $limit
                     ];
-                    log_message("nft-holders: Calling API for total holders, page=$api_page", 'nft_holders_log.txt');
+                    log_message("nft-holders: Calling API for total holders", 'nft_holders_log.txt');
                     $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
                     log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
                     if (isset($total_data['error'])) {
