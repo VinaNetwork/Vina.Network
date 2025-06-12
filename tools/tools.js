@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm, #nftHoldersForm')) {
+        if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
