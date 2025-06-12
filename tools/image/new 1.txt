@@ -1,4 +1,4 @@
-Để kiểm tra 2 lỗi: Popup "loader" không hiển thị và Danh sách holders không hiển thị thì tôi gửi lại bạn các file để bạn kiểm tra (bao gồm cả css và js):
+Tôi gửi lại bạn các file bên dưới để bạn xử lý lại đường dẫn tới các file js, hãy xử lý ở file index.php trước (loại trừ khả năng thiếu file, thiếu cấp quyền, chỉ tập trung xử lý đường dẫn), các file gốc bên dưới:
 File tools/index.php:
 <?php
 ob_start();
