@@ -1,8 +1,16 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
 define('VINANETWORK_ENTRY', true);
+if (!file_exists(__DIR__ . '/../bootstrap.php')) {
+    log_message("nft-holders: bootstrap.php not found at " . __DIR__ . '/../bootstrap.php', 'nft_holders_log.txt', 'ERROR');
+    die('Error: bootstrap.php not found');
+}
 require_once '../bootstrap.php';
 
 session_start();
