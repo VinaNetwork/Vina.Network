@@ -1,0 +1,811 @@
+Đây là cấu trúc trang web "Vina Network" trong đó có chức năng "Check NFT Holders" trong thư mục "tools":
+/var/www/vinanetwork/public_html
+├── index.php
+├── robots.txt
+├── .htaccess
+├── .gitignore
+├── LICENSE
+├── README.md
+│
+├── tools/
+│   ├── index.php1
+│   ├── load-tool.php
+│   ├── api-helper.php
+│   ├── bootstrap.php
+│   ├── tools.css
+│   ├── tools.js
+│   ├── nft-holders/
+│   │   ├── nft-holders.php
+│   │   ├── export-holders.php
+│   │   └── nft-holders-list.php
+│   ├── image/
+│   │   ├── ...
+│
+├── config/
+│   └── config.php
+│
+├── css/
+│   ├── ...
+│
+├── fonts/
+│   ├── ...
+│
+├── img/
+│   ├── ...
+│
+├── include/
+│   ├── ...
+│
+├── js/
+│   ├── ...
+│
+├── webfonts/
+│   ├── ...
+
+Các file của chức năng "Check NFT Holders" là:
+File tools/index.php:
+<?php
+ob_start();
+define('VINANETWORK', true);
+require_once 'bootstrap.php';
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+$root_path = '../';
+$page_title = "Vina Network - Solana NFT Tools & Holders Checker";
+$page_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
+$page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT valuation, blockchain, NFT";
+$page_og_title = "Vina Network - Solana NFT Tools & Holders Checker";
+$page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
+$page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
+$page_og_url = "https://vina.network/tools/";
+$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
+$page_css = ['../css/vina.css', 'tools.css'];
+$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
+$header_path = $root_path . 'include/header.php';
+if (!file_exists($header_path)) {
+    log_message("index: header.php not found at $header_path", 'tools_log.txt', 'ERROR');
+    die('Internal Server Error: Missing header.php');
+}
+include $header_path;
+?>
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <?php 
+        $navbar_path = $root_path . 'include/navbar.php';
+        if (!file_exists($navbar_path)) {
+            log_message("index: navbar.php not found at $navbar_path", 'tools_log.txt', 'ERROR');
+            die('Internal Server Error: Missing navbar.php');
+        }
+        include $navbar_path;
+    ?>
+    <section class="t-1">
+        <div class="t-2">
+            <h1>Vina Network Tools</h1>
+            <div class="t-3">
+                <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
+                    <i class="fas fa-wallet"></i> NFT Holders
+                </a>
+                <a href="?tool=nft-valuation" class="t-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
+                    <i class="fas fa-chart-line"></i> NFT Valuation
+                </a>
+                <a href="?tool=nft-transactions" class="t-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
+                    <i class="fas fa-history"></i> NFT Transactions
+                </a>
+                <a href="?tool=wallet-analysis" class="t-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
+                    <i class="fas fa-user"></i> Wallet Analysis
+                </a>
+            </div>
+            <p class="note">Note: Only supports checking on the Solana blockchain.</p>
+            <div class="t-4">
+                <?php
+                    log_message("index: tool = $tool", 'tools_log.txt');
+                    if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
+                        $tool = 'nft-holders';
+                        log_message("index: Invalid tool, defaulted to nft-holders", 'tools_log.txt', 'ERROR');
+                    }
+                    if ($tool === 'nft-holders') {
+                        $tool_file = 'nft-holders/nft-holders.php';
+                    } elseif ($tool === 'nft-valuation') {
+                        $tool_file = 'nft-valuation.php';
+                    } elseif ($tool === 'nft-transactions') {
+                        $tool_file = 'nft-transactions.php';
+                    } elseif ($tool === 'wallet-analysis') {
+                        $tool_file = 'wallet-analysis.php';
+                    }
+                    if (isset($tool_file) && file_exists($tool_file)) {
+                        include $tool_file;
+                    } else {
+                        echo "<p>Error: Tool not found.</p>";
+                        log_message("index: Tool file not found: $tool_file", 'tools_log.txt', 'ERROR');
+                    }
+                ?>
+            </div>
+        </div>
+    </section>
+    <?php 
+        $footer_path = $root_path . 'include/footer.php';
+        if (!file_exists($footer_path)) {
+            log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
+            die('Internal Server Error: Missing footer.php');
+        }
+        include $footer_path;
+    ?>
+    <script type="application/ld+json"> {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Vina Network Tools",
+        "operatingSystem": "All",
+        "applicationCategory": "http://schema.org/FinanceApplication",
+        "description": "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.",
+        "url": "https://vina.network/tools/",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    }
+    </script>
+    <script src="../js/vina.js"></script>
+    <script src="../js/navbar.js"></script>
+    <script src="tools.js"></script>
+</body>
+</html>
+<?php ob_end_flush(); ?>
+
+File tools/load-tool.php:
+<?php
+ob_start();
+define('VINANETWORK', true);
+require_once 'bootstrap.php';
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    die('Direct access not allowed');
+}
+$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
+log_message("load-tool: tool = $tool", 'tools_log.txt');
+if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
+    $tool = 'nft-holders';
+    log_message("load-tool: Invalid tool '$tool', defaulting to nft-holders", 'tools_log.txt', 'ERROR');
+}
+if ($tool === 'nft-holders') {
+    $tool_file = 'nft-holders/nft-holders.php';
+} elseif ($tool === 'nft-valuation') {
+    $tool_file = 'nft-valuation.php';
+} elseif ($tool === 'nft-transactions') {
+    $tool_file = 'nft-transactions.php';
+} elseif ($tool === 'wallet-analysis') {
+    $tool_file = 'wallet-analysis.php';
+}
+if (isset($tool_file) && file_exists($tool_file)) {
+    include $tool_file;
+} else {
+    echo "<p>Error: Tool not found.</p>";
+    log_message("load-tool: Tool file not found: $tool_file", 'tools_log.txt', 'ERROR');
+}
+ob_end_flush();
+?>
+
+File tools/api-helper.php:
+<?php
+require_once 'bootstrap.php';
+
+function callAPI($endpoint, $params = [], $method = 'POST') {
+    $url = "https://api.helius.xyz/v0/$endpoint?api-key=" . HELIUS_API_KEY;
+    $ch = curl_init();
+    if (!$ch) {
+        log_message("api-helper: cURL initialization failed.", 'api_log.txt', 'ERROR');
+        return ['error' => 'Failed to initialize cURL.'];
+    }
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    if ($method === 'POST') {
+        curl_setopt($ch, CURLOPT_POST, 1);
+        if (!empty($params)) {
+            $postData = json_encode([
+                'jsonrpc' => '2.0',
+                'id' => '1',
+                'method' => $endpoint,
+                'params' => $params
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+            log_message("api-helper: API request - Endpoint: $endpoint, Params: " . substr($postData, 0, 100) . "...", 'api_log.txt');
+        }
+    }
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    $response = curl_exec($ch);
+    if ($response === false) {
+        $curlError = curl_error($ch);
+        log_message("api-error: cURL error: $curlError", 'api_log.txt', 'ERROR');
+        curl_close($ch);
+        return ['error' => 'cURL error: ' . $curlError];
+    }
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($httpCode !== 200) {
+        log_message("api-error: API request failed - HTTP: $httpCode, Response: $response", 'api_log.txt', 'ERROR');
+        return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
+    }
+    $data = json_decode($response, true);
+    if ($data === null) {
+        log_message("api-error: Failed to parse API response as JSON. Response: $response", 'api_log.txt', 'ERROR');
+        return ['error' => 'Failed to parse API response as JSON.'];
+    }
+    if (isset($data['error'])) {
+        log_message("api-error: API error - Code: {$data['error']['code']}, Message: {$data['error']['message']}", 'api_log.txt', 'ERROR');
+        return ['error' => $data['error']['message']];
+    }
+    log_message("api-success: API success - Endpoint: $endpoint", 'api_log.txt');
+    return $data;
+}
+?>
+
+File tools/nft-holders/nft-holders.php:
+<?php
+if (!defined('VINANETWORK')) {
+    define('VINANETWORK', true);
+}
+require_once '../bootstrap.php';
+session_start();
+ini_set('log_errors', true);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', false);
+error_reporting(E_ALL);
+$root_path = '../../';
+$page_title = 'Check NFT Holders - Vina Network';
+$page_description = 'Check NFT holders for a Solana collection address.';
+$page_css = ['../../css/vina.css', '../tools.css'];
+include $root_path . 'include/header.php';
+include $root_path . 'include/navbar.php';
+$api_helper_path = '../api-helper.php';
+if (!file_exists($api_helper_path)) {
+    log_message("nft-holders: api-helper.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
+    die('Internal Server Error: Missing api-helper.php');
+}
+log_message("nft-holders: Including api-helper.php from $api_helper_path", 'nft_holders_log.txt');
+include $api_helper_path;
+log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
+?>
+<div class="t-6 nft-holders-content">
+    <div class="t-7">
+        <h2>Check NFT Holders</h2>
+        <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
+        <form id="nftHoldersForm" method="POST" action="">
+            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+            <button type="submit">Check Holders</button>
+        </form>
+        <div class="loader" style="display: none;"></div>
+    </div>
+    <?php
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
+        try {
+            $mintAddress = trim($_POST['mintAddress']);
+            log_message("nft-holders: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set'), 'nft_holders_log.txt');
+            $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
+            $holders_per_page = 50;
+            $limit = 1000;
+            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
+                throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
+            }
+            if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
+                if (isset($_SESSION['total_holders'][$mintAddress])) {
+                    unset($_SESSION['total_holders'][$mintAddress]);
+                    log_message("nft-holders: Cleared session cache for new mintAddress=$mintAddress", 'nft_holders_log.txt');
+                }
+                $_SESSION['last_mintAddress'] = $mintAddress;
+            }
+            if (!isset($_SESSION['total_holders'][$mintAddress])) {
+                $total_holders = 0;
+                $api_page = 1;
+                $has_more = true;
+                while ($has_more) {
+                    $total_params = [
+                        'groupKey' => 'collection',
+                        'groupValue' => $mintAddress,
+                        'page' => $api_page,
+                        'limit' => $limit
+                    ];
+                    log_message("nft-holders: Calling API for total holders, page=$api_page", 'nft_holders_log.txt');
+                    $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
+                    log_message("nft-holders: Total API response (page $api_page): " . json_encode($total_data), 'nft_holders_log.txt');
+                    if (isset($total_data['error'])) {
+                        throw new Exception("API error: " . $total_data['error']);
+                    }
+                    $items = $total_data['result']['items'] ?? [];
+                    $item_count = count($items);
+                    $total_holders += $item_count;
+                    log_message("nft-holders: Page $api_page added $item_count holders, total_holders = $total_holders", 'nft_holders_log.txt');
+                    if ($item_count < $limit) {
+                        $has_more = false;
+                    } else {
+                        $api_page++;
+                    }
+                }
+                $_SESSION['total_holders'][$mintAddress] = $total_holders;
+                log_message("nft-holders: Cached total_holders = $total_holders for $mintAddress", 'nft_holders_log.txt');
+            } else {
+                $total_holders = $_SESSION['total_holders'][$mintAddress];
+                log_message("nft-holders: Retrieved total_holders = $total_holders from cache for $mintAddress", 'nft_holders_log.txt');
+            }
+            log_message("nft-holders: Final total holders = $total_holders for $mintAddress", 'nft_holders_log.txt');
+            if ($total_holders === 0) {
+                throw new Exception("No holders found or invalid collection address.");
+            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) {
+                log_message("nft-holders: Suspicious total_holders ($total_holders) is multiple of limit for $mintAddress", 'nft_holders_log.txt', 'WARNING');
+                echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
+            }
+            ?>
+            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress) ?>">
+                <?php
+                $ajax_page = 1;
+                if (isset($_POST['page']) && is_numeric($_POST['page'])) $ajax_page = (int)$_POST['page'];
+                include 'nft-holders-list.php';
+                ?>
+            </div>
+            <?php
+        } catch (Exception $e) {
+            $error_msg = "Error processing request: " . $e->getMessage();
+            log_message("nft-holders: Exception - $error_msg", 'nft_holders_log.txt', 'ERROR');
+            echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
+        }
+    }
+    ?>
+    <div class="t-9">
+        <h2>About NFT Holders Checker</h2>
+        <p>
+            The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT collection by entering its On-chain Collection address. 
+            It retrieves a list of wallet addresses that currently hold NFTs in the collection, with pagination to browse through the results easily. 
+            This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of a collection on the Solana blockchain.
+        </p>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var holdersList = document.getElementById('holders-list');
+    if (holdersList) {
+        holdersList.addEventListener('click', function(e) {
+            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
+                e.preventDefault();
+                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
+                    || e.target.dataset.page;
+                var mint = holdersList.dataset.mint;
+                if (!page || !mint) return;
+                console.log('Sending AJAX request for page:', page, 'mint:', mint);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', 'nft-holders-list.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        console.log('AJAX response status:', xhr.status);
+                        if (xhr.status === 200) {
+                            holdersList.innerHTML = xhr.responseText;
+                        } else {
+                            console.error('AJAX error:', xhr.statusText);
+                        }
+                    }
+                };
+                xhr.send('mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page));
+            }
+        });
+    }
+});
+</script>
+<?php
+function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
+    $params = [
+        'groupKey' => 'collection',
+        'groupValue' => $mintAddress,
+        'page' => ceil(($offset + $size) / $size),
+        'limit' => $size
+    ];
+    log_message("nft-holders: Calling API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}", 'nft_holders_log.txt');
+    $data = callAPI('getAssetsByGroup', $params, 'POST');
+    if (isset($data['error'])) {
+        log_message("nft-holders: getAssetsByGroup error - " . json_encode($data), 'nft_holders_log.txt', 'ERROR');
+        return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
+    }
+    if (isset($data['result']['items']) && !empty($data['result']['items'])) {
+        $holders = array_map(function($item) {
+            return [
+                'owner' => $item['ownership']['owner'] ?? 'unknown',
+                'amount' => 1
+            ];
+        }, $data['result']['items']);
+        return ['holders' => $holders];
+    }
+    log_message("nft-holders: No holders found for address $mintAddress", 'nft_holders_log.txt', 'ERROR');
+    return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
+}
+include $root_path . 'include/footer.php';
+?>
+
+File tools/nft-holders/export-holders.php:
+<?php
+if (!defined('VINANETWORK')) {
+    define('VINANETWORK', true);
+}
+require_once('../bootstrap.php');
+session_start();
+include('../api_helper.php');
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
+error_log(E_ALL);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    log_message("export-holders: Invalid request method", 'export_log.txt', 'ERROR');
+    die('Error: Invalid request method.');
+}
+$mintAddress = trim($_POST['mintAddress'] ?? '');
+$export_type = $_POST['export_type'] ?? 'current';
+$export_format = $_POST['export_format'] ?? 'csv';
+$page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
+if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
+    log_message("export-holders: Invalid collection address: $mintAddress", 'export_log.txt', 'ERROR');
+    die('Error: Invalid collection address.');
+}
+if (!in_array($export_format, ['csv', 'json'])) {
+    log_message("export-holders: Invalid export format: $export_format", 'export_log.txt', 'ERROR');
+    die('Error: Invalid export format.');
+}
+function exportToCSV($holders, $filename) {
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    $output = fopen('php://output', 'w');
+    fputcsv($output, ['Address', 'Amount']);
+    foreach ($holders as $holder) {
+        fputcsv($output, [
+            $holder['owner'] ?? 'N/A',
+            $holder['amount'] ?? '0'
+        ]);
+    }
+    fclose($output);
+    exit;
+}
+function exportToJSON($holders, $filename) {
+    header('Content-Type: application/json');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    $data = array_map(function($holder) {
+        return [
+            'address' => $holder['owner'] ?? 'N/A',
+            'amount' => $holder['amount'] ?? '0'
+        ];
+    }, $holders);
+    echo json_encode($data, JSON_PRETTY_PRINT);
+    exit;
+}
+if ($export_type === 'current') {
+    $holders_per_page = 50;
+    $offset = ($page - 1) * $holders_per_page;
+    $holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
+    if (isset($holders_data['error']) || empty($holders_data['holders'])) {
+        log_message("export-holders: No holders found for page $page, mintAddress: $mintAddress", 'export_log.txt', 'ERROR');
+        die('Error: No holders found for this page.');
+    }
+    $holders = $holders_data['holders'];
+    $filename = $export_format === 'csv'
+        ? "holders_page_{$page}_{$mintAddress}.csv"
+        : "holders_page_{$page}_{$mintAddress}.json";
+    if ($export_format === 'csv') {
+        exportToCSV($holders, $filename);
+    } else {
+        exportToJSON($holders, $filename);
+    }
+} else {
+    $all_holders = [];
+    $api_page = 1;
+    $limit = 1000;
+    $has_more = true;
+    while ($has_more) {
+        $params = [
+            'groupKey' => 'collection',
+            'groupValue' => $mintAddress,
+            'page' => $api_page,
+            'limit' => $limit
+        ];
+        log_message("export-holders: Calling API for holders, page=$api_page", 'export_log.txt');
+        $data = callAPI('getAssetsByGroup', $params, 'POST');
+        if (isset($data['error'])) {
+            log_message("export-holders: API error - " . htmlspecialchars($data['error']), 'export_log.txt', 'ERROR');
+            die('Error fetching holders: ' . htmlspecialchars($data['error']));
+        }
+        $items = $data['result']['items'] ?? [];
+        foreach ($items as $item) {
+            $all_holders[] = [
+                'owner' => $item['ownership']['owner'] ?? 'unknown',
+                'amount' => 1
+            ];
+        }
+        if (count($items) < $limit) {
+            $has_more = false;
+        } else {
+            $api_page++;
+        }
+    }
+    if (empty($all_holders)) {
+        log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
+        die('Error: No holders found.');
+    }
+    $filename = $export_format === 'csv'
+    ? "holders_all_{$mintAddress}.csv"
+    : "holders_all_{$mintAddress}.json";
+    if ($export_format === 'csv') {
+        exportToCSV($all_holders, $filename);
+    } else {
+        exportToJSON($all_holders, $filename);
+    }
+}
+?>
+
+File tools/nft-holders/nft-holders-list.php:
+<?php
+if (!defined('VINANETWORK')) {
+    define('VINANETWORK', true);
+}
+require_once '../bootstrap.php';
+session_start();
+$headers_per_page = 50;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $mintAddress = trim($_POST['mintAddress']);
+    $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
+} else {
+    $mintAddress = isset($mintAddress) ? $mintAddress : '';
+    $page = isset($ajax_page) ? $ajax_page : 1;
+}
+$total_holders = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : 0;
+$offset = ($page - 1) * $holders_per_page;
+$holders_data = getNFTHolders($mintAddress, $offset, $holders_per_page);
+echo "<div class='export-section'>";
+echo "<form method='POST' action='export-holders.php' class='export-form'>";
+echo "<input type='hidden' name='mintAddress' value='$mintAddress'>";
+echo "<input type='hidden' name='page' value='$page'>";
+echo "<div class='export-controls'>";
+echo "<select name='export_format' class='export-format'>";
+echo "<option value='csv'>CSV</option>";
+echo "<option value='json'>JSON</option>";
+echo "</select>";
+echo "<button type='submit' name='export_type' value='all' class='export-btn' id='export-all-btn'>Export All Holders</button>";
+echo "<button type='submit' name='export_type' value='current' class='export-btn'>Export Current Page</button>";
+echo "</div>";
+echo "</form>";
+echo "<div class='progress-container' style='display: none;'>";
+echo "<p>Exporting...</p>";
+echo "<div class='progress-bar'><div class='progress-bar-fill' style='width: 0%;'></div></div>";
+echo "</div>";
+echo "</div>";
+if (isset($holders_data['error'])) {
+    echo "<div class='result-error'><p>" . htmlspecialchars($holders_data['error']) . "</p></div>";
+} elseif (!empty($holders_data['holders'])) {
+    $paginated_holders = $holders_data['holders'];
+    $current_holders = min($page * $holders_per_page, $total_holders);
+    $percentage = $total_holders > 0 ? number_format(($current_holders / $total_holders) * 100, 1) : 0;
+    echo "<div class='result-section'>";
+    echo "<p class='result-info'>Page $page: $current_holders/$total_holders ($percentage%)</p>";
+    echo "<table class='holders-table'>";
+    echo "<thead><tr><th>Address</th><th>Amount</th></tr></thead>";
+    echo "<tbody>";
+    foreach ($paginated_holders as $holder) {
+        $address = htmlspecialchars($holder['owner'] ?? 'N/A');
+        $amount = htmlspecialchars($holder['amount'] ?? 'N/A');
+        echo "<tr><td>$address</td><td>$amount</td></tr>";
+    }
+    echo "</tbody>";
+    echo "</table>";
+    echo "<div class='pagination'>";
+    $total_pages = ceil($total_holders / $holders_per_page);
+    if ($page > 1) {
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='1'><button type='submit' class='page-button' data-type='number' id='page-first'>1</button></form>";
+    } else {
+        echo "<span class='page-button active' data-type='number' id='page-first-active'>1</span>";
+    }
+    if ($page > 2) {
+        echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-start'>...</span>";
+    }
+    if ($page > 1) {
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-prev' title='Previous'><</button></form>";
+    }
+    if ($page > 1 && $page < $total_pages) {
+        echo "<span class='page-button active' data-type='number' id='page-current'>$page</span>";
+    }
+    if ($page < $total_pages) {
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-button nav' data-type='nav' id='page-next' title='Next'>></button></form>";
+    }
+    if ($page < $total_pages - 1) {
+        echo "<span class='page-button ellipsis' data-type='ellipsis' id='page-ellipsis-end'>...</span>";
+    }
+    if ($page < $total_pages) {
+        echo "<form method='POST' class='page-form' style='display:inline;'><input type='hidden' name='mintAddress' value='$mintAddress'><input type='hidden' name='page' value='$total_pages'><button type='submit' class='page-button' data-type='number' id='page-last'>$total_pages</button></form>";
+    } else {
+        echo "<span class='page-button active' data-type='number' id='page-last-active'>$total_pages</span>";
+    }
+    echo "</div>";
+    echo "</div>";
+} else {
+    echo "<div class='result-error'><p>No holders found for this page or invalid collection address.</p></div>";
+}
+?>
+
+File tools/tools.js:
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tool = urlParams.get('tool');
+    const tabsContainer = document.querySelector('.t-3');
+    let activeTab = document.querySelector('.t-link.active');
+
+    if (!activeTab && tool) {
+        activeTab = document.querySelector(`.t-link[data-tool="${tool}"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+        } else {
+            console.error(`No tab found for tool: ${tool}`);
+        }
+    }
+
+    if (tabsContainer && activeTab) {
+        setTimeout(() => {
+            const tabRect = activeTab.getBoundingClientRect();
+            const containerRect = tabsContainer.getBoundingClientRect();
+            tabsContainer.scrollTo({
+                left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                behavior: 'smooth'
+            });
+        }, 100);
+    }
+
+    document.querySelectorAll('.t-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelectorAll('.t-link').forEach(tab => tab.classList.remove('active'));
+            this.classList.add('active');
+
+            if (tabsContainer) {
+                const tabRect = this.getBoundingClientRect();
+                const containerRect = tabsContainer.getBoundingClientRect();
+                tabsContainer.scrollTo({
+                    left: this.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                    behavior: 'smooth'
+                });
+            }
+
+            const tool = this.getAttribute('data-tool');
+            history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
+
+            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
+                method: 'GET',
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.text();
+            })
+            .then(data => document.querySelector('.t-4').innerHTML = data)
+            .catch(error => {
+                console.error('Error loading tool content:', error);
+                document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
+            });
+        });
+    });
+
+    document.addEventListener('submit', (e) => {
+        if (e.target.matches('.export-form')) {
+            const exportType = e.target.querySelector('[name="export_type"]').value;
+            if (exportType === 'all') {
+                const progressContainer = document.querySelector('.progress-container');
+                const progressBarFill = document.querySelector('.progress-bar-fill');
+                if (progressContainer && progressBarFill) {
+                    progressContainer.style.display = 'block';
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 10;
+                        progressBarFill.style.width = `${progress}%`;
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            setTimeout(() => {
+                                progressContainer.style.display = 'none';
+                                progressBarFill.style.width = '0%';
+                            }, 1000);
+                        }
+                    }, 500);
+                }
+            }
+            return;
+        }
+        if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
+            e.preventDefault();
+            const form = e.target;
+            const loader = document.querySelector('.loader'); // Tìm loader trong toàn bộ DOM
+            console.log('Loader element:', loader); // Debug
+            if (loader) {
+                loader.style.display = 'block'; // Hiển thị loader
+                console.log('Loader activated');
+            } else {
+                console.error('Loader not found in DOM');
+            }
+
+            const formData = new FormData(form);
+            const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
+            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
+                method: 'POST',
+                body: formData,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.text();
+            })
+            .then(data => {
+                document.querySelector('.t-4').innerHTML = data;
+                if (loader) {
+                    loader.style.display = 'none'; // Ẩn loader sau khi load xong
+                    console.log('Loader deactivated');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting form:', error);
+                document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
+                if (loader) {
+                    loader.style.display = 'none'; // Ẩn loader nếu có lỗi
+                }
+            });
+        }
+    });
+});
+
+File config.php:
+<?php
+// config.php
+// Yêu cầu bắt buộc muốn include file config.php thì phải có VINANETWORK_ENTRY
+if (!defined('VINANETWORK_ENTRY')) {
+    http_response_code(403);
+    exit('No direct script access allowed!');
+}
+
+// Định nghĩa hằng số cấu hình
+if (!defined('HELIUS_API_KEY')) {
+    define('HELIUS_API_KEY', '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63'); // API Key Helius
+}
+if (!defined('ERROR_LOG_PATH')) {
+    define('ERROR_LOG_PATH', '/var/www/vinanetwork/public_html/tools/error_log.txt');
+}
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', '/var/www/vinanetwork/public_html/');
+}
+?>
+
+File bootstrap.php:
+<?php
+// tools/bootstrap.php
+if (!defined('VINANETWORK_ENTRY')) {
+    http_response_code(403);
+    exit('No direct access allowed!');
+}
+
+// Định nghĩa hằng số đường dẫn
+define('ROOT_PATH', dirname(__DIR__) . '/');
+define('TOOLS_PATH', ROOT_PATH . 'tools/');
+define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
+
+// Include config
+require_once ROOT_PATH . 'config/config.php';
+
+// Hàm ghi log
+function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') {
+    $log_path = TOOLS_PATH . $log_file;
+    $timestamp = date('Y-m-d H:i:s');
+    $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
+
+    try {
+        if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
+            error_log("Failed to write log to $log_path: $message");
+        }
+    } catch (Exception $e) {
+        error_log("Log error: " . $e->getMessage());
+    }
+}
+?>
