@@ -70,10 +70,12 @@ include $header_path;
                     } elseif ($tool === 'wallet-analysis') {
                         $tool_file = __DIR__ . '/wallet-analysis.php';
                     }
+                    
                     if (isset($tool_file) && file_exists($tool_file)) {
+                        log_message("index: Including tool file: $tool_file", 'tools_log.txt');
                         include $tool_file;
                     } else {
-                        echo "<p>Error: Tool not found.</p>";
+                        echo "<p>Error: Tool file not found at $tool_file.</p>";
                         log_message("index: Tool file not found: $tool_file", 'tools_log.txt', 'ERROR');
                     }
                 ?>
