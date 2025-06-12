@@ -1,4 +1,4 @@
-console.log('tools.js loaded'); // Debug
+console.log('tools.js loaded at ' + new Date().toISOString());
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing tools.js');
