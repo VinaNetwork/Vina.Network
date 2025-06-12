@@ -79,9 +79,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     ];
                     log_message("nft-holders: Calling API for total holders, page=$api_page", 'nft_holders_log.txt');
                     $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
-                    log_message("nft-holders: Total API response (page $api_page): " . json_encode($total_data), 'nft_holders_log.txt');
+                    log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
                     if (isset($total_data['error'])) {
-                        throw new Exception("API error: " . $total_data['error']);
+                        throw new Exception("API error: " . $total_data['error']['message']);
                     }
                     $items = $total_data['result']['items'] ?? [];
                     $item_count = count($items);
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!page || !mint) return;
                 console.log('Sending AJAX request for page:', page, 'mint:', mint);
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', 'nft-holders-list.php', true);
+                xhr.open('POST', '/tools/nft-holders/nft-holders-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
@@ -172,6 +172,7 @@ function getNFTHolders($mintAddress, $offset = 0, $size = 50) {
     ];
     log_message("nft-holders: Calling API for holders - mintAddress: $mintAddress, offset: $offset, size: $size, page: {$params['page']}", 'nft_holders_log.txt');
     $data = callAPI('getAssetsByGroup', $params, 'POST');
+    log_message("nft-holders: API response - URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($params) . ", Response=" . json_encode($data), 'nft_holders_log.txt');
     if (isset($data['error'])) {
         log_message("nft-holders: getAssetsByGroup error - " . json_encode($data), 'nft_holders_log.txt', 'ERROR');
         return ['error' => 'This is not an NFT collection address. Please enter a valid NFT Collection address.'];
