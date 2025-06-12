@@ -16,7 +16,7 @@ $page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders
 $page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
-$page_css = ['../css/vina.css', 'tools.css'];
+$page_css = ['/css/vina.css', '/tools/tools.css'];
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
@@ -83,13 +83,15 @@ include $header_path;
         </div>
     </section>
     <?php 
-        $footer_path = $root_path . 'include/footer.php';
+        $footer_path = __DIR__ . '/../include/footer.php';
+        log_message("index: Checking footer_path: $footer_path", 'tools_log.txt', 'DEBUG');
         if (!file_exists($footer_path)) {
             log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
             die('Internal Server Error: Missing footer.php');
         }
         include $footer_path;
     ?>
+
     <script type="application/ld+json"> {
         "@context": "https://schema.org",
         "@type": "WebApplication",
@@ -105,9 +107,13 @@ include $header_path;
         }
     }
     </script>
-    <script src="../js/vina.js"></script>
-    <script src="../js/navbar.js"></script>
-    <script src="tools.js"></script>
+
+    <script>
+        console.log('Attempting to load JS files...');
+    </script>
+    <script src="../js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
+    <script src="../js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/navbar.js')"></script>
+    <script src="tools.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load tools/tools.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>

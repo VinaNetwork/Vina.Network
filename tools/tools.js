@@ -1,4 +1,7 @@
+console.log('tools.js loaded at ' + new Date().toISOString());
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing tools.js');
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
     const tabsContainer = document.querySelector('.t-3');
@@ -27,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.t-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('Tab clicked:', this.getAttribute('data-tool'));
             document.querySelectorAll('.t-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
@@ -42,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
+            const loader = document.querySelector('.loader');
+            if (loader) loader.style.display = 'block';
+
             fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'GET',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -50,10 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => document.querySelector('.t-4').innerHTML = data)
+            .then(data => {
+                document.querySelector('.t-4').innerHTML = data;
+                if (loader) loader.style.display = 'none';
+            })
             .catch(error => {
                 console.error('Error loading tool content:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
+                if (loader) loader.style.display = 'none';
             });
         });
     });
@@ -82,16 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm')) {
+        if (e.target.matches('#nftHoldersForm, #nftValuationForm, .transaction-form, #walletAnalysisForm')) {
             e.preventDefault();
+            console.log('Form submitted:', e.target.id);
             const form = e.target;
-            const loader = document.querySelector('.loader');
+            const loader = form.parentElement.querySelector('.loader');
             console.log('Loader element:', loader);
             if (loader) {
                 loader.style.display = 'block';
                 console.log('Loader activated');
             } else {
-                console.error('Loader not found in DOM');
+                console.error('Loader not found in form parent');
             }
 
             const formData = new FormData(form);
@@ -111,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     loader.style.display = 'none';
                     console.log('Loader deactivated');
                 }
+                initPagination();
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
@@ -122,49 +135,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Xử lý phân trang cho #holders-list (chuyển từ nft-holders.php)
-    const holdersList = document.getElementById('holders-list');
-    if (holdersList) {
-        holdersList.addEventListener('click', function(e) {
-            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                e.preventDefault();
-                const page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
-                    || e.target.dataset.page;
-                const mint = holdersList.dataset.mint;
-                if (!page || !mint) return;
-                console.log('Sending AJAX request for page:', page, 'mint:', mint);
-                const loader = document.querySelector('.loader');
-                if (loader) {
-                    loader.style.display = 'block';
-                    console.log('Loader activated for pagination');
+    function initPagination() {
+        const holdersList = document.getElementById('holders-list');
+        if (holdersList) {
+            console.log('Initializing pagination for holders-list');
+            holdersList.addEventListener('click', function(e) {
+                if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
+                    e.preventDefault();
+                    const loader = document.querySelector('.loader');
+                    if (loader) loader.style.display = 'block';
+
+                    const page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
+                        || e.target.dataset.page;
+                    const mint = holdersList.dataset.mint;
+                    if (!page || !mint) {
+                        console.error('Missing page or mint:', {page, mint});
+                        if (loader) loader.style.display = 'none';
+                        return;
+                    }
+                    console.log('Sending AJAX request for page:', page, 'mint:', mint);
+                    fetch('/tools/nft-holders/nft-holders-list.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: `mintAddress=${encodeURIComponent(mint)}&page=${encodeURIComponent(page)}`
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                        return response.text();
+                    })
+                    .then(data => {
+                        holdersList.innerHTML = data;
+                        if (loader) loader.style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('AJAX error:', error);
+                        holdersList.innerHTML = '<p>Error loading holders. Please try again.</p>';
+                        if (loader) loader.style.display = 'none';
+                    });
                 }
-                fetch('/tools/nft-holders/nft-holders-list.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: `mintAddress=${encodeURIComponent(mint)}&page=${encodeURIComponent(page)}`
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                    return response.text();
-                })
-                .then(data => {
-                    holdersList.innerHTML = data;
-                    if (loader) {
-                        loader.style.display = 'none';
-                        console.log('Loader deactivated for pagination');
-                    }
-                })
-                .catch(error => {
-                    console.error('AJAX error:', error);
-                    if (loader) {
-                        loader.style.display = 'none';
-                    }
-                    holdersList.innerHTML = '<div class="result-error"><p>Error loading page. Please try again.</p></div>';
-                });
-            }
-        });
+            });
+        } else {
+            console.error('holders-list not found');
+        }
     }
+
+    initPagination();
 });
