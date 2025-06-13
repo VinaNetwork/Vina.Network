@@ -8,19 +8,20 @@ require_once '../api-helper.php';
 
 session_start();
 ini_set('log_errors', 1);
-ini_set('error_log', '/var/www/vinanetwork/public_html/tools/logs/php_error.log');
+ini_set('error_log', '/var/www/vinanetwork/public_html/nft-holders/nfts/logs/php_error.log');
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 // Define log path
-define('EXPORT_LOG_PATH', '/var/www/vinanetwork/public_html/tools/logs/export_log.txt');
+define('EXPORT_LOG_PATH', '/var/www/vinanetwork/public_html/nft-holders/nfts/logs/holders_export_log.txt');
 
-log_message("export-holders: Request received - method={$_SERVER['REQUEST_METHOD']}, POST=" . json_encode($_POST), EXPORT_LOG_PATH);
+// Test log writing
+file_put_contents(EXPORT_LOG_PATH, "export-holders: Script started - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("export-holders: Invalid request method", EXPORT_LOG_PATH, 'ERROR');
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid request method - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode(['error' => 'Invalid request method']);
     exit;
@@ -30,30 +31,30 @@ $mintAddress = trim($_POST['mintAddress'] ?? '');
 $export_type = $_POST['export_type'] ?? 'all';
 $export_format = $_POST['export_format'] ?? 'csv';
 
-log_message("export-holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format", EXPORT_LOG_PATH);
+file_put_contents(EXPORT_LOG_PATH, "export-holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
 if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-    log_message("export-holders: Invalid collection address: $mintAddress", EXPORT_LOG_PATH, 'ERROR');
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid collection address: $mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode(['error' => 'Invalid collection address']);
     exit;
 }
 
 if (!in_array($export_format, ['csv', 'json'])) {
-    log_message("export-holders: Invalid export format: $export_format", EXPORT_LOG_PATH, 'ERROR');
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid export format: $export_format - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export format']);
     exit;
 }
 
 if ($export_type !== 'all') {
-    log_message("export-holders: Invalid export type: $export_type", EXPORT_LOG_PATH, 'ERROR');
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid export type: $export_type - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export type']);
     exit;
 }
 
-function getHolders($mintAddress, $page = 1, $size = 1000) {
+function getHolders($mintAddress, $page = 1, $size = 100) {
     $params = [
         'groupKey' => 'collection',
         'groupValue' => $mintAddress,
@@ -63,24 +64,24 @@ function getHolders($mintAddress, $page = 1, $size = 1000) {
     $max_retries = 3;
     $retry_count = 0;
     do {
-        log_message("export-holders: Fetching holders - mintAddress=$mintAddress, page=$page, size=$size, retry=$retry_count, params=" . json_encode($params), EXPORT_LOG_PATH);
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetching holders - mintAddress=$mintAddress, page=$page, size=$size, retry=$retry_count, params=" . json_encode($params) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         $data = callAPI('getAssetsByGroup', $params, 'POST');
         if (isset($data['error'])) {
-            log_message("export-holders: API error - " . json_encode($data['error']) . ", retry=$retry_count", EXPORT_LOG_PATH, 'ERROR');
+            file_put_contents(EXPORT_LOG_PATH, "export-holders: API error - " . json_encode($data['error']) . ", retry=$retry_count - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
             if ($retry_count < $max_retries) {
                 $retry_count++;
-                usleep(1000000); // Delay 1s before retry
+                usleep(2000000); // Delay 2s before retry
                 continue;
             }
             return ['error' => $data['error']];
         }
         $items = $data['result']['items'] ?? [];
         $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
-        log_message("export-holders: API response - total=$total, items_count=" . count($items), EXPORT_LOG_PATH);
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: API response - total=$total, items_count=" . count($items) . ", raw_response=" . json_encode($data, JSON_PRETTY_PRINT) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         if (empty($items) && $retry_count < $max_retries && $page > 1) {
-            log_message("export-holders: Empty items on page $page, retry=$retry_count", EXPORT_LOG_PATH, 'WARN');
+            file_put_contents(EXPORT_LOG_PATH, "export-holders: Empty items on page $page, retry=$retry_count - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
             $retry_count++;
-            usleep(1000000); // Delay 1s before retry
+            usleep(2000000); // Delay 2s before retry
             continue;
         }
         $holders = array_map(function($item) {
@@ -89,10 +90,10 @@ function getHolders($mintAddress, $page = 1, $size = 1000) {
                 'amount' => 1
             ];
         }, $items);
-        log_message("export-holders: Fetched " . count($holders) . " holders for page $page, total=$total", EXPORT_LOG_PATH);
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetched " . count($holders) . " holders for page $page, total=$total - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         return ['holders' => $holders, 'total' => $total];
     } while ($retry_count < $max_retries);
-    log_message("export-holders: Max retries reached for page $page", EXPORT_LOG_PATH, 'ERROR');
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Max retries reached for page $page - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     return ['holders' => [], 'total' => 0];
 }
 
@@ -104,26 +105,25 @@ try {
 
     // Get total holders from session
     $total_expected = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : 0;
-    log_message("export-holders: Total expected holders from session: $total_expected", EXPORT_LOG_PATH);
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Total expected holders from session: $total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
     if ($total_expected === 0) {
-        // Fallback to API
-        $result = getHolders($mintAddress, 1, 1000);
+        $result = getHolders($mintAddress, 1, 100);
         if (isset($result['error'])) {
             throw new Exception('API error: ' . json_encode($result['error']));
         }
         $total_expected = $result['total'];
-        log_message("export-holders: Total expected holders from API fallback: $total_expected", EXPORT_LOG_PATH);
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: Total expected holders from API fallback: $total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     }
 
     if ($total_expected === 0) {
-        log_message("export-holders: No holders found for mintAddress=$mintAddress", EXPORT_LOG_PATH, 'ERROR');
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: No holders found for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         throw new Exception('No holders found');
     }
 
     // Fetch all holders
     $api_page = 1;
-    $limit = 1000;
+    $limit = 100;
     $total_fetched = 0;
     while ($total_fetched < $total_expected && $api_page <= 100) {
         $result = getHolders($mintAddress, $api_page, $limit);
@@ -133,17 +133,17 @@ try {
         $page_holders = $result['holders'];
         $holders = array_merge($holders, $page_holders);
         $total_fetched += count($page_holders);
-        log_message("export-holders: Page $api_page - Fetched $total_fetched/$total_expected holders", EXPORT_LOG_PATH);
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: Page $api_page - Fetched $total_fetched/$total_expected holders - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         if (count($page_holders) == 0) {
-            log_message("export-holders: No more holders on page $api_page, stopping", EXPORT_LOG_PATH);
+            file_put_contents(EXPORT_LOG_PATH, "export-holders: No more holders on page $api_page, stopping - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
             break;
         }
         $api_page++;
-        usleep(1000000); // Delay 1s between pages
+        usleep(2000000); // Delay 2s between pages
     }
 
     if (empty($holders)) {
-        log_message("export-holders: No holders found for mintAddress=$mintAddress", EXPORT_LOG_PATH, 'ERROR');
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: No holders found for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         throw new Exception('No holders found');
     }
 
@@ -159,7 +159,7 @@ try {
         }
     }
     $holders = array_values($unique_holders);
-    log_message("export-holders: Total items before deduplication: $total_items, Total unique holders after deduplication: " . count($holders), EXPORT_LOG_PATH);
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Total items before deduplication: $total_items, Total unique holders after deduplication: " . count($holders) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
     if ($export_format === 'csv') {
         header('Content-Type: text/csv; charset=utf-8');
@@ -186,7 +186,7 @@ try {
     }
     exit;
 } catch (Exception $e) {
-    log_message("export-holders: Exception - " . $e->getMessage(), EXPORT_LOG_PATH, 'ERROR');
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Exception - " . $e->getMessage() . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
     exit;
