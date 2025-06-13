@@ -150,15 +150,6 @@ h1, h2 {text-align: center;}
 }
 .export-btn:hover {background: #218838;}
 
-/* NFT chart */
-.holders-summary {
-    margin-bottom: 20px;
-}
-#nftDistributionChart {
-    max-width: 600px;
-    margin: 20px auto;
-}
-
 /* NFT Holders: List of wallets */
 .holders-table {
     border-collapse: collapse;
