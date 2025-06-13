@@ -132,9 +132,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress); ?>">
                 <?php
                 $ajax_page = $page;
-                log_message("nft-holders: Including nft-holders-list.php with page=$ajax_page", 'nft_holders_log.txt');
+                log_message("nft-holders: Including nft-holders-info.php with page=$ajax_page", 'nft_holders_log.txt');
                 ob_start();
-                include 'nft-holders-list.php';
+                include 'nft-holders-info.php';
                 $holders_output = ob_get_clean();
                 echo $holders_output;
                 log_message("nft-holders: Holders list output length: " . strlen($holders_output), 'nft_holders_log.txt');
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 console.log('Sending AJAX request for page:', page, 'mint:', mint);
                 var xhr = new XMLHttpRequest();
-                xhr.open('POST', '/tools/nft-holders/nft-holders-list.php', true);
+                xhr.open('POST', '/tools/nft-holders/nft-holders-info.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
