@@ -1,6 +1,6 @@
 <?php
-	// nft-valuation.php - Kiểm tra giá trị NFT
-	include 'api-helper.php';
+// nft-valuation.php - Kiểm tra giá trị NFT
+include '../api-helper.php';
 ?>
 
 <div class="t-6 nft-valuation-content">
