@@ -27,12 +27,12 @@ $page_css = ['../../css/vina.css', '../tools.css'];
 include $root_path . 'include/header.php';
 include $root_path . 'include/navbar.php';
 
-$api_helper_path = dirname(__DIR__) . '/api-helper.php';
+$api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft-holders: api-helper.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
-    die('Internal Server Error: Missing api-helper.php');
+    log_message("nft-holders: tools-api.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
+    die('Internal Server Error: Missing tools-api.php');
 }
-log_message("nft-holders: Including api-helper.php from $api_helper_path", 'nft_holders_log.txt');
+log_message("nft-holders: Including tools-api.php from $api_helper_path", 'nft_holders_log.txt');
 include $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
