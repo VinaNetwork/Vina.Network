@@ -58,16 +58,17 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
             if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
-                if (isset($_SESSION['total_holders'][$mintAddress])) {
-                    unset($_SESSION['total_holders'][$mintAddress]);
+                if (isset($_SESSION['total_items'][$mintAddress])) {
+                    unset($_SESSION['total_items'][$mintAddress]);
                     log_message("nft-holders: Cleared session cache for new mintAddress=$mintAddress", 'nft_holders_log.txt');
                 }
                 $_SESSION['last_mintAddress'] = $mintAddress;
             }
-            if (!isset($_SESSION['total_holders'][$mintAddress])) {
-                $total_holders = 0;
+            if (!isset($_SESSION['total_items'][$mintAddress])) {
+                $total_items = 0;
                 $api_page = 1;
                 $has_more = true;
+                $items = [];
                 while ($has_more) {
                     $total_params = [
                         'groupKey' => 'collection',
@@ -75,35 +76,56 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                         'page' => $api_page,
                         'limit' => $limit
                     ];
-                    log_message("nft-holders: Calling API for total holders, page=$api_page", 'nft_holders_log.txt');
+                    log_message("nft-holders: Calling API for total items, page=$api_page", 'nft_holders_log.txt');
                     $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
                     log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
                     if (isset($total_data['error'])) {
                         $errorMessage = is_array($total_data['error']) && isset($total_data['error']['message']) ? $total_data['error']['message'] : json_encode($total_data['error']);
                         throw new Exception("API error: " . $errorMessage);
                     }
-                    $items = $total_data['result']['items'] ?? [];
-                    $item_count = count($items);
-                    $total_holders += $item_count;
-                    log_message("nft-holders: Page $api_page added $item_count holders, total_holders = $total_holders", 'nft_holders_log.txt');
+                    $page_items = $total_data['result']['items'] ?? [];
+                    $item_count = count($page_items);
+                    $items = array_merge($items, array_map(function($item) {
+                        return [
+                            'owner' => $item['ownership']['owner'] ?? 'unknown',
+                            'amount' => 1
+                        ];
+                    }, $page_items));
+                    $total_items += $item_count;
+                    log_message("nft-holders: Page $api_page added $item_count items, total_items = $total_items", 'nft_holders_log.txt');
                     if ($item_count < $limit) {
                         $has_more = false;
                     } else {
                         $api_page++;
                     }
                 }
-                $_SESSION['total_holders'][$mintAddress] = $total_holders;
-                log_message("nft-holders: Cached total_holders = $total_holders for $mintAddress", 'nft_holders_log.txt');
+                // Get unique wallets
+                $unique_wallets = [];
+                foreach ($items as $item) {
+                    $owner = $item['owner'];
+                    if (!isset($unique_wallets[$owner])) {
+                        $unique_wallets[$owner] = $item;
+                    } else {
+                        $unique_wallets[$owner]['amount'] += 1;
+                    }
+                }
+                $wallets = array_values($unique_wallets);
+                $_SESSION['total_items'][$mintAddress] = $total_items;
+                $_SESSION['total_wallets'][$mintAddress] = count($wallets);
+                $_SESSION['items'][$mintAddress] = $items;
+                $_SESSION['wallets'][$mintAddress] = $wallets;
+                log_message("nft-holders: Cached total_items = $total_items, total_wallets = " . count($wallets) . " for $mintAddress", 'nft_holders_log.txt');
             } else {
-                $total_holders = $_SESSION['total_holders'][$mintAddress];
-                log_message("nft-holders: Retrieved total_holders = $total_holders from cache for $mintAddress", 'nft_holders_log.txt');
+                $total_items = $_SESSION['total_items'][$mintAddress];
+                $total_wallets = $_SESSION['total_wallets'][$mintAddress];
+                log_message("nft-holders: Retrieved total_items = $total_items, total_wallets = $total_wallets from cache for $mintAddress", 'nft_holders_log.txt');
             }
-            log_message("nft-holders: Final total holders = $total_holders for $mintAddress", 'nft_holders_log.txt');
-            if ($total_holders === 0) {
-                throw new Exception("No holders found or invalid collection address.");
-            } elseif ($limit > 0 && $total_holders % $limit === 0 && $total_holders >= $limit) {
-                log_message("nft-holders: Suspicious total_holders ($total_holders) is a multiple of limit for $mintAddress", 'nft_holders_log.txt', 'WARNING');
-                echo "<div class='result-error'><p>Warning: Total holders ($total_holders) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
+            log_message("nft-holders: Final total items = $total_items, total wallets = $total_wallets for $mintAddress", 'nft_holders_log.txt');
+            if ($total_items === 0) {
+                throw new Exception("No items found or invalid collection address.");
+            } elseif ($limit > 0 && $total_items % $limit === 0 && $total_items >= $limit) {
+                log_message("nft-holders: Suspicious total_items ($total_items) is a multiple of limit for $mintAddress", 'nft_holders_log.txt', 'WARNING');
+                echo "<div class='result-error'><p>Warning: Total items ($total_items) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
             }
             ?>
             <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress); ?>">
