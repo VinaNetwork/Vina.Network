@@ -1,14 +1,12 @@
 <?php
-	// wallet-analysis.php
-	// Cấu hình log lỗi
-	ini_set('log_errors', 1);
-	ini_set('error_log', ERROR_LOG_PATH);
-	ini_set('display_errors', 0);
-	error_reporting(E_ALL);
-
-	include 'api-helper.php';
-
-	error_log("wallet-analysis.php loaded"); // Debug
+// wallet-analysis.php
+// Cấu hình log lỗi
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+include '../api-helper.php';
+error_log("wallet-analysis.php loaded"); // Debug
 ?>
 
 <div class="t-6 wallet-analysis-content">
