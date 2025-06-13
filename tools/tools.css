@@ -88,7 +88,7 @@ h1, h2 {text-align: center;}
     border: 1px solid #ef9a9a;
 }
 
-/* NFT Checkbox */
+/* Checkbox */
 .t-7 {
     margin: 20px auto;
     padding: 20px;
@@ -149,6 +149,15 @@ h1, h2 {text-align: center;}
     justify-content: center;
 }
 .export-btn:hover {background: #218838;}
+
+/* NFT chart */
+.holders-summary {
+    margin-bottom: 20px;
+}
+#nftDistributionChart {
+    max-width: 600px;
+    margin: 20px auto;
+}
 
 /* NFT Holders: List of wallets */
 .holders-table {
