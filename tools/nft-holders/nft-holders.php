@@ -156,24 +156,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 console.log('Loader found:', loader);
                 loader.style.display = 'block'; // Bật loader
+                console.log('Loader display set to block:', loader.style.display);
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', '/tools/nft-holders/nft-holders-list.php', true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onreadystatechange = function() {
                     if (xhr.readyState === 4) {
                         console.log('AJAX response status:', xhr.status, 'Response:', xhr.responseText.substring(0, 200));
-                        loader.style.display = 'none'; // Ẩn loader
-                        if (xhr.status === 200) {
-                            holdersList.innerHTML = xhr.responseText;
-                        } else {
-                            console.error('AJAX error:', xhr.status, xhr.statusText, 'Response:', xhr.responseText);
-                            holdersList.innerHTML = '<div class="result-error"><p>Error loading holders. Status: ' + xhr.status + '. Please try again.</p></div>';
-                        }
+                        var minLoaderTime = 500; // Đảm bảo loader hiện ít nhất 500ms
+                        var startTime = performance.now();
+                        var elapsed = performance.now() - startTime;
+                        var remaining = minLoaderTime - elapsed;
+                        setTimeout(() => {
+                            loader.style.display = 'none'; // Ẩn loader
+                            console.log('Loader hidden after timeout');
+                            if (xhr.status === 200) {
+                                holdersList.innerHTML = xhr.responseText;
+                            } else {
+                                console.error('AJAX error:', xhr.status, xhr.statusText, 'Response:', xhr.responseText);
+                                holdersList.innerHTML = '<div class="result-error"><p>Error loading holders. Status: ' + xhr.status + '. Please try again.</p></div>';
+                            }
+                        }, remaining > 0 ? remaining : 0);
                     }
                 };
                 var data = 'mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page);
                 console.log('AJAX data:', data);
-                xhr.send(data);
+                setTimeout(() => {
+                    xhr.send(data); // Delay giả 1s để kiểm tra loader
+                }, 1000);
             }
         });
     } else {
