@@ -1,5 +1,5 @@
 <?php
-// tools/api-helper.php
+// tools/tools-api.php
 define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
