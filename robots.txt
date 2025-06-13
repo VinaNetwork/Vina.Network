@@ -1,2 +1,30 @@
 User-agent: *
 Allow: /
+Allow: *.html
+Allow: *.css
+Allow: *.js
+Allow: *.jpg
+Allow: *.jpeg
+Allow: *.png
+Allow: *.gif
+Allow: *.webp
+Allow: *.ico
+Allow: *.woff
+Allow: *.woff2
+
+# Disallow sensitive files and directories
+Disallow: /admin/
+Disallow: /login/
+Disallow: /config/
+Disallow: /include/
+Disallow: /.htaccess
+
+# Block bad bots
+User-agent: MJ12Bot
+Disallow: /
+User-agent: AhrefsBot
+Disallow: /
+User-agent: SemrushBot
+Disallow: /
+User-agent: DotBot
+Disallow: /
