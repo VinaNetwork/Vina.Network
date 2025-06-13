@@ -52,16 +52,17 @@ $params = [
     'groupKey' => 'collection',
     'groupValue' => $mintAddress,
     'page' => 1,
-    'limit' => 1
+    'limit' => 1000 // Tăng limit để lấy total chính xác
 ];
-log_message("nft-holders-list: Calling API for total holders - mintAddress: $mintAddress", 'nft_holders_log.txt');
+log_message("nft-holders-list: Calling API for total holders - mintAddress: $mintAddress, params: " . json_encode($params), 'nft_holders_log.txt');
 $data = callAPI('getAssetsByGroup', $params, 'POST');
 if (isset($data['error'])) {
     log_message("nft-holders-list: getAssetsByGroup error - " . json_encode($data), 'nft_holders_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Error fetching holders: ' . htmlspecialchars($data['error']) . '</p></div>';
     exit;
 }
-$total_holders = $data['result']['totalItems'] ?? $data['result']['total'] ?? 0;
+log_message("nft-holders-list: API response - " . json_encode($data), 'nft_holders_log.txt');
+$total_holders = $data['result']['total'] ?? $data['result']['totalItems'] ?? 0;
 $_SESSION['total_holders'][$mintAddress] = $total_holders;
 log_message("nft-holders-list: Total holders: $total_holders", 'nft_holders_log.txt');
 
