@@ -5,7 +5,7 @@ if (!defined('VINANETWORK')) {
 }
 define('VINANETWORK_ENTRY', true);
 require_once '../bootstrap.php';
-require_once '../api-helper.php';
+require_once '../tools-api.php';
 
 session_start();
 ini_set('log_errors', 1);
