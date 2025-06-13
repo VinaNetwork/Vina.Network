@@ -51,22 +51,23 @@ if (!in_array($export_type, ['all', 'current'])) {
     exit;
 }
 
-function getHolders($mintAddress, $offset = 0, $size = 50) {
+function getHolders($mintAddress, $page = 1, $size = 50) {
     $params = [
         'groupKey' => 'collection',
         'groupValue' => $mintAddress,
-        'page' => ceil(($offset + 1) / $size),
+        'page' => $page,
         'limit' => $size
     ];
-    log_message("export-holders: Fetching holders - mintAddress=$mintAddress, offset=$offset, size=$size, page={$params['page']}", 'export_log.txt');
+    log_message("export-holders: Fetching holders - mintAddress=$mintAddress, page=$page, size=$size", 'export_log.txt');
     $data = callAPI('getAssetsByGroup', $params, 'POST');
     if (isset($data['error'])) {
         log_message("export-holders: API error - " . json_encode($data['error']), 'export_log.txt', 'ERROR');
         return ['error' => $data['error']];
     }
     $items = $data['result']['items'] ?? [];
+    $total = $data['result']['total'] ?? count($items);
     if (empty($items)) {
-        return ['holders' => []];
+        return ['holders' => [], 'total' => $total];
     }
     $holders = array_map(function($item) {
         return [
@@ -74,8 +75,8 @@ function getHolders($mintAddress, $offset = 0, $size = 50) {
             'amount' => 1
         ];
     }, $items);
-    log_message("export-holders: Fetched " . count($holders) . " holders for page {$params['page']}", 'export_log.txt');
-    return ['holders' => $holders, 'total' => $data['result']['total'] ?? count($holders)];
+    log_message("export-holders: Fetched " . count($holders) . " holders for page $page, total=$total", 'export_log.txt');
+    return ['holders' => $holders, 'total' => $total];
 }
 
 try {
@@ -86,8 +87,7 @@ try {
 
     if ($export_type === 'current') {
         $holders_per_page = 50;
-        $offset = ($page - 1) * $holders_per_page;
-        $result = getHolders($mintAddress, $offset, $holders_per_page);
+        $result = getHolders($mintAddress, $page, $holders_per_page);
         if (isset($result['error'])) {
             throw new Exception('API error: ' . json_encode($result['error']));
         }
@@ -100,20 +100,40 @@ try {
         $api_page = 1;
         $limit = 1000;
         $total_fetched = 0;
-        $total_expected = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : null;
-        log_message("export-holders: Expected total holders: " . ($total_expected ?? 'unknown'), 'export_log.txt');
+        $total_expected = null;
 
-        do {
-            $result = getHolders($mintAddress, ($api_page - 1) * $limit, $limit);
+        // Get total holders first
+        $result = getHolders($mintAddress, 1, 1);
+        if (isset($result['error'])) {
+            throw new Exception('API error: ' . json_encode($result['error']));
+        }
+        $total_expected = $result['total'];
+        log_message("export-holders: Total expected holders: $total_expected", 'export_log.txt');
+
+        if ($total_expected === 0) {
+            log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
+            throw new Exception('No holders found');
+        }
+
+        // Fetch all holders
+        while ($total_fetched < $total_expected) {
+            $result = getHolders($mintAddress, $api_page, $limit);
             if (isset($result['error'])) {
                 throw new Exception('API error: ' . json_encode($result['error']));
             }
             $page_holders = $result['holders'];
             $holders = array_merge($holders, $page_holders);
             $total_fetched += count($page_holders);
-            log_message("export-holders: Fetched $total_fetched holders after page $api_page", 'export_log.txt');
+            log_message("export-holders: Fetched $total_fetched/$total_expected holders after page $api_page", 'export_log.txt');
+            if (count($page_holders) < $limit) {
+                break;
+            }
             $api_page++;
-        } while (count($page_holders) === $limit && (!$total_expected || $total_fetched < $total_expected));
+            if ($api_page > 100) {
+                log_message("export-holders: Reached safety limit at page $api_page", 'export_log.txt', 'ERROR');
+                break;
+            }
+        }
 
         if (empty($holders)) {
             log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
