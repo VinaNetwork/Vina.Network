@@ -60,26 +60,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('submit', (e) => {
         if (e.target.matches('.export-form')) {
-            const exportType = e.target.querySelector('[name="export_type"]').value;
-            if (exportType === 'all') {
-                const progressContainer = document.querySelector('.progress-container');
-                const progressBarFill = document.querySelector('.progress-bar-fill');
-                if (progressContainer && progressBarFill) {
-                    progressContainer.style.display = 'block';
-                    let progress = 0;
-                    const interval = setInterval(() => {
-                        progress += 10;
-                        progressBarFill.style.width = `${progress}%`;
-                        if (progress >= 100) {
-                            clearInterval(interval);
-                            setTimeout(() => {
-                                progressContainer.style.display = 'none';
-                                progressBarFill.style.width = '0%';
-                            }, 1000);
-                        }
-                    }, 500);
-                }
+            e.preventDefault();
+            const form = e.target;
+            const exportType = form.querySelector('[name="export_type"]').value;
+            const mintAddress = form.querySelector('[name="mintAddress"]').value;
+            const exportFormat = form.querySelector('[name="export_format"]').value;
+            const loader = document.querySelector('.loader');
+            const progressContainer = document.querySelector('.progress-container');
+            const progressBarFill = document.querySelector('.progress-bar-fill');
+
+            if (loader) {
+                loader.style.display = 'block';
             }
+
+            if (exportType === 'all' && progressContainer && progressBarFill) {
+                progressContainer.style.display = 'block';
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    progressBarFill.style.width = `${progress}%`;
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            progressContainer.style.display = 'none';
+                            progressBarFill.style.width = '0%';
+                        }, 1000);
+                    }
+                }, 500);
+            }
+
+            const formData = new FormData(form);
+            fetch('/tools/nft-holders/export-holders.php', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `holders_${exportType}_${mintAddress}.${exportFormat}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                    progressBarFill.style.width = '0%';
+                }
+            })
+            .catch(error => {
+                console.error('Error exporting holders:', error);
+                alert('Error exporting holders. Please try again.');
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                }
+            });
             return;
         }
         if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm, #nftHoldersForm')) {
