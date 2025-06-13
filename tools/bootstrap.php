@@ -1,4 +1,5 @@
 <?php
+// tools/bootstrap.php
 if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct access allowed!');
