@@ -119,7 +119,7 @@ h1, h2 {text-align: center;}
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* NFT Holders: Export Section */
+/* Export NFT Holders */
 .export-section {margin: 20px 0;}
 
 .export-form {
@@ -149,38 +149,6 @@ h1, h2 {text-align: center;}
     justify-content: center;
 }
 .export-btn:hover {background: #218838;}
-
-/* NFT Holders: List of wallets */
-.holders-table {
-    border-collapse: collapse;
-    background: #fff;
-    width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.holders-table th,
-.holders-table td {
-    padding: 5px 10px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-}
-
-.holders-table th {
-    background: #007bff;
-    color: #fff;
-    font-weight: 600;
-}
-
-.holders-table td:first-child {
-    overflow-wrap: break-word;
-    word-break: break-all;
-    white-space: normal;
-}
-.holders-table td:last-child {
-    text-align: center;
-}
 
 /* NFT Transaction */
 .transaction-table,
