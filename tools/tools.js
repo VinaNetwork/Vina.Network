@@ -74,14 +74,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 loader.style.display = 'block';
             }
 
-            if (exportType === 'all' && progressContainer && progressBarFill) {
+            let progressInterval;
+            if (progressContainer && progressBarFill) {
                 progressContainer.style.display = 'block';
                 let progress = 0;
-                const interval = setInterval(() => {
+                progressInterval = setInterval(() => {
                     progress += 5;
                     progressBarFill.style.width = `${progress}%`;
                     if (progress >= 95) {
-                        clearInterval(interval);
+                        clearInterval(progressInterval);
                     }
                 }, 300);
             }
@@ -94,16 +95,26 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(response => {
                 if (!response.ok) {
-                    return response.json().then(err => {
-                        throw new Error(err.error || `HTTP error! Status: ${response.status}`);
+                    return response.text().then(text => {
+                        try {
+                            const json = JSON.parse(text);
+                            throw new Error(json.error || `HTTP error! Status: ${response.status}`);
+                        } catch (e) {
+                            throw new Error(`HTTP error! Status: ${response.status}, Response: ${text}`);
+                        }
                     });
                 }
                 const contentType = response.headers.get('Content-Type');
                 if (contentType.includes('text/csv') || contentType.includes('application/json')) {
                     return response.blob().then(blob => ({ blob, contentType }));
                 }
-                return response.json().then(data => {
-                    throw new Error(data.error || 'Unexpected response');
+                return response.text().then(text => {
+                    try {
+                        const json = JSON.parse(text);
+                        throw new Error(json.error || 'Unexpected response');
+                    } catch (e) {
+                        throw new Error(`Unexpected content type: ${contentType}, Response: ${text}`);
+                    }
                 });
             })
             .then(({ blob, contentType }) => {
@@ -122,6 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
                 }
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
             })
             .catch(error => {
                 console.error('Export error:', error.message);
@@ -132,6 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (progressContainer) {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
+                }
+                if (progressInterval) {
+                    clearInterval(progressInterval);
                 }
             });
             return;
