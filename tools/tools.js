@@ -121,4 +121,58 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('.page-button') && !e.target.dataset.type?.includes('ellipsis')) {
+            e.preventDefault();
+            const holdersList = document.getElementById('holders-list');
+            if (!holdersList) {
+                console.error('holders-list not found in DOM');
+                return;
+            }
+            const page = e.target.closest('form')?.querySelector('input[name="page"]')?.value || e.target.dataset.page;
+            const mint = holdersList.dataset.mint;
+            if (!page || !mint) {
+                console.error('Missing page or mint:', { page, mint });
+                return;
+            }
+            console.log('Sending AJAX request for page:', page, 'mint:', mint);
+            const loader = document.querySelector('.loader');
+            if (!loader) {
+                console.error('Loader not found in DOM');
+                return;
+            }
+            console.log('Loader found:', loader);
+            loader.style.display = 'block';
+            console.log('Loader display set to block:', loader.style.display);
+            const minLoaderTime = 500;
+            const startTime = performance.now();
+            fetch('/tools/nft-holders/nft-holders-list.php', {
+                method: 'POST',
+                body: 'mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page),
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                return response.text();
+            })
+            .then(data => {
+                const elapsed = performance.now() - startTime;
+                const remaining = minLoaderTime - elapsed;
+                setTimeout(() => {
+                    holdersList.innerHTML = data;
+                    loader.style.display = 'none';
+                    console.log('Loader hidden after timeout');
+                }, remaining > 0 ? remaining : 0);
+            })
+            .catch(error => {
+                console.error('Pagination AJAX error:', error);
+                holdersList.innerHTML = '<div class="result-error"><p>Error loading holders. Please try again.</p></div>';
+                loader.style.display = 'none';
+            });
+        }
+    });
 });
