@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
-            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
+            fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'GET',
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(form);
             const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
-            fetch(`/tools/load-tool.php?tool=${encodeURIComponent(tool)}`, {
+            fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
