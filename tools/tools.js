@@ -65,20 +65,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const exportType = form.querySelector('[name="export_type"]').value;
             const mintAddress = form.querySelector('[name="mintAddress"]').value;
             const exportFormat = form.querySelector('[name="export_format"]').value;
-            const page = form.querySelector('[name="page"]').value;
             const loader = document.querySelector('.loader');
             const progressContainer = document.querySelector('.progress-container');
             const progressBarFill = document.querySelector('.progress-bar-fill');
+
+            if (exportType !== 'all') {
+                alert('Invalid export type');
+                return;
+            }
+
+            log_message(`export-holders: Client - exportType=${exportType}, mintAddress=${mintAddress}, format=${exportFormat}`, 'client_log.txt');
 
             if (loader) {
                 loader.style.display = 'block';
             }
 
-            let progressInterval;
             if (progressContainer && progressBarFill) {
                 progressContainer.style.display = 'block';
                 let progress = 0;
-                progressInterval = setInterval(() => {
+                const progressInterval = setInterval(() => {
                     progress += 5;
                     progressBarFill.style.width = `${progress}%`;
                     if (progress >= 95) {
@@ -121,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `holders_${exportType}_${mintAddress}_${page}.${exportFormat}`;
+                a.download = `holders_all_${mintAddress}.${exportFormat}`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -133,9 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
                 }
-                if (progressInterval) {
-                    clearInterval(progressInterval);
-                }
             })
             .catch(error => {
                 console.error('Export error:', error.message);
@@ -146,9 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (progressContainer) {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
-                }
-                if (progressInterval) {
-                    clearInterval(progressInterval);
                 }
             });
             return;
@@ -187,4 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    function log_message(message, file) {
+        fetch('/tools/log-client.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message, file})
+        }).catch(err => console.error('Log error:', err));
+    }
 });
