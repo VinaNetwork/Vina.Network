@@ -14,7 +14,7 @@ $page_description = "Discover Solana NFT tools on Vina Network: Check Holders, V
 $page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT valuation, blockchain, NFT";
 $page_og_title = "Vina Network - Solana NFT Tools & Holders Checker";
 $page_og_description = "Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis. Try now!";
-$page_og_image = "https://vina.network/tools/image/vina-network-tools.jpg";
+$page_og_image = "https://vina.network/tools/image/tools-og-image.jpg";
 $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
 $page_css = ['../css/vina.css', 'tools.css'];
