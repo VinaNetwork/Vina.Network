@@ -50,7 +50,7 @@ if ($export_type !== 'all') {
     exit;
 }
 
-function getHolders($mintAddress, $page = 1, $size = 50) {
+function getHolders($mintAddress, $page = 1, $size = 1000) {
     $params = [
         'groupKey' => 'collection',
         'groupValue' => $mintAddress,
@@ -102,7 +102,7 @@ try {
     $api_page = 1;
     $limit = 1000;
     $total_fetched = 0;
-    while ($api_page <= 100) {
+    while ($total_fetched < $total_expected && $api_page <= 100) {
         $result = getHolders($mintAddress, $api_page, $limit);
         if (isset($result['error'])) {
             throw new Exception('API error: ' . json_encode($result['error']));
@@ -110,8 +110,9 @@ try {
         $page_holders = $result['holders'];
         $holders = array_merge($holders, $page_holders);
         $total_fetched += count($page_holders);
-        log_message("export-holders: Fetched $total_fetched holders after page $api_page", 'export_log.txt');
-        if (count($page_holders) < $limit || $total_fetched >= $total_expected) {
+        log_message("export-holders: Fetched $total_fetched/$total_expected holders after page $api_page", 'export_log.txt');
+        if (count($page_holders) == 0) {
+            log_message("export-holders: No more holders on page $api_page, stopping", 'export_log.txt');
             break;
         }
         $api_page++;
@@ -122,14 +123,14 @@ try {
         throw new Exception('No holders found');
     }
 
-    // Remove duplicates
+    // Remove duplicates and count amounts
     $unique_holders = [];
     foreach ($holders as $holder) {
         $owner = $holder['owner'];
         if (!isset($unique_holders[$owner])) {
             $unique_holders[$owner] = $holder;
         } else {
-            $unique_holders[$owner]['amount'] += 1; // Increment amount for duplicate owners
+            $unique_holders[$owner]['amount'] += 1;
         }
     }
     $holders = array_values($unique_holders);
