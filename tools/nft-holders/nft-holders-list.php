@@ -59,7 +59,7 @@ try {
         echo "<p class='result-error'>No holders found for this collection.</p>";
     } else {
         echo "<div class='holders-summary'>";
-        echo "<p>Total Holders: <strong>$total_wallets</strong></p>";
+        echo "<p>Wallet holding NFT: <strong>$total_wallets</strong></p>";
         echo "<p>Total NFTs: <strong>$total_items</strong></p>";
         echo "</div>";
 
