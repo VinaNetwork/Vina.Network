@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const formData = new FormData(form);
-            fetch('/tools/nft-holders/export-holders.php', {
+            fetch('/tools/nft-holders/nft-holders-export.php', {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
