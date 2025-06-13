@@ -135,63 +135,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var holdersList = document.getElementById('holders-list');
-    if (holdersList) {
-        holdersList.addEventListener('click', function(e) {
-            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                e.preventDefault();
-                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value || e.target.dataset.page;
-                var mint = holdersList.dataset.mint;
-                if (!page || !mint) {
-                    console.error('Missing page or mint:', { page, mint });
-                    return;
-                }
-                console.log('Sending AJAX request for page:', page, 'mint:', mint);
-                var loader = document.querySelector('.loader');
-                if (!loader) {
-                    console.error('Loader not found in DOM');
-                    return;
-                }
-                console.log('Loader found:', loader);
-                loader.style.display = 'block'; // Bật loader
-                console.log('Loader display set to block:', loader.style.display);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '/tools/nft-holders/nft-holders-list.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        console.log('AJAX response status:', xhr.status, 'Response:', xhr.responseText.substring(0, 200));
-                        var minLoaderTime = 500; // Đảm bảo loader hiện ít nhất 500ms
-                        var startTime = performance.now();
-                        var elapsed = performance.now() - startTime;
-                        var remaining = minLoaderTime - elapsed;
-                        setTimeout(() => {
-                            loader.style.display = 'none'; // Ẩn loader
-                            console.log('Loader hidden after timeout');
-                            if (xhr.status === 200) {
-                                holdersList.innerHTML = xhr.responseText;
-                            } else {
-                                console.error('AJAX error:', xhr.status, xhr.statusText, 'Response:', xhr.responseText);
-                                holdersList.innerHTML = '<div class="result-error"><p>Error loading holders. Status: ' + xhr.status + '. Please try again.</p></div>';
-                            }
-                        }, remaining > 0 ? remaining : 0);
-                    }
-                };
-                var data = 'mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page);
-                console.log('AJAX data:', data);
-                setTimeout(() => {
-                    xhr.send(data); // Delay giả 1s để kiểm tra loader
-                }, 1000);
-            }
-        });
-    } else {
-        console.error('holders-list not found in DOM');
-    }
-});
-</script>
-
 <?php
 ob_start();
 include $root_path . 'include/footer.php';
