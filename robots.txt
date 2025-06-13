@@ -13,11 +13,32 @@ Allow: *.woff
 Allow: *.woff2
 
 # Disallow sensitive files and directories
+Disallow: /wp-admin/
 Disallow: /admin/
 Disallow: /login/
 Disallow: /config/
 Disallow: /include/
+Disallow: /vendor/
+Disallow: /logs/
+Disallow: /*.php$
+Disallow: /*.env
+Disallow: /*.log
+Disallow: /*.bak
+Disallow: /*.sql
+Disallow: /*.git
+Disallow: /php.ini
 Disallow: /.htaccess
+
+# Disallow dynamic or temporary pages
+Disallow: /*?* # Block URLs with query strings
+Disallow: /search/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /temporary/
+
+# Allow specific query strings for Vina Network tools
+Allow: /tools/?tool=*
 
 # Block bad bots
 User-agent: MJ12Bot
@@ -28,3 +49,6 @@ User-agent: SemrushBot
 Disallow: /
 User-agent: DotBot
 Disallow: /
+
+# Sitemap
+Sitemap: https://vina.network/sitemap.xml
