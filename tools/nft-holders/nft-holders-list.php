@@ -46,34 +46,21 @@ if (empty($mintAddress) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintA
     exit;
 }
 
-// Lấy tổng số holders
-$total_holders = 0;
-$params = [
-    'groupKey' => 'collection',
-    'groupValue' => $mintAddress,
-    'page' => 1,
-    'limit' => 1000 // Tăng limit để lấy total chính xác
-];
-log_message("nft-holders-list: Calling API for total holders - mintAddress: $mintAddress, params: " . json_encode($params), 'nft_holders_log.txt');
-$data = callAPI('getAssetsByGroup', $params, 'POST');
-if (isset($data['error'])) {
-    log_message("nft-holders-list: getAssetsByGroup error - " . json_encode($data), 'nft_holders_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Error fetching holders: ' . htmlspecialchars($data['error']) . '</p></div>';
-    exit;
-}
-log_message("nft-holders-list: API response - " . json_encode($data), 'nft_holders_log.txt');
-$total_holders = $data['result']['total'] ?? $data['result']['totalItems'] ?? 0;
-$_SESSION['total_holders'][$mintAddress] = $total_holders;
-log_message("nft-holders-list: Total holders: $total_holders", 'nft_holders_log.txt');
+// Lấy từ session
+$total_items = $_SESSION['total_items'][$mintAddress] ?? 0;
+$total_wallets = $_SESSION['total_wallets'][$mintAddress] ?? 0;
+$wallets = $_SESSION['wallets'][$mintAddress] ?? [];
+log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets", 'nft_holders_log.txt');
 
 try {
     ob_start();
     echo "<div class='result-section'>";
-    if ($total_holders === 0) {
+    if ($total_wallets === 0) {
         echo "<p class='result-error'>No holders found for this collection.</p>";
     } else {
         echo "<div class='holders-summary'>";
-        echo "<p>Total Holders: <strong>$total_holders</strong></p>";
+        echo "<p>Total Holders: <strong>$total_wallets</strong></p>";
+        echo "<p>Total NFTs: <strong>$total_items</strong></p>";
         echo "</div>";
 
         echo "<div class='export-section'>";
