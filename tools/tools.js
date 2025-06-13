@@ -96,7 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `HTTP error! Status: ${response.status}`);
+                    });
+                }
                 return response.blob();
             })
             .then(blob => {
@@ -117,8 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             })
             .catch(error => {
-                console.error('Error exporting holders:', error);
-                alert('Error exporting holders. Please try again.');
+                console.error('Error exporting holders:', error.message);
+                alert(`Error exporting holders: ${error.message}`);
                 if (loader) {
                     loader.style.display = 'none';
                 }
