@@ -1,8 +1,8 @@
 <?php
-// nft-transactions.php
+// nft-transaction.php
 // Chức năng: Kiểm tra lịch sử giao dịch NFT
 include '../api-helper.php';
-error_log("nft-transactions.php loaded"); // Debug
+error_log("nft-transaction.php loaded"); // Debug
 ?>
 
 <div class="t-6 nft-transactions-content">
