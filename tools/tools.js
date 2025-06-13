@@ -194,4 +194,54 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({message, file})
         }).catch(err => console.error('Log error:', err));
     }
+
+    // Khởi tạo NFT Distribution Chart
+    const initNftDistributionChart = () => {
+        const canvas = document.getElementById('nftDistributionChart');
+        if (!canvas || !window.nftDistributionData) return;
+
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: window.nftDistributionData.labels,
+                datasets: [{
+                    label: 'Number of Wallets',
+                    data: window.nftDistributionData.data,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.raw} wallet${context.raw > 1 ? 's' : ''}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Number of Wallets' },
+                        ticks: { precision: 0 }
+                    },
+                    x: {
+                        title: { display: true, text: 'Number of NFTs' }
+                    }
+                }
+            }
+        });
+        console.log('NFT Distribution Chart initialized');
+    };
+
+    // Gọi init sau khi load holders list
+    const holdersList = document.getElementById('holders-list');
+    if (holdersList) {
+        initNftDistributionChart();
+        holdersList.addEventListener('DOMSubtreeModified', initNftDistributionChart);
+    }
 });
