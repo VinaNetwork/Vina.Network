@@ -17,11 +17,11 @@ if (!file_exists($bootstrap_path)) {
 }
 require_once $bootstrap_path;
 
-$api_helper_path = __DIR__ . '/../api-helper.php';
+$api_helper_path = __DIR__ . '/../tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft-holders-list: api-helper.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
+    log_message("nft-holders-list: tools-api.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
     http_response_code(500);
-    echo '<div class="result-error"><p>Server error: Missing api-helper.php</p></div>';
+    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
