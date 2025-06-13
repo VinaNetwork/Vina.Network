@@ -82,8 +82,3 @@ RewriteCond %{HTTP_REFERER} !^$
 RewriteCond %{HTTP_REFERER} !^https?://(www\.)?localhost/.*$ [NC]
 RewriteCond %{HTTP_REFERER} !^https?://(www\.)?vina\.network/.*$ [NC]
 RewriteRule \.(jpg|jpeg|png|gif|webp)$ - [F,NC]
-
-# -------- RESTRICT ADMIN ACCESS (OPTIONAL) --------
-# <Files admin.php>
-#     Require ip 123.123.123.123
-# </Files>
