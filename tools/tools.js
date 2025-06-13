@@ -59,16 +59,89 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('submit', (e) => {
+        if (e.target.matches('.export-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const exportType = form.querySelector('[name="export_type"]').value;
+            const mintAddress = form.querySelector('[name="mintAddress"]').value;
+            const exportFormat = form.querySelector('[name="export_format"]').value;
+            const page = form.querySelector('[name="page"]').value;
+            const loader = document.querySelector('.loader');
+            const progressContainer = document.querySelector('.progress-container');
+            const progressBarFill = document.querySelector('.progress-bar-fill');
+
+            if (loader) {
+                loader.style.display = 'block';
+            }
+
+            if (exportType === 'all' && progressContainer && progressBarFill) {
+                progressContainer.style.display = 'block';
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 5;
+                    progressBarFill.style.width = `${progress}%`;
+                    if (progress >= 95) {
+                        clearInterval(interval);
+                    }
+                }, 300);
+            }
+
+            const formData = new FormData(form);
+            fetch('/tools/nft-holders/export-holders.php', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `HTTP error! Status: ${response.status}`);
+                    });
+                }
+                const contentType = response.headers.get('Content-Type');
+                if (contentType.includes('text/csv') || contentType.includes('application/json')) {
+                    return response.blob().then(blob => ({ blob, contentType }));
+                }
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Unexpected response');
+                });
+            })
+            .then(({ blob, contentType }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `holders_${exportType}_${mintAddress}_${page}.${exportFormat}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                    progressBarFill.style.width = '0%';
+                }
+            })
+            .catch(error => {
+                console.error('Export error:', error.message);
+                alert(`Export failed: ${error.message}`);
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                    progressBarFill.style.width = '0%';
+                }
+            });
+            return;
+        }
         if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm, #nftHoldersForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            console.log('Loader element:', loader);
             if (loader) {
                 loader.style.display = 'block';
-                console.log('Loader activated');
-            } else {
-                console.error('Loader not found in DOM');
             }
 
             const formData = new FormData(form);
@@ -86,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) {
                     loader.style.display = 'none';
-                    console.log('Loader deactivated');
                 }
             })
             .catch(error => {
