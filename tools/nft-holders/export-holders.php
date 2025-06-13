@@ -50,14 +50,18 @@ if ($export_type !== 'all') {
     exit;
 }
 
-function getHolders($mintAddress, $page = 1, $size = 1000) {
+function getHolders($mintAddress, $size = 1000, $cursor = null) {
     $params = [
         'groupKey' => 'collection',
         'groupValue' => $mintAddress,
-        'page' => $page,
         'limit' => $size
     ];
-    log_message("export-holders: Fetching holders - mintAddress=$mintAddress, page=$page, size=$size, params=" . json_encode($params), 'export_log.txt');
+    if ($cursor) {
+        $params['cursor'] = $cursor;
+    } else {
+        $params['page'] = 1;
+    }
+    log_message("export-holders: Fetching holders - mintAddress=$mintAddress, size=$size, cursor=" . ($cursor ?? 'none') . ", params=" . json_encode($params), 'export_log.txt');
     $data = callAPI('getAssetsByGroup', $params, 'POST');
     if (isset($data['error'])) {
         log_message("export-holders: API error - " . json_encode($data['error']), 'export_log.txt', 'ERROR');
@@ -65,9 +69,10 @@ function getHolders($mintAddress, $page = 1, $size = 1000) {
     }
     $items = $data['result']['items'] ?? [];
     $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
-    log_message("export-holders: API response - total=$total, items_count=" . count($items), 'export_log.txt');
+    $next_cursor = $data['result']['cursor'] ?? null;
+    log_message("export-holders: API response - total=$total, items_count=" . count($items) . ", next_cursor=" . ($next_cursor ?? 'none'), 'export_log.txt');
     if (empty($items)) {
-        return ['holders' => [], 'total' => $total];
+        return ['holders' => [], 'total' => $total, 'cursor' => null];
     }
     $holders = array_map(function($item) {
         return [
@@ -75,8 +80,8 @@ function getHolders($mintAddress, $page = 1, $size = 1000) {
             'amount' => 1
         ];
     }, $items);
-    log_message("export-holders: Fetched " . count($holders) . " holders for page $page, total=$total", 'export_log.txt');
-    return ['holders' => $holders, 'total' => $total];
+    log_message("export-holders: Fetched " . count($holders) . " holders, total=$total", 'export_log.txt');
+    return ['holders' => $holders, 'total' => $total, 'cursor' => $next_cursor];
 }
 
 try {
@@ -86,7 +91,7 @@ try {
         : "holders_all_{$mintAddress}.json";
 
     // Get total holders
-    $result = getHolders($mintAddress, 1, 1000);
+    $result = getHolders($mintAddress, 1000);
     if (isset($result['error'])) {
         throw new Exception('API error: ' . json_encode($result['error']));
     }
@@ -99,24 +104,25 @@ try {
     }
 
     // Fetch all holders
-    $api_page = 1;
-    $limit = 1000;
+    $cursor = null;
     $total_fetched = 0;
-    while ($total_fetched < $total_expected && $api_page <= 100) {
-        $result = getHolders($mintAddress, $api_page, $limit);
+    $iteration = 1;
+    do {
+        $result = getHolders($mintAddress, 1000, $cursor);
         if (isset($result['error'])) {
             throw new Exception('API error: ' . json_encode($result['error']));
         }
         $page_holders = $result['holders'];
         $holders = array_merge($holders, $page_holders);
         $total_fetched += count($page_holders);
-        log_message("export-holders: Fetched $total_fetched/$total_expected holders after page $api_page", 'export_log.txt');
-        if (count($page_holders) == 0) {
-            log_message("export-holders: No more holders on page $api_page, stopping", 'export_log.txt');
+        $cursor = $result['cursor'];
+        log_message("export-holders: Iteration $iteration - Fetched $total_fetched/$total_expected holders, cursor=" . ($cursor ?? 'none'), 'export_log.txt');
+        $iteration++;
+        if ($total_fetched >= $total_expected || !$cursor || $iteration > 100) {
             break;
         }
-        $api_page++;
-    }
+        usleep(200000); // Delay 200ms to avoid rate limit
+    } while (true);
 
     if (empty($holders)) {
         log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
