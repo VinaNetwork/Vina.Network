@@ -104,7 +104,7 @@ try {
         : "holders_all_{$mintAddress}.json";
 
     // Get total items from session
-    $total_expected = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : 0;
+    $total_expected = isset($_SESSION['total_items'][$mintAddress]) ? $_SESSION['total_items'][$mintAddress] : 0;
     file_put_contents(EXPORT_LOG_PATH, "export-holders: Total expected items from session: $total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
     if ($total_expected === 0) {
