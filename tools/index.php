@@ -65,11 +65,11 @@ include $header_path;
                     if ($tool === 'nft-holders') {
                         $tool_file = __DIR__ . '/nft-holders/nft-holders.php';
                     } elseif ($tool === 'nft-valuation') {
-                        $tool_file = __DIR__ . '/nft-valuation.php';
+                        $tool_file = __DIR__ . 'nft-valuation/nft-valuation.php';
                     } elseif ($tool === 'nft-transactions') {
-                        $tool_file = __DIR__ . '/nft-transactions.php';
+                        $tool_file = __DIR__ . 'nft-transactions/nft-transactions.php';
                     } elseif ($tool === 'wallet-analysis') {
-                        $tool_file = __DIR__ . '/wallet-analysis.php';
+                        $tool_file = __DIR__ . 'wallet-analysis/wallet-analysis.php';
                     }
                     
                     if (isset($tool_file) && file_exists($tool_file)) {
