@@ -57,14 +57,15 @@ function getHolders($mintAddress, $page = 1, $size = 50) {
         'page' => $page,
         'limit' => $size
     ];
-    log_message("export-holders: Fetching holders - mintAddress=$mintAddress, page=$page, size=$size", 'export_log.txt');
+    log_message("export-holders: Fetching holders - mintAddress=$mintAddress, page=$page, size=$size, params=" . json_encode($params), 'export_log.txt');
     $data = callAPI('getAssetsByGroup', $params, 'POST');
     if (isset($data['error'])) {
         log_message("export-holders: API error - " . json_encode($data['error']), 'export_log.txt', 'ERROR');
         return ['error' => $data['error']];
     }
     $items = $data['result']['items'] ?? [];
-    $total = $data['result']['totalItems'] ?? $data['result']['total'] ?? count($items);
+    $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
+    log_message("export-holders: API response - total=$total, items_count=" . count($items), 'export_log.txt');
     if (empty($items)) {
         return ['holders' => [], 'total' => $total];
     }
@@ -84,13 +85,8 @@ try {
         ? "holders_all_{$mintAddress}.csv"
         : "holders_all_{$mintAddress}.json";
 
-    $api_page = 1;
-    $limit = 1000;
-    $total_fetched = 0;
-    $total_expected = null;
-
     // Get total holders
-    $result = getHolders($mintAddress, 1, 1);
+    $result = getHolders($mintAddress, 1, 1000);
     if (isset($result['error'])) {
         throw new Exception('API error: ' . json_encode($result['error']));
     }
@@ -103,22 +99,18 @@ try {
     }
 
     // Fetch all holders
-    $unique_holders = []; // Track unique holders by owner address
-    while ($total_fetched < $total_expected && $api_page <= 100) {
+    $api_page = 1;
+    $limit = 1000;
+    $total_fetched = 0;
+    while ($api_page <= 100) {
         $result = getHolders($mintAddress, $api_page, $limit);
         if (isset($result['error'])) {
             throw new Exception('API error: ' . json_encode($result['error']));
         }
         $page_holders = $result['holders'];
-        foreach ($page_holders as $holder) {
-            $owner = $holder['owner'];
-            if (!isset($unique_holders[$owner])) {
-                $unique_holders[$owner] = $holder;
-                $holders[] = $holder;
-                $total_fetched++;
-            }
-        }
-        log_message("export-holders: Fetched $total_fetched/$total_expected unique holders after page $api_page", 'export_log.txt');
+        $holders = array_merge($holders, $page_holders);
+        $total_fetched += count($page_holders);
+        log_message("export-holders: Fetched $total_fetched holders after page $api_page", 'export_log.txt');
         if (count($page_holders) < $limit || $total_fetched >= $total_expected) {
             break;
         }
@@ -129,7 +121,19 @@ try {
         log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
         throw new Exception('No holders found');
     }
-    log_message("export-holders: Total fetched unique holders: $total_fetched", 'export_log.txt');
+
+    // Remove duplicates
+    $unique_holders = [];
+    foreach ($holders as $holder) {
+        $owner = $holder['owner'];
+        if (!isset($unique_holders[$owner])) {
+            $unique_holders[$owner] = $holder;
+        } else {
+            $unique_holders[$owner]['amount'] += 1; // Increment amount for duplicate owners
+        }
+    }
+    $holders = array_values($unique_holders);
+    log_message("export-holders: Total unique holders after deduplication: " . count($holders), 'export_log.txt');
 
     if ($export_format === 'csv') {
         header('Content-Type: text/csv; charset=utf-8');
