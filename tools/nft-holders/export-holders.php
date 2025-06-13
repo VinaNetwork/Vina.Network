@@ -50,38 +50,47 @@ if ($export_type !== 'all') {
     exit;
 }
 
-function getHolders($mintAddress, $size = 1000, $cursor = null) {
+function getHolders($mintAddress, $page = 1, $size = 1000) {
     $params = [
         'groupKey' => 'collection',
         'groupValue' => $mintAddress,
+        'page' => $page,
         'limit' => $size
     ];
-    if ($cursor) {
-        $params['cursor'] = $cursor;
-    } else {
-        $params['page'] = 1;
-    }
-    log_message("export-holders: Fetching holders - mintAddress=$mintAddress, size=$size, cursor=" . ($cursor ?? 'none') . ", params=" . json_encode($params), 'export_log.txt');
-    $data = callAPI('getAssetsByGroup', $params, 'POST');
-    if (isset($data['error'])) {
-        log_message("export-holders: API error - " . json_encode($data['error']), 'export_log.txt', 'ERROR');
-        return ['error' => $data['error']];
-    }
-    $items = $data['result']['items'] ?? [];
-    $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
-    $next_cursor = $data['result']['cursor'] ?? null;
-    log_message("export-holders: API response - total=$total, items_count=" . count($items) . ", next_cursor=" . ($next_cursor ?? 'none'), 'export_log.txt');
-    if (empty($items)) {
-        return ['holders' => [], 'total' => $total, 'cursor' => null];
-    }
-    $holders = array_map(function($item) {
-        return [
-            'owner' => $item['ownership']['owner'] ?? 'unknown',
-            'amount' => 1
-        ];
-    }, $items);
-    log_message("export-holders: Fetched " . count($holders) . " holders, total=$total", 'export_log.txt');
-    return ['holders' => $holders, 'total' => $total, 'cursor' => $next_cursor];
+    $max_retries = 3;
+    $retry_count = 0;
+    do {
+        log_message("export-holders: Fetching holders - mintAddress=$mintAddress, page=$page, size=$size, retry=$retry_count, params=" . json_encode($params), 'export_log.txt');
+        $data = callAPI('getAssetsByGroup', $params, 'POST');
+        if (isset($data['error'])) {
+            log_message("export-holders: API error - " . json_encode($data['error']) . ", retry=$retry_count", 'export_log.txt', 'ERROR');
+            if ($retry_count < $max_retries) {
+                $retry_count++;
+                usleep(500000); // Delay 500ms before retry
+                continue;
+            }
+            return ['error' => $data['error']];
+        }
+        $items = $data['result']['items'] ?? [];
+        $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
+        log_message("export-holders: API response - total=$total, items_count=" . count($items), 'export_log.txt');
+        if (empty($items) && $retry_count < $max_retries) {
+            log_message("export-holders: Empty items on page $page, retry=$retry_count", 'export_log.txt', 'WARN');
+            $retry_count++;
+            usleep(500000); // Delay 500ms before retry
+            continue;
+        }
+        $holders = array_map(function($item) {
+            return [
+                'owner' => $item['ownership']['owner'] ?? 'unknown',
+                'amount' => 1
+            ];
+        }, $items);
+        log_message("export-holders: Fetched " . count($holders) . " holders for page $page, total=$total", 'export_log.txt');
+        return ['holders' => $holders, 'total' => $total];
+    } while ($retry_count < $max_retries);
+    log_message("export-holders: Max retries reached for page $page", 'export_log.txt', 'ERROR');
+    return ['holders' => [], 'total' => 0];
 }
 
 try {
@@ -90,13 +99,19 @@ try {
         ? "holders_all_{$mintAddress}.csv"
         : "holders_all_{$mintAddress}.json";
 
-    // Get total holders
-    $result = getHolders($mintAddress, 1000);
-    if (isset($result['error'])) {
-        throw new Exception('API error: ' . json_encode($result['error']));
+    // Get total holders from session (set in nft-holders-list.php)
+    $total_expected = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : 0;
+    log_message("export-holders: Total expected holders from session: $total_expected", 'export_log.txt');
+
+    if ($total_expected === 0) {
+        // Fallback to API if session is empty
+        $result = getHolders($mintAddress, 1, 1000);
+        if (isset($result['error'])) {
+            throw new Exception('API error: ' . json_encode($result['error']));
+        }
+        $total_expected = $result['total'];
+        log_message("export-holders: Total expected holders from API fallback: $total_expected", 'export_log.txt');
     }
-    $total_expected = $result['total'];
-    log_message("export-holders: Total expected holders: $total_expected", 'export_log.txt');
 
     if ($total_expected === 0) {
         log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
@@ -104,25 +119,25 @@ try {
     }
 
     // Fetch all holders
-    $cursor = null;
+    $api_page = 1;
+    $limit = 1000;
     $total_fetched = 0;
-    $iteration = 1;
-    do {
-        $result = getHolders($mintAddress, 1000, $cursor);
+    while ($total_fetched < $total_expected && $api_page <= 100) {
+        $result = getHolders($mintAddress, $api_page, $limit);
         if (isset($result['error'])) {
             throw new Exception('API error: ' . json_encode($result['error']));
         }
         $page_holders = $result['holders'];
         $holders = array_merge($holders, $page_holders);
         $total_fetched += count($page_holders);
-        $cursor = $result['cursor'];
-        log_message("export-holders: Iteration $iteration - Fetched $total_fetched/$total_expected holders, cursor=" . ($cursor ?? 'none'), 'export_log.txt');
-        $iteration++;
-        if ($total_fetched >= $total_expected || !$cursor || $iteration > 100) {
+        log_message("export-holders: Page $api_page - Fetched $total_fetched/$total_expected holders", 'export_log.txt');
+        if (count($page_holders) == 0) {
+            log_message("export-holders: No more holders on page $api_page, stopping", 'export_log.txt');
             break;
         }
-        usleep(200000); // Delay 200ms to avoid rate limit
-    } while (true);
+        $api_page++;
+        usleep(500000); // Delay 500ms to avoid rate limit
+    }
 
     if (empty($holders)) {
         log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
@@ -131,6 +146,7 @@ try {
 
     // Remove duplicates and count amounts
     $unique_holders = [];
+    $total_items = count($holders);
     foreach ($holders as $holder) {
         $owner = $holder['owner'];
         if (!isset($unique_holders[$owner])) {
@@ -140,7 +156,7 @@ try {
         }
     }
     $holders = array_values($unique_holders);
-    log_message("export-holders: Total unique holders after deduplication: " . count($holders), 'export_log.txt');
+    log_message("export-holders: Total items before deduplication: $total_items, Total unique holders after deduplication: " . count($holders), 'export_log.txt');
 
     if ($export_format === 'csv') {
         header('Content-Type: text/csv; charset=utf-8');
