@@ -55,7 +55,7 @@ function getHolders($mintAddress, $offset = 0, $size = 50) {
     $params = [
         'groupKey' => 'collection',
         'groupValue' => $mintAddress,
-        'page' => ceil(($offset + $size) / $size),
+        'page' => ceil(($offset + 1) / $size),
         'limit' => $size
     ];
     log_message("export-holders: Fetching holders - mintAddress=$mintAddress, offset=$offset, size=$size, page={$params['page']}", 'export_log.txt');
@@ -74,7 +74,8 @@ function getHolders($mintAddress, $offset = 0, $size = 50) {
             'amount' => 1
         ];
     }, $items);
-    return ['holders' => $holders];
+    log_message("export-holders: Fetched " . count($holders) . " holders for page {$params['page']}", 'export_log.txt');
+    return ['holders' => $holders, 'total' => $data['result']['total'] ?? count($holders)];
 }
 
 try {
@@ -98,24 +99,27 @@ try {
     } else {
         $api_page = 1;
         $limit = 1000;
-        $has_more = true;
-        while ($has_more) {
+        $total_fetched = 0;
+        $total_expected = isset($_SESSION['total_holders'][$mintAddress]) ? $_SESSION['total_holders'][$mintAddress] : null;
+        log_message("export-holders: Expected total holders: " . ($total_expected ?? 'unknown'), 'export_log.txt');
+
+        do {
             $result = getHolders($mintAddress, ($api_page - 1) * $limit, $limit);
             if (isset($result['error'])) {
                 throw new Exception('API error: ' . json_encode($result['error']));
             }
             $page_holders = $result['holders'];
             $holders = array_merge($holders, $page_holders);
-            if (count($page_holders) < $limit) {
-                $has_more = false;
-            } else {
-                $api_page++;
-            }
-        }
+            $total_fetched += count($page_holders);
+            log_message("export-holders: Fetched $total_fetched holders after page $api_page", 'export_log.txt');
+            $api_page++;
+        } while (count($page_holders) === $limit && (!$total_expected || $total_fetched < $total_expected));
+
         if (empty($holders)) {
             log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
             throw new Exception('No holders found');
         }
+        log_message("export-holders: Total fetched holders: $total_fetched", 'export_log.txt');
     }
 
     if ($export_format === 'csv') {
