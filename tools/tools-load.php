@@ -39,7 +39,7 @@ if (!in_array($tool, $valid_tools)) {
 $tool_files = [
     'nft-holders' => 'nft-holders/nft-holders.php',
     'nft-valuation' => 'nft-valuation/nft-valuation.php',
-    'transaction' => 'transaction/transaction.php',
+    'transaction' => 'nft-transaction/transaction.php',
     'wallet-analysis' => 'wallet-analysis/wallet-analysis.php'
 ];
 
