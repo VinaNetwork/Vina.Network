@@ -87,7 +87,7 @@ try {
 
     ob_start();
     echo "<div class='export-section'>";
-    echo "<form method='POST' action='export-holders.php' class='export-form'>";
+    echo "<form method='POST' action='/tools/nft-holders/export-holders.php' class='export-form'>";
     echo "<input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'>";
     echo "<input type='hidden' name='page' value='$page'>";
     echo "<div class='export-controls'>";
