@@ -9,6 +9,11 @@ RewriteEngine On
 </Files>
 
 # -------- REDIRECTS --------
+# Redirect /tools/ to /tools/?tool=nft-holders
+RewriteCond %{REQUEST_URI} ^/tools/?$ [NC]
+RewriteCond %{QUERY_STRING} ^$ [NC]
+RewriteRule ^(.*)$ /tools/?tool=nft-holders [R=301,L]
+
 # Redirect /dogcat to subdomain
 RewriteCond %{HTTP_HOST} ^(www\.)?vina\.network$ [NC]
 RewriteRule ^dogcat/?(.*)$ https://dogcat.vina.network/$1 [L,R=301]
