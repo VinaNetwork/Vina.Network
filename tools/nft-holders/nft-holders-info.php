@@ -1,5 +1,5 @@
 <?php
-// tools/nft-holders/nft-holders-list.php
+// tools/nft-holders/nft-holders-info.php
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
