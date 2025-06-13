@@ -86,12 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            console.log('Form submit - Loader element:', loader);
+            console.log('Loader element:', loader);
             if (loader) {
                 loader.style.display = 'block';
-                console.log('Form submit - Loader activated');
+                console.log('Loader activated');
             } else {
-                console.error('Form submit - Loader not found in DOM');
+                console.error('Loader not found in DOM');
             }
 
             const formData = new FormData(form);
@@ -109,74 +109,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) {
                     loader.style.display = 'none';
-                    console.log('Form submit - Loader deactivated');
+                    console.log('Loader deactivated');
                 }
             })
             .catch(error => {
-                console.error('Form submit - Error submitting form:', error);
+                console.error('Error submitting form:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) {
                     loader.style.display = 'none';
                 }
             });
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if (e.target.matches('.page-button') && !e.target.dataset.type?.includes('ellipsis')) {
-            e.preventDefault();
-            const holdersList = document.getElementById('holders-list');
-            if (!holdersList) {
-                console.error('Pagination - holders-list not found in DOM');
-                return;
-            }
-            const page = e.target.closest('form')?.querySelector('input[name="page"]')?.value || e.target.dataset.page;
-            const mint = holdersList.dataset.mint;
-            if (!page || !mint) {
-                console.error('Pagination - Missing page or mint:', { page, mint });
-                return;
-            }
-            console.log('Pagination - Sending AJAX request for page:', page, 'mint:', mint);
-            const loader = document.querySelector('.loader');
-            if (!loader) {
-                console.error('Pagination - Loader not found in DOM');
-                return;
-            }
-            console.log('Pagination - Loader found:', loader);
-            loader.style.display = 'block';
-            console.log('Pagination - Loader display set to block:', loader.style.display);
-            const minLoaderTime = 1000; // Tăng lên 1s để dễ thấy
-            const startTime = performance.now();
-            setTimeout(() => {
-                fetch('/tools/nft-holders/nft-holders-list.php', {
-                    method: 'POST',
-                    body: 'mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page),
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                    return response.text();
-                })
-                .then(data => {
-                    const elapsed = performance.now() - startTime;
-                    const remaining = minLoaderTime - elapsed;
-                    console.log('Pagination - AJAX complete, elapsed:', elapsed, 'remaining:', remaining);
-                    setTimeout(() => {
-                        holdersList.innerHTML = data;
-                        loader.style.display = 'none';
-                        console.log('Pagination - Loader hidden after timeout');
-                    }, remaining > 0 ? remaining : 0);
-                })
-                .catch(error => {
-                    console.error('Pagination - AJAX error:', error);
-                    holdersList.innerHTML = '<div class="result-error"><p>Error loading holders. Please try again.</p></div>';
-                    loader.style.display = 'none';
-                    console.log('Pagination - Loader hidden on error');
-                });
-            }, 1000); // Delay giả 1s
         }
     });
 });
