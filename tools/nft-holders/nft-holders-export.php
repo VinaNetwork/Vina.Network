@@ -1,5 +1,5 @@
 <?php
-// tools/nft-holders/export-holders.php
+// tools/nft-holders/nft-holders-export.php
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
