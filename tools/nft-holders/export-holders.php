@@ -24,11 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $mintAddress = trim($_POST['mintAddress'] ?? '');
-$export_type = $_POST['export_type'] ?? 'current';
+$export_type = $_POST['export_type'] ?? 'all';
 $export_format = $_POST['export_format'] ?? 'csv';
-$page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
 
-log_message("export-holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format, page=$page", 'export_log.txt');
+log_message("export-holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format", 'export_log.txt');
 
 if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
     log_message("export-holders: Invalid collection address: $mintAddress", 'export_log.txt', 'ERROR');
@@ -44,7 +43,7 @@ if (!in_array($export_format, ['csv', 'json'])) {
     exit;
 }
 
-if (!in_array($export_type, ['all', 'current'])) {
+if ($export_type !== 'all') {
     log_message("export-holders: Invalid export type: $export_type", 'export_log.txt', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export type']);
@@ -65,7 +64,7 @@ function getHolders($mintAddress, $page = 1, $size = 50) {
         return ['error' => $data['error']];
     }
     $items = $data['result']['items'] ?? [];
-    $total = $data['result']['total'] ?? count($items);
+    $total = $data['result']['totalItems'] ?? $data['result']['total'] ?? count($items);
     if (empty($items)) {
         return ['holders' => [], 'total' => $total];
     }
@@ -82,65 +81,55 @@ function getHolders($mintAddress, $page = 1, $size = 50) {
 try {
     $holders = [];
     $filename = $export_format === 'csv'
-        ? "holders_{$export_type}_{$mintAddress}_{$page}.csv"
-        : "holders_{$export_type}_{$mintAddress}_{$page}.json";
+        ? "holders_all_{$mintAddress}.csv"
+        : "holders_all_{$mintAddress}.json";
 
-    if ($export_type === 'current') {
-        $holders_per_page = 50;
-        $result = getHolders($mintAddress, $page, $holders_per_page);
-        if (isset($result['error'])) {
-            throw new Exception('API error: ' . json_encode($result['error']));
-        }
-        $holders = $result['holders'];
-        if (empty($holders)) {
-            log_message("export-holders: No holders found for page $page, mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
-            throw new Exception('No holders found for this page');
-        }
-    } else {
-        $api_page = 1;
-        $limit = 1000;
-        $total_fetched = 0;
-        $total_expected = null;
+    $api_page = 1;
+    $limit = 1000;
+    $total_fetched = 0;
+    $total_expected = null;
 
-        // Get total holders first
-        $result = getHolders($mintAddress, 1, 1);
-        if (isset($result['error'])) {
-            throw new Exception('API error: ' . json_encode($result['error']));
-        }
-        $total_expected = $result['total'];
-        log_message("export-holders: Total expected holders: $total_expected", 'export_log.txt');
-
-        if ($total_expected === 0) {
-            log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
-            throw new Exception('No holders found');
-        }
-
-        // Fetch all holders
-        while ($total_fetched < $total_expected) {
-            $result = getHolders($mintAddress, $api_page, $limit);
-            if (isset($result['error'])) {
-                throw new Exception('API error: ' . json_encode($result['error']));
-            }
-            $page_holders = $result['holders'];
-            $holders = array_merge($holders, $page_holders);
-            $total_fetched += count($page_holders);
-            log_message("export-holders: Fetched $total_fetched/$total_expected holders after page $api_page", 'export_log.txt');
-            if (count($page_holders) < $limit) {
-                break;
-            }
-            $api_page++;
-            if ($api_page > 100) {
-                log_message("export-holders: Reached safety limit at page $api_page", 'export_log.txt', 'ERROR');
-                break;
-            }
-        }
-
-        if (empty($holders)) {
-            log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
-            throw new Exception('No holders found');
-        }
-        log_message("export-holders: Total fetched holders: $total_fetched", 'export_log.txt');
+    // Get total holders
+    $result = getHolders($mintAddress, 1, 1);
+    if (isset($result['error'])) {
+        throw new Exception('API error: ' . json_encode($result['error']));
     }
+    $total_expected = $result['total'];
+    log_message("export-holders: Total expected holders: $total_expected", 'export_log.txt');
+
+    if ($total_expected === 0) {
+        log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
+        throw new Exception('No holders found');
+    }
+
+    // Fetch all holders
+    $unique_holders = []; // Track unique holders by owner address
+    while ($total_fetched < $total_expected && $api_page <= 100) {
+        $result = getHolders($mintAddress, $api_page, $limit);
+        if (isset($result['error'])) {
+            throw new Exception('API error: ' . json_encode($result['error']));
+        }
+        $page_holders = $result['holders'];
+        foreach ($page_holders as $holder) {
+            $owner = $holder['owner'];
+            if (!isset($unique_holders[$owner])) {
+                $unique_holders[$owner] = $holder;
+                $holders[] = $holder;
+                $total_fetched++;
+            }
+        }
+        log_message("export-holders: Fetched $total_fetched/$total_expected unique holders after page $api_page", 'export_log.txt');
+        if (count($page_holders) < $limit || $total_fetched >= $total_expected) {
+            break;
+        }
+        $api_page++;
+    }
+
+    if (empty($holders)) {
+        log_message("export-holders: No holders found for mintAddress=$mintAddress", 'export_log.txt', 'ERROR');
+        throw new Exception('No holders found');
+    }
+    log_message("export-holders: Total fetched unique holders: $total_fetched", 'export_log.txt');
 
     if ($export_format === 'csv') {
         header('Content-Type: text/csv; charset=utf-8');
