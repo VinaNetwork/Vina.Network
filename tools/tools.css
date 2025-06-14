@@ -59,7 +59,6 @@ h1, h2 {text-align: center;}
 }
 
 /* Result */
-.result-section {}
 .holders-summary {
     display: flex;
     justify-content: center;
@@ -68,7 +67,7 @@ h1, h2 {text-align: center;}
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    background: #fff;
+    background: #efebeb;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
@@ -82,7 +81,7 @@ h1, h2 {text-align: center;}
 }
 .summary-item i {
     font-size: 24px;
-    color: #4caf50;
+    color: #008fff;
     margin-bottom: 10px;
 }
 .summary-item p {color: #666;}
@@ -138,25 +137,21 @@ h1, h2 {text-align: center;}
 
 /* Export NFT Holders */
 .export-section {margin: 20px 0;}
-
 .export-form {
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
 }
-
 .export-controls {
     display: flex;
     align-items: center;
     gap: 20px;
 }
-
 .export-format {
-    padding: 9px;
+    padding: 8px;
     border: 1px solid #007bff;
     border-radius: 10px;
     cursor: pointer;
-    box-sizing: border-box;
 }
 
 /* NFT Transaction */
