@@ -60,8 +60,18 @@ try {
         echo "<p class='result-error'>No holders found for this collection.</p>";
     } else {
         echo "<div class='holders-summary'>";
-        echo "<p>Total wallets holding: <strong>$total_wallets</strong></p>";
-        echo "<p>Total NFTs: <strong>$total_items</strong></p>";
+        echo "<div class='summary-card'>";
+        echo "<div class='summary-item'>";
+        echo "<i class='fas fa-wallet'></i>"; // Font Awesome icon
+        echo "<p>Total Holders</p>";
+        echo "<h3>" . number_format($total_wallets) . "</h3>";
+        echo "</div>";
+        echo "<div class='summary-item'>";
+        echo "<i class='fas fa-image'></i>"; // Font Awesome icon
+        echo "<p>Total NFTs</p>";
+        echo "<h3>" . number_format($total_items) . "</h3>";
+        echo "</div>";
+        echo "</div>";
         echo "</div>";
 
         echo "<div class='export-section'>";
@@ -75,6 +85,7 @@ try {
         echo "<button type='submit' name='export_type' value='all' class='export-btn' id='export-all-btn'>Export All Holders</button>";
         echo "</div>";
         echo "</form>";
+        
         echo "<div class='progress-container' style='display: none;'>";
         echo "<p>Exporting... Please wait.</p>";
         echo "<div class='progress-bar'><div class='progress-bar-fill' style='width: 0%;'></div></div>";
