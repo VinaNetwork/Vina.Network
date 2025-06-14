@@ -32,6 +32,9 @@ a {
 li { list-style: none; }
 .note {font-style: italic;}
 
+/* input */
+input {border: unset;}
+
 /* CTA Button */
 .cta-button {
     background: linear-gradient(45deg, #00d4ff, #007bff);
