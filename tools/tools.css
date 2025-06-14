@@ -10,285 +10,281 @@ h1, h2 {text-align: center;}
 
 /* Tab Tools */
 .t-3 {
-    display: flex;
-    gap: 20px;
-    margin: 20px 0 10px;
-    background: #eeeeee;
-    white-space: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+	display: flex;
+	gap: 20px;
+	margin: 20px 0 10px;
+	background: #eeeeee;
+	white-space: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .t-3::-webkit-scrollbar {height: 2px;}
 .t-3::-webkit-scrollbar-track {background: #333;}
 
 .t-link {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.3s;
-    flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 20px;
+	border-bottom: 2px solid transparent;
+	transition: all 0.3s;
+	flex-shrink: 0;
 }
 
 .t-link i {font-size: 1.1em;}
 
 .t-link:hover {
-    color: #007bff;
-    border-bottom: 4px solid #007bff;
+	color: #007bff;
+	border-bottom: 4px solid #007bff;
 }
 
 .t-link.active {
-    font-weight: bold;
-    color: #007bff;
-    border-bottom: 4px solid #007bff;
+	font-weight: bold;
+	color: #007bff;
+	border-bottom: 4px solid #007bff;
 }
 
 /* Box Form */
 .t-4 form {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    position: relative;
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	position: relative;
 }
 
 .t-4 input {
-    padding: 10px;
-    border-radius: 10px;
+	padding: 10px;
+	border-radius: 10px;
 }
 
 /* Result */
 .holders-summary {
-    display: flex;
-    justify-content: center;
+	display: flex;
+	justify-content: center;
 }
 .summary-card {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    background: #efebeb;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    max-width: 600px;
-    width: 100%;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	background: #efebeb;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	padding: 20px;
+	max-width: 600px;
+	width: 100%;
 }
 .summary-item {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
+	flex: 1;
+	text-align: center;
+	padding: 10px;
 }
 .summary-item i {
-    font-size: 24px;
-    color: #008fff;
-    margin-bottom: 10px;
+	font-size: 24px;
+	color: #008fff;
+	margin-bottom: 10px;
 }
-.summary-item p {color: #666;}
-.summary-item h3 {color: #333;}
 
 .result-info {
-    overflow-wrap: break-word;
-    word-break: break-all;
-    max-width: 100%;
-    color: #333;
-    margin: 10px 0;
+	overflow-wrap: break-word;
+	word-break: break-all;
+	max-width: 100%;
+	color: #333;
+	margin: 10px 0;
 }
 
 .result-error {
-    background: #ffebee;
-    color: #c62828;
-    padding: 10px;
-    border-radius: 10px;
-    margin: 20px 0;
-    border: 1px solid #ef9a9a;
+	background: #ffebee;
+	color: #c62828;
+	padding: 10px;
+	border-radius: 10px;
+	margin: 20px 0;
+	border: 1px solid #ef9a9a;
 }
 
 /* Checkbox */
 .t-7 {
-    margin: 20px auto;
-    padding: 20px;
-    border-radius: 10px;
-    background: #c3c3c4;
-    position: relative; /* Đảm bảo .loader căn giữa */
+	margin: 20px auto;
+	padding: 20px;
+	border-radius: 10px;
+	background: #c3c3c4;
+	position: relative;
 }
 .t-7 form {margin-bottom: 20px;}
 .t-7 input {width: 600px;}
 
 .loader {
-    border: 4px solid #333; /* Đổi màu nền viền đậm hơn */
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    width: 40px; /* Tăng kích thước */
-    height: 40px;
-    animation: spin 1s linear infinite;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: none;
-    z-index: 1000;
+	border: 4px solid #333;
+	border-top: 4px solid #007bff;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	animation: spin 1s linear infinite;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: none;
+	z-index: 1000;
 }
 
 @keyframes spin {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
+	0% { transform: translate(-50%, -50%) rotate(0deg); }
+	100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* Export NFT Holders */
 .export-section {margin: 20px 0;}
 .export-form {
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
+	display: flex;
+	justify-content: flex-start;
+	align-items: flex-start;
 }
 .export-controls {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+	display: flex;
+	align-items: center;
+	gap: 20px;
 }
 .export-format {
-    padding: 8px;
-    border: 1px solid #007bff;
-    border-radius: 10px;
-    cursor: pointer;
+	padding: 8px;
+	border: 1px solid #007bff;
+	border-radius: 10px;
+	cursor: pointer;
 }
 
 /* NFT Transaction */
 .transaction-table,
 .nft-transaction-results table {
-    margin: 20px auto;
-    border-collapse: collapse;
-    background: #fff;
-    width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+	margin: 20px auto;
+	border-collapse: collapse;
+	background: #fff;
+	width: 100%;
+	border-radius: 10px;
+	overflow: hidden;
+	box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .transaction-table th,
 .transaction-table td,
 .nft-transaction-results th,
 .nft-transaction-results td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    font-size: 14px;
+	padding: 10px;
+	border: 1px solid #ddd;
+	font-size: 14px;
 }
 
 .transaction-table th {
-    background: #007bff;
-    color: #fff;
-    font-weight: 600;
+	background: #007bff;
+	color: #fff;
+	font-weight: 600;
 }
 
 .nft-transaction-results th {
-    background: #f4f4f4;
-    font-weight: 600;
+	background: #f4f4f4;
+	font-weight: 600;
 }
 
 .transaction-table a {
-    color: #007bff;
-    text-decoration: none;
-    transition: color 0.2s;
+	color: #007bff;
+	text-decoration: none;
+	transition: color 0.2s;
 }
 
 .transaction-table a:hover {
-    color: #0056b3;
-    text-decoration: underline;
+	color: #0056b3;
+	text-decoration: underline;
 }
 
 /* Pagination */
 .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 30px;
-    margin: 20px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 30px;
+	margin: 20px;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
 .page-form {
-    display: inline-flex;
-    align-items: center;
-    margin: 0;
-    padding: 0;
+	display: inline-flex;
+	align-items: center;
+	margin: 0;
+	padding: 0;
 }
 
 .page-button {
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
+	width: 34px;
+	height: 34px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
 }
 
 .page-button:hover {background: #f0f0f0;}
 
 .page-button.active {
-    background: #74787c;
-    color: #fff;
-    cursor: default;
-    border-radius: 10px;
+	background: #74787c;
+	color: #fff;
+	cursor: default;
+	border-radius: 10px;
 }
 
 .page-button.ellipsis {
-    background: transparent;
-    border: none;
-    color: #666;
-    cursor: default;
+	background: transparent;
+	border: none;
+	color: #666;
+	cursor: default;
 }
 
 /* Progress Bar */
 .progress-container {
-    margin: 10px 0;
-    text-align: left;
+	margin: 10px 0;
+	text-align: left;
 }
 
 .progress-bar {
-    width: 100%;
-    height: 20px;
-    background: #f0f0f0;
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 10px 0;
+	width: 100%;
+	height: 20px;
+	background: #f0f0f0;
+	border-radius: 10px;
+	overflow: hidden;
+	margin: 10px 0;
 }
 
 .progress-bar-fill {
-    height: 100%;
-    background: #28a745;
-    transition: width 0.3s ease;
+	height: 100%;
+	background: #28a745;
+	transition: width 0.3s ease;
 }
 
 /* Responsive */
 @media screen and (max-width: 768px) {
-    .t-1 {
-        margin-top: 64px;
-        max-width: 100%;
-    }
-    .t-2 {padding: 20px;}
-    .t-3 {gap: 6px;}
-    .t-4 form {
-        flex-direction: column;
-        align-items: center;
-    }
-    .t-4 input {width: 100%;}
-
-    .summary-card {max-width: 100%}
+	.t-1 {
+		margin-top: 64px;
+		max-width: 100%;
+	}
+	.t-2 {padding: 20px;}
+	.t-3 {gap: 6px;}
+	.t-4 form {
+		flex-direction: column;
+		align-items: center;
+	}
+	.t-4 input,
+	.summary-card,
+	.transaction-table,
+	.nft-transaction-results table {
+		width: 100%;
+	}
 	
-    .transaction-table,
-    .nft-transaction-results table {
-        width: 100%;
-    }
-
-    .transaction-table th,
-    .transaction-table td,
-    .nft-transaction-results td {
-        font-size: 12px;
-    }
-
-    /* Phân trang */
-    .pagination {gap: 20px;}
+	.transaction-table th,
+	.transaction-table td,
+	.nft-transaction-results td {
+		font-size: 12px;
+	}
+	
+	/* Phân trang */
+	.pagination {gap: 20px;}
 }
