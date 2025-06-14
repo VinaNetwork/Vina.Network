@@ -1,4 +1,5 @@
-# File thông báo lỗi trong tools/
+# File
+config/config.php
 tools/*.txt
 
 # Thư mục hệ thống
