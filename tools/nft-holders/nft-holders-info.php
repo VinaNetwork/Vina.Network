@@ -82,7 +82,7 @@ try {
         echo "<option value='csv'>CSV</option>";
         echo "<option value='json'>JSON</option>";
         echo "</select>";
-        echo "<button type='submit' name='export_type' value='all' class='export-btn' id='export-all-btn'>Export All Holders</button>";
+        echo "<button type='submit' name='export_type' value='all' class='export-btn' id='export-all-btn'>Export All Wallets</button>";
         echo "</div>";
         echo "</form>";
         
