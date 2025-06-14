@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
-                renderDistributionChart(); // gọi sau khi load xong HTML
+                setTimeout(() => renderDistributionChart(), 100);
             })
             .catch(error => {
                 console.error('Error loading tool content:', error);
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) loader.style.display = 'none';
-                renderDistributionChart(); // gọi lại hàm vẽ biểu đồ sau submit
+                setTimeout(() => renderDistributionChart(), 100);
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
@@ -185,12 +185,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => console.error('Log error:', err));
     }
 
-    renderDistributionChart(); // gọi một lần sau load lần đầu
+    // Trì hoãn hàm render để đảm bảo Chart.js đã sẵn sàng
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            renderDistributionChart();
+        }, 200);
+    });
 });
 
 function renderDistributionChart() {
-    if (typeof window.nftDistributionData !== 'undefined' && document.getElementById('distributionChart')) {
-        const ctx = document.getElementById('distributionChart').getContext('2d');
+    const canvas = document.getElementById('distributionChart');
+    if (
+        typeof Chart !== 'undefined' &&
+        typeof window.nftDistributionData !== 'undefined' &&
+        canvas
+    ) {
+        const ctx = canvas.getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -215,5 +225,7 @@ function renderDistributionChart() {
                 }
             }
         });
+    } else {
+        console.warn('Chart.js or canvas not available yet.');
     }
 }
