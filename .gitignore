@@ -1,5 +1,8 @@
 # Các file/folder thường loại trừ cho dự án PHP/Web
 
+# Folder config/
+config/
+
 # File thông báo lỗi trong tools/
 tools/*.txt
 
