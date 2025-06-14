@@ -15,7 +15,7 @@ error_log("wallet-analysis.php loaded"); // Debug
         <p>Enter the wallet address to see its balance, tokens, and recent activities.</p>
         <form id="walletAnalysisForm" class="wallet-form" method="POST" action="">
             <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address (e.g., 7xKXtg2CW87d97...)" required>
-            <button type="submit">Analyze Wallet</button>
+            <button type="submit" class="cta-button">Analyze Wallet</button>
         </form>
     </div>
 
