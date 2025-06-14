@@ -62,17 +62,24 @@ try {
         echo "<div class='holders-summary'>";
         echo "<div class='summary-card'>";
         echo "<div class='summary-item'>";
-        echo "<i class='fas fa-wallet'></i>"; // Font Awesome icon
+        echo "<i class='fas fa-wallet'></i>";
         echo "<p>Total wallets</p>";
         echo "<h3>" . number_format($total_wallets) . "</h3>";
         echo "</div>";
         echo "<div class='summary-item'>";
-        echo "<i class='fas fa-image'></i>"; // Font Awesome icon
+        echo "<i class='fas fa-image'></i>";
         echo "<p>Total NFTs</p>";
         echo "<h3>" . number_format($total_items) . "</h3>";
         echo "</div>";
         echo "</div>";
         echo "</div>";
+
+        // Distribution Chart
+        echo "<div class='chart-section'>";
+        echo "<h3 style='text-align:center'>Distribution Chart</h3>";
+        echo "<canvas id='distributionChart' width='600' height='400'></canvas>";
+        echo "</div>";
+
 
         echo "<div class='export-section'>";
         echo "<form method='POST' action='/tools/nft-holders/nft-holders-export.php' class='export-form'>";
