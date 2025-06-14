@@ -1,9 +1,9 @@
 # Các file/folder thường loại trừ cho dự án PHP/Web
 
-# File thông báo lỗi
-tools/error_log.txt
+# File thông báo lỗi trong tools/
+tools/*.txt
 
-# Thư mục config
+# Thư mục config/
 config/
 
 # Thư mục lưu tạm file tạm thời
