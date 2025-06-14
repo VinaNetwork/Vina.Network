@@ -345,12 +345,4 @@ footer {
     
     .footer-1 {flex-direction: column;}
     .footer-2 {margin: .5rem 0;}
-
-    #back-to-top {
-        width: 20px;
-        height: 20px;
-        bottom: 6px;
-        right: 6px;
-        font-size: 13px;
-    }
 }
