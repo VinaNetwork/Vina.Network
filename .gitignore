@@ -49,3 +49,5 @@ data/
 
 # Các thư mục khác của VSCode, PHPStorm...
 /nbproject/
+config/config.php
+config/config.php
