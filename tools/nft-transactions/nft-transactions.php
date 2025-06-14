@@ -1,5 +1,5 @@
 <?php
-// nft-transactions.php
+// nft-transactions/nft-transactions.php
 // Chức năng: Kiểm tra lịch sử giao dịch NFT
 include '../api-helper.php';
 error_log("nft-transactions.php loaded"); // Debug
@@ -92,19 +92,19 @@ function getNFTTransactions($mintAddress, $page = 1) {
 		"limit" => 1000,
 		"page" => $page
 	];
-
+	
 	error_log("nft-transactions.php: Calling Helius API for mintAddress = $mintAddress, page = $page"); // Debug
 	$data = callHeliusAPI('transactions', $payload);
 	if (isset($data['error'])) {
 		error_log("nft-transactions.php: Helius API error - {$data['error']}"); // Debug
 		return ['error' => $data['error']];
 	}
-
+	
 	if (isset($data['transactions'])) {
 		error_log("nft-transactions.php: Retrieved " . count($data['transactions']) . " transactions"); // Debug
 		return ['transactions' => $data['transactions']];
 	}
-
+	
 	error_log("nft-transactions.php: No transaction data found for $mintAddress"); // Debug
 	return ['error' => 'No transaction data found for this mint address.'];
 }
