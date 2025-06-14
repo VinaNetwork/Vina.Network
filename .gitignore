@@ -3,12 +3,6 @@
 # File thông báo lỗi trong tools/
 tools/*.txt
 
-# Thư mục config/
-config/
-
-# Thư mục lưu tạm file tạm thời
-recycle-bin/
-
 # Thư mục hệ thống
 .DS_Store
 Thumbs.db
