@@ -32,7 +32,7 @@
         <li class="nav-2 dropdown">
             <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i></a>
             <ul class="dropdown-menu">
-                <li><a href="https://kimo.vina.network/token/" class="dropdown-link"><i class="fas fa-paw"></i> Kimo</a></li>
+                <li><a href="https://www.vina.network/notification/" class="dropdown-link"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
         </li>
         <li class="nav-2"><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact</a></li>
