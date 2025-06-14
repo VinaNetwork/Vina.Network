@@ -310,24 +310,18 @@ h1, h2 {text-align: center;}
         align-items: center;
     }
     .t-4 input {width: 100%;}
-
-    .summary-card {flex-direction: column;}
 	
-    .holders-table,
     .transaction-table,
     .nft-transaction-results table {
         width: 100%;
     }
-    .holders-table th,
-    .holders-table td,
+
     .transaction-table th,
     .transaction-table td,
     .nft-transaction-results td {
         font-size: 12px;
     }
-
-    /* Phân trang */
-    .pagination {gap: 20px;}
+	
     .export-section {margin: 10px 0;}
 
     .export-form {
@@ -346,4 +340,7 @@ h1, h2 {text-align: center;}
     .export-btn {
         width: 100%;
     }
+
+    /* Phân trang */
+    .pagination {gap: 20px;}
 }
