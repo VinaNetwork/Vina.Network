@@ -1,5 +1,5 @@
 <?php
-// nft-valuation.php - Kiểm tra giá trị NFT
+// nft-valuation/nft-valuation.php - Kiểm tra giá trị NFT
 include '../api-helper.php';
 ?>
 
@@ -15,25 +15,25 @@ include '../api-helper.php';
     </div>
 
     <?php
-		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressValuation'])) {
-			$mintAddress = trim($_POST['mintAddressValuation']);
-
-			// Gọi API để lấy thông tin giá trị NFT
-			$valuation = getNFTValuation($mintAddress);
-
-			if (isset($valuation['error'])) {
-				echo "<div class='result-error'><p>" . htmlspecialchars($valuation['error']) . "</p></div>";
-			} elseif ($valuation) {
-				echo "<div class='result-section'>";
-				echo "<h3>Results</h3>";
-				echo "<p class='result-info'>Floor Price: " . htmlspecialchars($valuation['floorPrice'] ?? 'N/A') . " SOL</p>";
-				echo "<p class='result-info'>Last Sale: " . htmlspecialchars($valuation['lastSale'] ?? 'N/A') . " SOL</p>";
-				echo "<p class='result-info'>Volume (24h): " . htmlspecialchars($valuation['volume'] ?? 'N/A') . " SOL</p>";
-				echo "</div>";
-			} else {
-				echo "<div class='result-error'><p>No valuation data found or invalid mint address.</p></div>";
-			}
+	if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressValuation'])) {
+		$mintAddress = trim($_POST['mintAddressValuation']);
+	
+		// Gọi API để lấy thông tin giá trị NFT
+		$valuation = getNFTValuation($mintAddress);
+	
+		if (isset($valuation['error'])) {
+			echo "<div class='result-error'><p>" . htmlspecialchars($valuation['error']) . "</p></div>";
+		} elseif ($valuation) {
+			echo "<div class='result-section'>";
+			echo "<h3>Results</h3>";
+			echo "<p class='result-info'>Floor Price: " . htmlspecialchars($valuation['floorPrice'] ?? 'N/A') . " SOL</p>";
+			echo "<p class='result-info'>Last Sale: " . htmlspecialchars($valuation['lastSale'] ?? 'N/A') . " SOL</p>";
+			echo "<p class='result-info'>Volume (24h): " . htmlspecialchars($valuation['volume'] ?? 'N/A') . " SOL</p>";
+			echo "</div>";
+		} else {
+			echo "<div class='result-error'><p>No valuation data found or invalid mint address.</p></div>";
 		}
+	}
     ?>
 
     <!-- Thêm mô tả chi tiết chức năng của tab -->
@@ -52,12 +52,12 @@ include '../api-helper.php';
 		$payload = [
 			"mintAddresses" => [$mintAddress]
 		];
-
+	
 		$data = callHeliusAPI('tokens', $payload);
 		if (isset($data['error'])) {
 			return ['error' => $data['error']];
 		}
-
+	
 		if (isset($data[0])) {
 			return [
 				'floorPrice' => $data[0]['floorPrice'] ?? 'N/A',
@@ -65,7 +65,7 @@ include '../api-helper.php';
 				'volume' => $data[0]['volume'] ?? 'N/A'
 			];
 		}
-
+	
 		return ['error' => 'No data found for this mint address.'];
 	}
 ?>
