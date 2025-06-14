@@ -4,9 +4,6 @@ tools/*.txt
 # Config
 /config/
 
-# Error Log Tools
-nft-holders/
-
 # Thư mục hệ thống
 .DS_Store
 Thumbs.db
