@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-// Định nghĩa biến cơ bản
+// Định nghĩa biến cơ bản abc
 $root_path = '../';
 $page_title = "Vina Network - Airdrop Guide with NFT";
 $page_description = "Step-by-step guide to running an airdrop event with an NFT collection on Vina Network using Solana blockchain.";
