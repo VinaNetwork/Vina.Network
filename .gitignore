@@ -3,6 +3,9 @@
 # File thông báo lỗi
 tools/error_log.txt
 
+# Thư mục config
+config/
+
 # Thư mục lưu tạm file tạm thời
 recycle-bin/
 
