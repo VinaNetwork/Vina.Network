@@ -12,7 +12,7 @@ error_log("nft-transactions.php loaded"); // Debug
 
         <form class="transaction-form" method="POST" action="">
             <input type="text" name="mintAddressTransactions" id="mintAddressTransactions" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-            <button type="submit">Check Transactions</button>
+            <button type="submit" class="cta-button">Check Transactions</button>
         </form>
     </div>
 
