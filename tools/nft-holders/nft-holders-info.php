@@ -63,7 +63,7 @@ try {
         echo "<div class='summary-card'>";
         echo "<div class='summary-item'>";
         echo "<i class='fas fa-wallet'></i>"; // Font Awesome icon
-        echo "<p>Total Holders</p>";
+        echo "<p>Total wallets</p>";
         echo "<h3>" . number_format($total_wallets) . "</h3>";
         echo "</div>";
         echo "<div class='summary-item'>";
