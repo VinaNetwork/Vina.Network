@@ -1,11 +1,7 @@
 <?php
 // tools/nft-holders/nft-holders-info.php
-if (!defined('VINANETWORK')) {
-    define('VINANETWORK', true);
-}
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
+if (!defined('VINANETWORK')) define('VINANETWORK', true);
+if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 // Include dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
@@ -51,12 +47,14 @@ if (empty($mintAddress) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintA
 $total_items = $_SESSION['total_items'][$mintAddress] ?? 0;
 $total_wallets = $_SESSION['total_wallets'][$mintAddress] ?? 0;
 $wallets = $_SESSION['wallets'][$mintAddress] ?? [];
-log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets", 'nft_holders_log.txt');
+
+log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets, wallets=" . print_r($wallets, true), 'nft_holders_log.txt');
 
 try {
     ob_start();
     echo "<div class='result-section'>";
-    if ($total_wallets === 0) {
+
+    if (empty($wallets)) {
         echo "<p class='result-error'>No holders found for this collection.</p>";
     } else {
         echo "<div class='holders-summary'>";
@@ -92,14 +90,11 @@ try {
         echo "</div>";
         echo "</div>";
 
-        // Tính phân phối số lượng NFT mỗi ví
+        // Phân phối số lượng NFT mỗi ví
         $distribution = [];
         foreach ($wallets as $wallet) {
             $count = $wallet['count'] ?? 1;
-            if (!isset($distribution[$count])) {
-                $distribution[$count] = 0;
-            }
-            $distribution[$count]++;
+            $distribution[$count] = ($distribution[$count] ?? 0) + 1;
         }
         ksort($distribution);
 
@@ -115,6 +110,7 @@ try {
         </script>";
         echo "</div>";
     }
+
     echo "</div>";
     $output = ob_get_clean();
     log_message("nft-holders-list: Output length: " . strlen($output), 'nft_holders_log.txt');
@@ -124,4 +120,3 @@ try {
     http_response_code(500);
     echo '<div class="result-error"><p>Server error: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
 }
-?>
