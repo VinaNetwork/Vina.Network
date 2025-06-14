@@ -1,1 +1,16 @@
-
+<?php
+// Mẫu cấu hình
+if (!defined('VINANETWORK_ENTRY')) {
+    http_response_code(403);
+    exit('No direct script access allowed!');
+}
+if (!defined('HELIUS_API_KEY')) {
+    define('HELIUS_API_KEY', 'YOUR_HELIUS_API');
+}
+if (!defined('ERROR_LOG_PATH')) {
+    define('ERROR_LOG_PATH', '/var/www/vinanetwork/public_html/tools/error_log.txt');
+}
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', '/var/www/vinanetwork/public_html/');
+}
+?>
