@@ -1,6 +1,9 @@
 # File
 tools/*.txt
 
+# Config
+/config/
+
 # Thư mục hệ thống
 .DS_Store
 Thumbs.db
@@ -9,7 +12,6 @@ Thumbs.db
 *.log
 
 # Thư mục
-config/
 cache/
 tmp/
 temp/
