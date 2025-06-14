@@ -50,10 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => {
-                document.querySelector('.t-4').innerHTML = data;
-                setTimeout(() => renderDistributionChart(), 100);
-            })
+            .then(data => document.querySelector('.t-4').innerHTML = data)
             .catch(error => {
                 console.error('Error loading tool content:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
@@ -79,14 +76,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             log_message(`export-holders: Client - exportType=${exportType}, mintAddress=${mintAddress}, format=${exportFormat}`, 'client_log.txt');
 
-            if (loader) loader.style.display = 'block';
+            if (loader) {
+                loader.style.display = 'block';
+            }
+
             if (progressContainer && progressBarFill) {
                 progressContainer.style.display = 'block';
                 let progress = 0;
                 const progressInterval = setInterval(() => {
                     progress += 5;
                     progressBarFill.style.width = `${progress}%`;
-                    if (progress >= 95) clearInterval(progressInterval);
+                    if (progress >= 95) {
+                        clearInterval(progressInterval);
+                    }
                 }, 300);
             }
 
@@ -129,7 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url);
-                if (loader) loader.style.display = 'none';
+                if (loader) {
+                    loader.style.display = 'none';
+                }
                 if (progressContainer) {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
@@ -138,7 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Export error:', error.message);
                 alert(`Export failed: ${error.message}`);
-                if (loader) loader.style.display = 'none';
+                if (loader) {
+                    loader.style.display = 'none';
+                }
                 if (progressContainer) {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
@@ -146,12 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             return;
         }
-
         if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm, #nftHoldersForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            if (loader) loader.style.display = 'block';
+            if (loader) {
+                loader.style.display = 'block';
+            }
 
             const formData = new FormData(form);
             const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
@@ -166,13 +173,16 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
-                if (loader) loader.style.display = 'none';
-                setTimeout(() => renderDistributionChart(), 100);
+                if (loader) {
+                    loader.style.display = 'none';
+                }
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
-                if (loader) loader.style.display = 'none';
+                if (loader) {
+                    loader.style.display = 'none';
+                }
             });
         }
     });
@@ -184,48 +194,4 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({message, file})
         }).catch(err => console.error('Log error:', err));
     }
-
-    // Trì hoãn hàm render để đảm bảo Chart.js đã sẵn sàng
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            renderDistributionChart();
-        }, 200);
-    });
 });
-
-function renderDistributionChart() {
-    const canvas = document.getElementById('distributionChart');
-    if (
-        typeof Chart !== 'undefined' &&
-        typeof window.nftDistributionData !== 'undefined' &&
-        canvas
-    ) {
-        const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: window.nftDistributionData.labels,
-                datasets: [{
-                    label: 'Wallet Count',
-                    data: window.nftDistributionData.values,
-                    backgroundColor: '#007bff',
-                    borderColor: '#0056b3',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { title: { display: true, text: 'NFTs per Wallet' } },
-                    y: { title: { display: true, text: 'Number of Wallets' }, beginAtZero: true }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: true }
-                }
-            }
-        });
-    } else {
-        console.warn('Chart.js or canvas not available yet.');
-    }
-}
