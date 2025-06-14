@@ -10,7 +10,7 @@ include '../api-helper.php';
 
         <form id="nftValuationForm" method="POST" action="">
             <input type="text" name="mintAddressValuation" id="mintAddressValuation" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
-            <button type="submit">Check Valuation</button>
+            <button type="submit" class="cta-button">Check Valuation</button>
         </form>
     </div>
 
