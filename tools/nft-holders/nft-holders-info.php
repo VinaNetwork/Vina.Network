@@ -74,13 +74,6 @@ try {
         echo "</div>";
         echo "</div>";
 
-        // Distribution Chart
-        echo "<div class='chart-section'>";
-        echo "<h3 style='text-align:center'>Distribution Chart</h3>";
-        echo "<canvas id='distributionChart' width='600' height='400'></canvas>";
-        echo "</div>";
-
-
         echo "<div class='export-section'>";
         echo "<form method='POST' action='/tools/nft-holders/nft-holders-export.php' class='export-form'>";
         echo "<input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'>";
@@ -92,11 +85,34 @@ try {
         echo "<button type='submit' name='export_type' value='all' class='cta-button export-btn' id='export-all-btn'>Export All Wallets</button>";
         echo "</div>";
         echo "</form>";
-        
+
         echo "<div class='progress-container' style='display: none;'>";
         echo "<p>Exporting... Please wait.</p>";
         echo "<div class='progress-bar'><div class='progress-bar-fill' style='width: 0%;'></div></div>";
         echo "</div>";
+        echo "</div>";
+
+        // Tính phân phối số lượng NFT mỗi ví
+        $distribution = [];
+        foreach ($wallets as $wallet) {
+            $count = $wallet['count'] ?? 1;
+            if (!isset($distribution[$count])) {
+                $distribution[$count] = 0;
+            }
+            $distribution[$count]++;
+        }
+        ksort($distribution);
+
+        // Hiển thị biểu đồ phân phối
+        echo "<div class='chart-section'>";
+        echo "<h3 style='text-align:center'>Distribution Chart</h3>";
+        echo "<canvas id='distributionChart' width='600' height='400'></canvas>";
+        echo "<script>
+        window.nftDistributionData = {
+            labels: " . json_encode(array_keys($distribution)) . ",
+            values: " . json_encode(array_values($distribution)) . "
+        };
+        </script>";
         echo "</div>";
     }
     echo "</div>";
