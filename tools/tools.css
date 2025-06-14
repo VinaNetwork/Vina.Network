@@ -71,6 +71,45 @@ h1, h2 {text-align: center;}
 .t-4 button:hover {background: #0056b3;}
 
 /* Result */
+.result-section {
+    margin-top: 20px;
+}
+.holders-summary {
+    display: flex;
+    justify-content: center;
+}
+.summary-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    max-width: 600px;
+    width: 100%;
+}
+.summary-item {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+}
+.summary-item i {
+    font-size: 24px;
+    color: #4caf50;
+    margin-bottom: 10px;
+}
+.summary-item p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+.summary-item h3 {
+    font-size: 24px;
+    color: #333;
+    margin: 5px 0 0;
+}
+
 .result-info {
     overflow-wrap: break-word;
     word-break: break-all;
@@ -271,6 +310,9 @@ h1, h2 {text-align: center;}
         align-items: center;
     }
     .t-4 input {width: 100%;}
+
+    .summary-card {flex-direction: column;}
+	
     .holders-table,
     .transaction-table,
     .nft-transaction-results table {
