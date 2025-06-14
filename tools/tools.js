@@ -195,3 +195,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => console.error('Log error:', err));
     }
 });
+
+// Distribution Chart
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.nftDistributionData !== 'undefined' && document.getElementById('distributionChart')) {
+        const ctx = document.getElementById('distributionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: window.nftDistributionData.labels,
+                datasets: [{
+                    label: 'Wallets',
+                    data: window.nftDistributionData.values,
+                    backgroundColor: '#007bff',
+                    borderColor: '#0056b3',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'NFTs per Wallet' } },
+                    y: { title: { display: true, text: 'Number of Wallets' }, beginAtZero: true }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: true }
+                }
+            }
+        });
+    }
+});
