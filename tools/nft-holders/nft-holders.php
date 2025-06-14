@@ -55,6 +55,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
             $holders_per_page = 50;
             $limit = 1000;
+            $max_pages = 100; // Giới hạn tối đa 100 trang
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
@@ -70,7 +71,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 $api_page = 1;
                 $has_more = true;
                 $items = [];
-                while ($has_more) {
+                while ($has_more && $api_page <= $max_pages) {
                     $total_params = [
                         'groupKey' => 'collection',
                         'groupValue' => $mintAddress,
@@ -99,6 +100,10 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     } else {
                         $api_page++;
                     }
+                }
+                if ($api_page > $max_pages) {
+                    log_message("nft-holders: Reached max pages ($max_pages) for $mintAddress, data may be incomplete", 'nft_holders_log.txt', 'WARNING');
+                    echo "<div class='result-error'><p>Warning: Reached maximum page limit ($max_pages), some data may be incomplete.</p></div>";
                 }
                 // Get unique wallets
                 $unique_wallets = [];
