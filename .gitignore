@@ -2,7 +2,7 @@
 tools/*.txt
 
 # Config
-/config/
+config/
 
 # Thư mục hệ thống
 .DS_Store
