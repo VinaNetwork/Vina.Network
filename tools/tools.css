@@ -181,14 +181,6 @@ h1, h2 {text-align: center;}
     box-sizing: border-box;
 }
 
-.export-btn {
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.export-btn:hover {background: #218838;}
-
 /* NFT Transaction */
 .transaction-table,
 .nft-transaction-results table {
