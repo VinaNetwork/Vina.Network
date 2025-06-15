@@ -1,6 +1,12 @@
 <?php
-// config.php
-// Điều kiện truy cập config.php
+/*
+ * config.php - Vina Network Configuration
+ *
+ * Centralized configuration for API keys and other constants.
+ * Includes Helius API key and Google reCAPTCHA v3 keys.
+ */
+
+// config.php access conditions
 if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct script access allowed!');
@@ -10,6 +16,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 if (!defined('HELIUS_API_KEY')) {
     define('HELIUS_API_KEY', '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63'); // API Key Helius
 }
+
+// Google reCAPTCHA v3 keys
+define('RECAPTCHA_SITE_KEY', '6Lcrp2ErAAAAACnVPArv1DNzsnYcWq_RQaYZ4kj7');
+define('RECAPTCHA_SECRET_KEY', '6Lcrp2ErAAAAANrVSsg_X_O2RxHwuBHmyeNdoJ7l');
 
 // Folder Error
 if (!defined('ERROR_LOG_PATH')) {
