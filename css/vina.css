@@ -20,9 +20,8 @@ p {
     margin-bottom: 0;
     font: 1.1em/1.8 sans-serif;
 }
-p:not(:last-child) {margin-bottom: 30px;}
-/* Loại bỏ margin-bottom nếu phần tử liền kề sau là không phải <p> */
-p:not(:last-child) + :not(p) {margin-bottom: 0;}
+p:not(:last-child):has(+ :not(p)) {margin-bottom: 0;}
+p:not(:last-child):has(+ p) {margin-bottom: 30px;}
 
 a {
     font: 1.1em/1.8 sans-serif;
