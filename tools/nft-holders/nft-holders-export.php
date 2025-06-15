@@ -1,5 +1,12 @@
 <?php
-// tools/nft-holders/nft-holders-export.php
+/*
+ * nft-holders-export.php - Export NFT Holder Data
+ *
+ * This script handles export requests for NFT holder data (CSV/JSON format).
+ * It validates input parameters, retrieves cached or live data using Helius API,
+ * formats the results, and outputs them as downloadable files. Logs all steps.
+ */
+
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
@@ -15,12 +22,11 @@ error_reporting(E_ALL);
 
 // Define log path
 define('EXPORT_LOG_PATH', '/var/www/vinanetwork/public_html/nft-holders/nfts/logs/holders_export_log.txt');
-
-// Test log writing
 file_put_contents(EXPORT_LOG_PATH, "export-holders: Script started - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Validate request method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid request method - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     http_response_code(400);
@@ -28,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Parse and validate parameters
 $mintAddress = trim($_POST['mintAddress'] ?? '');
 $export_type = $_POST['export_type'] ?? 'all';
 $export_format = $_POST['export_format'] ?? 'csv';
@@ -55,6 +62,9 @@ if ($export_type !== 'all') {
     exit;
 }
 
+/**
+ * getItems - Fetches paginated NFT ownership data from API
+ */
 function getItems($mintAddress, $page = 1, $size = 100) {
     $params = [
         'groupKey' => 'collection',
@@ -71,7 +81,7 @@ function getItems($mintAddress, $page = 1, $size = 100) {
             file_put_contents(EXPORT_LOG_PATH, "export-holders: API error - " . json_encode($data['error']) . ", retry=$retry_count - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
             if ($retry_count < $max_retries) {
                 $retry_count++;
-                usleep(2000000); // Delay 2s before retry
+                usleep(2000000);
                 continue;
             }
             return ['error' => $data['error']];
@@ -82,7 +92,7 @@ function getItems($mintAddress, $page = 1, $size = 100) {
         if (empty($items) && $retry_count < $max_retries && $page > 1) {
             file_put_contents(EXPORT_LOG_PATH, "export-holders: Empty items on page $page, retry=$retry_count - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
             $retry_count++;
-            usleep(2000000); // Delay 2s before retry
+            usleep(2000000);
             continue;
         }
         $nft_items = array_map(function($item) {
@@ -104,8 +114,8 @@ try {
         ? "holders_all_{$mintAddress}.csv"
         : "holders_all_{$mintAddress}.json";
 
-    // Get total items from session
-    $total_expected = isset($_SESSION['total_items'][$mintAddress]) ? $_SESSION['total_items'][$mintAddress] : 0;
+    // Try reading total from session; fallback to API
+    $total_expected = $_SESSION['total_items'][$mintAddress] ?? 0;
     file_put_contents(EXPORT_LOG_PATH, "export-holders: Total expected items from session: $total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
     if ($total_expected === 0) {
@@ -122,7 +132,7 @@ try {
         throw new Exception('No items found');
     }
 
-    // Fetch all items
+    // Fetch paginated data
     $api_page = 1;
     $limit = 100;
     $total_fetched = 0;
@@ -140,7 +150,7 @@ try {
             break;
         }
         $api_page++;
-        usleep(2000000); // Delay 2s between pages
+        usleep(2000000);
     }
 
     if (empty($items)) {
@@ -148,7 +158,7 @@ try {
         throw new Exception('No items found');
     }
 
-    // Remove duplicates to get unique wallets
+    // Group by wallet address
     $total_items = count($items);
     $unique_wallets = [];
     foreach ($items as $item) {
@@ -162,6 +172,7 @@ try {
     $wallets = array_values($unique_wallets);
     file_put_contents(EXPORT_LOG_PATH, "export-holders: Total items fetched: $total_items, Total unique wallets: " . count($wallets) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
+    // Output based on requested format
     if ($export_format === 'csv') {
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
