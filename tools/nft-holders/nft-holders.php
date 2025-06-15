@@ -227,10 +227,12 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                                 <h3><?php echo number_format($total_items); ?></h3>
                             </div>
                         </div>
-                        <?php if ($cache_valid): ?>
-                            <p class="cache-timestamp">Data last updated: <?php echo date('d M Y, H:i', $_SESSION['cache_timestamp'][$mintAddress]) . ' UTC+7'; ?></p>
-                        <?php endif; ?>
                     </div>
+
+                    <?php if ($cache_valid): ?>
+                        <p class="cache-timestamp">Data last updated: <?php echo date('d M Y, H:i', $_SESSION['cache_timestamp'][$mintAddress]) . ' UTC+7'; ?></p>
+                    <?php endif; ?>
+                
                     <!-- Export controls -->
                     <div class="export-section">
                         <form method="POST" action="/tools/nft-holders/nft-holders-export.php" class="export-form">
