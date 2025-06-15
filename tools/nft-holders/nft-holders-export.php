@@ -3,8 +3,8 @@
  * nft-holders-export.php - Export NFT Holder Data
  *
  * This script handles export requests for NFT holder data (CSV/JSON format).
- * It validates input parameters, checks session cache with 3-hour expiration,
- * retrieves live data if cache is expired, and outputs downloadable files.
+ * It validates input parameters, retrieves data from session or API, and outputs downloadable files.
+ * Restored from Update 1 with fixes for HTTP 500.
  */
 
 if (!defined('VINANETWORK')) {
@@ -72,40 +72,28 @@ function getItems($mintAddress, $page = 1, $size = 100) {
         'page' => $page,
         'limit' => $size
     ];
-    $max_retries = 3;
-    $retry_count = 0;
-    do {
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetching items - mintAddress=$mintAddress, page=$page, size=$size, retry=$retry_count, params=" . json_encode($params) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-        $data = callAPI('getAssetsByGroup', $params, 'POST');
-        if (isset($data['error'])) {
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: API error - " . json_encode($data['error']) . ", retry=$retry_count - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-            if ($retry_count < $max_retries) {
-                $retry_count++;
-                usleep(2000000);
-                continue;
-            }
-            return ['error' => $data['error']];
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetching items - mintAddress=$mintAddress, page=$page, size=$size, params=" . json_encode($params) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    $data = callAPI('getAssetsByGroup', $params, 'POST');
+    if (isset($data['error'])) {
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: API error - " . json_encode($data['error']) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        return ['error' => $data['error']];
+    }
+    $items = $data['result']['items'] ?? [];
+    $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: API response - total=$total, items_count=" . count($items) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    $nft_items = array_map(function($item) {
+        if (!isset($item['ownership']['owner'])) {
+            file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid item structure, missing owner: " . json_encode($item) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            return null;
         }
-        $items = $data['result']['items'] ?? [];
-        $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: API response - total=$total, items_count=" . count($items) . ", raw_response=" . json_encode($data, JSON_PRETTY_PRINT) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-        if (empty($items) && $retry_count < $max_retries && $page > 1) {
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: Empty items on page $page, retry=$retry_count - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-            $retry_count++;
-            usleep(2000000);
-            continue;
-        }
-        $nft_items = array_map(function($item) {
-            return [
-                'owner' => $item['ownership']['owner'] ?? 'unknown',
-                'amount' => 1
-            ];
-        }, $items);
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetched " . count($nft_items) . " items for page $page, total=$total - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-        return ['items' => $nft_items, 'total' => $total];
-    } while ($retry_count < $max_retries);
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Max retries reached for page $page - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-    return ['items' => [], 'total' => 0];
+        return [
+            'owner' => $item['ownership']['owner'],
+            'amount' => 1
+        ];
+    }, $items);
+    $nft_items = array_filter($nft_items);
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetched " . count($nft_items) . " items for page $page, total=$total - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    return ['items' => $nft_items, 'total' => $total];
 }
 
 try {
@@ -114,26 +102,24 @@ try {
         ? "holders_all_{$mintAddress}.csv"
         : "holders_all_{$mintAddress}.json";
 
-    // Check cache validity
-    $cache_expiration = 3 * 3600; // 3 hours in seconds
-    $cache_valid = isset($_SESSION['total_items'][$mintAddress]) && isset($_SESSION['cache_timestamp'][$mintAddress]) && (time() - $_SESSION['cache_timestamp'][$mintAddress] < $cache_expiration);
-
-    if ($cache_valid) {
-        // Use cached data
+    // Check session cache
+    if (isset($_SESSION['total_items'][$mintAddress]) && isset($_SESSION['items'][$mintAddress])) {
         $total_expected = $_SESSION['total_items'][$mintAddress];
         $items = $_SESSION['items'][$mintAddress];
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Using cached data for mintAddress=$mintAddress, total_expected=$total_expected, cached at " . date('Y-m-d H:i:s', $_SESSION['cache_timestamp'][$mintAddress]) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: Using cached data for mintAddress=$mintAddress, total_expected=$total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     } else {
-        // Cache expired or not set, fetch from API
-        if (!$cache_valid && isset($_SESSION['cache_timestamp'][$mintAddress])) {
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: Cache expired for mintAddress=$mintAddress, fetching new data - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-        }
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: No cache found for mintAddress=$mintAddress, fetching new data - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        ini_set('memory_limit', '512M');
         $result = getItems($mintAddress, 1, 100);
         if (isset($result['error'])) {
             throw new Exception('API error: ' . json_encode($result['error']));
         }
         $total_expected = $result['total'];
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Total expected items from API: $total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+
+        if ($total_expected === 0) {
+            file_put_contents(EXPORT_LOG_PATH, "export-holders: No items found for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            throw new Exception('No items found');
+        }
 
         // Fetch paginated data
         $api_page = 1;
@@ -153,21 +139,16 @@ try {
                 break;
             }
             $api_page++;
-            usleep(2000000);
+            usleep(2000000); // 2-second delay
         }
 
         // Update cache
         $_SESSION['total_items'][$mintAddress] = $total_fetched;
         $_SESSION['items'][$mintAddress] = $items;
-        $_SESSION['cache_timestamp'][$mintAddress] = time();
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Cached total_items=$total_fetched for mintAddress=$mintAddress with timestamp=" . date('Y-m-d H:i:s') . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        file_put_contents(EXPORT_LOG_PATH, "export-holders: Cached total_items=$total_fetched for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     }
 
-    if ($total_expected === 0) {
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: No items found for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-        throw new Exception('No items found');
-    }
-
+    // Validate items
     if (empty($items)) {
         file_put_contents(EXPORT_LOG_PATH, "export-holders: No items found for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         throw new Exception('No items found');
@@ -177,6 +158,10 @@ try {
     $total_items = count($items);
     $unique_wallets = [];
     foreach ($items as $item) {
+        if (!isset($item['owner'])) {
+            file_put_contents(EXPORT_LOG_PATH, "export-holders: Skipping invalid item during deduplication: " . json_encode($item) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            continue;
+        }
         $owner = $item['owner'];
         if (!isset($unique_wallets[$owner])) {
             $unique_wallets[$owner] = $item;
@@ -185,38 +170,40 @@ try {
         }
     }
     $wallets = array_values($unique_wallets);
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Total items fetched: $total_items=$total_fetched, total_wallets=" . count($wallets) . " items - ", $total_items . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Total items fetched: $total_items, Total unique wallets: " . count($wallets) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
     // Output based on requested format
     if ($export_format === 'csv') {
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         $output = fopen('php://output', 'w');
+        if ($output === false) {
+            throw new Exception('Failed to open output stream');
+        }
         fputcsv($output, ['Wallet Address', 'NFT Count']);
-        foreach ($wallets as $item) {
+        foreach ($wallets as $wallet) {
             fputcsv($output, [
-                $item['owner'] ?? 'N/A',
-                $item['amount'] ?? 0
+                $wallet['owner'] ?? 'N/A',
+                $wallet['amount'] ?? 0
             ]);
         }
         fclose($output);
     } else {
         header('Content-Type: application/json; charset=utf-8');
-        $json_data = array_map(function($item) {
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        $json_data = array_map(function($wallet) {
             return [
-                'address' => $item['owner'] ?? 'N/A',
-                'amount' => $item['amount'] ?? 0
+                'address' => $wallet['owner'] ?? 'N/A',
+                'amount' => $wallet['amount'] ?? 0
             ];
         }, $wallets);
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
         echo json_encode($json_data, JSON_PRETTY_PRINT);
     }
     exit;
-
 } catch (Exception $e) {
     file_put_contents(EXPORT_LOG_PATH, "export-holders: Exception - " . $e->getMessage() . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     http_response_code(500);
-    echo json_encode(['error' => $e->getMessage()]);
+    echo json_encode(['error' => 'Export failed: ' . $e->getMessage()]);
     exit;
 }
 ?>
