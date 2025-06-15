@@ -1,13 +1,24 @@
 <?php
 // tools/tools-api.php
+
+// Define project constants for secured includes
 define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
+/**
+ * callAPI
+ * Universal wrapper to call Helius RPC API on Solana.
+ *
+ * @param string $endpoint - The RPC method name to be called.
+ * @param array $params - Parameters to pass with the request.
+ * @param string $method - HTTP method, default is POST.
+ * @return array - Parsed API response or error message.
+ */
 function callAPI($endpoint, $params = [], $method = 'POST') {
     $url = "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY;
-    
-    // Log phiên bản PHP và cURL để debug
+
+    // Log PHP and cURL versions for debugging
     log_message("api-helper: PHP version: " . phpversion() . ", cURL version: " . curl_version()['version'], 'api_log.txt');
 
     $max_retries = 3;
@@ -28,8 +39,9 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);
+
             if (!empty($params)) {
-                // Thử payload dạng object
+                // Prepare standard JSON-RPC payload
                 $postData = json_encode([
                     'jsonrpc' => '2.0',
                     'id' => '1',
@@ -39,7 +51,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
                 log_message("api-helper: API request - URL: $url, Endpoint: $endpoint, Params: " . substr($postData, 0, 100) . "...", 'api_log.txt');
 
-                // Thử payload dạng mảng (theo tài liệu Helius cho một số phương thức)
+                // Prepare alternative format (array payload) in case standard fails
                 $postDataArray = json_encode([
                     'jsonrpc' => '2.0',
                     'id' => '1',
@@ -48,6 +60,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                 ]);
                 log_message("api-helper: Alternative payload - Params: " . substr($postDataArray, 0, 100) . "...", 'api_log.txt');
             }
+
         } elseif ($method === 'GET') {
             if (!empty($params)) {
                 $url .= '&' . http_build_query($params);
@@ -65,15 +78,14 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         }
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $rate_limit_remaining = curl_getinfo($ch, CURLINFO_HEADER_OUT); // Kiểm tra header (giả sử Helius trả X-Rate-Limit-Remaining)
         $headers = curl_getinfo($ch, CURLINFO_HEADER_OUT);
 
-        // Kiểm tra rate limit (nếu Helius trả header)
+        // (Optional) Check for rate limit from response headers
         if (preg_match('/X-Rate-Limit-Remaining: (\d+)/i', $headers, $matches)) {
             $remaining = (int)$matches[1];
             if ($remaining < 10) {
                 log_message("api-helper: Low rate limit remaining ($remaining), pausing...", 'api_log.txt', 'WARNING');
-                usleep(1000000); // Chờ 1 giây
+                usleep(1000000); // Wait 1 second
             }
         }
 
@@ -81,20 +93,22 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         log_message("api-helper: Response - HTTP: $httpCode, Body: " . substr($response, 0, 500) . "...", 'api_log.txt');
 
+        // Retry if rate limited (HTTP 429)
         if ($httpCode === 429) {
-            // Xử lý lỗi Too Many Requests
             log_message("api-helper: Rate limit exceeded (429), retrying ($retry_count/$max_retries)...", 'api_log.txt', 'WARNING');
             if ($retry_count < $max_retries) {
                 $retry_count++;
-                usleep(2000000); // Chờ 2 giây trước khi thử lại
+                usleep(2000000); // Wait 2 seconds
                 continue;
             }
             return ['error' => 'Rate limit exceeded after retries.'];
         }
 
+        // Fallback retry logic for 404 or failed POST
         if ($httpCode !== 200) {
             log_message("api-error: API request failed - HTTP: $httpCode, Response: $response", 'api_log.txt', 'ERROR');
-            // Thử lại với payload dạng mảng nếu thất bại
+
+            // Retry with alternative param format if POST fails
             if ($method === 'POST' && $httpCode === 404) {
                 log_message("api-helper: Retrying with array params payload", 'api_log.txt');
                 $ch = curl_init();
@@ -114,20 +128,24 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
         }
 
+        // Decode JSON response
         $data = json_decode($response, true);
         if ($data === null) {
             log_message("api-error: Failed to parse API response as JSON. Response: $response", 'api_log.txt', 'ERROR');
             return ['error' => 'Failed to parse API response as JSON.'];
         }
 
+        // Return error if API-level error exists
         if (isset($data['error'])) {
             $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
             log_message("api-error: API error - Code: " . ($data['error']['code'] ?? 'N/A') . ", Message: $errorMessage", 'api_log.txt', 'ERROR');
             return ['error' => $errorMessage];
         }
 
+        // Success: log and return data
         log_message("api-success: API success - Endpoint: $endpoint, Response: " . substr(json_encode($data), 0, 100) . "...", 'api_log.txt');
         return $data;
+
     } while ($retry_count < $max_retries);
 
     return ['error' => 'Max retries reached.'];
