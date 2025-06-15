@@ -2,9 +2,9 @@
 /*
  * NFT Holders Checker - Vina Network
  *
- * This script allows users to check all wallet addresses holding NFTs from a given Solana on-chain collection address.
- * It loads required dependencies, validates the address, queries Helius API, paginates results,
- * caches session data for performance with a 3-hour expiration, and renders the result dynamically using AJAX.
+ * This script allows users to check the total number of holders and NFTs for a given Solana on-chain collection address.
+ * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
+ * Pagination and holders list are removed as they are not displayed.
  */
 
 // Disable display of errors in production
@@ -56,7 +56,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
 <div class="t-6 nft-holders-content">
     <div class="t-7">
         <h2>Check NFT Holders</h2>
-        <p>Enter the <strong>NFT Collection</strong> address to see the number of holders and their wallet addresses. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
+        <p>Enter the <strong>NFT Collection</strong> address to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
             <button type="submit" class="cta-button">Check Holders</button>
@@ -68,9 +68,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
             $mintAddress = trim($_POST['mintAddress']);
-            log_message("nft-holders: Form submitted with mintAddress=$mintAddress, page=" . ($_POST['page'] ?? 'not set'), 'nft_holders_log.txt');
-            $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
-            $holders_per_page = 50;
+            log_message("nft-holders: Form submitted with mintAddress=$mintAddress", 'nft_holders_log.txt');
             $limit = 1000;
             $max_pages = 100; // Limit max API page iterations
             $cache_expiration = 3 * 3600; // 3 hours in seconds
@@ -181,17 +179,43 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 echo "<div class='result-error'><p>Warning: Total items ($total_items) is a multiple of API limit ($limit). Actual number may be higher. For full details, check directly on the Solana blockchain or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
             }
             ?>
-            <!-- Display result list -->
-            <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress); ?>">
-                <?php
-                $ajax_page = $page;
-                log_message("nft-holders: Including nft-holders-info.php with page=$ajax_page", 'nft_holders_log.txt');
-                ob_start();
-                include 'nft-holders-info.php';
-                $holders_output = ob_get_clean();
-                echo $holders_output;
-                log_message("nft-holders: Holders list output length: " . strlen($holders_output), 'nft_holders_log.txt');
-                ?>
+            <!-- Display summary card -->
+            <div class="result-section">
+                <?php if ($total_wallets === 0): ?>
+                    <p class="result-error">No holders found for this collection.</p>
+                <?php else: ?>
+                    <div class="holders-summary">
+                        <div class="summary-card">
+                            <div class="summary-item">
+                                <i class="fas fa-wallet"></i>
+                                <p>Total wallets</p>
+                                <h3><?php echo number_format($total_wallets); ?></h3>
+                            </div>
+                            <div class="summary-item">
+                                <i class="fas fa-image"></i>
+                                <p>Total NFTs</p>
+                                <h3><?php echo number_format($total_items); ?></h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Export controls -->
+                    <div class="export-section">
+                        <form method="POST" action="/tools/nft-holders/nft-holders-export.php" class="export-form">
+                            <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
+                            <div class="export-controls">
+                                <select name="export_format" class="export-format">
+                                    <option value="csv">CSV</option>
+                                    <option value="json">JSON</option>
+                                </select>
+                                <button type="submit" name="export_type" value="all" class="cta-button export-btn" id="export-all-btn">Export All Wallets</button>
+                            </div>
+                        </form>
+                        <div class="progress-container" style="display: none;">
+                            <p>Exporting... Please wait.</p>
+                            <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
             <?php
         } catch (Exception $e) {
@@ -205,51 +229,11 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     <div class="t-9">
         <h2>About NFT Holders Checker</h2>
         <p>
-            The NFT Holders Checker allows you to view the total number of holders for a specific Solana NFT collection by entering its On-chain Collection address. 
-            It retrieves a list of wallet addresses that currently hold NFTs in the collection, with pagination to browse through the results easily. 
+            The NFT Holders Checker allows you to view the total number of holders and NFTs for a specific Solana NFT collection by entering its On-chain Collection address. 
             This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of a collection on the Solana blockchain.
         </p>
     </div>
 </div>
-
-<!-- JavaScript to handle AJAX pagination -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var holdersList = document.getElementById('holders-list');
-    if (holdersList) {
-        holdersList.addEventListener('click', function(e) {
-            if (e.target.classList.contains('page-button') && e.target.dataset.type !== 'ellipsis') {
-                e.preventDefault();
-                var page = e.target.closest('form')?.querySelector('input[name="page"]')?.value
-                    || e.target.dataset.page;
-                var mint = holdersList.dataset.mint;
-                if (!page || !mint) {
-                    console.error('Missing page or mint:', { page, mint });
-                    return;
-                }
-                console.log('Sending AJAX request for page:', page, 'mint:', mint);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '/tools/nft-holders/nft-holders-info.php', true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.onreadystatechange = function() {
-                    if (xhr.readyState === 4) {
-                        console.log('AJAX response status:', xhr.status, 'Response:', xhr.responseText.substring(0, 200));
-                        if (xhr.status === 200) {
-                            holdersList.innerHTML = xhr.responseText;
-                        } else {
-                            console.error('AJAX error:', xhr.status, xhr.statusText, 'Response:', xhr.responseText);
-                            holdersList.innerHTML = '<div class="result-error"><p>Error loading holders. Status: ' + xhr.status + '. Please try again.</p></div>';
-                        }
-                    }
-                };
-                var data = 'mintAddress=' + encodeURIComponent(mint) + '&page=' + encodeURIComponent(page);
-                console.log('AJAX data:', data);
-                xhr.send(data);
-            }
-        });
-    }
-});
-</script>
 
 <?php
 // Output and log footer
