@@ -3,8 +3,8 @@
  * NFT Holders Checker - Vina Network
  *
  * This script allows users to check all wallet addresses holding NFTs from a given Solana on-chain collection address.
- * It loads required dependencies, validates the address, queries Helius API, paginates results,
- * caches session data for performance with a 3-hour expiration, and renders the result dynamically using AJAX.
+ * It queries Helius API, caches session data, displays summary and paginated holders list, and includes max pages warning.
+ * Restored from Update 1 with fixes for $total_wallets = 0.
  */
 
 // Disable display of errors in production
@@ -73,7 +73,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             $holders_per_page = 50;
             $limit = 1000;
             $max_pages = 100; // Limit max API page iterations
-            $cache_expiration = 3 * 3600; // 3 hours in seconds
 
             // Validate address format (base58, 32–44 characters)
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
@@ -83,20 +82,17 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             // Reset cache if new address submitted
             if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
                 if (isset($_SESSION['total_items'][$mintAddress])) {
-                    unset($_SESSION['total_items'][$mintAddress], $_SESSION['total_wallets'][$mintAddress], $_SESSION['items'][$mintAddress], $_SESSION['wallets'][$mintAddress], $_SESSION['cache_timestamp'][$mintAddress]);
+                    unset($_SESSION['total_items'][$mintAddress], $_SESSION['total_wallets'][$mintAddress], $_SESSION['items'][$mintAddress], $_SESSION['wallets'][$mintAddress]);
                     log_message("nft-holders: Cleared session cache for new mintAddress=$mintAddress", 'nft_holders_log.txt');
                 }
                 $_SESSION['last_mintAddress'] = $mintAddress;
             }
 
-            // Check if cache exists and is not expired
-            $cache_valid = isset($_SESSION['total_items'][$mintAddress]) && isset($_SESSION['cache_timestamp'][$mintAddress]) && (time() - $_SESSION['cache_timestamp'][$mintAddress] < $cache_expiration);
-
-            if (!$cache_valid) {
-                // Cache expired or not set, fetch from API
-                if (!$cache_valid && isset($_SESSION['cache_timestamp'][$mintAddress])) {
-                    log_message("nft-holders: Cache expired for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
-                }
+            // Check if cache exists
+            if (!isset($_SESSION['total_items'][$mintAddress]) || !isset($_SESSION['items'][$mintAddress])) {
+                log_message("nft-holders: No cache found for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
+                // Increase memory limit for large collections
+                ini_set('memory_limit', '512M');
                 $total_items = 0;
                 $api_page = 1;
                 $has_more = true;
@@ -108,30 +104,43 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                         'page' => $api_page,
                         'limit' => $limit
                     ];
-                    log_message("nft-holders: Calling API for total items, page=$api_page", 'nft_holders_log.txt');
+                    log_message("nft-holders: Calling API for total items, page=$api_page, params=" . json_encode($total_params), 'nft_holders_log.txt');
                     $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
-                    log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
+                    log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Response=" . json_encode($total_data, JSON_PRETTY_PRINT), 'nft_holders_log.txt');
 
                     if (isset($total_data['error'])) {
                         $errorMessage = is_array($total_data['error']) && isset($total_data['error']['message']) ? $total_data['error']['message'] : json_encode($total_data['error']);
                         throw new Exception("API error: " . $errorMessage);
                     }
 
+                    // Validate API response
+                    if (!isset($total_data['result']['items'])) {
+                        log_message("nft-holders: Invalid API response, no items found for page=$api_page, mintAddress=$mintAddress", 'nft_holders_log.txt', 'ERROR');
+                        throw new Exception("Invalid API response: No items found.");
+                    }
+
                     // Merge items and count
-                    $page_items = $total_data['result']['items'] ?? [];
+                    $page_items = $total_data['result']['items'];
                     $item_count = count($page_items);
                     $items = array_merge($items, array_map(function($item) {
+                        if (!isset($item['ownership']['owner'])) {
+                            log_message("nft-holders: Invalid item structure, missing owner: " . json_encode($item), 'nft_holders_log.txt', 'WARNING');
+                            return null;
+                        }
                         return [
-                            'owner' => $item['ownership']['owner'] ?? 'unknown',
+                            'owner' => $item['ownership']['owner'],
                             'amount' => 1
                         ];
                     }, $page_items));
+                    // Filter out null items
+                    $items = array_filter($items);
                     $total_items += $item_count;
 
-                    log_message("nft-holders: Page $api_page added $item_count items, total_items = $total_items", 'nft_holders_log.txt');
+                    log_message("nft-holders: Page $api_page added $item_count items, total_items=$total_items, valid_items=" . count($items), 'nft_holders_log.txt');
 
                     $has_more = $item_count >= $limit;
                     $api_page++;
+                    usleep(2000000); // 2-second delay to avoid rate limit
                 }
 
                 // Warning when max pages reached
@@ -147,6 +156,10 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 // Deduplicate wallet holders
                 $unique_wallets = [];
                 foreach ($items as $item) {
+                    if (!isset($item['owner'])) {
+                        log_message("nft-holders: Skipping invalid item during deduplication: " . json_encode($item), 'nft_holders_log.txt', 'WARNING');
+                        continue;
+                    }
                     $owner = $item['owner'];
                     if (!isset($unique_wallets[$owner])) {
                         $unique_wallets[$owner] = $item;
@@ -155,23 +168,29 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     }
                 }
                 $wallets = array_values($unique_wallets);
+                $total_wallets = count($wallets);
 
-                // Store in session cache with timestamp
+                // Validate data before caching
+                if ($total_items > 0 && $total_wallets === 0) {
+                    log_message("nft-holders: Inconsistent data: total_items=$total_items but total_wallets=0 for $mintAddress", 'nft_holders_log.txt', 'ERROR');
+                    throw new Exception("Failed to retrieve wallet data. Please try again or contact support.");
+                }
+
+                // Store in session cache
                 $_SESSION['total_items'][$mintAddress] = $total_items;
-                $_SESSION['total_wallets'][$mintAddress] = count($wallets);
+                $_SESSION['total_wallets'][$mintAddress] = $total_wallets;
                 $_SESSION['items'][$mintAddress] = $items;
                 $_SESSION['wallets'][$mintAddress] = $wallets;
-                $_SESSION['cache_timestamp'][$mintAddress] = time();
-                log_message("nft-holders: Cached total_items = $total_items, total_wallets = " . count($wallets) . " for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
+                log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress", 'nft_holders_log.txt');
             } else {
                 $total_items = $_SESSION['total_items'][$mintAddress];
                 $total_wallets = $_SESSION['total_wallets'][$mintAddress];
                 $items = $_SESSION['items'][$mintAddress];
                 $wallets = $_SESSION['wallets'][$mintAddress];
-                log_message("nft-holders: Retrieved total_items = $total_items, total_wallets = $total_wallets from cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $_SESSION['cache_timestamp'][$mintAddress]), 'nft_holders_log.txt');
+                log_message("nft-holders: Retrieved total_items=$total_items, total_wallets=$total_wallets from cache for $mintAddress", 'nft_holders_log.txt');
             }
 
-            log_message("nft-holders: Final total items = $total_items, total wallets = $total_wallets for $mintAddress", 'nft_holders_log.txt');
+            log_message("nft-holders: Final total_items=$total_items, total_wallets=$total_wallets for $mintAddress", 'nft_holders_log.txt');
 
             // Handle edge case: total = 0 or looks incomplete
             if ($total_items === 0) {
