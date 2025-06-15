@@ -1,98 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Function to load Chart.js dynamically
-    function loadChartJS(callback, retries = 3, delay = 1000) {
-        if (typeof Chart !== 'undefined') {
-            console.log('Chart.js already loaded');
-            callback();
-            return;
-        }
-        console.log(`Loading Chart.js (Retries left: ${retries})...`);
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.min.js';
-        script.integrity = 'sha512-L0Shl7nXXzIlBSUUPpxrokqq4ojqgZFQczTYlGjzONGTDAcLremjwaWv5A+EDLnxhQzY5xUZPWLOLqYRkY0Cbw==';
-        script.crossOrigin = 'anonymous';
-        script.onload = () => {
-            console.log('Chart.js loaded successfully');
-            callback();
-        };
-        script.onerror = () => {
-            if (retries > 0) {
-                console.log(`Failed to load Chart.js, retrying (${retries - 1} retries left)...`);
-                setTimeout(() => loadChartJS(callback, retries - 1, delay * 2), delay);
-            } else {
-                console.error('Failed to load Chart.js after retries');
-                log_message('client-error: Failed to load Chart.js after retries', 'client_log.txt');
-                document.querySelector('.t-4').innerHTML = '<p>Error: Chart.js failed to load after multiple attempts. Please try again later.</p>';
-            }
-        };
-        document.head.appendChild(script);
-    }
-
-    // Initialize NFT Distribution Chart
-    function initNFTDistributionChart() {
-        loadChartJS(() => {
-            const canvas = document.getElementById('nftDistributionChart');
-            if (!canvas) {
-                console.error('Canvas #nftDistributionChart not found');
-                log_message('client-error: Canvas #nftDistributionChart not found', 'client_log.txt');
-                return;
-            }
-            const labels = JSON.parse(canvas.dataset.labels || '[]');
-            const values = JSON.parse(canvas.dataset.values || '[]');
-            const ctx = canvas.getContext('2d');
-            try {
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Số ví',
-                            data: values,
-                            backgroundColor: '#007bff',
-                            borderColor: '#0056b3',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Số lượng NFT'
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Số ví'
-                                },
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
-                console.log('NFT Distribution Chart initialized');
-                log_message('client-success: NFT Distribution Chart initialized', 'client_log.txt');
-            } catch (e) {
-                console.error('Error initializing Chart.js:', e.message);
-                log_message(`client-error: Error initializing Chart.js - ${e.message}`, 'client_log.txt');
-                document.querySelector('.t-4').innerHTML = `<p>Error initializing chart: ${e.message}. Please try again.</p>`;
-            }
-        });
-    }
-
-    // Call chart initialization on page load
-    initNFTDistributionChart();
-
     // Get the "tool" parameter from URL to determine which tab should be active
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
@@ -152,10 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => {
-                document.querySelector('.t-4').innerHTML = data;
-                initNFTDistributionChart(); // Re-initialize chart after AJAX load
-            })
+            .then(data => document.querySelector('.t-4').innerHTML = data)
             .catch(error => {
                 console.error('Error loading tool content:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
@@ -269,40 +172,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loader) loader.style.display = 'block';
 
             const formData = new FormData(form);
-            const tool = document.querySelector('.t-link.active')?.getAttribute('data-tool');
-            if (!tool) {
-                console.error('No active tool found');
-                document.querySelector('.t-4').innerHTML = '<p>Error: No active tool selected. Please try again.</p>';
-                if (loader) loader.style.display = 'none';
-                return;
-            }
+            const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
             fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        try {
-                            const json = JSON.parse(text);
-                            throw new Error(json.error || `HTTP error! Status: ${response.status}, Response: ${text}`);
-                        } catch (e) {
-                            throw new Error(`HTTP error! Status: ${response.status}, Response: ${text}`);
-                        }
-                    });
-                }
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
-                initNFTDistributionChart(); // Re-initialize chart after AJAX load
                 if (loader) loader.style.display = 'none';
             })
             .catch(error => {
-                console.error('Error submitting form:', error.message);
-                document.querySelector('.t-4').innerHTML = `<p>Error submitting form: ${error.message}. Please try again.</p>`;
-                log_message(`client-error: Form submission failed - ${error.message}`, 'client_log.txt');
+                console.error('Error submitting form:', error);
+                document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) loader.style.display = 'none';
             });
         }
