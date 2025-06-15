@@ -241,7 +241,7 @@ input {border: unset;}
 footer {
     background: #1a1a1a;
     color: #fff;
-    padding: 3rem 2rem;
+    padding: 1rem 2rem;
 }
 
 .footer-1 {
@@ -256,7 +256,7 @@ footer {
     min-width: 200px;
     margin: 1rem;
 }
-.footer-2 h3 {color: #00d4ff;}
+.footer-2 h4 {color: #00d4ff;}
 .footer-2 p a, 
 .footer-3 a, 
 .footer-4 a {
@@ -273,7 +273,6 @@ footer {
 
 .footer-5 {
     text-align: center;
-    padding-top: .3rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
