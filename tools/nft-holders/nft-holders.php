@@ -1,9 +1,10 @@
 <?php
 /*
  * NFT Holders Checker - Vina Network
- * Update 3: Summary card, export, cache 3 hours, fix $total_wallets=0 and HTTP 500
- * Update 4: Added Google reCAPTCHA v3 with keys from config.php
- * Update 5: Fix log path, include paths, remove duplicate session_start and constants
+ *
+ * This script allows users to check the total number of holders and NFTs for a given Solana on-chain collection address.
+ * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
+ * Update 3: Removed holders list and pagination, only shows summary card and export.
  */
 
 // Disable display of errors in production
@@ -11,15 +12,7 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
-// Load config file
-$config_path = __DIR__ . '/../../config/config.php';
-if (!file_exists($config_path)) {
-    error_log("nft-holders: config.php not found at $config_path");
-    die('Error: config.php not found');
-}
-require_once $config_path;
-
-// Define constants only if not defined
+// Define constants to mark script entry
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
@@ -30,42 +23,23 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Load bootstrap dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    error_log("nft-holders: bootstrap.php not found at $bootstrap_path");
+    log_message("nft-holders: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'ERROR');
     die('Error: bootstrap.php not found');
 }
 require_once $bootstrap_path;
 
-// Configure error logging
+// Start session and configure error logging
+session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
-// Custom log function
-function log_message($message, $log_file = 'nft_holders_log.txt', $level = 'INFO') {
-    $log_dir = dirname(ERROR_LOG_PATH);
-    $log_path = $log_dir . '/' . $log_file;
-    $timestamp = date('Y-m-d H:i:s');
-    $log_entry = "[$timestamp] [$level] $message\n";
-    if (!is_dir($log_dir)) {
-        mkdir($log_dir, 0755, true);
-    }
-    file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX);
-}
-
-// Set up page variables
-$root_path = BASE_PATH;
+// Set up page variables and include layout headers
+$root_path = '../../';
 $page_title = 'Check NFT Holders - Vina Network';
 $page_description = 'Check NFT holders for a Solana collection address.';
-$page_css = ['css/vina.css', 'tools/tools.css'];
-
-// Include layout headers
-$header_path = $root_path . 'include/header.php';
-$navbar_path = $root_path . 'include/navbar.php';
-if (!file_exists($header_path) || !file_exists($navbar_path)) {
-    log_message("nft-holders: Header or navbar not found at $header_path or $navbar_path", 'nft_holders_log.txt', 'ERROR');
-    die('Error: Missing header or navbar files');
-}
-include $header_path;
-include $navbar_path;
+$page_css = ['../../css/vina.css', '../tools.css'];
+include $root_path . 'include/header.php';
+include $root_path . 'include/navbar.php';
 
 // Include tools API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
@@ -78,70 +52,25 @@ include $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
-<!-- Render input form with reCAPTCHA -->
+<!-- Render input form for NFT Collection address -->
 <div class="t-6 nft-holders-content">
     <div class="t-7">
         <h2>Check NFT Holders</h2>
         <p>Enter the <strong>NFT Collection</strong> address to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-            <!-- reCAPTCHA v3 hidden input -->
-            <input type="hidden" name="recaptcha_token" id="recaptcha-token">
-            <button type="submit" class="cta-button" id="submit-btn">Check Holders</button>
+            <button type="submit" class="cta-button">Check Holders</button>
         </form>
         <div class="loader"></div>
     </div>
     <?php
-    // Handle form submission with reCAPTCHA validation
+    // Handle form submission and NFT data fetching
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
             $mintAddress = trim($_POST['mintAddress']);
-            log_message("nft-holders: Form submitted with mintAddress=$mintAddress, POST data=" . json_encode($_POST), 'nft_holders_log.txt');
-
-            // Validate reCAPTCHA token
-            $recaptcha_token = '';
-            if (isset($_POST['recaptcha_token'])) {
-                $recaptcha_token = is_scalar($_POST['recaptcha_token']) ? trim($_POST['recaptcha_token']) : '';
-            }
-            if (empty($recaptcha_token)) {
-                log_message("reCAPTCHA: No token provided for mintAddress=$mintAddress, POST data=" . json_encode($_POST), 'nft_holders_log.txt', 'ERROR');
-                throw new Exception("Please complete the CAPTCHA verification.");
-            }
-
-            // Verify reCAPTCHA with Google
-            $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
-            $recaptcha_data = [
-                'secret' => RECAPTCHA_SECRET_KEY,
-                'response' => $recaptcha_token,
-                'remoteip' => $_SERVER['REMOTE_ADDR']
-            ];
-            $recaptcha_options = [
-                'http' => [
-                    'header' => "Content-type: application/x-www-form-urlencoded\r\n",
-                    'method' => 'POST',
-                    'content' => http_build_query($recaptcha_data),
-                    'timeout' => 10
-                ]
-            ];
-            $recaptcha_context = stream_context_create($recaptcha_options);
-            $recaptcha_response = @file_get_contents($recaptcha_url, false, $recaptcha_context);
-            if ($recaptcha_response === false) {
-                log_message("reCAPTCHA: Failed to contact Google API for mintAddress=$mintAddress, error=" . error_get_last()['message'], 'nft_holders_log.txt', 'ERROR');
-                throw new Exception("CAPTCHA service unavailable. Please try again later.");
-            }
-            $recaptcha_result = json_decode($recaptcha_response, true);
-
-            log_message("reCAPTCHA: Verification result for mintAddress=$mintAddress, result=" . json_encode($recaptcha_result), 'nft_holders_log.txt');
-
-            if (!isset($recaptcha_result['success']) || !$recaptcha_result['success'] || $recaptcha_result['score'] < 0.5) {
-                $score = $recaptcha_result['score'] ?? 'N/A';
-                $error_codes = $recaptcha_result['error-codes'] ?? [];
-                log_message("reCAPTCHA: Verification failed for mintAddress=$mintAddress, score=$score, error_codes=" . json_encode($error_codes), 'nft_holders_log.txt', 'ERROR');
-                throw new Exception("CAPTCHA verification failed. Please try again.");
-            }
-
+            log_message("nft-holders: Form submitted with mintAddress=$mintAddress", 'nft_holders_log.txt');
             $limit = 1000;
-            $max_pages = 50; // Reduced max pages to avoid API rate limit
+            $max_pages = 100; // Limit max API page iterations
             $cache_expiration = 3 * 3600; // 3 hours in seconds
 
             // Validate address format (base58, 32–44 characters)
@@ -335,57 +264,10 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     </div>
 </div>
 
-<!-- Include Google reCAPTCHA v3 script -->
-<script src="https://www.google.com/recaptcha/api.js?render=<?php echo RECAPTCHA_SITE_KEY; ?>" async defer></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var form = document.getElementById('nftHoldersForm');
-    var submitBtn = document.getElementById('submit-btn');
-    if (form && submitBtn) {
-        // Ensure reCAPTCHA script is loaded
-        if (typeof grecaptcha === 'undefined') {
-            console.error('reCAPTCHA script not loaded');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Check Holders';
-            form.insertAdjacentHTML('afterend', '<div class="result-error"><p>CAPTCHA service failed to load. Please refresh the page.</p></div>');
-            return;
-        }
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Verifying...';
-
-            grecaptcha.ready(function() {
-                grecaptcha.execute('<?php echo RECAPTCHA_SITE_KEY; ?>', { action: 'submit_nft_holders' })
-                    .then(function(token) {
-                        document.getElementById('recaptcha-token').value = token;
-                        console.log('reCAPTCHA token generated:', token);
-                        form.submit();
-                    })
-                    .catch(function(error) {
-                        console.error('reCAPTCHA error:', error);
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Check Holders';
-                        form.insertAdjacentHTML('afterend', '<div class="result-error"><p>CAPTCHA verification failed. Please try again.</p></div>');
-                    });
-            });
-        });
-    } else {
-        console.error('Form or submit button not found');
-    }
-});
-</script>
-
 <?php
-// Output footer
-$footer_path = $root_path . 'include/footer.php';
-if (!file_exists($footer_path)) {
-    log_message("nft-holders: Footer not found at $footer_path", 'nft_holders_log.txt', 'ERROR');
-    die('Error: Missing footer file');
-}
+// Output and log footer
 ob_start();
-include $footer_path;
+include $root_path . 'include/footer.php';
 $footer_output = ob_get_clean();
 log_message("nft-holders: Footer output length: " . strlen($footer_output), 'nft_holders_log.txt');
 echo $footer_output;
