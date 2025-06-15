@@ -2,9 +2,10 @@
 /*
  * nft-holders-info.php - Display NFT Holder Summary & Export Options (AJAX Handler)
  *
- * This script handles AJAX requests to display summary information
+ * This script is used to handle AJAX requests to display summary information
  * about the total number of holders and NFTs for a given collection address.
- * It retrieves data from session cache with a 3-hour expiration or triggers a refresh.
+ * It retrieves data from the session cache populated during the initial form
+ * submission in nft-holders.php and provides export functionality (CSV/JSON).
  */
 
 // Define constants to mark script entry (if not already defined)
@@ -58,25 +59,11 @@ if (empty($mintAddress) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintA
     exit;
 }
 
-// Check cache validity
-$cache_expiration = 3 * 3600; // 3 hours in seconds
-$cache_valid = isset($_SESSION['total_items'][$mintAddress]) && isset($_SESSION['cache_timestamp'][$mintAddress]) && (time() - $_SESSION['cache_timestamp'][$mintAddress] < $cache_expiration);
-
-if (!$cache_valid) {
-    // Cache expired or not set, redirect to nft-holders.php to refresh data
-    if (!$cache_valid && isset($_SESSION['cache_timestamp'][$mintAddress])) {
-        log_message("nft-holders-list: Cache expired for mintAddress=$mintAddress, redirecting to refresh data", 'nft_holders_log.txt');
-    }
-    http_response_code(307);
-    header("Location: /tools/nft-holders/nft-holders.php?tool=nft-holders&mintAddress=" . urlencode($mintAddress));
-    exit;
-}
-
 // Retrieve total items and wallets from session cache
 $total_items = $_SESSION['total_items'][$mintAddress] ?? 0;
 $total_wallets = $_SESSION['total_wallets'][$mintAddress] ?? 0;
 $wallets = $_SESSION['wallets'][$mintAddress] ?? [];
-log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets, cached at " . date('Y-m-d H:i:s', $_SESSION['cache_timestamp'][$mintAddress]), 'nft_holders_log.txt');
+log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets", 'nft_holders_log.txt');
 
 try {
     ob_start();
