@@ -1,5 +1,15 @@
-/* tools/tools.css */
+/* tools/tools.css - Styling for NFT Holder Tools UI
+ *
+ * This CSS file defines layout, style, and responsiveness for the NFT tools interface.
+ * It includes tab navigation, form elements, summary cards, result outputs,
+ * loader spinner, export controls, transaction tables, pagination, progress bar,
+ * and responsive adjustments for mobile devices.
+ */
+
+/* Headings */
 h1, h2 {text-align: center;}
+
+/* Container spacing */
 .t-1 {margin-top: 72px;}
 .t-2 {
 	max-width: 1000px;
@@ -8,7 +18,7 @@ h1, h2 {text-align: center;}
 	margin: 0 auto;
 }
 
-/* Tab Tools */
+/* Tab navigation bar */
 .t-3 {
     display: flex;
     gap: 20px;
@@ -18,11 +28,10 @@ h1, h2 {text-align: center;}
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
-
 .t-3::-webkit-scrollbar {height: 2px;}
 .t-3::-webkit-scrollbar-track {background: #333;}
 
-/* Tool tab buttons */
+/* Tab buttons */
 .t-link {
     display: flex;
     align-items: center;
@@ -32,34 +41,30 @@ h1, h2 {text-align: center;}
     transition: all 0.3s;
     flex-shrink: 0;
 }
-
 .t-link i {font-size: 1.1em;}
-
 .t-link:hover {
     color: #007bff;
     border-bottom: 4px solid #007bff;
 }
-
 .t-link.active {
     font-weight: bold;
     color: #007bff;
     border-bottom: 4px solid #007bff;
 }
 
-/* Tool form box */
+/* Search input form */
 .t-4 form {
     display: flex;
     justify-content: center;
     gap: 20px;
     position: relative;
 }
-
 .t-4 input {
     padding: 10px;
     border-radius: 8px;
 }
 
-/* Result section */
+/* Holder results summary */
 .result-section {margin: 20px 0;}
 .holders-summary {
     display: flex;
@@ -90,6 +95,7 @@ h1, h2 {text-align: center;}
 .summary-item p {color: #666;}
 .summary-item h3 {color: #333;}
 
+/* Output & error sections */
 .result-info {
     overflow-wrap: break-word;
     word-break: break-all;
@@ -97,7 +103,6 @@ h1, h2 {text-align: center;}
     color: #333;
     margin: 10px 0;
 }
-
 .result-error {
     background: #ffebee;
     color: #c62828;
@@ -107,22 +112,22 @@ h1, h2 {text-align: center;}
     border: 1px solid #ef9a9a;
 }
 
-/* Checkbox group */
+/* Input + loader for checkboxes */
 .t-7 {
     padding: 20px;
     border-radius: 10px;
     background: #c3c3c4;
-    position: relative; /* Ensure .loader is centered */
+    position: relative; /* Ensures .loader is centered */
 }
 .t-7 form {margin: 20px;}
 .t-7 input {width: 600px;}
 
-/* Loading spinner */
+/* Spinner animation */
 .loader {
-    border: 4px solid #333; /* Darker background border */
-    border-top: 4px solid #007bff;
+    border: 4px solid #333; /* Outer border */
+    border-top: 4px solid #007bff; /* Animated top */
     border-radius: 50%;
-    width: 40px; /* Larger size */
+    width: 40px;
     height: 40px;
     animation: spin 1s linear infinite;
     position: absolute;
@@ -132,27 +137,23 @@ h1, h2 {text-align: center;}
     display: none;
     z-index: 1000;
 }
-
 @keyframes spin {
     0% { transform: translate(-50%, -50%) rotate(0deg); }
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* Export NFT Holders */
+/* NFT Holders Export */
 .export-section {margin: 20px 0;}
-
 .export-form {
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
 }
-
 .export-controls {
     display: flex;
     align-items: center;
     gap: 20px;
 }
-
 .export-format {
     padding: 9px;
     border: 1px solid #007bff;
@@ -161,7 +162,7 @@ h1, h2 {text-align: center;}
     box-sizing: border-box;
 }
 
-/* NFT Transaction */
+/* NFT transaction table styles */
 .transaction-table,
 .nft-transaction-results table {
     margin: 20px auto;
@@ -172,7 +173,6 @@ h1, h2 {text-align: center;}
     overflow: hidden;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
 .transaction-table th,
 .transaction-table td,
 .nft-transaction-results th,
@@ -181,30 +181,26 @@ h1, h2 {text-align: center;}
     border: 1px solid #ddd;
     font-size: 14px;
 }
-
 .transaction-table th {
     background: #007bff;
     color: #fff;
     font-weight: 600;
 }
-
 .nft-transaction-results th {
     background: #f4f4f4;
     font-weight: 600;
 }
-
 .transaction-table a {
     color: #007bff;
     text-decoration: none;
     transition: color 0.2s;
 }
-
 .transaction-table a:hover {
     color: #0056b3;
     text-decoration: underline;
 }
 
-/* Pagination */
+/* Pagination control */
 .pagination {
     display: flex;
     justify-content: center;
@@ -215,14 +211,12 @@ h1, h2 {text-align: center;}
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
-
 .page-form {
     display: inline-flex;
     align-items: center;
     margin: 0;
     padding: 0;
 }
-
 .page-button {
     width: 34px;
     height: 34px;
@@ -231,16 +225,13 @@ h1, h2 {text-align: center;}
     justify-content: center;
     box-sizing: border-box;
 }
-
 .page-button:hover {background: #f0f0f0;}
-
 .page-button.active {
     background: #74787c;
     color: #fff;
     cursor: default;
     border-radius: 10px;
 }
-
 .page-button.ellipsis {
     background: transparent;
     border: none;
@@ -248,12 +239,11 @@ h1, h2 {text-align: center;}
     cursor: default;
 }
 
-/* Progress Bar */
+/* Progress bar for loading or fetch progress */
 .progress-container {
     margin: 10px 0;
     text-align: left;
 }
-
 .progress-bar {
     width: 100%;
     height: 20px;
@@ -262,14 +252,13 @@ h1, h2 {text-align: center;}
     overflow: hidden;
     margin: 10px 0;
 }
-
 .progress-bar-fill {
     height: 100%;
     background: #28a745;
     transition: width 0.3s ease;
 }
 
-/* Responsive design */
+/* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
     .t-1 {
         margin-top: 64px;
@@ -282,20 +271,15 @@ h1, h2 {text-align: center;}
         align-items: center;
     }
     .t-4 input {width: 100%;}
-
     .summary-card {max-width: 100%}
-	
-    .transaction-table,
+	.transaction-table,
     .nft-transaction-results table {
         width: 100%;
     }
-
     .transaction-table th,
     .transaction-table td,
     .nft-transaction-results td {
         font-size: 12px;
     }
-
-    /* Pagination section on mobile */
     .pagination {gap: 20px;}
 }
