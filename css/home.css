@@ -31,7 +31,7 @@ section h3 {
 }
 .h-2 p {
     color: #e0e0e0;
-    margin-bottom: 20px;
+    margin-bottom: 20px !important;
     animation: zoomIn 1s ease-out forwards 0.5s;
 }
 .h-2 h1:hover {text-shadow: 0 0 15px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5);}
