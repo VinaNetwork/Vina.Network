@@ -5,6 +5,7 @@
  * This script allows users to check the total number of holders and NFTs for a given Solana on-chain collection address.
  * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
  * Update 3: Removed holders list and pagination, only shows summary card and export.
+ * Update 5: Display last cached timestamp to inform users when data was last updated.
  */
 
 // Disable display of errors in production
@@ -226,6 +227,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                                 <h3><?php echo number_format($total_items); ?></h3>
                             </div>
                         </div>
+                        <?php if ($cache_valid): ?>
+                            <p class="cache-timestamp">Data last updated: <?php echo date('d M Y, H:i', $_SESSION['cache_timestamp'][$mintAddress]) . ' UTC+7'; ?></p>
+                        <?php endif; ?>
                     </div>
                     <!-- Export controls -->
                     <div class="export-section">
