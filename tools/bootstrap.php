@@ -1,19 +1,35 @@
 <?php
 // tools/bootstrap.php
+
+// ---------------------------------------------------
+// Security check: Prevent direct access to this file
+// ---------------------------------------------------
 if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct access allowed!');
 }
 
-// Định nghĩa hằng số đường dẫn
+// ---------------------------------------------------
+// Define core path constants
+// Used across the tools module for easier path management
+// ---------------------------------------------------
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('TOOLS_PATH', ROOT_PATH . 'tools/');
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
 
-// Include config
+// ---------------------------------------------------
+// Load configuration file
+// ---------------------------------------------------
 require_once ROOT_PATH . 'config/config.php';
 
-// Hàm ghi log
+// ---------------------------------------------------
+// Logging utility function
+// Writes timestamped messages to the specified log file
+//
+// @param string $message    - The log content/message
+// @param string $log_file   - Filename within TOOLS_PATH to write logs
+// @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
+// ---------------------------------------------------
 function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') {
     $log_path = TOOLS_PATH . $log_file;
     $timestamp = date('Y-m-d H:i:s');
