@@ -10,6 +10,7 @@
     justify-content: center;
     gap: 30px;
     flex-wrap: wrap;
+    margin-top: 20px;
 }
 .c-4 {
     background-color: #fff;
@@ -34,9 +35,7 @@
     color: #ff6f91;
     transition: color 0.3s;
 }
-.c-4 a:hover {
-    color: #ff85a1;
-}
+.c-4 a:hover {color: #ff85a1;}
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
