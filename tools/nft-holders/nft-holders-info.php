@@ -1,13 +1,12 @@
 <?php
 /*
- * nft-holders-info.php - Display NFT Holder Summary & Export Options (AJAX Handler)
+ * nft-holders-info.php - Display NFT Holder Summary & Paginated List (AJAX Handler)
  *
  * This script handles AJAX requests to display summary information
- * about the total number of holders and NFTs for a given collection address.
- * It retrieves data from session cache with a 3-hour expiration or triggers a refresh.
+ * about the total number of holders and NFTs, and a paginated list of holders.
+ * Restored from Update 1 with fixes for session validation.
  */
 
-// Define constants to mark script entry (if not already defined)
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
@@ -15,7 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-// Include bootstrap file to load configuration and helpers
+// Include bootstrap file
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("nft-holders-list: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'ERROR');
@@ -25,7 +24,7 @@ if (!file_exists($bootstrap_path)) {
 }
 require_once $bootstrap_path;
 
-// Include tools API helper for logging and shared functions
+// Include tools API helper
 $api_helper_path = __DIR__ . '/../tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-holders-list: tools-api.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
@@ -39,7 +38,7 @@ require_once $api_helper_path;
 session_start();
 log_message("nft-holders-list: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 
-// Validate that the request method is POST
+// Validate request method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     log_message("nft-holders-list: Invalid request method: {$_SERVER['REQUEST_METHOD']}", 'nft_holders_log.txt', 'ERROR');
     http_response_code(400);
@@ -47,10 +46,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Retrieve collection address from POST data and validate format
+// Retrieve collection address and page
 $mintAddress = trim($_POST['mintAddress'] ?? '');
-log_message("nft-holders-list: Processing mintAddress=$mintAddress", 'nft_holders_log.txt');
+$page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
+$holders_per_page = 50;
+log_message("nft-holders-list: Processing mintAddress=$mintAddress, page=$page", 'nft_holders_log.txt');
 
+// Validate mintAddress
 if (empty($mintAddress) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
     log_message("nft-holders-list: Invalid mintAddress: $mintAddress", 'nft_holders_log.txt', 'ERROR');
     http_response_code(400);
@@ -58,25 +60,19 @@ if (empty($mintAddress) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintA
     exit;
 }
 
-// Check cache validity
-$cache_expiration = 3 * 3600; // 3 hours in seconds
-$cache_valid = isset($_SESSION['total_items'][$mintAddress]) && isset($_SESSION['cache_timestamp'][$mintAddress]) && (time() - $_SESSION['cache_timestamp'][$mintAddress] < $cache_expiration);
-
-if (!$cache_valid) {
-    // Cache expired or not set, redirect to nft-holders.php to refresh data
-    if (!$cache_valid && isset($_SESSION['cache_timestamp'][$mintAddress])) {
-        log_message("nft-holders-list: Cache expired for mintAddress=$mintAddress, redirecting to refresh data", 'nft_holders_log.txt');
-    }
+// Check session cache
+if (!isset($_SESSION['total_items'][$mintAddress]) || !isset($_SESSION['wallets'][$mintAddress])) {
+    log_message("nft-holders-list: No session cache for mintAddress=$mintAddress, redirecting", 'nft_holders_log.txt');
     http_response_code(307);
     header("Location: /tools/nft-holders/nft-holders.php?tool=nft-holders&mintAddress=" . urlencode($mintAddress));
     exit;
 }
 
-// Retrieve total items and wallets from session cache
+// Retrieve data from session
 $total_items = $_SESSION['total_items'][$mintAddress] ?? 0;
 $total_wallets = $_SESSION['total_wallets'][$mintAddress] ?? 0;
 $wallets = $_SESSION['wallets'][$mintAddress] ?? [];
-log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets, cached at " . date('Y-m-d H:i:s', $_SESSION['cache_timestamp'][$mintAddress]), 'nft_holders_log.txt');
+log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets", 'nft_holders_log.txt');
 
 try {
     ob_start();
@@ -84,7 +80,7 @@ try {
     if ($total_wallets === 0) {
         echo "<p class='result-error'>No holders found for this collection.</p>";
     } else {
-        // Display summary cards with totals
+        // Display summary cards
         echo "<div class='holders-summary'>";
         echo "<div class='summary-card'>";
         echo "<div class='summary-item'>";
@@ -99,6 +95,60 @@ try {
         echo "</div>";
         echo "</div>";
         echo "</div>";
+
+        // Display paginated holders list
+        $total_pages = ceil($total_wallets / $holders_per_page);
+        $page = max(1, min($page, $total_pages));
+        $offset = ($page - 1) * $holders_per_page;
+        $paged_wallets = array_slice($wallets, $offset, $holders_per_page);
+
+        echo "<div class='holders-list'>";
+        echo "<table>";
+        echo "<thead><tr><th>Wallet Address</th><th>NFT Count</th></tr></thead>";
+        echo "<tbody>";
+        foreach ($paged_wallets as $wallet) {
+            echo "<tr>";
+            echo "<td>" . htmlspecialchars($wallet['owner'] ?? 'N/A') . "</td>";
+            echo "<td>" . ($wallet['amount'] ?? 0) . "</td>";
+            echo "</tr>";
+        }
+        echo "</tbody>";
+        echo "</table>";
+        echo "</div>";
+
+        // Display pagination controls
+        if ($total_pages > 1) {
+            echo "<div class='pagination'>";
+            echo "<form method='POST' action=''>";
+            echo "<input type='hidden' name='mintAddress' value='" . htmlspecialchars($mintAddress) . "'>";
+            echo "<input type='hidden' name='page' value='" . ($page - 1) . "'>";
+            if ($page > 1) {
+                echo "<button type='submit' class='page-button' data-page='" . ($page - 1) . "'>Previous</button>";
+            }
+            $range = 2;
+            $start = max(1, $page - $range);
+            $end = min($total_pages, $page + $range);
+            if ($start > 1) {
+                echo "<button type='button' class='page-button' data-page='1'>1</button>";
+                if ($start > 2) {
+                    echo "<span class='ellipsis' data-type='ellipsis'>...</span>";
+                }
+            }
+            for ($i = $start; $i <= $end; $i++) {
+                echo "<button type='button' class='page-button" . ($i === $page ? ' active' : '') . "' data-page='$i'>$i</button>";
+            }
+            if ($end < $total_pages) {
+                if ($end < $total_pages - 1) {
+                    echo "<span class='ellipsis' data-type='ellipsis'>...</span>";
+                }
+                echo "<button type='button' class='page-button' data-page='$total_pages'>$total_pages</button>";
+            }
+            if ($page < $total_pages) {
+                echo "<button type='submit' class='page-button' data-page='" . ($page + 1) . "'>Next</button>";
+            }
+            echo "</form>";
+            echo "</div>";
+        }
 
         // Display export controls
         echo "<div class='export-section'>";
