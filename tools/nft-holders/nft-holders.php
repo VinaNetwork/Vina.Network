@@ -1,11 +1,9 @@
 <?php
 /*
  * NFT Holders Checker - Vina Network
- *
- * This script allows users to check the total number of holders and NFTs for a given Solana on-chain collection address.
- * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
- * Update 3: Removed holders list and pagination, only shows summary card and export.
- * Update 4: Added Google reCAPTCHA v3 with keys from config.php.
+ * Update 3: Summary card, export, cache 3 hours, fix $total_wallets=0 and HTTP 500
+ * Update 4: Added Google reCAPTCHA v3 with keys from config.php
+ * Update 5: Fix log path, include paths, remove duplicate session_start and constants
  */
 
 // Disable display of errors in production
@@ -13,7 +11,15 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
-// Define constants to mark script entry
+// Load config file
+$config_path = __DIR__ . '/../../config/config.php';
+if (!file_exists($config_path)) {
+    error_log("nft-holders: config.php not found at $config_path");
+    die('Error: config.php not found');
+}
+require_once $config_path;
+
+// Define constants only if not defined
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
@@ -21,34 +27,45 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-// Load config file
-$config_path = __DIR__ . '/../../config/config.php';
-if (!file_exists($config_path)) {
-    log_message("nft-holders: config.php not found at $config_path", 'nft_holders_log.txt', 'ERROR');
-    die('Error: config.php not found');
-}
-require_once $config_path;
-
 // Load bootstrap dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft-holders: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'ERROR');
+    error_log("nft-holders: bootstrap.php not found at $bootstrap_path");
     die('Error: bootstrap.php not found');
 }
 require_once $bootstrap_path;
 
-// Start session and configure error logging
-session_start();
+// Configure error logging
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
-// Set up page variables and include layout headers
-$root_path = '../../';
+// Custom log function
+function log_message($message, $log_file = 'nft_holders_log.txt', $level = 'INFO') {
+    $log_dir = dirname(ERROR_LOG_PATH);
+    $log_path = $log_dir . '/' . $log_file;
+    $timestamp = date('Y-m-d H:i:s');
+    $log_entry = "[$timestamp] [$level] $message\n";
+    if (!is_dir($log_dir)) {
+        mkdir($log_dir, 0755, true);
+    }
+    file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX);
+}
+
+// Set up page variables
+$root_path = BASE_PATH;
 $page_title = 'Check NFT Holders - Vina Network';
 $page_description = 'Check NFT holders for a Solana collection address.';
-$page_css = ['../../css/vina.css', '../tools.css'];
-include $root_path . 'include/header.php';
-include $root_path . 'include/navbar.php';
+$page_css = ['css/vina.css', 'tools/tools.css'];
+
+// Include layout headers
+$header_path = $root_path . 'include/header.php';
+$navbar_path = $root_path . 'include/navbar.php';
+if (!file_exists($header_path) || !file_exists($navbar_path)) {
+    log_message("nft-holders: Header or navbar not found at $header_path or $navbar_path", 'nft_holders_log.txt', 'ERROR');
+    die('Error: Missing header or navbar files');
+}
+include $header_path;
+include $navbar_path;
 
 // Include tools API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
@@ -361,9 +378,14 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
-// Output and log footer
+// Output footer
+$footer_path = $root_path . 'include/footer.php';
+if (!file_exists($footer_path)) {
+    log_message("nft-holders: Footer not found at $footer_path", 'nft_holders_log.txt', 'ERROR');
+    die('Error: Missing footer file');
+}
 ob_start();
-include $root_path . 'include/footer.php';
+include $footer_path;
 $footer_output = ob_get_clean();
 log_message("nft-holders: Footer output length: " . strlen($footer_output), 'nft_holders_log.txt');
 echo $footer_output;
