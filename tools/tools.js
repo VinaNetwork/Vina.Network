@@ -1,88 +1,51 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Function to load Chart.js dynamically
-    function loadChartJS(callback) {
-        if (typeof Chart !== 'undefined') {
-            console.log('Chart.js already loaded');
-            callback();
-            return;
-        }
-        console.log('Loading Chart.js...');
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
-        script.integrity = 'sha256-+fS7zO2s3+lc78lnvE5iM3aGobvj1g3xDHXSfr5N2cY=';
-        script.crossOrigin = 'anonymous';
-        script.onload = () => {
-            console.log('Chart.js loaded successfully');
-            callback();
-        };
-        script.onerror = () => {
-            console.error('Failed to load Chart.js from CDN');
-            log_message('client-error: Failed to load Chart.js from CDN', 'client_log.txt');
-            document.querySelector('.t-4').innerHTML = '<p>Error: Chart.js failed to load. Please try again later.</p>';
-        };
-        document.head.appendChild(script);
-    }
-
     // Initialize NFT Distribution Chart
     function initNFTDistributionChart() {
-        loadChartJS(() => {
-            const canvas = document.getElementById('nftDistributionChart');
-            if (!canvas) {
-                console.error('Canvas #nftDistributionChart not found');
-                log_message('client-error: Canvas #nftDistributionChart not found', 'client_log.txt');
-                return;
-            }
+        const canvas = document.getElementById('nftDistributionChart');
+        if (canvas) {
             const labels = JSON.parse(canvas.dataset.labels || '[]');
             const values = JSON.parse(canvas.dataset.values || '[]');
             const ctx = canvas.getContext('2d');
-            try {
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Số ví',
-                            data: values,
-                            backgroundColor: '#007bff',
-                            borderColor: '#0056b3',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Số lượng NFT'
-                                }
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Số ví'
-                                },
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                }
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Số ví',
+                        data: values,
+                        backgroundColor: '#007bff',
+                        borderColor: '#0056b3',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Số lượng NFT'
                             }
                         },
-                        plugins: {
-                            legend: {
+                        y: {
+                            title: {
                                 display: true,
-                                position: 'top'
+                                text: 'Số ví'
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
                             }
                         }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
                     }
-                });
-                console.log('NFT Distribution Chart initialized');
-                log_message('client-success: NFT Distribution Chart initialized', 'client_log.txt');
-            } catch (e) {
-                console.error('Error initializing Chart.js:', e.message);
-                log_message(`client-error: Error initializing Chart.js - ${e.message}`, 'client_log.txt');
-                document.querySelector('.t-4').innerHTML = `<p>Error initializing chart: ${e.message}. Please try again.</p>`;
-            }
-        });
+                }
+            });
+        }
     }
 
     // Call chart initialization on page load
