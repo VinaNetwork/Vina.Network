@@ -5,6 +5,7 @@
  * This script allows users to check the total number of holders and NFTs for a given Solana on-chain collection address.
  * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
  * Update 3: Removed holders list and pagination, only shows summary card and export.
+ * Update 4: Added Google reCAPTCHA v3 for form submission with provided keys.
  */
 
 // Disable display of errors in production
@@ -33,6 +34,9 @@ session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
+// reCAPTCHA v3 Secret Key
+define('RECAPTCHA_SECRET_KEY', '6Lcrp2ErAAAAANrVSsg_X_O2RxHwuBHmyeNdoJ7l');
+
 // Set up page variables and include layout headers
 $root_path = '../../';
 $page_title = 'Check NFT Holders - Vina Network';
@@ -52,25 +56,59 @@ include $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
-<!-- Render input form for NFT Collection address -->
+<!-- Render input form with reCAPTCHA -->
 <div class="t-6 nft-holders-content">
     <div class="t-7">
         <h2>Check NFT Holders</h2>
         <p>Enter the <strong>NFT Collection</strong> address to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-            <button type="submit" class="cta-button">Check Holders</button>
+            <!-- reCAPTCHA v3 hidden input -->
+            <input type="hidden" name="recaptcha_token" id="recaptcha-token">
+            <button type="submit" class="cta-button" id="submit-btn">Check Holders</button>
         </form>
         <div class="loader"></div>
     </div>
     <?php
-    // Handle form submission and NFT data fetching
+    // Handle form submission with reCAPTCHA validation
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
+            // Validate reCAPTCHA token
+            $recaptcha_token = trim($_POST['recaptcha_token'] ?? '');
+            if (empty($recaptcha_token)) {
+                throw new Exception("Please complete the CAPTCHA verification.");
+            }
+
+            // Verify reCAPTCHA with Google
+            $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+            $recaptcha_data = [
+                'secret' => RECAPTCHA_SECRET_KEY,
+                'response' => $recaptcha_token,
+                'remoteip' => $_SERVER['REMOTE_ADDR']
+            ];
+            $recaptcha_options = [
+                'http' => [
+                    'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+                    'method' => 'POST',
+                    'content' => http_build_query($recaptcha_data)
+                ]
+            ];
+            $recaptcha_context = stream_context_create($recaptcha_options);
+            $recaptcha_response = file_get_contents($recaptcha_url, false, $recaptcha_context);
+            $recaptcha_result = json_decode($recaptcha_response, true);
+
+            log_message("reCAPTCHA: Verification result for mintAddress=$mintAddress, result=" . json_encode($recaptcha_result), 'nft_holders_log.txt');
+
+            if (!$recaptcha_result['success'] || $recaptcha_result['score'] < 0.5) {
+                // Score threshold 0.5: adjust as needed (0.0 = bot, 1.0 = human)
+                log_message("reCAPTCHA: Verification failed for mintAddress=$mintAddress, score=" . ($recaptcha_result['score'] ?? 'N/A'), 'nft_holders_log.txt', 'ERROR');
+                throw new Exception("CAPTCHA verification failed. Please try again.");
+            }
+
             $mintAddress = trim($_POST['mintAddress']);
             log_message("nft-holders: Form submitted with mintAddress=$mintAddress", 'nft_holders_log.txt');
             $limit = 1000;
-            $max_pages = 100; // Limit max API page iterations
+            $max_pages = 50; // Reduced max pages to avoid API rate limit
             $cache_expiration = 3 * 3600; // 3 hours in seconds
 
             // Validate address format (base58, 32–44 characters)
@@ -263,6 +301,34 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         </p>
     </div>
 </div>
+
+<!-- Include Google reCAPTCHA v3 script -->
+<script src="https://www.google.com/recaptcha/api.js?render=6Lcrp2ErAAAAACnVPArv1DNzsnYcWq_RQaYZ4kj7"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('nftHoldersForm');
+    var submitBtn = document.getElementById('submit-btn');
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Verifying...';
+            grecaptcha.ready(function() {
+                grecaptcha.execute('6Lcrp2ErAAAAACnVPArv1DNzsnYcWq_RQaYZ4kj7', { action: 'submit_nft_holders' }).then(function(token) {
+                    document.getElementById('recaptcha-token').value = token;
+                    console.log('reCAPTCHA token generated:', token);
+                    form.submit();
+                }).catch(function(error) {
+                    console.error('reCAPTCHA error:', error);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Check Holders';
+                    alert('CAPTCHA verification failed. Please try again.');
+                });
+            });
+        });
+    }
+});
+</script>
 
 <?php
 // Output and log footer
