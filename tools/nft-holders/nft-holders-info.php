@@ -65,6 +65,16 @@ $total_wallets = $_SESSION['total_wallets'][$mintAddress] ?? 0;
 $wallets = $_SESSION['wallets'][$mintAddress] ?? [];
 log_message("nft-holders-list: Retrieved from session - total_items=$total_items, total_wallets=$total_wallets", 'nft_holders_log.txt');
 
+// Calculate NFT distribution
+$distribution = [];
+foreach ($wallets as $wallet) {
+    $nft_count = $wallet['amount'] ?? 1;
+    $distribution[$nft_count] = ($distribution[$nft_count] ?? 0) + 1;
+}
+ksort($distribution); // Sort by number of NFTs
+$labels = array_keys($distribution);
+$values = array_values($distribution);
+
 try {
     ob_start();
     echo "<div class='result-section'>";
@@ -84,6 +94,12 @@ try {
         echo "<p>Total NFTs</p>";
         echo "<h3>" . number_format($total_items) . "</h3>";
         echo "</div>";
+        echo "</div>";
+        
+        // NFT Distribution Chart
+        echo "<div class='nft-distribution-chart'>";
+        echo "<h3>Phân phối số lượng NFT trên mỗi ví</h3>";
+        echo "<canvas id='nftDistributionChart' data-labels='" . htmlspecialchars(json_encode($labels)) . "' data-values='" . htmlspecialchars(json_encode($values)) . "'></canvas>";
         echo "</div>";
         echo "</div>";
 
