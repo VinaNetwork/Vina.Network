@@ -27,6 +27,7 @@ p:not(:last-child) + :not(p) {margin-bottom: 0;}
 a {
     font: 1.1em/1.8 sans-serif;
     text-decoration: none;
+    cursor: pointer;
 }
 
 li { list-style: none; }
