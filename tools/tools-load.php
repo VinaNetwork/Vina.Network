@@ -1,15 +1,20 @@
 <?php
 // tools/tools-load.php
+
+// Disable error display in browser
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
+// Ensure essential constants are defined
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
+
+// Load the bootstrap file for shared configurations
 $bootstrap_path = __DIR__ . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     error_log("load-tool: bootstrap.php not found at $bootstrap_path");
@@ -19,14 +24,16 @@ if (!file_exists($bootstrap_path)) {
 }
 require_once $bootstrap_path;
 
+// Start session and setup logging
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
+// Get the requested tool from the query string
 $tool = isset($_GET['tool']) ? trim($_GET['tool']) : '';
 log_message("load-tool: Request received - tool=$tool, method={$_SERVER['REQUEST_METHOD']}", 'load_tool_log.txt');
 
-// Validate tool parameter
+// Validate the 'tool' parameter against allowed values
 $valid_tools = ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'];
 if (!in_array($tool, $valid_tools)) {
     log_message("load-tool: Invalid tool parameter - tool=$tool", 'load_tool_log.txt', 'ERROR');
@@ -35,7 +42,7 @@ if (!in_array($tool, $valid_tools)) {
     exit;
 }
 
-// Determine the tool file to include
+// Define corresponding file path for each tool
 $tool_files = [
     'nft-holders' => 'nft-holders/nft-holders.php',
     'nft-valuation' => 'nft-valuation/nft-valuation.php',
@@ -46,6 +53,7 @@ $tool_files = [
 $tool_file = __DIR__ . '/' . $tool_files[$tool];
 log_message("load-tool: Attempting to include file - $tool_file", 'load_tool_log.txt');
 
+// Check if the tool file exists
 if (!file_exists($tool_file)) {
     log_message("load-tool: Tool file not found - $tool_file", 'load_tool_log.txt', 'ERROR');
     http_response_code(404);
@@ -53,7 +61,7 @@ if (!file_exists($tool_file)) {
     exit;
 }
 
-// Include the tool file
+// Attempt to include the tool file and return its output
 try {
     ob_start();
     include $tool_file;
