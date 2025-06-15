@@ -1,15 +1,26 @@
 <?php
-// tools/nft-holders.php abc
+/*
+ * NFT Holders Checker - Vina Network
+ *
+ * This script allows users to check all wallet addresses holding NFTs from a given Solana on-chain collection address.
+ * It loads required dependencies, validates the address, queries Helius API, paginates results,
+ * caches session data for performance, and renders the result dynamically using AJAX.
+ */
+
+// Disable display of errors in production
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
+// Define constants to mark script entry
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
 }
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
+
+// Load bootstrap dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("nft-holders: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'ERROR');
@@ -17,9 +28,12 @@ if (!file_exists($bootstrap_path)) {
 }
 require_once $bootstrap_path;
 
+// Start session and configure error logging
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
+
+// Set up page variables and include layout headers
 $root_path = '../../';
 $page_title = 'Check NFT Holders - Vina Network';
 $page_description = 'Check NFT holders for a Solana collection address.';
@@ -27,6 +41,7 @@ $page_css = ['../../css/vina.css', '../tools.css'];
 include $root_path . 'include/header.php';
 include $root_path . 'include/navbar.php';
 
+// Include tools API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-holders: tools-api.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
@@ -37,6 +52,7 @@ include $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
+<!-- Render input form for NFT Collection address -->
 <div class="t-6 nft-holders-content">
     <div class="t-7">
         <h2>Check NFT Holders</h2>
@@ -48,6 +64,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         <div class="loader"></div>
     </div>
     <?php
+    // Handle form submission and NFT data fetching
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
             $mintAddress = trim($_POST['mintAddress']);
@@ -55,10 +72,14 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             $page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
             $holders_per_page = 50;
             $limit = 1000;
-            $max_pages = 100; // Giới hạn tối đa 100 trang
+            $max_pages = 100; // Limit max API page iterations
+
+            // Validate address format (base58, 32–44 characters)
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
+
+            // Reset cache if new address submitted
             if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
                 if (isset($_SESSION['total_items'][$mintAddress])) {
                     unset($_SESSION['total_items'][$mintAddress]);
@@ -66,6 +87,8 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 }
                 $_SESSION['last_mintAddress'] = $mintAddress;
             }
+
+            // Fetch from API if not cached yet
             if (!isset($_SESSION['total_items'][$mintAddress])) {
                 $total_items = 0;
                 $api_page = 1;
@@ -81,10 +104,13 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     log_message("nft-holders: Calling API for total items, page=$api_page", 'nft_holders_log.txt');
                     $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
                     log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Params=" . json_encode($total_params) . ", Response=" . json_encode($total_data), 'nft_holders_log.txt');
+
                     if (isset($total_data['error'])) {
                         $errorMessage = is_array($total_data['error']) && isset($total_data['error']['message']) ? $total_data['error']['message'] : json_encode($total_data['error']);
                         throw new Exception("API error: " . $errorMessage);
                     }
+
+                    // Merge items and count
                     $page_items = $total_data['result']['items'] ?? [];
                     $item_count = count($page_items);
                     $items = array_merge($items, array_map(function($item) {
@@ -94,18 +120,19 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                         ];
                     }, $page_items));
                     $total_items += $item_count;
+
                     log_message("nft-holders: Page $api_page added $item_count items, total_items = $total_items", 'nft_holders_log.txt');
-                    if ($item_count < $limit) {
-                        $has_more = false;
-                    } else {
-                        $api_page++;
-                    }
+
+                    $has_more = $item_count >= $limit;
+                    $api_page++;
                 }
+
                 if ($api_page > $max_pages) {
                     log_message("nft-holders: Reached max pages ($max_pages) for $mintAddress, data may be incomplete", 'nft_holders_log.txt', 'WARNING');
                     echo "<div class='result-error'><p>Warning: Reached maximum page limit ($max_pages), some data may be incomplete.</p></div>";
                 }
-                // Get unique wallets
+
+                // Deduplicate wallet holders
                 $unique_wallets = [];
                 foreach ($items as $item) {
                     $owner = $item['owner'];
@@ -116,6 +143,8 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     }
                 }
                 $wallets = array_values($unique_wallets);
+
+                // Store in session cache
                 $_SESSION['total_items'][$mintAddress] = $total_items;
                 $_SESSION['total_wallets'][$mintAddress] = count($wallets);
                 $_SESSION['items'][$mintAddress] = $items;
@@ -126,7 +155,10 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 $total_wallets = $_SESSION['total_wallets'][$mintAddress];
                 log_message("nft-holders: Retrieved total_items = $total_items, total_wallets = $total_wallets from cache for $mintAddress", 'nft_holders_log.txt');
             }
+
             log_message("nft-holders: Final total items = $total_items, total wallets = $total_wallets for $mintAddress", 'nft_holders_log.txt');
+
+            // Handle edge case: total = 0 or looks incomplete
             if ($total_items === 0) {
                 throw new Exception("No items found or invalid collection address.");
             } elseif ($limit > 0 && $total_items % $limit === 0 && $total_items >= $limit) {
@@ -134,6 +166,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 echo "<div class='result-error'><p>Warning: Total items ($total_items) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
             }
             ?>
+            <!-- Display result list -->
             <div id="holders-list" data-mint="<?php echo htmlspecialchars($mintAddress); ?>">
                 <?php
                 $ajax_page = $page;
@@ -153,6 +186,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         }
     }
     ?>
+    <!-- Informational block -->
     <div class="t-9">
         <h2>About NFT Holders Checker</h2>
         <p>
@@ -163,6 +197,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     </div>
 </div>
 
+<!-- JavaScript to handle AJAX pagination -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var holdersList = document.getElementById('holders-list');
@@ -202,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
+// Output and log footer
 ob_start();
 include $root_path . 'include/footer.php';
 $footer_output = ob_get_clean();
