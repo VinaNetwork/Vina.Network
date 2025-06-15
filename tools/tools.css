@@ -49,7 +49,7 @@ h1, h2 {text-align: center;}
 .t-4 form {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 20px;
     position: relative;
 }
 
