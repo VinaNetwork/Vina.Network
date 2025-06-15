@@ -127,9 +127,14 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     $api_page++;
                 }
 
-                if ($api_page > $max_pages) {
-                    log_message("nft-holders: Reached max pages ($max_pages) for $mintAddress, data may be incomplete", 'nft_holders_log.txt', 'WARNING');
-                    echo "<div class='result-error'><p>Warning: Reached maximum page limit ($max_pages), some data may be incomplete.</p></div>";
+                // Updated: Clearer warning message when max pages reached
+                if ($api_page > $max_pages && $has_more) {
+                    $max_items_possible = $max_pages * $limit;
+                    log_message("nft-holders: Reached max pages ($max_pages) for $mintAddress, data may be incomplete. Total items fetched: $total_items", 'nft_holders_log.txt', 'WARNING');
+                    echo "<div class='result-error'>";
+                    echo "<p><strong>Warning:</strong> The collection is too large, and only the first $max_items_possible NFTs were retrieved due to API limitations.</p>";
+                    echo "<p>This data may be incomplete. For full details, consider checking directly on the Solana blockchain or <a href='mailto:support@vina.network'>contact our support team</a>.</p>";
+                    echo "</div>";
                 }
 
                 // Deduplicate wallet holders
@@ -163,7 +168,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 throw new Exception("No items found or invalid collection address.");
             } elseif ($limit > 0 && $total_items % $limit === 0 && $total_items >= $limit) {
                 log_message("nft-holders: Suspicious total_items ($total_items) is a multiple of limit for $mintAddress", 'nft_holders_log.txt', 'WARNING');
-                echo "<div class='result-error'><p>Warning: Total items ($total_items) is a multiple of API limit ($limit). Actual number may be higher.</p></div>";
+                echo "<div class='result-error'><p>Warning: Total items ($total_items) is a multiple of API limit ($limit). Actual number may be higher. For full details, check directly on the Solana blockchain or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
             }
             ?>
             <!-- Display result list -->
