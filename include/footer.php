@@ -2,11 +2,11 @@
 <footer>
 <div class="footer-1">
     <div class="footer-2">
-        <h4>Vina Network</h3>
+        <h4>Vina Network</h4>
         <p>A leading Web3 ecosystem focused on cryptocurrencies, stablecoins, and DeFi.</p>
     </div>
     <div class="footer-2">
-        <h4>Quick Links</h3>
+        <h4>Quick Links</h4>
         <ul class="footer-3">
             <li><a href="https://www.vina.network/"><i class="fas fa-home"></i> Home</a></li>
             <li><a href="https://kimo.vina.network/token/"><i class="fas fa-coins"></i> Kimo</a></li>
@@ -14,7 +14,7 @@
         </ul>
     </div>
     <div class="footer-2">
-        <h4>Follow Us</h3>
+        <h4>Follow Us</h4>
         <div class="footer-4">
             <a href="https://x.com/Vina_Network" target="_blank" rel="nofollow noopener noreferrer"><i class="fab fa-x-twitter"></i> Twitter</a>
             <a href="https://t.me/VinaNetworks" target="_blank" rel="nofollow noopener noreferrer"><i class="fab fa-telegram-plane"></i> Telegram</a>
