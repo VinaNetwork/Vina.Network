@@ -5,7 +5,7 @@
  * This script allows users to check the total number of holders and NFTs for a given Solana on-chain collection address.
  * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
  * Update 3: Removed holders list and pagination, only shows summary card and export.
- * Update 4: Added Google reCAPTCHA v3 for form submission with provided keys.
+ * Update 4: Added Google reCAPTCHA v3 with keys from config.php.
  */
 
 // Disable display of errors in production
@@ -21,6 +21,14 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
+// Load config file
+$config_path = __DIR__ . '/../../config/config.php';
+if (!file_exists($config_path)) {
+    log_message("nft-holders: config.php not found at $config_path", 'nft_holders_log.txt', 'ERROR');
+    die('Error: config.php not found');
+}
+require_once $config_path;
+
 // Load bootstrap dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
@@ -33,9 +41,6 @@ require_once $bootstrap_path;
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
-
-// reCAPTCHA v3 Secret Key
-define('RECAPTCHA_SECRET_KEY', '6Lcrp2ErAAAAANrVSsg_X_O2RxHwuBHmyeNdoJ7l');
 
 // Set up page variables and include layout headers
 $root_path = '../../';
@@ -73,9 +78,16 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     // Handle form submission with reCAPTCHA validation
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
+            $mintAddress = trim($_POST['mintAddress']);
+            log_message("nft-holders: Form submitted with mintAddress=$mintAddress, POST data=" . json_encode($_POST), 'nft_holders_log.txt');
+
             // Validate reCAPTCHA token
-            $recaptcha_token = trim($_POST['recaptcha_token'] ?? '');
+            $recaptcha_token = '';
+            if (isset($_POST['recaptcha_token'])) {
+                $recaptcha_token = is_scalar($_POST['recaptcha_token']) ? trim($_POST['recaptcha_token']) : '';
+            }
             if (empty($recaptcha_token)) {
+                log_message("reCAPTCHA: No token provided for mintAddress=$mintAddress, POST data=" . json_encode($_POST), 'nft_holders_log.txt', 'ERROR');
                 throw new Exception("Please complete the CAPTCHA verification.");
             }
 
@@ -90,23 +102,27 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 'http' => [
                     'header' => "Content-type: application/x-www-form-urlencoded\r\n",
                     'method' => 'POST',
-                    'content' => http_build_query($recaptcha_data)
+                    'content' => http_build_query($recaptcha_data),
+                    'timeout' => 10
                 ]
             ];
             $recaptcha_context = stream_context_create($recaptcha_options);
-            $recaptcha_response = file_get_contents($recaptcha_url, false, $recaptcha_context);
+            $recaptcha_response = @file_get_contents($recaptcha_url, false, $recaptcha_context);
+            if ($recaptcha_response === false) {
+                log_message("reCAPTCHA: Failed to contact Google API for mintAddress=$mintAddress, error=" . error_get_last()['message'], 'nft_holders_log.txt', 'ERROR');
+                throw new Exception("CAPTCHA service unavailable. Please try again later.");
+            }
             $recaptcha_result = json_decode($recaptcha_response, true);
 
             log_message("reCAPTCHA: Verification result for mintAddress=$mintAddress, result=" . json_encode($recaptcha_result), 'nft_holders_log.txt');
 
-            if (!$recaptcha_result['success'] || $recaptcha_result['score'] < 0.5) {
-                // Score threshold 0.5: adjust as needed (0.0 = bot, 1.0 = human)
-                log_message("reCAPTCHA: Verification failed for mintAddress=$mintAddress, score=" . ($recaptcha_result['score'] ?? 'N/A'), 'nft_holders_log.txt', 'ERROR');
+            if (!isset($recaptcha_result['success']) || !$recaptcha_result['success'] || $recaptcha_result['score'] < 0.5) {
+                $score = $recaptcha_result['score'] ?? 'N/A';
+                $error_codes = $recaptcha_result['error-codes'] ?? [];
+                log_message("reCAPTCHA: Verification failed for mintAddress=$mintAddress, score=$score, error_codes=" . json_encode($error_codes), 'nft_holders_log.txt', 'ERROR');
                 throw new Exception("CAPTCHA verification failed. Please try again.");
             }
 
-            $mintAddress = trim($_POST['mintAddress']);
-            log_message("nft-holders: Form submitted with mintAddress=$mintAddress", 'nft_holders_log.txt');
             $limit = 1000;
             $max_pages = 50; // Reduced max pages to avoid API rate limit
             $cache_expiration = 3 * 3600; // 3 hours in seconds
@@ -303,29 +319,43 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
 </div>
 
 <!-- Include Google reCAPTCHA v3 script -->
-<script src="https://www.google.com/recaptcha/api.js?render=6Lcrp2ErAAAAACnVPArv1DNzsnYcWq_RQaYZ4kj7"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=<?php echo RECAPTCHA_SITE_KEY; ?>" async defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('nftHoldersForm');
     var submitBtn = document.getElementById('submit-btn');
     if (form && submitBtn) {
+        // Ensure reCAPTCHA script is loaded
+        if (typeof grecaptcha === 'undefined') {
+            console.error('reCAPTCHA script not loaded');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Check Holders';
+            form.insertAdjacentHTML('afterend', '<div class="result-error"><p>CAPTCHA service failed to load. Please refresh the page.</p></div>');
+            return;
+        }
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             submitBtn.disabled = true;
             submitBtn.textContent = 'Verifying...';
+
             grecaptcha.ready(function() {
-                grecaptcha.execute('6Lcrp2ErAAAAACnVPArv1DNzsnYcWq_RQaYZ4kj7', { action: 'submit_nft_holders' }).then(function(token) {
-                    document.getElementById('recaptcha-token').value = token;
-                    console.log('reCAPTCHA token generated:', token);
-                    form.submit();
-                }).catch(function(error) {
-                    console.error('reCAPTCHA error:', error);
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Check Holders';
-                    alert('CAPTCHA verification failed. Please try again.');
-                });
+                grecaptcha.execute('<?php echo RECAPTCHA_SITE_KEY; ?>', { action: 'submit_nft_holders' })
+                    .then(function(token) {
+                        document.getElementById('recaptcha-token').value = token;
+                        console.log('reCAPTCHA token generated:', token);
+                        form.submit();
+                    })
+                    .catch(function(error) {
+                        console.error('reCAPTCHA error:', error);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Check Holders';
+                        form.insertAdjacentHTML('afterend', '<div class="result-error"><p>CAPTCHA verification failed. Please try again.</p></div>');
+                    });
             });
         });
+    } else {
+        console.error('Form or submit button not found');
     }
 });
 </script>
