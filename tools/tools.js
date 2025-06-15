@@ -227,23 +227,40 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loader) loader.style.display = 'block';
 
             const formData = new FormData(form);
-            const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
+            const tool = document.querySelector('.t-link.active')?.getAttribute('data-tool');
+            if (!tool) {
+                console.error('No active tool found');
+                document.querySelector('.t-4').innerHTML = '<p>Error: No active tool selected. Please try again.</p>';
+                if (loader) loader.style.display = 'none';
+                return;
+            }
             fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        try {
+                            const json = JSON.parse(text);
+                            throw new Error(json.error || `HTTP error! Status: ${response.status}, Response: ${text}`);
+                        } catch (e) {
+                            throw new Error(`HTTP error! Status: ${response.status}, Response: ${text}`);
+                        }
+                    });
+                }
                 return response.text();
             })
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
                 initNFTDistributionChart(); // Re-initialize chart after AJAX load
+                if (loader) loader.style.display = 'none';
             })
             .catch(error => {
-                console.error('Error submitting form:', error);
-                document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
+                console.error('Error submitting form:', error.message);
+                document.querySelector('.t-4').innerHTML = `<p>Error submitting form: ${error.message}. Please try again.</p>`;
+                log_message(`client-error: Form submission failed - ${error.message}`, 'client_log.txt');
                 if (loader) loader.style.display = 'none';
             });
         }
