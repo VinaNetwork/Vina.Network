@@ -208,7 +208,7 @@ input {border: unset;}
     text-align: center;
 }
 
-.community-2 p {margin-bottom: 20px;}
+.community-2 p {margin-bottom: 20px !important;}
 
 /* Footer */
 footer {
