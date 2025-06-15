@@ -67,7 +67,6 @@ h1, h2 {text-align: center;}
 /* Holder results summary */
 .result-section {margin: 20px 0;}
 .holders-summary {
-    display: flex;
     justify-content: center;
     margin-bottom: 20px;
 }
