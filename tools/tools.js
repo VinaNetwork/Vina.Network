@@ -1,9 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Get the "tool" parameter from URL to determine which tab should be active
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
     const tabsContainer = document.querySelector('.t-3');
     let activeTab = document.querySelector('.t-link.active');
 
+    // If no tab is active but a tool is specified in the URL, activate the corresponding tab
     if (!activeTab && tool) {
         activeTab = document.querySelector(`.t-link[data-tool="${tool}"]`);
         if (activeTab) {
@@ -13,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Scroll the active tab into view
     if (tabsContainer && activeTab) {
         setTimeout(() => {
             const tabRect = activeTab.getBoundingClientRect();
@@ -24,12 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 
+    // Handle tab click events
     document.querySelectorAll('.t-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
+
+            // Remove active class from all tabs and set the clicked tab as active
             document.querySelectorAll('.t-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
+            // Scroll the clicked tab into center view
             if (tabsContainer) {
                 const tabRect = this.getBoundingClientRect();
                 const containerRect = tabsContainer.getBoundingClientRect();
@@ -39,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
+            // Update URL and load the corresponding tool content
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
@@ -58,9 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Handle form submissions
     document.addEventListener('submit', (e) => {
+        // Export form submission
         if (e.target.matches('.export-form')) {
             e.preventDefault();
+
             const form = e.target;
             const exportType = form.querySelector('[name="export_type"]').value;
             const mintAddress = form.querySelector('[name="mintAddress"]').value;
@@ -74,24 +85,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Client-side log
             log_message(`export-holders: Client - exportType=${exportType}, mintAddress=${mintAddress}, format=${exportFormat}`, 'client_log.txt');
 
-            if (loader) {
-                loader.style.display = 'block';
-            }
+            // Show loading indicator
+            if (loader) loader.style.display = 'block';
 
+            // Simulate progress bar
             if (progressContainer && progressBarFill) {
                 progressContainer.style.display = 'block';
                 let progress = 0;
                 const progressInterval = setInterval(() => {
                     progress += 5;
                     progressBarFill.style.width = `${progress}%`;
-                    if (progress >= 95) {
-                        clearInterval(progressInterval);
-                    }
+                    if (progress >= 95) clearInterval(progressInterval);
                 }, 300);
             }
 
+            // Submit the export form via fetch
             const formData = new FormData(form);
             fetch('/tools/nft-holders/nft-holders-export.php', {
                 method: 'POST',
@@ -123,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             })
             .then(({ blob, contentType }) => {
+                // Create a temporary download link
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -131,9 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url);
-                if (loader) {
-                    loader.style.display = 'none';
-                }
+
+                // Hide loader and reset progress
+                if (loader) loader.style.display = 'none';
                 if (progressContainer) {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
@@ -142,23 +154,22 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(error => {
                 console.error('Export error:', error.message);
                 alert(`Export failed: ${error.message}`);
-                if (loader) {
-                    loader.style.display = 'none';
-                }
+                if (loader) loader.style.display = 'none';
                 if (progressContainer) {
                     progressContainer.style.display = 'none';
                     progressBarFill.style.width = '0%';
                 }
             });
+
             return;
         }
+
+        // Handle all other form submissions (valuation, analysis, holders lookup, etc.)
         if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm, #nftHoldersForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            if (loader) {
-                loader.style.display = 'block';
-            }
+            if (loader) loader.style.display = 'block';
 
             const formData = new FormData(form);
             const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
@@ -173,20 +184,19 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
-                if (loader) {
-                    loader.style.display = 'none';
-                }
+                if (loader) loader.style.display = 'none';
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
-                if (loader) {
-                    loader.style.display = 'none';
-                }
+                if (loader) loader.style.display = 'none';
             });
         }
     });
 
+    /**
+     * Send client-side log message to the server (log-client.php)
+     */
     function log_message(message, file) {
         fetch('/tools/log-client.php', {
             method: 'POST',
