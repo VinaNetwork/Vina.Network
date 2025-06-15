@@ -1,4 +1,56 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize NFT Distribution Chart
+    function initNFTDistributionChart() {
+        const canvas = document.getElementById('nftDistributionChart');
+        if (canvas) {
+            const labels = JSON.parse(canvas.dataset.labels || '[]');
+            const values = JSON.parse(canvas.dataset.values || '[]');
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Số ví',
+                        data: values,
+                        backgroundColor: '#007bff',
+                        borderColor: '#0056b3',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Số lượng NFT'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Số ví'
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Call chart initialization on page load
+    initNFTDistributionChart();
+
     // Get the "tool" parameter from URL to determine which tab should be active
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
@@ -58,7 +110,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => document.querySelector('.t-4').innerHTML = data)
+            .then(data => {
+                document.querySelector('.t-4').innerHTML = data;
+                initNFTDistributionChart(); // Re-initialize chart after AJAX load
+            })
             .catch(error => {
                 console.error('Error loading tool content:', error);
                 document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
@@ -184,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 document.querySelector('.t-4').innerHTML = data;
-                if (loader) loader.style.display = 'none';
+                initNFTDistributionChart(); // Re-initialize chart after AJAX load
             })
             .catch(error => {
                 console.error('Error submitting form:', error);
