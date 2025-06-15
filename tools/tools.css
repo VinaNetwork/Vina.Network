@@ -12,10 +12,10 @@ h1, h2 {text-align: center;}
 /* Container spacing */
 .t-1 {margin-top: 72px;}
 .t-2 {
-	max-width: 1000px;
-	background: #ffffff;
-	padding: 30px;
-	margin: 0 auto;
+    max-width: 1000px;
+    background: #ffffff;
+    padding: 30px;
+    margin: 0 auto;
 }
 
 /* Tab navigation bar */
@@ -94,6 +94,14 @@ h1, h2 {text-align: center;}
 }
 .summary-item p {color: #666;}
 .summary-item h3 {color: #333;}
+
+/* Cache timestamp */
+.cache-timestamp {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+}
 
 /* Output & error sections */
 .result-info {
@@ -272,7 +280,7 @@ h1, h2 {text-align: center;}
     }
     .t-4 input {width: 100%;}
     .summary-card {max-width: 100%}
-	.transaction-table,
+    .transaction-table,
     .nft-transaction-results table {
         width: 100%;
     }
