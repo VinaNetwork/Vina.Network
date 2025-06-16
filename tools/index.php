@@ -1,16 +1,9 @@
 <?php
-/*
- * tools/index.php - Main Interface Loader for NFT Holder Tools
- *
- * This file serves as the main entry point for the NFT Tools section on the Vina Network website.
- * It provides the following functionalities:
- * - Initializes constants, configurations, and SEO metadata
- * - Displays the main HTML layout with tool navigation tabs (Holders, Valuation, Transactions, Wallet Analysis)
- * - Dynamically loads the correct tool module based on URL parameters (via PHP and AJAX)
- * - Provides basic error logging and fallback for missing modules
- * - Includes header, navbar, and footer templates
- * - Injects structured data for SEO (WebApplication schema)
- */
+// ============================================================================
+// tools/index.php - Main Interface Loader for NFT Holder Tools
+// Description: Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.
+// Created by: Vina Network
+// ============================================================================
 
 // Start output buffering and define constants for context
 ob_start();
