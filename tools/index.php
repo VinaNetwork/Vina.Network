@@ -1,15 +1,16 @@
 <?php
 /*
- * tools/index.php - Main Interface Loader for NFT Holder Tools
+ * tools/index.php - Main Interface Loader for NFT Tools (Vina Network)
  *
  * This file serves as the main entry point for the NFT Tools section on the Vina Network website.
- * It provides the following functionalities:
- * - Initializes constants, configurations, and SEO metadata
- * - Displays the main HTML layout with tool navigation tabs (Holders, Valuation, Transactions, Wallet Analysis)
- * - Dynamically loads the correct tool module based on URL parameters (via PHP and AJAX)
- * - Provides basic error logging and fallback for missing modules
- * - Includes header, navbar, and footer templates
- * - Injects structured data for SEO (WebApplication schema)
+ *
+ * Responsibilities:
+ * - Set up constants, environment, and SEO metadata
+ * - Load layout including header, navbar, footer
+ * - Render main tool navigation with tabbed links
+ * - Dynamically include corresponding tool module based on URL query
+ * - Log activity and handle fallback for invalid/missing modules
+ * - Provide structured data for SEO enhancement
  */
 
 // Start output buffering and define constants for context
@@ -18,7 +19,7 @@ define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
-// Set error reporting and logging
+// Enable error logging to file only
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
@@ -36,10 +37,10 @@ $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-holders' ? $_GET['tool'] . '/' : '');
 $page_css = ['../css/vina.css', 'tools.css'];
 
-// Get the requested tool from query string
+// Parse selected tool from query string
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-holders';
 
-// Include header
+// Include header template
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
     log_message("index: header.php not found at $header_path", 'tools_log.txt', 'ERROR');
@@ -51,7 +52,7 @@ include $header_path;
 <html lang="en">
 <body>
     <?php 
-        // Include navigation bar
+        // Load navigation bar template
         $navbar_path = $root_path . 'include/navbar.php';
         if (!file_exists($navbar_path)) {
             log_message("index: navbar.php not found at $navbar_path", 'tools_log.txt', 'ERROR');
@@ -62,44 +63,44 @@ include $header_path;
 
     <section class="t-1">
         <div class="t-2">
-            <!-- Page Title -->
+            <!-- Page Header -->
             <h1>Vina Network Tools</h1>
 
-            <!-- Tool Navigation Menu -->
+            <!-- Navigation Menu for Tool Tabs -->
             <div class="t-3">
-                <!-- Tool Tab: NFT Holders -->
+                <!-- NFT Holders Tool Tab -->
                 <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
                     <i class="fas fa-wallet"></i> NFT Holders
                 </a>
-                <!-- Tool Tab: NFT Valuation -->
+                <!-- NFT Valuation Tool Tab -->
                 <a href="?tool=nft-valuation" class="t-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
                     <i class="fas fa-chart-line"></i> NFT Valuation
                 </a>
-                <!-- Tool Tab: NFT Transactions -->
+                <!-- NFT Transactions Tool Tab -->
                 <a href="?tool=nft-transactions" class="t-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
                     <i class="fas fa-history"></i> NFT Transactions
                 </a>
-                <!-- Tool Tab: Wallet Analysis -->
+                <!-- Wallet Analysis Tool Tab -->
                 <a href="?tool=wallet-analysis" class="t-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
                     <i class="fas fa-user"></i> Wallet Analysis
                 </a>
             </div>
 
-            <!-- General Notice -->
+            <!-- General Information for Users -->
             <p class="note">Note: Only supports checking on the Solana blockchain.</p>
 
-            <!-- Tool Content Loader -->
+            <!-- Tool Output Container -->
             <div class="t-4">
                 <?php
                     log_message("index: tool = $tool", 'tools_log.txt');
 
-                    // Validate selected tool, fallback to default
+                    // Fallback if invalid tool selected
                     if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
                         $tool = 'nft-holders';
                         log_message("index: Invalid tool, defaulted to nft-holders", 'tools_log.txt', 'ERROR');
                     }
 
-                    // Define the file path for the selected tool
+                    // Determine file path for selected tool module
                     if ($tool === 'nft-holders') {
                         $tool_file = __DIR__ . '/nft-holders/nft-holders.php';
                     } elseif ($tool === 'nft-valuation') {
@@ -110,7 +111,7 @@ include $header_path;
                         $tool_file = __DIR__ . '/wallet-analysis/wallet-analysis.php';
                     }
 
-                    // Load the corresponding tool file if exists
+                    // Load module if file exists
                     if (isset($tool_file) && file_exists($tool_file)) {
                         log_message("index: Including tool file: $tool_file", 'tools_log.txt');
                         include $tool_file;
@@ -124,7 +125,7 @@ include $header_path;
     </section>
 
     <?php 
-        // Include footer
+        // Load footer template
         $footer_path = __DIR__ . '/../include/footer.php';
         log_message("index: Checking footer_path: $footer_path", 'tools_log.txt', 'DEBUG');
         if (!file_exists($footer_path)) {
@@ -134,7 +135,7 @@ include $header_path;
         include $footer_path;
     ?>
 
-    <!-- Structured Data for SEO: WebApplication -->
+    <!-- Schema.org Structured Metadata -->
     <script type="application/ld+json"> {
         "@context": "https://schema.org",
         "@type": "WebApplication",
@@ -151,7 +152,7 @@ include $header_path;
     }
     </script>
 
-    <!-- Load JavaScript files with timestamp and error fallback -->
+    <!-- Load Client-side JS Resources with Error Handling -->
     <script>console.log('Attempting to load JS files...');</script>
     <script src="../js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
     <script src="../js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/navbar.js')"></script>
