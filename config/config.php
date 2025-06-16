@@ -1,7 +1,7 @@
 <?php
 /*
  * ============================================================================
- * File: config.php
+ * File: config/config.php
  * Description: Central configuration file for Vina Network.
  *              Defines global constants such as API keys, base paths,
  *              error logging settings, and security access control.
