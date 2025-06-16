@@ -95,9 +95,14 @@ include $root_path . 'include/navbar.php';
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
 
-            // Fetch valuation from Helius API (placeholder endpoint)
-            $params = ['collection' => $mintAddress];
-            $data = callAPI('getCollectionStats', $params, 'POST');
+            // Fetch assets from Helius API to calculate floor price
+            $params = [
+                'groupKey' => 'collection',
+                'groupValue' => $mintAddress,
+                'page' => 1,
+                'limit' => 100 // Limit to 100 NFTs for performance
+            ];
+            $data = callAPI('getAssetsByGroup', $params, 'POST');
 
             if (isset($data['error'])) {
                 $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
@@ -105,15 +110,29 @@ include $root_path . 'include/navbar.php';
             }
 
             // Validate API response
-            if (!isset($data['result']['floor_price'], $data['result']['last_sale_price'], $data['result']['volume_24h'])) {
-                log_message("nft-valuation: Invalid API response, missing valuation data for mintAddress=$mintAddress", 'nft_valuation_log.txt', 'ERROR');
-                throw new Exception("Invalid API response: No valuation data found.");
+            if (!isset($data['result']['items'])) {
+                log_message("nft-valuation: Invalid API response, no items found for mintAddress=$mintAddress", 'nft_valuation_log.txt', 'ERROR');
+                throw new Exception("Invalid API response: No NFTs found in collection.");
             }
 
+            // Calculate floor price (min listed price, placeholder logic)
+            $items = $data['result']['items'];
+            $floor_price = 0;
+            foreach ($items as $item) {
+                // Check if NFT is listed (placeholder, Helius may not provide listing price)
+                if (isset($item['marketplace']['price']) && $item['marketplace']['listed']) {
+                    $price = $item['marketplace']['price'];
+                    if ($floor_price === 0 || $price < $floor_price) {
+                        $floor_price = $price;
+                    }
+                }
+            }
+
+            // Placeholder values for last sale price and volume
             $result = [
-                'floor_price' => $data['result']['floor_price'],
-                'last_sale_price' => $data['result']['last_sale_price'],
-                'volume_24h' => $data['result']['volume_24h']
+                'floor_price' => $floor_price ?: 'N/A', // If no listed NFTs, show N/A
+                'last_sale_price' => '0.00', // Need getSales endpoint
+                'volume_24h' => '0.00' // Need getSales endpoint
             ];
             log_message("nft-valuation: Retrieved floor_price={$result['floor_price']}, last_sale_price={$result['last_sale_price']}, volume_24h={$result['volume_24h']} for mintAddress=$mintAddress", 'nft_valuation_log.txt');
             ?>
@@ -130,12 +149,13 @@ include $root_path . 'include/navbar.php';
                     </thead>
                     <tbody>
                         <tr>
-                            <td><?php echo number_format($result['floor_price'], 2); ?></td>
+                            <td><?php echo is_numeric($result['floor_price']) ? number_format($result['floor_price'], 2) : $result['floor_price']; ?></td>
                             <td><?php echo number_format($result['last_sale_price'], 2); ?></td>
                             <td><?php echo number_format($result['volume_24h'], 2); ?></td>
                         </tr>
                     </tbody>
                 </table>
+                <p class="result-error">Note: Last Sale Price and 24h Trading Volume are placeholders. Please provide Helius endpoint for accurate data.</p>
             </div>
             <?php
         } catch (Exception $e) {
