@@ -1,13 +1,9 @@
 <?php
-/*
- * nft-holders-export.php - Export NFT Holder Data
- *
- * This script handles export requests for NFT holder data (CSV/JSON format).
- * It validates input parameters, retrieves data from file cache or API, and outputs downloadable files.
- * Restored from Update 1 with fixes for HTTP 500.
- * Update: Read from file cache with robust error handling to ensure consistency with nft-holders.php.
- * Fix: Simplified cache validation to prevent data loss after browser close.
- */
+// ============================================================================
+// File: index.php
+// Description: This script handles export requests for NFT holder data (CSV/JSON format).
+// Created by: Vina Network
+// ============================================================================
 
 if (!defined('VINANETWORK')) {
     define('VINANETWORK', true);
