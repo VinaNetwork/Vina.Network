@@ -1,21 +1,14 @@
 <?php
 // tools/tools-api.php
+// Description: Universal wrapper to call Helius RPC API on Solana.
+// Created by: Vina Network
+// ============================================================================
 
 // Define project constants for secured includes
 define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
-/**
- * callAPI
- * Universal wrapper to call Helius RPC API on Solana.
- *
- * @param string $endpoint - The RPC method name to be called.
- * @param array $params - Parameters to pass with the request.
- * @param string $method - HTTP method, default is POST.
- * @return array - Parsed API response or error message.
- * Update 7: Masked API key in logs for security
- */
 function callAPI($endpoint, $params = [], $method = 'POST') {
     $url = "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY;
     // Mask API key for logging
