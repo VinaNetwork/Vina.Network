@@ -1,17 +1,9 @@
 <?php
-/*
-|--------------------------------------------------------------------------
-| File: include/header.php
-| Description: Shared <head> section for all pages on Vina Network.
-| This file sets up:
-| - SEO meta tags (title, description, keywords, Open Graph, Twitter Card)
-| - Favicon and canonical URL
-| - Dynamic CSS inclusion and theme color
-| - Preload for performance optimization (fonts)
-| - JSON-LD structured data for SEO
-| - Google Analytics (gtag.js)
-|--------------------------------------------------------------------------
-*/
+// ============================================================================
+// File: include/header.php
+// Description: Shared <head> section for all pages on Vina Network.
+// Created by: Vina Network
+// ============================================================================
 
 // Default meta values (can be overridden from each page)
 $page_title = isset($page_title) ? $page_title : 'Vina Network - Leading Web3 Blockchain Ecosystem';
@@ -33,82 +25,82 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
 ?>
 
 <head>
-    <!-- Charset, Viewport & Theme Color -->
-    <meta charset="UTF-8">
-    <meta name="robots" content="index, follow">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="<?php echo htmlspecialchars($page_theme_color); ?>">
-    <meta name="msapplication-navbutton-color" content="<?php echo htmlspecialchars($page_theme_color); ?>">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Charset, Viewport & Theme Color -->
+<meta charset="UTF-8">
+<meta name="robots" content="index, follow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="<?php echo htmlspecialchars($page_theme_color); ?>">
+<meta name="msapplication-navbutton-color" content="<?php echo htmlspecialchars($page_theme_color); ?>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- SEO: Title & Meta Description -->
-    <title><?php echo htmlspecialchars($page_title); ?></title>
-    <meta name="description" content="<?php echo htmlspecialchars($page_description); ?>">
-    <meta name="keywords" content="<?php echo htmlspecialchars($page_keywords); ?>">
-    <meta name="author" content="<?php echo htmlspecialchars($page_author); ?>">
+<!-- SEO: Title & Meta Description -->
+<title><?php echo htmlspecialchars($page_title); ?></title>
+<meta name="description" content="<?php echo htmlspecialchars($page_description); ?>">
+<meta name="keywords" content="<?php echo htmlspecialchars($page_keywords); ?>">
+<meta name="author" content="<?php echo htmlspecialchars($page_author); ?>">
 
-    <!-- Open Graph for Facebook/LinkedIn -->
-    <meta property="og:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
-    <meta property="og:description" content="<?php echo htmlspecialchars($page_og_description); ?>">
-    <meta property="og:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
-    <meta property="og:url" content="<?php echo htmlspecialchars($page_og_url); ?>">
-    <meta property="og:type" content="<?php echo htmlspecialchars($page_og_type); ?>">
+<!-- Open Graph for Facebook/LinkedIn -->
+<meta property="og:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
+<meta property="og:description" content="<?php echo htmlspecialchars($page_og_description); ?>">
+<meta property="og:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
+<meta property="og:url" content="<?php echo htmlspecialchars($page_og_url); ?>">
+<meta property="og:type" content="<?php echo htmlspecialchars($page_og_type); ?>">
 
-    <!-- Twitter Card for better preview -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
-    <meta name="twitter:description" content="<?php echo htmlspecialchars($page_og_description); ?>">
-    <meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
+<!-- Twitter Card for better preview -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
+<meta name="twitter:description" content="<?php echo htmlspecialchars($page_og_description); ?>">
+<meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
 
-    <!-- Optional override robots -->
-    <meta name="robots" content="<?php echo isset($page_robots) ? htmlspecialchars($page_robots) : 'index, follow'; ?>">
+<!-- Optional override robots -->
+<meta name="robots" content="<?php echo isset($page_robots) ? htmlspecialchars($page_robots) : 'index, follow'; ?>">
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href="<?php echo htmlspecialchars($page_canonical); ?>">
+<!-- Canonical URL -->
+<link rel="canonical" href="<?php echo htmlspecialchars($page_canonical); ?>">
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="<?php echo $root_path; ?>img/favicon.ico">
+<!-- Favicon -->
+<link rel="icon" type="image/x-icon" href="<?php echo $root_path; ?>img/favicon.ico">
 
-    <!-- Core Stylesheets -->
-    <link rel="stylesheet" href="<?php echo $root_path; ?>css/vina.css">
-    <?php if (!empty($page_css)): ?>
-        <?php foreach ($page_css as $css): ?>
-            <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
-        <?php endforeach; ?>
-    <?php endif; ?>
-    <link rel="stylesheet" href="<?php echo $root_path; ?>css/poppins.css">
-    <link rel="stylesheet" href="<?php echo $root_path; ?>css/all.css">
+<!-- Core Stylesheets -->
+<link rel="stylesheet" href="<?php echo $root_path; ?>css/vina.css">
+<?php if (!empty($page_css)): ?>
+    <?php foreach ($page_css as $css): ?>
+        <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
+    <?php endforeach; ?>
+<?php endif; ?>
+<link rel="stylesheet" href="<?php echo $root_path; ?>css/poppins.css">
+<link rel="stylesheet" href="<?php echo $root_path; ?>css/all.css">
 
-    <!-- Font Preloading (Performance Optimization) -->
-    <link rel="preload" href="<?php echo $root_path; ?>webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo $root_path; ?>webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo $root_path; ?>webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo $root_path; ?>fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="<?php echo $root_path; ?>fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Font Preloading (Performance Optimization) -->
+<link rel="preload" href="<?php echo $root_path; ?>webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<?php echo $root_path; ?>webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<?php echo $root_path; ?>webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<?php echo $root_path; ?>fonts/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<?php echo $root_path; ?>fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
 
-    <!-- JSON-LD Structured Data for SEO -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Vina Network",
-        "url": "<?php echo htmlspecialchars($page_og_url); ?>",
-        "logo": "<?php echo htmlspecialchars($page_og_image); ?>",
-        "description": "<?php echo htmlspecialchars($page_description); ?>",
-        "sameAs": [
-            "https://x.com/Vina_Network",
-            "https://t.me/Vina_Network"
-        ]
-    }
-    </script>
+<!-- JSON-LD Structured Data for SEO -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Vina Network",
+    "url": "<?php echo htmlspecialchars($page_og_url); ?>",
+    "logo": "<?php echo htmlspecialchars($page_og_image); ?>",
+    "description": "<?php echo htmlspecialchars($page_description); ?>",
+    "sameAs": [
+        "https://x.com/Vina_Network",
+        "https://t.me/Vina_Network"
+    ]
+}
+</script>
 
-    <!-- Google Analytics Tracking -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-9PX6BGXB5N"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-9PX6BGXB5N');
-    </script>
+<!-- Google Analytics Tracking -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9PX6BGXB5N"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-9PX6BGXB5N');
+</script>
 </head>
