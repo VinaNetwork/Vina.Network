@@ -1,4 +1,16 @@
-// 3. Đổi style Navbar khi cuộn trang với debounce
+/* 
+|--------------------------------------------------------------------------
+| File: js/navbar.js
+| Description: JavaScript logic for handling the behavior of the navigation bar.
+| Features:
+| 1. Change navbar style on scroll
+| 2. Toggle mobile menu (burger menu)
+| 3. Manage dropdown behavior (mobile + desktop)
+| 4. Auto-close dropdowns and menu on outside click
+|--------------------------------------------------------------------------
+*/
+
+// 1. Debounce function to limit the rate at which a function is triggered
 function debounce(func, wait) {
     let timeout;
     return function (...args) {
@@ -6,6 +18,8 @@ function debounce(func, wait) {
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
+
+// 2. Change navbar style (e.g., background) when user scrolls down
 document.addEventListener('scroll', debounce(() => {
     if (window.scrollY > 50) {
         document.querySelector('.navbar').classList.add('scrolled');
@@ -14,27 +28,30 @@ document.addEventListener('scroll', debounce(() => {
     }
 }, 100));
 
-// 4. Hiệu ứng menu mobile (Burger Menu)
+// 3. Toggle burger menu (mobile view)
 const burger = document.querySelector('.burger');
 const navLinks = document.querySelector('.nav-1');
+
 burger.addEventListener('click', () => {
     burger.classList.toggle('active');
     navLinks.classList.toggle('active');
+    // Disable body scroll when mobile menu is open
     document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
 });
 
-// 5. Xử lý trạng thái active cho các menu links
+// 4. Handle menu link clicks
 const navLinksItems = document.querySelectorAll('.nav-link');
 navLinksItems.forEach(link => {
     link.addEventListener('click', (e) => {
-        // Nếu là dropdown-toggle trên mobile, chỉ xổ menu con, không đóng menu chính
+        // Handle dropdown toggle on mobile
         if (window.innerWidth <= 768 && link.classList.contains('dropdown-toggle')) {
             e.preventDefault();
             const parentDropdown = link.closest('.dropdown');
             const dropdownMenu = parentDropdown.querySelector('.dropdown-menu');
             dropdownMenu.classList.toggle('active');
             link.classList.toggle('active');
-            // Đóng các dropdown khác
+
+            // Close other open dropdowns
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 if (menu !== dropdownMenu) menu.classList.remove('active');
             });
@@ -43,8 +60,9 @@ navLinksItems.forEach(link => {
             });
             return;
         }
-        // Link thường: đóng menu mobile
-        if(navLinks.classList.contains('active')) {
+
+        // For regular links: close burger menu if open
+        if (navLinks.classList.contains('active')) {
             burger.classList.remove('active');
             navLinks.classList.remove('active');
             document.body.style.overflow = '';
@@ -52,10 +70,10 @@ navLinksItems.forEach(link => {
     });
 });
 
-// Khi click vào dropdown-link trên mobile, đóng menu luôn
+// 5. When clicking a dropdown item on mobile, close entire menu
 document.querySelectorAll('.dropdown-link').forEach(item => {
     item.addEventListener('click', () => {
-        if(window.innerWidth <= 768) {
+        if (window.innerWidth <= 768) {
             burger.classList.remove('active');
             navLinks.classList.remove('active');
             document.body.style.overflow = '';
@@ -65,17 +83,19 @@ document.querySelectorAll('.dropdown-link').forEach(item => {
     });
 });
 
-// 6. Dropdown menu (sổ menu con) trên desktop
+// 6. Dropdown toggle behavior on desktop (click to open/close)
 const dropdowns = document.querySelectorAll('.dropdown');
 dropdowns.forEach(dropdown => {
     const toggle = dropdown.querySelector('.dropdown-toggle');
     const content = dropdown.querySelector('.dropdown-menu');
-    // Chỉ xử lý hover trên desktop
+    
     if (window.innerWidth > 768) {
         toggle.addEventListener('click', (e) => {
             e.preventDefault();
             content.classList.toggle('active');
             toggle.classList.toggle('active');
+
+            // Close other dropdowns
             dropdowns.forEach(d => {
                 if (d !== dropdown) {
                     d.querySelector('.dropdown-menu').classList.remove('active');
@@ -86,9 +106,9 @@ dropdowns.forEach(dropdown => {
     }
 });
 
-// 7. Đóng dropdown khi click ra ngoài (mobile + desktop)
+// 7. Close dropdowns or mobile menu when clicking outside
 document.addEventListener('click', (e) => {
-    // Đóng toàn bộ navbar mobile khi bấm ngoài
+    // Close mobile menu if user clicks outside
     if (
         window.innerWidth <= 768 &&
         navLinks.classList.contains('active') &&
@@ -102,7 +122,7 @@ document.addEventListener('click', (e) => {
         document.querySelectorAll('.dropdown-toggle').forEach(toggle => toggle.classList.remove('active'));
     }
 
-    // Đóng dropdown menu nếu click ra ngoài vùng dropdown (desktop)
+    // Close desktop dropdowns if user clicks outside
     if (window.innerWidth > 768) {
         dropdowns.forEach(dropdown => {
             if (!dropdown.contains(e.target)) {
