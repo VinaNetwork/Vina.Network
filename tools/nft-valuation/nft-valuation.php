@@ -1,76 +1,166 @@
 <?php
 // ============================================================================
 // File: tools/nft-valuation/nft-valuation.php
-// Description: NFT price check function.
+// Description: Check real-time market valuation for Solana NFT Collections.
 // Created by: Vina Network
 // ============================================================================
 
-include '../tools-api.php';
+// Disable display of errors in production
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
+
+// Define constants to mark script entry
+if (!defined('VINANETWORK')) {
+    define('VINANETWORK', true);
+}
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+// Load bootstrap dependencies
+$bootstrap_path = __DIR__ . '/../bootstrap.php';
+if (!file_exists($bootstrap_path)) {
+    log_message("nft-valuation: bootstrap.php not found at $bootstrap_path", 'nft_valuation_log.txt', 'ERROR');
+    die('Error: bootstrap.php not found');
+}
+require_once $bootstrap_path;
+
+// Start session and configure error logging
+session_start();
+ini_set('log_errors', true);
+ini_set('error_log', ERROR_LOG_PATH);
+
+// Rate limiting: 5 requests per minute per IP
+$ip = $_SERVER['REMOTE_ADDR'];
+$rate_limit_key = "rate_limit:$ip";
+$rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
+$rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
+if (time() - $rate_limit_time > 60) {
+    $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
+    log_message("nft-valuation: Reset rate limit for IP=$ip, count=1", 'nft_valuation_log.txt');
+} elseif ($rate_limit_count >= 5) {
+    log_message("nft-valuation: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_valuation_log.txt', 'ERROR');
+    die("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
+} else {
+    $_SESSION[$rate_limit_key]['count']++;
+    log_message("nft-valuation: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_valuation_log.txt');
+}
+
+// Include tools API helper
+$api_helper_path = __DIR__ . '/../tools-api.php';
+if (!file_exists($api_helper_path)) {
+    log_message("nft-valuation: tools-api.php not found at $api_helper_path", 'nft_valuation_log.txt', 'ERROR');
+    die('Internal Server Error: Missing tools-api.php');
+}
+include $api_helper_path;
+
+// Set up page variables
+$root_path = '../../';
+$page_title = 'Check NFT Valuation - Vina Network';
+$page_description = 'Check real-time market valuation for a Solana NFT Collection.';
+$page_css = ['../../css/vina.css', '../tools.css'];
+include $root_path . 'include/header.php';
+include $root_path . 'include/navbar.php';
 ?>
 
+<!-- Render input form for NFT Collection address -->
 <div class="t-6 nft-valuation-content">
     <div class="t-7">
         <h2>Check NFT Valuation</h2>
-        <p>Enter the address of the NFT to see its current floor price and recent sales.</p>
-
+        <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to check its real-time market valuation. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftValuationForm" method="POST" action="">
-            <input type="text" name="mintAddressValuation" id="mintAddressValuation" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+            <input type="text" name="mintAddress" id="mintAddressValuation" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
             <button type="submit" class="cta-button">Check Valuation</button>
         </form>
+        <div class="loader"></div>
     </div>
 
     <?php
-	if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressValuation'])) {
-		$mintAddress = trim($_POST['mintAddressValuation']);
-	
-		// Gọi API để lấy thông tin giá trị NFT
-		$valuation = getNFTValuation($mintAddress);
-	
-		if (isset($valuation['error'])) {
-			echo "<div class='result-error'><p>" . htmlspecialchars($valuation['error']) . "</p></div>";
-		} elseif ($valuation) {
-			echo "<div class='result-section'>";
-			echo "<h3>Results</h3>";
-			echo "<p class='result-info'>Floor Price: " . htmlspecialchars($valuation['floorPrice'] ?? 'N/A') . " SOL</p>";
-			echo "<p class='result-info'>Last Sale: " . htmlspecialchars($valuation['lastSale'] ?? 'N/A') . " SOL</p>";
-			echo "<p class='result-info'>Volume (24h): " . htmlspecialchars($valuation['volume'] ?? 'N/A') . " SOL</p>";
-			echo "</div>";
-		} else {
-			echo "<div class='result-error'><p>No valuation data found or invalid mint address.</p></div>";
-		}
-	}
+    // Handle form submission and valuation fetching
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
+        try {
+            // Validate CSRF token
+            if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+                log_message("nft-valuation: Invalid CSRF token for mintAddress=" . ($_POST['mintAddress'] ?? 'unknown'), 'nft_valuation_log.txt', 'ERROR');
+                throw new Exception("Invalid CSRF token. Please try again.");
+            }
+
+            $mintAddress = trim($_POST['mintAddress']);
+            log_message("nft-valuation: Form submitted with mintAddress=$mintAddress", 'nft_valuation_log.txt');
+
+            // Validate address format (base58, 32–44 characters)
+            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
+                throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
+            }
+
+            // Fetch valuation from Helius API (placeholder endpoint)
+            $params = ['collection' => $mintAddress];
+            $data = callAPI('getCollectionStats', $params, 'POST');
+
+            if (isset($data['error'])) {
+                $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
+                throw new Exception("API error: $errorMessage");
+            }
+
+            // Validate API response
+            if (!isset($data['result']['floor_price'], $data['result']['last_sale_price'], $data['result']['volume_24h'])) {
+                log_message("nft-valuation: Invalid API response, missing valuation data for mintAddress=$mintAddress", 'nft_valuation_log.txt', 'ERROR');
+                throw new Exception("Invalid API response: No valuation data found.");
+            }
+
+            $result = [
+                'floor_price' => $data['result']['floor_price'],
+                'last_sale_price' => $data['result']['last_sale_price'],
+                'volume_24h' => $data['result']['volume_24h']
+            ];
+            log_message("nft-valuation: Retrieved floor_price={$result['floor_price']}, last_sale_price={$result['last_sale_price']}, volume_24h={$result['volume_24h']} for mintAddress=$mintAddress", 'nft_valuation_log.txt');
+            ?>
+
+            <!-- Display valuation table -->
+            <div class="result-section">
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Floor Price (SOL)</th>
+                            <th>Last Sale Price (SOL)</th>
+                            <th>24h Trading Volume (SOL)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><?php echo number_format($result['floor_price'], 2); ?></td>
+                            <td><?php echo number_format($result['last_sale_price'], 2); ?></td>
+                            <td><?php echo number_format($result['volume_24h'], 2); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <?php
+        } catch (Exception $e) {
+            $error_msg = "Error processing request: " . $e->getMessage();
+            log_message("nft-valuation: Exception - $error_msg", 'nft_valuation_log.txt', 'ERROR');
+            echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
+        }
+    }
     ?>
 
-    <!-- Thêm mô tả chi tiết chức năng của tab -->
+    <!-- Informational block -->
     <div class="t-9">
-        <h3>About NFT Valuation Checker</h3>
+        <h2>About NFT Valuation Checker</h2>
         <p>
-            The NFT Valuation Checker allows you to assess the market value of a specific Solana NFT by entering its mint address. 
-            It retrieves key financial metrics, including the current floor price, the most recent sale price, and the trading volume over the last 24 hours. 
-            This tool is ideal for NFT traders, investors, or collectors looking to evaluate the market performance of an NFT on the Solana blockchain.
+            The NFT Valuation Checker allows you to view real-time market valuation for a specific Solana NFT Collection by entering its On-chain Collection address. 
+            This tool provides key financial metrics such as floor price, last sale price, and 24-hour trading volume, useful for NFT creators, collectors, or investors.
         </p>
     </div>
 </div>
 
 <?php
-	function getNFTValuation($mintAddress) {
-		$payload = [
-			"mintAddresses" => [$mintAddress]
-		];
-	
-		$data = callHeliusAPI('tokens', $payload);
-		if (isset($data['error'])) {
-			return ['error' => $data['error']];
-		}
-	
-		if (isset($data[0])) {
-			return [
-				'floorPrice' => $data[0]['floorPrice'] ?? 'N/A',
-				'lastSale' => $data[0]['lastSale'] ?? 'N/A',
-				'volume' => $data[0]['volume'] ?? 'N/A'
-			];
-		}
-	
-		return ['error' => 'No data found for this mint address.'];
-	}
+// Output and log footer
+ob_start();
+include $root_path . 'include/footer.php';
+$footer_output = ob_get_clean();
+log_message("nft-valuation: Footer output length: " . strlen($footer_output), 'nft_valuation_log.txt');
+echo $footer_output;
 ?>
