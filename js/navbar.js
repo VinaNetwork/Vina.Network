@@ -1,14 +1,8 @@
-/* 
-|--------------------------------------------------------------------------
-| File: js/navbar.js
-| Description: JavaScript logic for handling the behavior of the navigation bar.
-| Features:
-| 1. Change navbar style on scroll
-| 2. Toggle mobile menu (burger menu)
-| 3. Manage dropdown behavior (mobile + desktop)
-| 4. Auto-close dropdowns and menu on outside click
-|--------------------------------------------------------------------------
-*/
+// ============================================================================
+// File: js/navbar.js
+// Description: JavaScript logic for handling the behavior of the navigation bar.
+// Created by: Vina Network
+// ============================================================================
 
 // 1. Debounce function to limit the rate at which a function is triggered
 function debounce(func, wait) {
