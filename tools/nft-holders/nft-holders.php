@@ -10,6 +10,7 @@
  * Update 7: Changed timestamp label to UTC+0 and moved Last updated below holders-summary.
  * Update 7: Ensured API key is masked in logs for security.
  * Update 8: Added cleanup of expired cache entries to reduce cache file size.
+ * Update 8: Compressed cache with gzcompress to reduce storage size.
  * Fix: Robust file-based cache to persist data across sessions, with detailed logging for debugging.
  * Fix 2: Removed cache reset on new mintAddress to prevent data loss after browser close.
  * Temporary: Set cache_expiration to 600 seconds (10 minutes) for testing expired cache cleanup.
@@ -57,12 +58,12 @@ if (!is_dir($cache_dir)) {
 
 // Ensure cache file exists
 if (!file_exists($cache_file)) {
-    if (file_put_contents($cache_file, json_encode([])) === false) {
-        log_message("nft-holders: Failed to create cache file at $cache_file", 'nft_holders_log.txt', 'ERROR');
+    if (file_put_contents($cache_file, gzcompress(json_encode([]), 6)) === false) {
+        log_message("nft-holders: Failed to create compressed cache file at $cache_file", 'nft_holders_log.txt', 'ERROR');
         die('Error: Unable to create cache file');
     }
     chmod($cache_file, 0644);
-    log_message("nft-holders: Created cache file at $cache_file", 'nft_holders_log.txt');
+    log_message("nft-holders: Created compressed cache file at $cache_file", 'nft_holders_log.txt');
 }
 
 // Check cache file permissions
@@ -124,10 +125,21 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             }
 
             // Load cache from file
-            $cache_data = json_decode(file_get_contents($cache_file), true);
-            if (!is_array($cache_data)) {
-                $cache_data = [];
-                log_message("nft-holders: Failed to parse cache file, initializing empty cache", 'nft_holders_log.txt', 'WARNING');
+            $cache_data = [];
+            $cache_content = file_get_contents($cache_file);
+            if ($cache_content !== false && !empty($cache_content)) {
+                $uncompressed = @gzuncompress($cache_content);
+                if ($uncompressed !== false) {
+                    $cache_data = json_decode($uncompressed, true);
+                    if (!is_array($cache_data)) {
+                        $cache_data = [];
+                        log_message("nft-holders: Failed to decode uncompressed cache, resetting cache", 'nft_holders_log.txt', 'ERROR');
+                    }
+                } else {
+                    log_message("nft-holders: Failed to uncompress cache, resetting cache", 'nft_holders_log.txt', 'ERROR');
+                }
+            } else {
+                log_message("nft-holders: Failed to read cache file or cache is empty, initializing empty cache", 'nft_holders_log.txt', 'WARNING');
             }
 
             // Check if cache exists and is not expired
@@ -244,18 +256,24 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     'wallets' => $wallets,
                     'timestamp' => time()
                 ];
-                if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-                    log_message("nft-holders: Failed to write cache file for mintAddress=$mintAddress", 'nft_holders_log.txt', 'ERROR');
-                    throw new Exception("Failed to save cache data");
+                $compressed = gzcompress(json_encode($cache_data, JSON_PRETTY_PRINT), 6);
+                if ($compressed !== false) {
+                    if (file_put_contents($cache_file, $compressed) === false) {
+                        log_message("nft-holders: Failed to write compressed cache to $cache_file", 'nft_holders_log.txt', 'ERROR');
+                        throw new Exception("Failed to save compressed cache data");
+                    }
+                    log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
+                } else {
+                    log_message("nft-holders: Failed to compress cache data for $mintAddress", 'nft_holders_log.txt', 'ERROR');
+                    throw new Exception("Failed to compress cache data");
                 }
-                log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
             } else {
                 $total_items = $cache_data[$mintAddress]['total_items'] ?? 0;
                 $total_wallets = $cache_data[$mintAddress]['total_wallets'] ?? 0;
                 $items = $cache_data[$mintAddress]['items'] ?? [];
                 $wallets = $cache_data[$mintAddress]['wallets'] ?? [];
                 $cache_timestamp = $cache_data[$mintAddress]['timestamp'];
-                log_message("nft-holders: Retrieved total_items=$total_items, total_wallets=$total_wallets from file cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $cache_timestamp), 'nft_holders_log.txt');
+                log_message("nft-holders: Retrieved total_items=$total_items, total_wallets=$total_wallets from compressed cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $cache_timestamp), 'nft_holders_log.txt');
             }
 
             log_message("nft-holders: Final total_items=$total_items, total_wallets=$total_wallets for $mintAddress", 'nft_holders_log.txt');
