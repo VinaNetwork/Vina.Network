@@ -11,6 +11,7 @@
  * Update 7: Ensured API key is masked in logs for security.
  * Update 8: Added cleanup of expired cache entries to reduce cache file size.
  * Update 8: Compressed cache with gzcompress to reduce storage size.
+ * Update 9: Added rate limiting (5 requests/minute/IP) to prevent API abuse.
  * Fix: Robust file-based cache to persist data across sessions, with detailed logging for debugging.
  * Fix 2: Removed cache reset on new mintAddress to prevent data loss after browser close.
  * Temporary: Set cache_expiration to 600 seconds (10 minutes) for testing expired cache cleanup.
@@ -42,6 +43,22 @@ require_once $bootstrap_path;
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
+
+// Rate limiting: 5 requests per minute per IP
+$ip = $_SERVER['REMOTE_ADDR'];
+$rate_limit_key = "rate_limit:$ip";
+$rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
+$rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
+if (time() - $rate_limit_time > 60) {
+    $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
+    log_message("nft-holders: Reset rate limit for IP=$ip, count=1", 'nft_holders_log.txt');
+} elseif ($rate_limit_count >= 5) {
+    log_message("nft-holders: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_holders_log.txt', 'ERROR');
+    die("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
+} else {
+    $_SESSION[$rate_limit_key]['count']++;
+    log_message("nft-holders: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_holders_log.txt');
+}
 
 // Define cache directory and file
 $cache_dir = __DIR__ . '/cache';
