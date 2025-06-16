@@ -8,10 +8,11 @@
  *              Provides users with ways to get in touch via X (Twitter),
  *              Telegram, or Email. Also includes relevant metadata for SEO
  *              and social sharing.
- * Created by: Vina Network Development Team
+ * Created by: Vina Network
  * ============================================================================
  */
 
+// Head Section (Meta, Styles, Title) is included via header.php
 $root_path = '../';
 $page_title = "Vina Network - Contact Us";
 $page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
@@ -25,7 +26,6 @@ $page_css = ['contact.css'];
 include '../include/header.php';
 ?>
 <body>
-
     <!-- Navigation Bar -->
     <?php include '../include/navbar.php'; ?>
 
@@ -74,13 +74,12 @@ include '../include/header.php';
 
     <!-- Structured Data for SEO -->
     <script type="application/ld+json">
-        {
-            "@context": "https://schema.org",
-            "@type": "ContactPage",
-            "url": "https://www.vina.network/contact/",
-            "name": "Contact Vina Network"
-        }
+    {
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "url": "https://www.vina.network/contact/",
+        "name": "Contact Vina Network"
+    }
     </script>
-
 </body>
 </html>
