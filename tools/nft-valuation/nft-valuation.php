@@ -95,12 +95,12 @@ include $root_path . 'include/navbar.php';
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
 
-            // Fetch assets from Helius API to calculate floor price
+            // Fetch assets from Helius API
             $params = [
                 'groupKey' => 'collection',
                 'groupValue' => $mintAddress,
                 'page' => 1,
-                'limit' => 100 // Limit to 100 NFTs for performance
+                'limit' => 100 // Reduced for performance
             ];
             $data = callAPI('getAssetsByGroup', $params, 'POST');
 
@@ -115,26 +115,13 @@ include $root_path . 'include/navbar.php';
                 throw new Exception("Invalid API response: No NFTs found in collection.");
             }
 
-            // Calculate floor price (min listed price, placeholder logic)
-            $items = $data['result']['items'];
-            $floor_price = 0;
-            foreach ($items as $item) {
-                // Check if NFT is listed (placeholder, Helius may not provide listing price)
-                if (isset($item['marketplace']['price']) && $item['marketplace']['listed']) {
-                    $price = $item['marketplace']['price'];
-                    if ($floor_price === 0 || $price < $floor_price) {
-                        $floor_price = $price;
-                    }
-                }
-            }
-
-            // Placeholder values for last sale price and volume
+            // Placeholder: No price data available in getAssetsByGroup
             $result = [
-                'floor_price' => $floor_price ?: 'N/A', // If no listed NFTs, show N/A
+                'floor_price' => 'N/A', // Need Helius endpoint for listings
                 'last_sale_price' => '0.00', // Need getSales endpoint
                 'volume_24h' => '0.00' // Need getSales endpoint
             ];
-            log_message("nft-valuation: Retrieved floor_price={$result['floor_price']}, last_sale_price={$result['last_sale_price']}, volume_24h={$result['volume_24h']} for mintAddress=$mintAddress", 'nft_valuation_log.txt');
+            log_message("nft-valuation: Retrieved total_items=" . count($data['result']['items']) . ", floor_price={$result['floor_price']}, last_sale_price={$result['last_sale_price']}, volume_24h={$result['volume_24h']} for mintAddress=$mintAddress", 'nft_valuation_log.txt');
             ?>
 
             <!-- Display valuation table -->
@@ -149,13 +136,13 @@ include $root_path . 'include/navbar.php';
                     </thead>
                     <tbody>
                         <tr>
-                            <td><?php echo is_numeric($result['floor_price']) ? number_format($result['floor_price'], 2) : $result['floor_price']; ?></td>
+                            <td><?php echo $result['floor_price']; ?></td>
                             <td><?php echo number_format($result['last_sale_price'], 2); ?></td>
                             <td><?php echo number_format($result['volume_24h'], 2); ?></td>
                         </tr>
                     </tbody>
                 </table>
-                <p class="result-error">Note: Last Sale Price and 24h Trading Volume are placeholders. Please provide Helius endpoint for accurate data.</p>
+                <p class="result-error">Note: Valuation data is placeholder due to missing Helius endpoint for market stats. Please provide endpoint for floor price, last sale, and 24h volume.</p>
             </div>
             <?php
         } catch (Exception $e) {
@@ -170,14 +157,14 @@ include $root_path . 'include/navbar.php';
     <div class="t-9">
         <h2>About NFT Valuation Checker</h2>
         <p>
-            The NFT Valuation Checker allows you to view real-time market valuation for a specific Solana NFT Collection by entering its On-chain Collection address. 
-            This tool provides key financial metrics such as floor price, last sale price, and 24-hour trading volume, useful for NFT creators, collectors, or investors.
+            The NFT Valuation Tool allows you to view real-time market valuation for a specific Solana NFT Collection by entering its on-chain collection address.
+            This tool aims to provide key financial metrics such as floor price, last sale price, and 24-hour trading volume, useful for NFT creators, collectors, or investors.
         </p>
     </div>
 </div>
 
 <?php
-// Output and log footer
+// Output footer
 ob_start();
 include $root_path . 'include/footer.php';
 $footer_output = ob_get_clean();
