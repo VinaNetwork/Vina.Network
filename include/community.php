@@ -5,7 +5,6 @@
 //              Included across all pages to encourage users to join the Vina Network community.
 // Created by: Vina Network
 // --------------------------------------------------------------------------
-*/
 ?>
 
 <!-- Join Our Community Section -->
