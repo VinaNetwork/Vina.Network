@@ -1,3 +1,12 @@
+# ------------------------------------------------------------------------------
+# File: robots.txt
+# Description: Control search engine bot access for the Vina Network website
+# Purpose: Optimize SEO, protect sensitive resources, and block unwanted crawlers
+# ------------------------------------------------------------------------------
+
+# ----------------------------------------
+# Allow all bots to access static resources and HTML content
+# ----------------------------------------
 User-agent: *
 Allow: /
 Allow: *.html
@@ -12,7 +21,9 @@ Allow: *.ico
 Allow: *.woff
 Allow: *.woff2
 
-# Disallow sensitive files and directories
+# ----------------------------------------
+# Block access to sensitive files and internal directories
+# ----------------------------------------
 Disallow: /wp-admin/
 Disallow: /admin/
 Disallow: /login/
@@ -20,27 +31,33 @@ Disallow: /config/
 Disallow: /include/
 Disallow: /vendor/
 Disallow: /logs/
-Disallow: /*.php$
-Disallow: /*.env
-Disallow: /*.log
-Disallow: /*.bak
-Disallow: /*.sql
-Disallow: /*.git
-Disallow: /php.ini
-Disallow: /.htaccess
+Disallow: /*.php$         # Block all PHP files
+Disallow: /*.env          # Environment configuration files
+Disallow: /*.log          # Log files
+Disallow: /*.bak          # Backup files
+Disallow: /*.sql          # Database dump files
+Disallow: /*.git          # Git version control folder
+Disallow: /php.ini        # PHP configuration file
+Disallow: /.htaccess      # Apache server configuration file
 
-# Disallow dynamic or temporary pages
-Disallow: /*?* # Block URLs with query strings
+# ----------------------------------------
+# Block dynamic and temporary pages from indexing
+# ----------------------------------------
+Disallow: /*?*            # Block all URLs with query strings
 Disallow: /search/
 Disallow: /cart/
 Disallow: /checkout/
 Disallow: /account/
 Disallow: /temporary/
 
+# ----------------------------------------
 # Allow specific query strings for Vina Network tools
+# ----------------------------------------
 Allow: /tools/?tool=*
 
-# Block bad bots
+# ----------------------------------------
+# Block unwanted or aggressive bots
+# ----------------------------------------
 User-agent: MJ12Bot
 Disallow: /
 User-agent: AhrefsBot
@@ -50,5 +67,7 @@ Disallow: /
 User-agent: DotBot
 Disallow: /
 
-# Sitemap
+# ----------------------------------------
+# Sitemap declaration for search engines
+# ----------------------------------------
 Sitemap: https://vina.network/sitemap.xml
