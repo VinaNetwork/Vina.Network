@@ -5,7 +5,7 @@
 //              ecosystem components, and core values. Includes navigation bar,
 //              main sections (hero, about, why choose us, ecosystem),
 //              community CTA, and footer.
-// Created by: Vina Network Development Team
+// Created by: Vina Network
 // ============================================================================
 
 $page_canonical = 'https://vina.network';
@@ -19,7 +19,6 @@ include __DIR__ . '/include/header.php';
 <!-- Head Section (Meta, Styles, Title) is included via header.php -->
 
 <body>
-
     <!-- Navigation Bar -->
     <?php include __DIR__ . '/include/navbar.php'; ?>
 
@@ -158,21 +157,16 @@ include __DIR__ . '/include/header.php';
 
     <!-- Join Our Community Section -->
     <?php include __DIR__ . '/include/community.php'; ?>
-
     <!-- Crypto Price Widget Section -->
     <?php include __DIR__ . '/include/crypto_widget.php'; ?>
-
     <!-- Footer Section -->
     <?php include __DIR__ . '/include/footer.php'; ?>
-
     <!-- Back to Top Button -->
     <button id="back-to-top" title="Back to top">
         <i class="fas fa-arrow-up" aria-hidden="true"></i>
     </button>
-
     <!-- Scripts -->
     <script src="js/vina.js"></script>
     <script src="js/navbar.js"></script>
-
 </body>
 </html>
