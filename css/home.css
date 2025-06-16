@@ -1,16 +1,12 @@
 /* 
 |--------------------------------------------------------------------------
 | File: css/home.css
-| Description: Custom CSS for the homepage (index.php) of the Vina Network project
-| Purpose: Style the hero section, card sections, crypto widgets, animations, etc.
+| Description: Custom CSS for the homepage (index.php) of the Vina Network.
+| Created by: Vina Network
 |--------------------------------------------------------------------------
 */
 
-/* 
-|--------------------------------------------------------------------------
-| Common Section Styles: Styling for section headings
-|--------------------------------------------------------------------------
-*/
+/* Common Section Styles: Styling for section headings */
 section h2,
 section h3 {
     color: #007bff;
@@ -18,11 +14,7 @@ section h3 {
     text-align: center;
 }
 
-/* 
-|--------------------------------------------------------------------------
-| Hero Section: Fullscreen top section with gradient background and animated text
-|--------------------------------------------------------------------------
-*/
+/* Hero Section: Fullscreen top section with gradient background and animated text */
 .h-1 {
     height: 100vh;
     margin-top: 72px;
@@ -57,11 +49,7 @@ section h3 {
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
 }
 
-/* 
-|--------------------------------------------------------------------------
-| Keyframes: Define animations for gradient text and zoom-in effects
-|--------------------------------------------------------------------------
-*/
+/*  Keyframes: Define animations for gradient text and zoom-in effects */
 @keyframes gradientText {
     0%, 100% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
@@ -72,11 +60,7 @@ section h3 {
     to { opacity: 1; transform: scale(1); }
 }
 
-/* 
-|--------------------------------------------------------------------------
-| Card Sections: Layout and style for feature/info cards
-|--------------------------------------------------------------------------
-*/
+/*  Card Sections: Layout and style for feature/info cards */
 .h-3, 
 .h-7, 
 .h-11 {
@@ -146,11 +130,7 @@ section h3 {
     transform: scale(1.1) rotate(15deg);
 }
 
-/* 
-|--------------------------------------------------------------------------
-| Crypto Widget: Display crypto data widgets (e.g., from CoinMarketCap)
-|--------------------------------------------------------------------------
-*/
+/*  Crypto Widget: Display crypto data widgets (e.g., from CoinMarketCap) */
 .crypto-widget {
     text-align: center;
     padding: 20px;
@@ -168,11 +148,7 @@ section h3 {
     border-radius: 10px;
 }
 
-/* 
-|--------------------------------------------------------------------------
-| Responsive Design: Adjust layout and components for small screens
-|--------------------------------------------------------------------------
-*/
+/*  Responsive Design: Adjust layout and components for small screens */
 @media screen and (max-width: 768px) {
     .h-1 {
         background-attachment: scroll;
