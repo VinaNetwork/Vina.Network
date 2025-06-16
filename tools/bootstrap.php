@@ -43,4 +43,26 @@ function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') 
         error_log("Log error: " . $e->getMessage());
     }
 }
+
+// ---------------------------------------------------
+// Generate CSRF token
+// Creates a unique token stored in session for form security
+// @return string - The CSRF token
+// ---------------------------------------------------
+function generate_csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+// ---------------------------------------------------
+// Validate CSRF token
+// Checks if the provided token matches the session token
+// @param string $token - The token to validate
+// @return bool - True if valid, false otherwise
+// ---------------------------------------------------
+function validate_csrf_token($token) {
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
 ?>
