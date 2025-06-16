@@ -1,15 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<!-- Header -->
 <?php
+// ============================================================================
+// File: index.php
+// Description: Homepage of Vina Network. Introduces the project, its vision,
+//              ecosystem components, and core values. Includes navigation bar,
+//              main sections (hero, about, why choose us, ecosystem),
+//              community CTA, and footer.
+// Created by: Vina Network Development Team
+// ============================================================================
+
 $page_canonical = 'https://vina.network';
 $page_css = ['css/home.css'];
 include __DIR__ . '/include/header.php';
 ?>
 
-<!-- body -->
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head Section (Meta, Styles, Title) is included via header.php -->
+
 <body>
-    <!-- Include Header -->
+
+    <!-- Navigation Bar -->
     <?php include __DIR__ . '/include/navbar.php'; ?>
 
     <!-- Hero Section -->
@@ -26,21 +37,28 @@ include __DIR__ . '/include/header.php';
         <div class="h-4">
             <h2 class="fade-in" data-delay="0">About Vina Network</h2>
             <div class="h-5">
+                <!-- Vision & Mission -->
                 <div class="h-6 fade-in" data-delay="400">
                     <img src="/img/vision.png" alt="Vina Network Vision and Mission">
                     <h3>Vision & Mission</h3>
                     <p>Vina Network envisions becoming a leading crypto-focused ecosystem that serves a global user base. Its mission is to connect, educate, and accelerate the growth of blockchain technology adoption worldwide.</p>
                 </div>
+
+                <!-- Financial Ecosystem -->
                 <div class="h-6 fade-in" data-delay="550">
                     <img src="/img/financial.png" alt="Vina Network Financial Ecosystem">
                     <h3>Financial Ecosystem</h3>
                     <p>Vina Network aims to build a comprehensive crypto ecosystem, including Web3 wallets, decentralized exchanges (DEX), stablecoins, on-chain analytics tools, NFT platforms, GameFi, and more.</p>
                 </div>
+
+                <!-- Core Values -->
                 <div class="h-6 fade-in" data-delay="700">
                     <img src="/img/core-values.png" alt="Vina Network Core Values">
                     <h3>Core Values</h3>
                     <p>Vina Network is guided by three core principles: transparency, innovation, and community empowerment. These values shape the way we build products, collaborate with partners, and serve users.</p>
                 </div>
+
+                <!-- Development Roadmap -->
                 <div class="h-6 fade-in" data-delay="850">
                     <img src="/img/stages.png" alt="Vina Network Development Roadmap">
                     <h3>Development Roadmap</h3>
@@ -55,21 +73,29 @@ include __DIR__ . '/include/header.php';
         <div class="h-8">
             <h2 class="fade-in" data-delay="0">Why Choose Vina Network?</h2>
             <div class="h-9">
+
+                <!-- Community - Centric Approach -->
                 <div class="h-10 fade-in" data-delay="400">
                     <i class="fas fa-shield" aria-hidden="true"></i>
                     <h3>Community - Centric Approach</h3>
                     <p>Vina Network places its community at the heart of development. From education to governance, users are empowered to shape the future of the ecosystem through transparency, participation, and reward mechanisms.</p>
                 </div>
+
+                <!-- Comprehensive Web3 Ecosystem -->
                 <div class="h-10 fade-in" data-delay="550">
                     <i class="fas fa-globe" aria-hidden="true"></i>
                     <h3>Comprehensive Web3 Ecosystem</h3>
                     <p>By integrating key crypto applications — like wallets, DEX, stablecoins, and on-chain tools — Vina Network offers a seamless and interconnected experience, enabling users to access the full potential of Web3.</p>
                 </div>
+
+                <!-- Visionary & Scalable Development -->
                 <div class="h-10 fade-in" data-delay="700">
                     <i class="fas fa-rocket" aria-hidden="true"></i>
                     <h3>Visionary & Scalable Development</h3>
                     <p>The products developed by Vina Network are designed with a long-term vision in mind. Its adaptable infrastructure and cross-chain compatibility ensure sustainability as blockchain evolves.</p>
                 </div>
+
+                <!-- Security - First Design -->
                 <div class="h-10 fade-in" data-delay="850">
                     <i class="fas fa-shield-alt" aria-hidden="true"></i>
                     <h3>Security - First Design</h3>
@@ -84,31 +110,43 @@ include __DIR__ . '/include/header.php';
         <div class="h-12">
             <h2 class="fade-in" data-delay="0">Our Ecosystem</h2>
             <div class="h-13">
+
+                <!-- Vina Wallet -->
                 <div class="h-14 fade-in" data-delay="200">
                     <i class="fas fa-wallet" aria-hidden="true"></i>
                     <h3>Vina Wallet</h3>
                     <p>Vina Wallet is a user-friendly, non-custodial Web3 wallet developed by Vina Network. It allows users to securely store, send, and receive cryptocurrencies, interact with decentralized applications, and manage their digital assets.</p>
                 </div>
+
+                <!-- Vina Stablecoin -->
                 <div class="h-14 fade-in" data-delay="350">
                     <i class="fas fa-balance-scale" aria-hidden="true"></i>
                     <h3>Vina Stablecoin</h3>
                     <p>Vina Stablecoin is a core component of the Vina Network ecosystem, providing a reliable, value-stable medium of exchange for users and DeFi platforms. It is designed to support fast, low-cost transactions.</p>
                 </div>
+
+                <!-- Vina DEX -->
                 <div class="h-14 fade-in" data-delay="500">
                     <i class="fas fa-exchange-alt" aria-hidden="true"></i>
                     <h3>Vina DEX</h3>
                     <p>Vina DEX is a decentralized exchange developed by Vina Network that enables users to trade cryptocurrencies directly from their wallets without relying on intermediaries. Built for speed, security, and transparency.</p>
                 </div>
+
+                <!-- Vina DeFi -->
                 <div class="h-14 fade-in" data-delay="650">
                     <i class="fas fa-link" aria-hidden="true"></i>
                     <h3>Vina DeFi</h3>
                     <p>Vina DeFi is a decentralized finance platform within the Vina Network ecosystem, offering services such as staking, lending, borrowing, and yield farming. Designed to be accessible and secure for all users.</p>
                 </div>
+
+                <!-- Vina GameFi -->
                 <div class="h-14 fade-in" data-delay="800">
                     <i class="fas fa-gamepad" aria-hidden="true"></i>
                     <h3>Vina GameFi</h3>
                     <p>Vina GameFi is an innovative platform that merges blockchain technology with gaming, enabling players to earn rewards through play-to-earn mechanics. Integrated with NFTs and DeFi.</p>
                 </div>
+
+                <!-- NFT Marketplace -->
                 <div class="h-14 fade-in" data-delay="950">
                     <i class="fas fa-image" aria-hidden="true"></i>
                     <h3>NFT Marketplace</h3>
@@ -120,16 +158,21 @@ include __DIR__ . '/include/header.php';
 
     <!-- Join Our Community Section -->
     <?php include __DIR__ . '/include/community.php'; ?>
-    <!-- Include Crypto Widget -->
+
+    <!-- Crypto Price Widget Section -->
     <?php include __DIR__ . '/include/crypto_widget.php'; ?>
-    <!-- Include Footer -->
+
+    <!-- Footer Section -->
     <?php include __DIR__ . '/include/footer.php'; ?>
-    <!-- Back to Top -->
+
+    <!-- Back to Top Button -->
     <button id="back-to-top" title="Back to top">
         <i class="fas fa-arrow-up" aria-hidden="true"></i>
     </button>
 
+    <!-- Scripts -->
     <script src="js/vina.js"></script>
     <script src="js/navbar.js"></script>
+
 </body>
 </html>
