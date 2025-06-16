@@ -1,10 +1,8 @@
-/* tools/tools.css - Styling for NFT Holder Tools UI
- *
- * This CSS file defines layout, style, and responsiveness for the NFT tools interface.
- * It includes tab navigation, form elements, summary cards, result outputs,
- * loader spinner, export controls, transaction tables, pagination, progress bar,
- * and responsive adjustments for mobile devices.
- */
+/* ============================================================================
+ * File: tools/tools.css
+ * Description: Styling for NFT Holder Tools UI
+ * Created by: Vina Network
+ * ========================================================================== */
 
 /* Headings */
 h1, h2 {text-align: center;}
