@@ -7,6 +7,7 @@
  * Update 3: Removed holders list and pagination, only shows summary card and export.
  * Update 5: Display last cached timestamp to inform users when data was last updated.
  * Fix: Robust file-based cache to persist data across sessions, with detailed logging for debugging.
+ * Fix 2: Removed cache reset on new mintAddress to prevent data loss after browser close.
  */
 
 // Disable display of errors in production
@@ -116,22 +117,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 log_message("nft-holders: Failed to parse cache file, initializing empty cache", 'nft_holders_log.txt', 'WARNING');
             }
 
-            // Reset cache if new address submitted
-            if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
-                if (isset($cache_data[$mintAddress])) {
-                    unset($cache_data[$mintAddress]);
-                    if (file_put_contents($cache_file, json_encode($cache_data)) === false) {
-                        log_message("nft-holders: Failed to write cache file when clearing cache for mintAddress=$mintAddress", 'nft_holders_log.txt', 'ERROR');
-                    }
-                    log_message("nft-holders: Cleared file cache for new mintAddress=$mintAddress", 'nft_holders_log.txt');
-                }
-                $_SESSION['last_mintAddress'] = $mintAddress;
-            }
-
             // Check if cache exists and is not expired
             $cache_valid = isset($cache_data[$mintAddress]) && 
                            isset($cache_data[$mintAddress]['timestamp']) && 
-                           isset($cache_data[$mintAddress]['total_items']) && 
                            (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
 
             if (!$cache_valid) {
@@ -241,8 +229,8 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 }
                 log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
             } else {
-                $total_items = $cache_data[$mintAddress]['total_items'];
-                $total_wallets = $cache_data[$mintAddress]['total_wallets'];
+                $total_items = $cache_data[$mintAddress]['total_items'] ?? 0;
+                $total_wallets = $cache_data[$mintAddress]['total_wallets'] ?? 0;
                 $items = $cache_data[$mintAddress]['items'] ?? [];
                 $wallets = $cache_data[$mintAddress]['wallets'] ?? [];
                 $cache_timestamp = $cache_data[$mintAddress]['timestamp'];
