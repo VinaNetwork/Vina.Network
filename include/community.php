@@ -1,10 +1,10 @@
 <?php
-// --------------------------------------------------------------------------
+// ============================================================================
 // File: include/community.php
 // Description: Reusable section for displaying links to Vina Network's social media.
 //              Included across all pages to encourage users to join the Vina Network community.
 // Created by: Vina Network
-// --------------------------------------------------------------------------
+// ============================================================================
 ?>
 
 <!-- Join Our Community Section -->
