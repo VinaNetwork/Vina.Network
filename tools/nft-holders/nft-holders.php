@@ -6,6 +6,8 @@
  * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
  * Update 3: Removed holders list and pagination, only shows summary card and export.
  * Update 5: Display last cached timestamp to inform users when data was last updated.
+ * Update 6: Changed timestamp label to UTC+0 and moved Last updated below holders-summary.
+ * Update 7: Added cleanup of expired cache entries to reduce cache file size.
  * Fix: Robust file-based cache to persist data across sessions, with detailed logging for debugging.
  * Fix 2: Removed cache reset on new mintAddress to prevent data loss after browser close.
  */
@@ -128,6 +130,14 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     log_message("nft-holders: Cache expired for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
                 } elseif (!isset($cache_data[$mintAddress])) {
                     log_message("nft-holders: No cache found for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
+                }
+
+                // Clean up expired cache entries
+                foreach ($cache_data as $address => $data) {
+                    if (!isset($data['timestamp']) || (time() - $data['timestamp'] > $cache_expiration)) {
+                        unset($cache_data[$address]);
+                        log_message("nft-holders: Removed expired cache for mintAddress=$address", 'nft_holders_log.txt');
+                    }
                 }
 
                 // Increase memory limit for large collections
