@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
-/*
- * ============================================================================
- * File: contact/index.php (Contact home)
- * Description: "Contact Us" page for Vina Network.
- *              Provides users with ways to get in touch via X (Twitter),
- *              Telegram, or Email. Also includes relevant metadata for SEO
- *              and social sharing.
- * Created by: Vina Network
- * ============================================================================
- */
+// ============================================================================
+// File: contact/index.php (Contact home)
+// Description: "Contact Us" page for Vina Network.
+//              Provides users with ways to get in touch via X (Twitter),
+//              Telegram, or Email. Also includes relevant metadata for SEO
+//              and social sharing.
+// Created by: Vina Network
+// ============================================================================
 
 // Head Section (Meta, Styles, Title) is included via header.php
 $root_path = '../';
