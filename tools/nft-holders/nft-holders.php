@@ -6,6 +6,7 @@
  * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
  * Update 3: Removed holders list and pagination, only shows summary card and export.
  * Update 5: Display last cached timestamp to inform users when data was last updated.
+ * Fix: Use file-based cache to persist data across sessions, addressing session deletion on browser close.
  */
 
 // Disable display of errors in production
@@ -33,6 +34,19 @@ require_once $bootstrap_path;
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
+
+// Define cache directory and file
+$cache_dir = __DIR__ . '/cache';
+$cache_file = $cache_dir . '/nft_holders_cache.json';
+if (!is_dir($cache_dir)) {
+    mkdir($cache_dir, 0755, true);
+    log_message("nft-holders: Created cache directory at $cache_dir", 'nft_holders_log.txt');
+}
+if (!file_exists($cache_file)) {
+    file_put_contents($cache_file, json_encode([]));
+    chmod($cache_file, 0644);
+    log_message("nft-holders: Created cache file at $cache_file", 'nft_holders_log.txt');
+}
 
 // Set up page variables and include layout headers
 $root_path = '../../';
@@ -79,23 +93,35 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
 
+            // Load cache from file
+            $cache_data = json_decode(file_get_contents($cache_file), true);
+            if (!is_array($cache_data)) {
+                $cache_data = [];
+                log_message("nft-holders: Failed to parse cache file, initializing empty cache", 'nft_holders_log.txt', 'WARNING');
+            }
+
             // Reset cache if new address submitted
             if (!isset($_SESSION['last_mintAddress']) || $_SESSION['last_mintAddress'] !== $mintAddress) {
-                if (isset($_SESSION['total_items'][$mintAddress])) {
-                    unset($_SESSION['total_items'][$mintAddress], $_SESSION['total_wallets'][$mintAddress], $_SESSION['items'][$mintAddress], $_SESSION['wallets'][$mintAddress], $_SESSION['cache_timestamp'][$mintAddress]);
-                    log_message("nft-holders: Cleared session cache for new mintAddress=$mintAddress", 'nft_holders_log.txt');
+                if (isset($cache_data[$mintAddress])) {
+                    unset($cache_data[$mintAddress]);
+                    file_put_contents($cache_file, json_encode($cache_data));
+                    log_message("nft-holders: Cleared file cache for new mintAddress=$mintAddress", 'nft_holders_log.txt');
                 }
                 $_SESSION['last_mintAddress'] = $mintAddress;
             }
 
             // Check if cache exists and is not expired
-            $cache_valid = isset($_SESSION['total_items'][$mintAddress]) && isset($_SESSION['cache_timestamp'][$mintAddress]) && isset($_SESSION['items'][$mintAddress]) && (time() - $_SESSION['cache_timestamp'][$mintAddress] < $cache_expiration);
+            $cache_valid = isset($cache_data[$mintAddress]) && 
+                           isset($cache_data[$mintAddress]['timestamp']) && 
+                           isset($cache_data[$mintAddress]['total_items']) && 
+                           isset($cache_data[$mintAddress]['items']) && 
+                           (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
 
             if (!$cache_valid) {
                 // Cache expired or not set, fetch from API
-                if (!$cache_valid && isset($_SESSION['cache_timestamp'][$mintAddress])) {
+                if (isset($cache_data[$mintAddress]['timestamp']) && !$cache_valid) {
                     log_message("nft-holders: Cache expired for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
-                } elseif (!isset($_SESSION['total_items'][$mintAddress])) {
+                } elseif (!isset($cache_data[$mintAddress])) {
                     log_message("nft-holders: No cache found for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
                 }
 
@@ -184,19 +210,37 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     throw new Exception("Failed to retrieve wallet data. Please try again or contact support.");
                 }
 
-                // Store in session cache with timestamp
+                // Store in file cache with timestamp
+                $cache_data[$mintAddress] = [
+                    'total_items' => $total_items,
+                    'total_wallets' => $total_wallets,
+                    'items' => $items,
+                    'wallets' => $wallets,
+                    'timestamp' => time()
+                ];
+                file_put_contents($cache_file, json_encode($cache_data));
+                log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
+
+                // Sync session for compatibility
                 $_SESSION['total_items'][$mintAddress] = $total_items;
                 $_SESSION['total_wallets'][$mintAddress] = $total_wallets;
                 $_SESSION['items'][$mintAddress] = $items;
                 $_SESSION['wallets'][$mintAddress] = $wallets;
                 $_SESSION['cache_timestamp'][$mintAddress] = time();
-                log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
             } else {
-                $total_items = $_SESSION['total_items'][$mintAddress];
-                $total_wallets = $_SESSION['total_wallets'][$mintAddress];
-                $items = $_SESSION['items'][$mintAddress];
-                $wallets = $_SESSION['wallets'][$mintAddress];
-                log_message("nft-holders: Retrieved total_items=$total_items, total_wallets=$total_wallets from cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $_SESSION['cache_timestamp'][$mintAddress]), 'nft_holders_log.txt');
+                $total_items = $cache_data[$mintAddress]['total_items'];
+                $total_wallets = $cache_data[$mintAddress]['total_wallets'];
+                $items = $cache_data[$mintAddress]['items'];
+                $wallets = $cache_data[$mintAddress]['wallets'];
+                $cache_timestamp = $cache_data[$mintAddress]['timestamp'];
+                log_message("nft-holders: Retrieved total_items=$total_items, total_wallets=$total_wallets from file cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $cache_timestamp), 'nft_holders_log.txt');
+
+                // Sync session for compatibility
+                $_SESSION['total_items'][$mintAddress] = $total_items;
+                $_SESSION['total_wallets'][$mintAddress] = $total_wallets;
+                $_SESSION['items'][$mintAddress] = $items;
+                $_SESSION['wallets'][$mintAddress] = $wallets;
+                $_SESSION['cache_timestamp'][$mintAddress] = $cache_timestamp;
             }
 
             log_message("nft-holders: Final total_items=$total_items, total_wallets=$total_wallets for $mintAddress", 'nft_holders_log.txt');
@@ -227,12 +271,10 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                                 <h3><?php echo number_format($total_items); ?></h3>
                             </div>
                         </div>
+                        <?php if ($cache_valid): ?>
+                            <p class="cache-timestamp">Data last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+7'; ?></p>
+                        <?php endif; ?>
                     </div>
-
-                    <?php if ($cache_valid): ?>
-                        <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $_SESSION['cache_timestamp'][$mintAddress]) . ' UTC+7'; ?></p>
-                    <?php endif; ?>
-                
                     <!-- Export controls -->
                     <div class="export-section">
                         <form method="POST" action="/tools/nft-holders/nft-holders-export.php" class="export-form">
