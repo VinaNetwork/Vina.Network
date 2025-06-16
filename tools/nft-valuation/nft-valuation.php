@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: tools/nft-transactions.php
+// File: tools/nft-valuation/nft-valuation.php
 // Description: NFT price check function.
 // Created by: Vina Network
 // ============================================================================
