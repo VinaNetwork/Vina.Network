@@ -7,10 +7,12 @@
  * Update 3: Removed holders list and pagination, only shows summary card and export.
  * Update 5: Display last cached timestamp to inform users when data was last updated.
  * Update 6: Changed timestamp label to UTC+0 and moved Last updated below holders-summary.
+ * Update 6: Added CSRF token for form security to prevent cross-site request forgery attacks.
  * Update 7: Added cleanup of expired cache entries to reduce cache file size.
  * Fix: Robust file-based cache to persist data across sessions, with detailed logging for debugging.
  * Fix 2: Removed cache reset on new mintAddress to prevent data loss after browser close.
  * Temporary: Set cache_expiration to 600 seconds (10 minutes) for testing expired cache cleanup.
+ * Reverted: Set cache_expiration back to 3 hours after successful testing.
  */
 
 // Disable display of errors in production
@@ -93,6 +95,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         <h2>Check NFT Holders</h2>
         <p>Enter the <strong>NFT Collection</strong> address to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftHoldersForm" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
             <button type="submit" class="cta-button">Check Holders</button>
         </form>
@@ -102,6 +105,12 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     // Handle form submission and NFT data fetching
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
+            // Validate CSRF token
+            if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+                log_message("nft-holders: Invalid CSRF token for mintAddress=" . ($_POST['mintAddress'] ?? 'unknown'), 'nft_holders_log.txt', 'ERROR');
+                throw new Exception("Invalid CSRF token. Please try again.");
+            }
+
             $mintAddress = trim($_POST['mintAddress']);
             log_message("nft-holders: Form submitted with mintAddress=$mintAddress", 'nft_holders_log.txt');
             $limit = 1000;
