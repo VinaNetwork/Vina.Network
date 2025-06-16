@@ -1,21 +1,6 @@
 <?php
 /*
  * NFT Holders Checker - Vina Network
- *
- * This script allows users to check the total number of holders and NFTs for a given Solana on-chain collection address.
- * It queries Helius API, caches data with a 3-hour expiration, and displays summary information.
- * Update 3: Removed holders list and pagination, only shows summary card and export.
- * Update 5: Display last cached timestamp to inform users when data was last updated.
- * Update 6: Added CSRF token for form security to prevent cross-site request forgery attacks.
- * Update 7: Changed timestamp label to UTC+0 and moved Last updated below holders-summary.
- * Update 7: Ensured API key is masked in logs for security.
- * Update 8: Added cleanup of expired cache entries to reduce cache file size.
- * Update 8: Compressed cache with gzcompress to reduce storage size.
- * Update 9: Added rate limiting (5 requests/minute/IP) to prevent API abuse.
- * Fix: Robust file-based cache to persist data across sessions, with detailed logging for debugging.
- * Fix 2: Removed cache reset on new mintAddress to prevent data loss after browser close.
- * Temporary: Set cache_expiration to 600 seconds (10 minutes) for testing expired cache cleanup.
- * Reverted: Set cache_expiration back to 3 hours after successful testing.
  */
 
 // Disable display of errors in production
