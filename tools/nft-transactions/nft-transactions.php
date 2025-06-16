@@ -5,7 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-include '../tools.php';
+include '../tools-api.php';
 error_log("nft-transactions.php loaded"); // Debug
 ?>
 
