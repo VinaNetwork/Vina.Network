@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 <?php
 // ============================================================================
 // File: index.php
@@ -14,8 +16,6 @@ $page_css = ['css/home.css'];
 include __DIR__ . '/include/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
 <body>
     <!-- Navigation Bar -->
     <?php include __DIR__ . '/include/navbar.php'; ?>
