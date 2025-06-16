@@ -5,7 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-include '../api-helper.php';
+include '../tools.php';
 error_log("nft-transactions.php loaded"); // Debug
 ?>
 
@@ -28,12 +28,12 @@ error_log("nft-transactions.php loaded"); // Debug
 	$offset = ($page - 1) * $transactions_per_page;
 
 	// Gọi API để lấy lịch sử giao dịch
-	error_log("nft-transactions.php: Fetching transactions for mintAddress = $mintAddress, page = $page"); // Debug
+	error_log("nft-transactions.php: Fetching transactions for mintAddress = $mintAddress, page = $page");
 	$transactions_data = getNFTTransactions($mintAddress, $page);
 
 	if (isset($transactions_data['error'])) {
 		echo "<div class='result-error'><p>" . htmlspecialchars($transactions_data['error']) . "</p></div>";
-		error_log("nft-transactions.php: Error - {$transactions_data['error']}"); // Debug
+		error_log("nft-transactions.php: Error - {$transactions_data['error']}");
 	} elseif ($transactions_data && !empty($transactions_data['transactions'])) {
 		$total_transactions = count($transactions_data['transactions']);
 		$paginated_transactions = array_slice($transactions_data['transactions'], $offset, $transactions_per_page);
@@ -97,7 +97,7 @@ function getNFTTransactions($mintAddress, $page = 1) {
 		"page" => $page
 	];
 	
-	error_log("nft-transactions.php: Calling Helius API for mintAddress = $mintAddress, page = $page"); // Debug
+	error_log("nft-transactions.php: Calling Helius API for mintAddress = $mintAddress, page = $page");
 	$data = callHeliusAPI('transactions', $payload);
 	if (isset($data['error'])) {
 		error_log("nft-transactions.php: Helius API error - {$data['error']}"); // Debug
@@ -105,7 +105,7 @@ function getNFTTransactions($mintAddress, $page = 1) {
 	}
 	
 	if (isset($data['transactions'])) {
-		error_log("nft-transactions.php: Retrieved " . count($data['transactions']) . " transactions"); // Debug
+		error_log("nft-transactions.php: Retrieved " . count($data['transactions']) . " transactions");
 		return ['transactions' => $data['transactions']];
 	}
 	
