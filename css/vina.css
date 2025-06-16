@@ -1,3 +1,14 @@
+/* ============================================================================
+ * File: vina.css
+ * Description: Global stylesheet for Vina Network website. 
+ *              Defines base layout, typography, navbar, footer, animations, 
+ *              buttons, responsive adjustments and common UI elements.
+ * Created by: Vina Network Development Team
+ * ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Reset & Base Font
+ * ------------------------------------------------------------------------- */
 * {
     margin: 0;
     padding: 0;
@@ -10,7 +21,9 @@ body {
     color: #333;
 }
 
-/* Typography */
+/* ---------------------------------------------------------------------------
+ * Typography System
+ * ------------------------------------------------------------------------- */
 h1 {
   font-size: 4em;
   line-height: 1.3;
@@ -37,6 +50,8 @@ p {
     font-size: 1.1em;
     line-height: 1.8;
 }
+
+/* Margin adjustment between paragraphs */
 p:not(:last-child):has(+ :not(p)) {margin-bottom: 0;}
 p:not(:last-child):has(+ p) {margin-bottom: 30px;}
 
@@ -47,7 +62,14 @@ a {
     cursor: pointer;
 }
 
-li { list-style: none; }
+/* ---------------------------------------------------------------------------
+ * Lists & Notes
+ * ------------------------------------------------------------------------- */
+li {
+    list-style: none;
+}
+
+/* Callout or Note styling */
 .note {
     background-color: #f9f9f9;
     border-left: 4px solid #007acc;
@@ -59,10 +81,14 @@ li { list-style: none; }
     border-radius: 10px;
 }
 
-/* input */
-input {border: unset;}
+/* Input cleanup */
+input {
+    border: unset;
+}
 
-/* CTA Button */
+/* ---------------------------------------------------------------------------
+ * CTA Button Style
+ * ------------------------------------------------------------------------- */
 .cta-button {
     background: linear-gradient(45deg, #00d4ff, #007bff);
     color: #fff;
@@ -74,12 +100,15 @@ input {border: unset;}
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
 .cta-button:hover {
     transform: scale(1.05);
     box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
 }
 
-/* Navbar */
+/* ---------------------------------------------------------------------------
+ * Navbar (Desktop & Sticky)
+ * ------------------------------------------------------------------------- */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -94,11 +123,13 @@ input {border: unset;}
     transition: padding 0.3s ease, background 0.3s ease;
 }
 
+/* Navbar after scroll */
 .navbar.scrolled {
     padding: 0.5rem 2rem;
     background: rgba(26, 26, 26, 0.95);
 }
 
+/* Logo styling */
 .logo img {
     height: 56px;
     object-fit: contain;
@@ -111,14 +142,21 @@ input {border: unset;}
     transform: scale(1.05);
 }
 
+/* Navbar menu structure */
 .nav-1 {
     display: flex;
     align-items: center;
 }
 
-.nav-1 li {position: relative;}
-.nav-1 .nav-2 {margin-left: 2.5rem;}
+.nav-1 li {
+    position: relative;
+}
 
+.nav-1 .nav-2 {
+    margin-left: 2.5rem;
+}
+
+/* Link styles */
 .nav-link {
     color: #fff;
     padding: 0.5rem 0;
@@ -146,6 +184,7 @@ input {border: unset;}
     color: #00d4ff;
 }
 
+/* Underline hover effect */
 .nav-link::after {
     content: '';
     position: absolute;
@@ -162,6 +201,7 @@ input {border: unset;}
     width: 100%;
 }
 
+/* Dropdown menu and icon */
 .dropdown-icon {
     font-size: 0.9rem;
     transition: transform 0.3s ease, color 0.3s ease;
@@ -180,8 +220,13 @@ input {border: unset;}
     padding: 0.5rem 0;
 }
 
-.dropdown-menu.active {display: block;}
-.dropdown-menu.active + .dropdown-icon {transform: rotate(180deg);}
+.dropdown-menu.active {
+    display: block;
+}
+
+.dropdown-menu.active + .dropdown-icon {
+    transform: rotate(180deg);
+}
 
 .dropdown-link {
     color: #fff;
@@ -192,13 +237,16 @@ input {border: unset;}
     transition: background 0.3s ease, color 0.3s ease;
 }
 
-.dropdown-menu i {margin-right: 6px;}
+.dropdown-menu i {
+    margin-right: 6px;
+}
 
 .nav-link:hover .dropdown-icon, 
 .nav-link.active .dropdown-icon {
     color: #00d4ff;
 }
 
+/* Burger icon (mobile menu) */
 .burger {
     display: none;
     cursor: pointer;
@@ -216,7 +264,9 @@ input {border: unset;}
 .burger.active .line2 {opacity: 0;}
 .burger.active .line3 {transform: rotate(-45deg) translate(5px, -5px);}
 
-/* Fade-in Animation */
+/* ---------------------------------------------------------------------------
+ * Animations
+ * ------------------------------------------------------------------------- */
 .fade-in {
     opacity: 0;
     transform: translateY(20px);
@@ -228,16 +278,21 @@ input {border: unset;}
     transform: translateY(0);
 }
 
-/* Community Section */
+/* ---------------------------------------------------------------------------
+ * Community Section
+ * ------------------------------------------------------------------------- */
 .community-1 {
     padding: 20px;
     background: #c3c7c4;
     text-align: center;
 }
+.community-2 p {
+    margin-bottom: 20px !important;
+}
 
-.community-2 p {margin-bottom: 20px !important;}
-
-/* Footer */
+/* ---------------------------------------------------------------------------
+ * Footer Section
+ * ------------------------------------------------------------------------- */
 footer {
     background: #1a1a1a;
     color: #fff;
@@ -256,7 +311,11 @@ footer {
     min-width: 200px;
     margin: 1rem;
 }
-.footer-2 h4 {color: #00d4ff;}
+
+.footer-2 h4 {
+    color: #00d4ff;
+}
+
 .footer-2 p a, 
 .footer-3 a, 
 .footer-4 a {
@@ -264,7 +323,9 @@ footer {
     transition: color 0.3s ease;
 }
 
-.footer-3 li {padding: 5px 10px;}
+.footer-3 li {
+    padding: 5px 10px;
+}
 
 .footer-4 {
     display: flex;
@@ -276,7 +337,9 @@ footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Back to Top Button */
+/* ---------------------------------------------------------------------------
+ * Back to Top Button
+ * ------------------------------------------------------------------------- */
 #back-to-top {
     display: none;
     position: fixed;
@@ -294,15 +357,19 @@ footer {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     transition: opacity 0.3s ease, background 0.3s ease;
 }
+
 #back-to-top:hover {
     background: #0056b3;
     opacity: 0.9;
 }
+
 #back-to-top.show {
     display: block;
 }
 
-/* Responsive Design */
+/* ---------------------------------------------------------------------------
+ * Responsive Design (Mobile)
+ * ------------------------------------------------------------------------- */
 @media screen and (max-width: 768px) {
     h1 { font-size: 2em; }
     h2 { font-size: 1.6em; }
@@ -342,9 +409,17 @@ footer {
         width: 100%;
     }
 
-    .nav-link i {margin-right: 0.5rem;}
-    .nav-link::after {display: none;}
-    .dropdown-icon {margin-left: auto;}
+    .nav-link i {
+        margin-right: 0.5rem;
+    }
+
+    .nav-link::after {
+        display: none;
+    }
+
+    .dropdown-icon {
+        margin-left: auto;
+    }
 
     .dropdown-menu {
         position: static;
@@ -354,22 +429,42 @@ footer {
         padding: 0.5rem 0;
         display: none;
     }
-    .dropdown-menu.active {display: block;}
-    .dropdown-link {justify-content: flex-start;}
+
+    .dropdown-menu.active {
+        display: block;
+    }
+
+    .dropdown-link {
+        justify-content: flex-start;
+    }
+
     .dropdown-link:hover {
         background: none;
         color: #00d4ff;
     }
+
     .dropdown-toggle .dropdown-icon {
         transition: transform 0.3s cubic-bezier(.46,1.48,.74,.96);
         display: inline-block;
     }
+
     .dropdown-toggle.active .dropdown-icon {
         transform: rotate(90deg);
     }
-    .burger {display: block;}
-    .logo img {height: 48px;}
-    
-    .footer-1 {flex-direction: column;}
-    .footer-2 {margin: .5rem 0;}
+
+    .burger {
+        display: block;
+    }
+
+    .logo img {
+        height: 48px;
+    }
+
+    .footer-1 {
+        flex-direction: column;
+    }
+
+    .footer-2 {
+        margin: .5rem 0;
+    }
 }
