@@ -1,6 +1,10 @@
 <?php
-// nft-transactions/nft-transactions.php
-// Chức năng: Kiểm tra lịch sử giao dịch NFT
+// ============================================================================
+// File: tools/nft-transactions.php
+// Description: NFT transaction verification function.
+// Created by: Vina Network
+// ============================================================================
+
 include '../api-helper.php';
 error_log("nft-transactions.php loaded"); // Debug
 ?>
