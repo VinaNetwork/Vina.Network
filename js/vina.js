@@ -1,3 +1,15 @@
+/* 
+|--------------------------------------------------------------------------
+| File: js/vina.js
+| Description: Global JavaScript functions used across the Vina Network website.
+| Includes:
+| - Debounce helper function
+| - Typewriter animation effect
+| - IntersectionObserver for .fade-in animation
+| - Back to Top button behavior
+|--------------------------------------------------------------------------
+*/
+
 // Debounce function to limit the frequency of function execution
 function debounce(func, wait) {
     let timeout;
@@ -7,51 +19,52 @@ function debounce(func, wait) {
     };
 }
 
-// Typewriter effect function
+// Typewriter effect for simulating text typing animation
 function typewriterEffect(element, text, speed = 50, delay = 200) {
-    console.log('Starting typewriterEffect for:', element, text); // Debug
+    console.log('Starting typewriterEffect for:', element, text); // Debugging log
     let i = 0;
-    element.textContent = ''; // Clear initial content
-    element.style.borderRight = '2px solid #00d4ff'; // Add blinking cursor
+    element.textContent = ''; // Clear existing content
+    element.style.borderRight = '2px solid #00d4ff'; // Simulate blinking cursor
 
     setTimeout(() => {
         function type() {
             if (i < text.length) {
                 element.textContent += text[i];
                 i++;
-                setTimeout(type, speed);
+                setTimeout(type, speed); // Continue typing next character
             } else {
-                console.log('Typewriter effect completed'); // Debug
-                // Start blinking cursor animation
+                console.log('Typewriter effect completed'); // Debugging log
+                // Toggle blinking cursor indefinitely after typing completes
                 setInterval(() => {
                     element.style.borderRight = element.style.borderRight ? '' : '2px solid #00d4ff';
-                }, 750); // Match CSS blinkCursor timing
+                }, 750);
             }
         }
         type();
     }, delay);
 }
 
-// Activate fade-in and typewriter for initial elements when DOM is loaded
+// DOM Ready: Activate fade-in animation and typewriter effect
 document.addEventListener('DOMContentLoaded', () => {
-    const fadeElements = document.querySelectorAll('.fade-in');
-    const heroP = document.querySelector('.hero-content p');
+    const fadeElements = document.querySelectorAll('.fade-in'); // Elements with fade-in animation
+    const heroP = document.querySelector('.hero-content p');    // Hero section paragraph
     console.log('Hero P element:', heroP); // Debug
 
     if (heroP) {
-        // Apply typewriter effect immediately for hero p
+        // Start typewriter effect on hero section text
         typewriterEffect(heroP, '"Simplifying Crypto. Unlocking Web3"', 50, 200);
     } else {
-        console.error('Hero P element not found'); // Debug
+        console.error('Hero P element not found'); // Debug error log
     }
 
+    // Initialize IntersectionObserver for fade-in animations
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const delay = parseInt(entry.target.getAttribute('data-delay') || 0);
                 setTimeout(() => {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target); // Stop observing after displaying
+                    entry.target.classList.add('visible'); // Trigger CSS transition
+                    observer.unobserve(entry.target);      // Only animate once
                 }, delay);
             }
         });
@@ -61,12 +74,12 @@ document.addEventListener('DOMContentLoaded', () => {
         threshold: 0.1
     });
 
-    // Observe all fade-in elements
+    // Apply observer to all fade-in elements
     fadeElements.forEach(element => {
         observer.observe(element);
     });
 
-    // Ensure the first element is displayed immediately
+    // If the first fade-in element is already in view, show it immediately
     const firstElement = fadeElements[0];
     if (firstElement) {
         const rect = firstElement.getBoundingClientRect();
@@ -80,10 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Back to Top Button
+// Back to Top Button Logic
 const backToTopButton = document.getElementById("back-to-top");
 
-// Show button when scrolling down 100px
+// Show the button only after scrolling down 100px
 window.onscroll = function() {
     if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
         backToTopButton.classList.add("show");
@@ -92,7 +105,7 @@ window.onscroll = function() {
     }
 };
 
-// Smooth scroll to top when clicking the button
+// Scroll smoothly to top when button is clicked
 backToTopButton.addEventListener("click", function() {
     window.scrollTo({
         top: 0,
