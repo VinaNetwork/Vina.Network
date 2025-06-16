@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <?php
+/*
+ * ============================================================================
+ * File: contact.php
+ * Description: "Contact Us" page for Vina Network.
+ *              Provides users with ways to get in touch via X (Twitter),
+ *              Telegram, or Email. Also includes relevant metadata for SEO
+ *              and social sharing.
+ * Created by: Vina Network Development Team
+ * ============================================================================
+ */
+
 $root_path = '../';
 $page_title = "Vina Network - Contact Us";
 $page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
@@ -10,31 +21,40 @@ $page_og_description = "Contact Vina Network via X, Telegram, or Email. Join our
 $page_og_url = "https://www.vina.network/contact/";
 $page_canonical = "https://www.vina.network/contact/";
 $page_css = ['contact.css'];
+
 include '../include/header.php';
 ?>
-
 <body>
-    <!-- Include Header -->
+
+    <!-- Navigation Bar -->
     <?php include '../include/navbar.php'; ?>
 
     <!-- Contact Info Section -->
     <section class="c-1">
         <div class="c-2">
             <h1 class="fade-in" data-delay="0">Contact Us</h1>
-            <p class="fade-in" data-delay="200">We'd love to hear from you! Reach out to Vina Network via X, Telegram, or Email.</p>
+            <p class="fade-in" data-delay="200">
+                We'd love to hear from you! Reach out to Vina Network via X, Telegram, or Email.
+            </p>
+
             <div class="c-3">
+                <!-- X (Twitter) Contact Option -->
                 <div class="c-4 fade-in" data-delay="200">
                     <i class="fab fa-x-twitter"></i>
                     <h2>X (Twitter)</h2>
                     <p>Follow us and send a DM!</p>
                     <a href="https://x.com/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">Follow Now</a>
                 </div>
+
+                <!-- Telegram Contact Option -->
                 <div class="c-4 fade-in" data-delay="400">
                     <i class="fab fa-telegram-plane"></i>
                     <h2>Telegram</h2>
                     <p>Join our community on Telegram!</p>
                     <a href="https://t.me/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">Join Now</a>
                 </div>
+
+                <!-- Email Contact Option -->
                 <div class="c-4 fade-in" data-delay="600">
                     <i class="fas fa-envelope"></i>
                     <h2>Email</h2>
@@ -45,19 +65,22 @@ include '../include/header.php';
         </div>
     </section>
 
-    <!-- Include Footer -->
+    <!-- Footer Section -->
     <?php include '../include/footer.php'; ?>
 
+    <!-- Scripts -->
     <script src="../js/vina.js"></script>
     <script src="../js/navbar.js"></script>
 
+    <!-- Structured Data for SEO -->
     <script type="application/ld+json">
         {
-        "@context": "https://schema.org",
-        "@type": "ContactPage",
-        "url": "https://www.vina.network/contact/",
-        "name": "Contact Vina Network"
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            "url": "https://www.vina.network/contact/",
+            "name": "Contact Vina Network"
         }
     </script>
+
 </body>
 </html>
