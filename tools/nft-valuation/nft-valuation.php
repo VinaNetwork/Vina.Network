@@ -1,6 +1,11 @@
 <?php
-// nft-valuation/nft-valuation.php - Kiểm tra giá trị NFT
-include '../api-helper.php';
+// ============================================================================
+// File: tools/nft-transactions.php
+// Description: NFT price check function.
+// Created by: Vina Network
+// ============================================================================
+
+include '../tools-api.php';
 ?>
 
 <div class="t-6 nft-valuation-content">
