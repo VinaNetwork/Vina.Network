@@ -401,7 +401,6 @@ footer {
     }
 
     .dropdown-menu.active {display: block;}
-
     .dropdown-link {justify-content: flex-start;}
 
     .dropdown-link:hover {
@@ -414,12 +413,10 @@ footer {
         display: inline-block;
     }
 
-    .dropdown-toggle.active .dropdown-icon {
-        transform: rotate(90deg);
-    }
-
+    .dropdown-toggle.active .dropdown-icon {transform: rotate(90deg);}
     .burger {display: block;}
     .logo img {height: 48px;}
     .footer-1 {flex-direction: column;}
     .footer-2 {margin: .5rem 0;}
+    .footer-5 {font-size: 12px;}
 }
