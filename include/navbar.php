@@ -1,16 +1,40 @@
-<!-- Navbar -->
+<!--
+|--------------------------------------------------------------------------
+| File: include/navbar.php
+| Description: Fixed top navigation bar shared across the Vina Network website.
+| This navbar includes:
+| - Logo and homepage link
+| - Main navigation items (Home, Product, Tools, Meme Coin, Contact)
+| - Dropdown menus for product and tools categories
+| - Mobile burger menu trigger (for responsive view)
+|--------------------------------------------------------------------------
+-->
+
+<!-- Main Navigation Bar -->
 <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+    <!-- Website Logo -->
     <div class="logo">
         <a href="https://www.vina.network/" aria-label="Vina Network Home">
             <img src="https://www.vina.network/img/logo.png" alt="Vina Network Logo">
         </a>
     </div>
+
+    <!-- Navigation Links -->
     <ul class="nav-1">
+
+        <!-- Home -->
         <li class="nav-2">
-            <a href="https://www.vina.network/" class="nav-link"><i class="fas fa-home"></i> Home</a>
+            <a href="https://www.vina.network/" class="nav-link">
+                <i class="fas fa-home"></i> Home
+            </a>
         </li>
+
+        <!-- Product Dropdown -->
         <li class="nav-2 dropdown">
-            <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i></a>
+            <a href="#" class="nav-link dropdown-toggle">
+                <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
+            </a>
             <ul class="dropdown-menu">
                 <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
                 <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
@@ -20,8 +44,12 @@
                 <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-image"></i> NFT Marketplace</a></li>
             </ul>
         </li>
+
+        <!-- Tools Dropdown -->
         <li class="nav-2 dropdown">
-            <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i></a>
+            <a href="#" class="nav-link dropdown-toggle">
+                <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
+            </a>
             <ul class="dropdown-menu">
                 <li><a href="https://www.vina.network/tools/?tool=nft-holders" class="dropdown-link"><i class="fas fa-wallet"></i> NFT Holders</a></li>
                 <li><a href="https://www.vina.network/tools/?tool=nft-valuation" class="dropdown-link"><i class="fas fa-chart-line"></i> NFT Valuation</a></li>
@@ -29,14 +57,26 @@
                 <li><a href="https://www.vina.network/tools/?tool=wallet-analysis" class="dropdown-link"><i class="fas fa-search"></i> Wallet Analysis</a></li>
             </ul>
         </li>
+
+        <!-- Meme Coin Dropdown -->
         <li class="nav-2 dropdown">
-            <a href="#" class="nav-link dropdown-toggle"><i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i></a>
+            <a href="#" class="nav-link dropdown-toggle">
+                <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
+            </a>
             <ul class="dropdown-menu">
                 <li><a href="https://www.vina.network/notification/" class="dropdown-link"><i class="fas fa-paw"></i> Kimo</a></li>
             </ul>
         </li>
-        <li class="nav-2"><a href="https://www.vina.network/contact/" class="nav-link"><i class="fas fa-envelope"></i> Contact</a></li>
+
+        <!-- Contact -->
+        <li class="nav-2">
+            <a href="https://www.vina.network/contact/" class="nav-link">
+                <i class="fas fa-envelope"></i> Contact
+            </a>
+        </li>
     </ul>
+
+    <!-- Burger Menu (for mobile responsiveness) -->
     <div class="burger" aria-label="Menu toggle">
         <div class="line1"></div>
         <div class="line2"></div>
