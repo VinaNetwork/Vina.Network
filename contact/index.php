@@ -3,7 +3,7 @@
 <?php
 /*
  * ============================================================================
- * File: index.php (Contact home)
+ * File: contact/index.php (Contact home)
  * Description: "Contact Us" page for Vina Network.
  *              Provides users with ways to get in touch via X (Twitter),
  *              Telegram, or Email. Also includes relevant metadata for SEO
