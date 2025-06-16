@@ -1,3 +1,9 @@
+// ============================================================================
+// File: tools/tools.js
+// Description: Script of the entire tool page.
+// Created by: Vina Network
+// ============================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
     // Get the "tool" parameter from URL to determine which tab should be active
     const urlParams = new URLSearchParams(window.location.search);
