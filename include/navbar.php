@@ -1,18 +1,13 @@
-<!--
-|--------------------------------------------------------------------------
-| File: include/navbar.php
-| Description: Fixed top navigation bar shared across the Vina Network website.
-| This navbar includes:
-| - Logo and homepage link
-| - Main navigation items (Home, Product, Tools, Meme Coin, Contact)
-| - Dropdown menus for product and tools categories
-| - Mobile burger menu trigger (for responsive view)
-|--------------------------------------------------------------------------
--->
+<?php
+// ============================================================================
+// File: include/navbar.php
+// Description: Fixed top navigation bar shared across the Vina Network website.
+// Created by: Vina Network
+// ============================================================================
+?>
 
 <!-- Main Navigation Bar -->
 <nav class="navbar" role="navigation" aria-label="Main navigation">
-
     <!-- Website Logo -->
     <div class="logo">
         <a href="https://www.vina.network/" aria-label="Vina Network Home">
@@ -22,7 +17,6 @@
 
     <!-- Navigation Links -->
     <ul class="nav-1">
-
         <!-- Home -->
         <li class="nav-2">
             <a href="https://www.vina.network/" class="nav-link">
