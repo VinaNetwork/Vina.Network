@@ -8,6 +8,7 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Head Section (Meta, Styles, Title) is included via header.php
 $page_canonical = 'https://vina.network';
 $page_css = ['css/home.css'];
 include __DIR__ . '/include/header.php';
@@ -15,9 +16,6 @@ include __DIR__ . '/include/header.php';
 
 <!DOCTYPE html>
 <html lang="en">
-
-<!-- Head Section (Meta, Styles, Title) is included via header.php -->
-
 <body>
     <!-- Navigation Bar -->
     <?php include __DIR__ . '/include/navbar.php'; ?>
