@@ -1,12 +1,10 @@
 <?php
-/*
-|--------------------------------------------------------------------------
-| File: include/crypto_widget.php
-| Description: Reusable section to display real-time crypto prices (BTC, ETH, SOL).
-| Usage: Included across the site (e.g. homepage, tools) to provide live price updates.
-| Source: CoinMarketCap widget script (currency.js)
-|--------------------------------------------------------------------------
-*/
+// --------------------------------------------------------------------------
+// File: include/crypto_widget.php
+// Description: Reusable section to display real-time crypto prices (BTC, ETH, SOL).
+//              Included across the site (e.g. homepage, tools) to provide live price updates.
+// Created by: Vina Network
+// --------------------------------------------------------------------------
 ?>
 
 <!-- Crypto Price Widget Section -->
