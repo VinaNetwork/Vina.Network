@@ -5,7 +5,7 @@
  * This script handles export requests for NFT holder data (CSV/JSON format).
  * It validates input parameters, retrieves data from file cache or API, and outputs downloadable files.
  * Restored from Update 1 with fixes for HTTP 500.
- * Update: Read from file cache to ensure consistency with nft-holders.php and handle session deletion.
+ * Update: Read from file cache with robust error handling to ensure consistency with nft-holders.php.
  */
 
 if (!defined('VINANETWORK')) {
@@ -27,6 +27,14 @@ file_put_contents(EXPORT_LOG_PATH, "export-holders: Script started - " . date('Y
 
 // Define cache file
 $cache_file = __DIR__ . '/cache/nft_holders_cache.json';
+
+// Validate cache file
+if (!file_exists($cache_file)) {
+    file_put_contents(EXPORT_LOG_PATH, "export-holders: Cache file $cache_file does not exist - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    http_response_code(500);
+    echo json_encode(['error' => 'Cache file missing']);
+    exit;
+}
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -109,8 +117,8 @@ try {
     // Load cache from file
     $cache_data = json_decode(file_get_contents($cache_file), true);
     if (!is_array($cache_data)) {
-        $cache_data = [];
         file_put_contents(EXPORT_LOG_PATH, "export-holders: Failed to parse cache file, initializing empty cache - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        $cache_data = [];
     }
 
     // Check file cache
@@ -119,12 +127,8 @@ try {
         isset($cache_data[$mintAddress]['timestamp']) && 
         (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration)) {
         $total_expected = $cache_data[$mintAddress]['total_items'];
-        $items = $cache_data[$mintAddress]['items'];
+        $items = $cache_data[$mintAddress]['items'] ?? [];
         file_put_contents(EXPORT_LOG_PATH, "export-holders: Using file cache for mintAddress=$mintAddress, total_expected=$total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-
-        // Sync session for compatibility
-        $_SESSION['total_items'][$mintAddress] = $cache_data[$mintAddress]['total_items'];
-        $_SESSION['items'][$mintAddress] = $cache_data[$mintAddress]['items'];
     } else {
         file_put_contents(EXPORT_LOG_PATH, "export-holders: No valid file cache found for mintAddress=$mintAddress, fetching new data - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         ini_set('memory_limit', '512M');
@@ -166,12 +170,11 @@ try {
             'items' => $items,
             'timestamp' => time()
         ];
-        file_put_contents($cache_file, json_encode($cache_data));
+        if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
+            file_put_contents(EXPORT_LOG_PATH, "export-holders: Failed to write cache file for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            throw new Exception('Failed to save cache data');
+        }
         file_put_contents(EXPORT_LOG_PATH, "export-holders: Cached total_items=$total_fetched for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-
-        // Update session
-        $_SESSION['total_items'][$mintAddress] = $total_fetched;
-        $_SESSION['items'][$mintAddress] = $items;
     }
 
     // Validate items
