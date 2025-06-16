@@ -6,6 +6,7 @@
  * It validates input parameters, retrieves data from file cache or API, and outputs downloadable files.
  * Restored from Update 1 with fixes for HTTP 500.
  * Update: Read from file cache with robust error handling to ensure consistency with nft-holders.php.
+ * Fix: Simplified cache validation to prevent data loss after browser close.
  */
 
 if (!defined('VINANETWORK')) {
@@ -126,7 +127,7 @@ try {
     if (isset($cache_data[$mintAddress]) && 
         isset($cache_data[$mintAddress]['timestamp']) && 
         (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration)) {
-        $total_expected = $cache_data[$mintAddress]['total_items'];
+        $total_expected = $cache_data[$mintAddress]['total_items'] ?? 0;
         $items = $cache_data[$mintAddress]['items'] ?? [];
         file_put_contents(EXPORT_LOG_PATH, "export-holders: Using file cache for mintAddress=$mintAddress, total_expected=$total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
     } else {
