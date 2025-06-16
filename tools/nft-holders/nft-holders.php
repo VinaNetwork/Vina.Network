@@ -10,6 +10,7 @@
  * Update 7: Added cleanup of expired cache entries to reduce cache file size.
  * Fix: Robust file-based cache to persist data across sessions, with detailed logging for debugging.
  * Fix 2: Removed cache reset on new mintAddress to prevent data loss after browser close.
+ * Temporary: Set cache_expiration to 600 seconds (10 minutes) for testing expired cache cleanup.
  */
 
 // Disable display of errors in production
@@ -105,7 +106,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             log_message("nft-holders: Form submitted with mintAddress=$mintAddress", 'nft_holders_log.txt');
             $limit = 1000;
             $max_pages = 100; // Limit max API page iterations
-            $cache_expiration = 3 * 3600; // 3 hours in seconds
+            $cache_expiration = 600; // 10 minutes in seconds (temporary for testing)
 
             // Validate address format (base58, 32–44 characters)
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
