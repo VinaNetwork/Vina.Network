@@ -1,14 +1,8 @@
-/* 
-|--------------------------------------------------------------------------
-| File: js/vina.js
-| Description: Global JavaScript functions used across the Vina Network website.
-| Includes:
-| - Debounce helper function
-| - Typewriter animation effect
-| - IntersectionObserver for .fade-in animation
-| - Back to Top button behavior
-|--------------------------------------------------------------------------
-*/
+// ============================================================================
+// File: js/vina.js
+// Description: Global JavaScript functions used across the Vina Network website.
+// Created by: Vina Network
+// ============================================================================
 
 // Debounce function to limit the frequency of function execution
 function debounce(func, wait) {
