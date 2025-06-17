@@ -10,13 +10,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // ---------------------------------------------------
-// Start session early (needed for CSRF, etc.)
-// ---------------------------------------------------
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// ---------------------------------------------------
 // Define core path constants
 // Used across the tools module for easier path management
 // ---------------------------------------------------
