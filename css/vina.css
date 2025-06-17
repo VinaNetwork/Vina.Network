@@ -75,9 +75,11 @@ li {
     border-radius: 10px;
 }
 
-/* Input cleanup */
+/* Input */
 input {
     border: unset;
+    padding: 10px;
+    border-radius: 10px;
 }
 
 /*  CTA Button Style */
