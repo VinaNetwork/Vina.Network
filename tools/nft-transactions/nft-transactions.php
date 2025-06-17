@@ -141,41 +141,17 @@ include $root_path . 'include/navbar.php';
             }
             log_message("nft-transactions: Interface: $interface, Collection name: $collection_name for mintAddress=$mintAddress, json_uri: $json_uri", 'nft_transactions_log.txt');
 
-            // Get transactions using v0/transactions
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL => "https://api.helius.xyz/v0/addresses/$mintAddress/transactions?api-key=8eb75cd9-015a-4e24-9de2-5be9ee0f1c63",
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => "",
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => "GET",
-                CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
-            ]);
-
-            $response = curl_exec($curl);
-            $err = curl_error($curl);
-            curl_close($curl);
-
-            if ($err) {
-                log_message("nft-transactions: cURL error for mintAddress=$mintAddress: $err", 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("cURL error: $err");
-            }
-
-            $transactions = json_decode($response, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                log_message("nft-transactions: JSON decode error for mintAddress=$mintAddress: $response", 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("Invalid API response");
-            }
+            // Get transactions using v0/addresses
+            $params = ['address' => $mintAddress];
+            $transactions = callAPI('v0/addresses', $params, 'GET');
 
             if (isset($transactions['error'])) {
                 $errorMessage = is_array($transactions['error']) && isset($transactions['error']['message']) ? $transactions['error']['message'] : json_encode($transactions['error']);
-                log_message("nft-transactions: Helius v0/transactions error for mintAddress=$mintAddress: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
+                log_message("nft-transactions: Helius v0/addresses error for mintAddress=$mintAddress: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
                 throw new Exception("Helius API error: $errorMessage");
             }
 
-            log_message("nft-transactions: Helius v0/transactions response: " . json_encode($transactions, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), 'nft_transactions_log.txt');
+            log_message("nft-transactions: Helius v0/addresses response: " . json_encode($transactions, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), 'nft_transactions_log.txt');
 
             if (empty($transactions)) {
                 throw new Exception("No transactions found for the provided mint address.");
