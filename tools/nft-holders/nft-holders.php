@@ -118,13 +118,14 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             }
 
             $mintAddress = strtolower(trim($_POST['mintAddress']));
-            log_message("nft-holders: Form submitted with mintAddress=$mintAddress", 'nft_holders_log.txt');
+            log_message("nft-holders: Raw mintAddress=" . $_POST['mintAddress'] . ", Processed mintAddress=$mintAddress", 'nft_holders_log.txt');
             $limit = 1000;
             $max_pages = 100; // Limit max API page iterations
             $cache_expiration = 3 * 3600; // 3 hours in seconds
 
             // Validate address format (base58, 32–44 characters)
-            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
+            if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $mintAddress)) {
+                log_message("nft-holders: Invalid mintAddress format: $mintAddress", 'nft_holders_log.txt', 'ERROR');
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
 
@@ -257,10 +258,21 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     'wallets' => $wallets,
                     'timestamp' => time()
                 ];
-                if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-                    log_message("nft-holders: Failed to write cache to $cache_file", 'nft_holders_log.txt', 'ERROR');
-                    throw new Exception("Failed to save cache data");
+                $fp = fopen($cache_file, 'c');
+                if (flock($fp, LOCK_EX)) {
+                    if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
+                        log_message("nft-holders: Failed to write cache to $cache_file", 'nft_holders_log.txt', 'ERROR');
+                        flock($fp, LOCK_UN);
+                        fclose($fp);
+                        throw new Exception("Failed to save cache data");
+                    }
+                    flock($fp, LOCK_UN);
+                } else {
+                    log_message("nft-holders: Failed to lock cache file $cache_file", 'nft_holders_log.txt', 'ERROR');
+                    fclose($fp);
+                    throw new Exception("Failed to lock cache file");
                 }
+                fclose($fp);
                 log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
             } else {
                 $total_items = $cache_data[$mintAddress]['total_items'] ?? 0;
