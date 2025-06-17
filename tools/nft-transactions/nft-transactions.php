@@ -46,6 +46,21 @@ if (!file_exists($api_helper_path)) {
 }
 include $api_helper_path;
 
+// Fetch JSON from URI
+function fetchJsonUri($uri) {
+    $ch = curl_init($uri);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        log_message("nft-transactions: JSON URI decode error - URI: $uri, Response: $response", 'nft_transactions_log.txt', 'ERROR');
+        return null;
+    }
+    return $data;
+}
+
 // CSV export function
 function exportToCsv($transactions, $mintAddress) {
     $filename = "nft_transactions_{$mintAddress}_" . date('YmdHis') . ".csv";
@@ -105,6 +120,24 @@ include $root_path . 'include/navbar.php';
                 throw new Exception("Invalid mint address. Please enter a valid Solana mint address (32-44 characters, base58).");
             }
 
+            // Get NFT metadata to confirm collection
+            $params = ['id' => $mintAddress];
+            $asset_data = callAPI('getAsset', $params, 'POST');
+
+            if (isset($asset_data['error'])) {
+                $errorMessage = is_array($asset_data['error']) && isset($asset_data['error']['message']) ? $asset_data['error']['message'] : json_encode($asset_data['error']);
+                log_message("nft-transactions: Helius getAsset error for mintAddress=$mintAddress: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
+                throw new Exception("Helius API error: $errorMessage");
+            }
+
+            $json_uri = $asset_data['result']['content']['json_uri'] ?? null;
+            $collection_name = 'Unknown';
+            if ($json_uri) {
+                $json_data = fetchJsonUri($json_uri);
+                $collection_name = $json_data['collection']['name'] ?? $json_data['name'] ?? 'Unknown';
+            }
+            log_message("nft-transactions: Collection name: $collection_name for mintAddress=$mintAddress, json_uri: $json_uri", 'nft_transactions_log.txt');
+
             // Get transactions from Helius API
             $params = [
                 'id' => $mintAddress,
@@ -115,8 +148,23 @@ include $root_path . 'include/navbar.php';
 
             if (isset($helius_data['error'])) {
                 $errorMessage = is_array($helius_data['error']) && isset($helius_data['error']['message']) ? $helius_data['error']['message'] : json_encode($helius_data['error']);
-                log_message("nft-transactions: Helius API error for mintAddress=$mintAddress: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("Helius API error: $errorMessage");
+                log_message("nft-transactions: Helius getSignaturesForAsset error for mintAddress=$mintAddress: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
+
+                // Fallback to getSignaturesForAddress
+                if (strpos($errorMessage, 'Tree not found') !== false) {
+                    $params = [
+                        'address' => $mintAddress,
+                        'limit' => 100
+                    ];
+                    $helius_data = callAPI('getSignaturesForAddress', $params, 'POST');
+                    if (isset($helius_data['error'])) {
+                        $errorMessage = is_array($helius_data['error']) && isset($helius_data['error']['message']) ? $helius_data['error']['message'] : json_encode($helius_data['error']);
+                        throw new Exception("Helius API fallback error: $errorMessage");
+                    }
+                    log_message("nft-transactions: Fallback getSignaturesForAddress success for mintAddress=$mintAddress", 'nft_transactions_log.txt');
+                } else {
+                    throw new Exception("Helius API error: $errorMessage");
+                }
             }
 
             log_message("nft-transactions: Helius API response: " . json_encode($helius_data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), 'nft_transactions_log.txt');
@@ -157,6 +205,7 @@ include $root_path . 'include/navbar.php';
                     </tbody>
                 </table>
                 <p>Mint Address: <?php echo htmlspecialchars($mintAddress); ?></p>
+                <p>Collection: <?php echo htmlspecialchars($collection_name); ?></p>
                 <a href="exports/<?php echo htmlspecialchars($csv_filename); ?>" download class="cta-button">Download CSV</a>
             </div>
             <?php
