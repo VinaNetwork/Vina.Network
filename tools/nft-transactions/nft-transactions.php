@@ -3,7 +3,7 @@
 // File: tools/nft-transactions/nft-transactions.php
 // Description: Check transaction history for Solana NFT/Collection using Helius API.
 // Created by: Vina Network
-// Updated: 17/06/2025 - Support SWAP with Candy Machine or Mint Address in accounts
+// Updated: 17/06/2025 - Support SWAP, UNKNOWN + LAUNCH_MY_NFT; use tools-api2.php only
 // ============================================================================
 
 ini_set('display_errors', 0);
@@ -40,17 +40,11 @@ if (time() - $rate_limit_time > 60) {
     log_message("nft-transactions: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_transactions_log.txt');
 }
 
-$api_helper_path = __DIR__ . '/../tools-api.php';
 $api_helper2_path = __DIR__ . '/../tools-api2.php';
-if (!file_exists($api_helper_path)) {
-    log_message("nft-transactions: tools-api.php not found at $api_helper_path", 'nft_transactions_log.txt', 'ERROR');
-    die('Internal Server Error: Missing tools-api.php');
-}
 if (!file_exists($api_helper2_path)) {
     log_message("nft-transactions: tools-api2.php not found at $api_helper2_path", 'nft_transactions_log.txt', 'ERROR');
     die('Internal Server Error: Missing tools-api2.php');
 }
-include $api_helper_path;
 include $api_helper2_path;
 
 // Fetch JSON from URI
@@ -130,9 +124,9 @@ include $root_path . 'include/navbar.php';
                 throw new Exception("Invalid mint address. Please enter a valid Solana mint address (32-44 characters, base58).");
             }
 
-            // Get NFT/Collection metadata (using tools-api.php)
+            // Get NFT/Collection metadata (using tools-api2.php for getAsset)
             $params = ['id' => $mintAddress];
-            $asset_data = callAPI('getAsset', $params, 'POST');
+            $asset_data = callAPI2('getAsset', $params, 'POST');
 
             if (isset($asset_data['error'])) {
                 $errorMessage = is_array($asset_data['error']) && isset($asset_data['error']['message']) ? $asset_data['error']['message'] : json_encode($asset_data['error']);
@@ -169,17 +163,22 @@ include $root_path . 'include/navbar.php';
             $normalized_transactions = [];
             $valid_types = ['NFT_SALE', 'MINT', 'NFT_MINT', 'NFT_BURN', 'ACCEPT_ESCROW_ARTIST', 'NFT_BID'];
             $candy_machine_program = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK';
+            $valid_sources = ['LAUNCH_MY_NFT', 'MAGIC_EDEN', 'TENSOR', 'FORMFUNCTION'];
             foreach ($transactions as $tx) {
                 $tx_type = $tx['type'] ?? 'UNKNOWN';
+                $tx_source = $tx['source'] ?? 'UNKNOWN';
                 $has_nft_event = !empty($tx['events']['nft']);
                 $has_candy_machine = in_array($candy_machine_program, array_column($tx['instructions'] ?? [], 'programId') ?: []);
                 $has_mint_address = in_array($mintAddress, array_column($tx['accounts'] ?? [], 'address') ?: []);
-                // Giữ SWAP hoặc transaction liên quan Candy Machine/Mint Address
-                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event)) || ($tx_type === 'SWAP' && ($has_candy_machine || $has_mint_address || !empty($tx['tokenTransfers'])))) {
+                // Giữ transaction UNKNOWN từ LAUNCH_MY_NFT nếu có Mint Address và nativeTransfers
+                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || 
+                    ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event)) || 
+                    ($tx_type === 'SWAP' && ($has_candy_machine || $has_mint_address || !empty($tx['tokenTransfers']))) || 
+                    ($tx_type === 'UNKNOWN' && in_array($tx_source, $valid_sources) && $has_mint_address && !empty($tx['nativeTransfers']))) {
                     $normalized_transactions[] = [
                         'signature' => $tx['signature'] ?? 'N/A',
-                        'type' => $has_nft_event ? ($tx['events']['nft']['type'] ?? $tx_type) : $tx_type,
-                        'source' => $has_nft_event ? ($tx['events']['nft']['source'] ?? $tx['source'] ?? 'Unknown') : ($tx['source'] ?? 'Unknown'),
+                        'type' => $has_nft_event ? ($tx['events']['nft']['type'] ?? $tx_type) : ($tx_source === 'LAUNCH_MY_NFT' && $has_mint_address ? 'NFT_MINT' : $tx_type),
+                        'source' => $has_nft_event ? ($tx['events']['nft']['source'] ?? $tx_source) : $tx_source,
                         'timestamp' => $tx['timestamp'] ?? ($tx['blockTime'] ?? null),
                         'from' => $has_nft_event ? ($tx['events']['nft']['seller'] ?? ($tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A'))) : ($tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A')),
                         'to' => $has_nft_event ? ($tx['events']['nft']['buyer'] ?? ($tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A'))) : ($tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A')),
