@@ -3,7 +3,7 @@
 // File: tools/nft-transactions/nft-transactions.php
 // Description: Check transaction history for Solana NFT/Collection using Helius API.
 // Created by: Vina Network
-// Updated: 17/06/2025 - Support SWAP with Mint Address in events.swap.tokenOutputs
+// Updated: 17/06/2025 - Support SWAP with Candy Machine or Mint Address in accounts
 // ============================================================================
 
 ini_set('display_errors', 0);
@@ -174,20 +174,8 @@ include $root_path . 'include/navbar.php';
                 $has_nft_event = !empty($tx['events']['nft']);
                 $has_candy_machine = in_array($candy_machine_program, array_column($tx['instructions'] ?? [], 'programId') ?: []);
                 $has_mint_address = in_array($mintAddress, array_column($tx['accounts'] ?? [], 'address') ?: []);
-                // Check if mintAddress is in events.swap.tokenOutputs.mint
-                $has_swap_mint = false;
-                if (isset($tx['events']['swap']['tokenOutputs'])) {
-                    foreach ($tx['events']['swap']['tokenOutputs'] as $output) {
-                        if (isset($output['mint']) && $output['mint'] === $mintAddress) {
-                            $has_swap_mint = true;
-                            break;
-                        }
-                    }
-                }
-                // Keep SWAP if related to Candy Machine, Mint Address, tokenTransfers, or swap output mint
-                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || 
-                    ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event)) || 
-                    ($tx_type === 'SWAP' && ($has_candy_machine || $has_mint_address || $has_swap_mint || !empty($tx['tokenTransfers'])))) {
+                // Giữ SWAP hoặc transaction liên quan Candy Machine/Mint Address
+                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event)) || ($tx_type === 'SWAP' && ($has_candy_machine || $has_mint_address || !empty($tx['tokenTransfers'])))) {
                     $normalized_transactions[] = [
                         'signature' => $tx['signature'] ?? 'N/A',
                         'type' => $has_nft_event ? ($tx['events']['nft']['type'] ?? $tx_type) : $tx_type,
@@ -240,12 +228,12 @@ include $root_path . 'include/navbar.php';
                 <p>Mint Address: <?php echo htmlspecialchars($mintAddress); ?></p>
                 <p>Interface: <?php echo htmlspecialchars($interface); ?></p>
                 <p>Collection: <?php echo htmlspecialchars($collection_name); ?></p>
-                <a href="exports/<?php echo htmlspecialchars($csv_filename)); ?>" download class="cta-button">Download CSV</a>
+                <a href="exports/<?php echo htmlspecialchars($csv_filename); ?>" download class="cta-button">Download CSV</a>
             </div>
             <?php
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . $e->getMessage();
-            log_message("nft-transactions error: $error_msg.",$tx_log_txt_log.txt', 'ERROR');
+            log_message("nft-transactions: Exception - $error_msg", 'nft_transactions_log.txt', 'ERROR');
             echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
         }
     }
