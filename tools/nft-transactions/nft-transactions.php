@@ -46,6 +46,29 @@ if (!file_exists($api_helper_path)) {
 }
 include $api_helper_path;
 
+// CSV export function
+function exportToCsv($transactions, $mintAddress) {
+    $filename = "nft_transactions_{$mintAddress}_" . date('YmdHis') . ".csv";
+    $filepath = __DIR__ . "/exports/{$filename}";
+    if (!is_dir(__DIR__ . '/exports')) {
+        mkdir(__DIR__ . '/exports', 0755, true);
+    }
+    $fp = fopen($filepath, 'w');
+    fputcsv($fp, ['Signature', 'Type', 'Timestamp', 'From', 'To', 'Price (SOL)']);
+    foreach ($transactions as $tx) {
+        fputcsv($fp, [
+            $tx['signature'] ?? 'N/A',
+            $tx['type'] ?? 'Unknown',
+            isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A',
+            $tx['source'] ?? 'N/A',
+            $tx['destination'] ?? 'N/A',
+            number_format($tx['price'] ?? 0, 2)
+        ]);
+    }
+    fclose($fp);
+    return $filename;
+}
+
 $root_path = '../../';
 $page_title = 'Check NFT Transactions - Vina Network';
 $page_description = 'Check transaction history for a Solana NFT.';
@@ -84,7 +107,7 @@ include $root_path . 'include/navbar.php';
 
             // Get transactions from Helius API
             $params = [
-                'assetId' => $mintAddress,
+                'id' => $mintAddress,
                 'page' => 1,
                 'limit' => 100
             ];
@@ -102,6 +125,9 @@ include $root_path . 'include/navbar.php';
             if (empty($transactions)) {
                 throw new Exception("No transactions found for the provided mint address.");
             }
+
+            // Export to CSV
+            $csv_filename = exportToCsv($transactions, $mintAddress);
             ?>
 
             <!-- Display transactions table -->
@@ -120,9 +146,9 @@ include $root_path . 'include/navbar.php';
                     <tbody>
                         <?php foreach ($transactions as $tx) : ?>
                             <tr>
-                                <td><?php echo htmlspecialchars(substr($tx['signature'], 0, 10)) . '...'; ?></td>
+                                <td><a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['signature']); ?>" target="_blank"><?php echo htmlspecialchars(substr($tx['signature'], 0, 10)) . '...'; ?></a></td>
                                 <td><?php echo htmlspecialchars($tx['type'] ?? 'Unknown'); ?></td>
-                                <td><?php echo date('Y-m-d H:i:s', $tx['timestamp'] ?? time()); ?></td>
+                                <td><?php echo isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A'; ?></td>
                                 <td><?php echo htmlspecialchars(substr($tx['source'] ?? 'N/A', 0, 10)) . '...'; ?></td>
                                 <td><?php echo htmlspecialchars(substr($tx['destination'] ?? 'N/A', 0, 10)) . '...'; ?></td>
                                 <td><?php echo number_format($tx['price'] ?? 0, 2); ?></td>
@@ -131,6 +157,7 @@ include $root_path . 'include/navbar.php';
                     </tbody>
                 </table>
                 <p>Mint Address: <?php echo htmlspecialchars($mintAddress); ?></p>
+                <a href="exports/<?php echo htmlspecialchars($csv_filename); ?>" download class="cta-button">Download CSV</a>
             </div>
             <?php
         } catch (Exception $e) {
