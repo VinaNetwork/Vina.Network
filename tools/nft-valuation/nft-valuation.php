@@ -76,6 +76,7 @@ function callMagicEdenAPI($endpoint) {
         throw new Exception("Invalid MagicEden API response");
     }
 
+    log_message("nft-valuation: MagicEden API success - Endpoint: $endpoint, Response: " . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), 'nft_valuation_log.txt');
     return $data;
 }
 
@@ -145,14 +146,23 @@ include $root_path . 'include/navbar.php';
 
             // Step 2: Get valuation data from MagicEden API
             $stats = callMagicEdenAPI("$collection_symbol/stats");
-            $activities = callMagicEdenAPI("$collection_symbol/activities?type=sale&limit=1");
+            $activities = callMagicEdenAPI("$collection_symbol/activities?type=sale&limit=100");
 
             // Convert floor price (lamports to SOL)
             $floor_price = isset($stats['floorPrice']) ? $stats['floorPrice'] / 1000000000 : 'N/A';
-            // Get last sale price (first sale from activities)
-            $last_sale_price = isset($activities[0]['price']) ? $activities[0]['price'] : '0.00';
-            // Get 24h volume (lamports to SOL)
-            $volume_24h = isset($stats['volume24h']) ? $stats['volume24h'] / 1000000000 : '0.00';
+
+            // Get last sale price (first sale within 24h)
+            $last_sale_price = '0.00';
+            $volume_24h = 0.00;
+            $now = time();
+            foreach ($activities as $activity) {
+                if ($activity['type'] === 'sale' && isset($activity['blockTime']) && ($now - $activity['blockTime']) <= 86400) {
+                    if ($last_sale_price === '0.00') {
+                        $last_sale_price = $activity['price'];
+                    }
+                    $volume_24h += $activity['price'];
+                }
+            }
 
             log_message("nft-valuation: Retrieved floor_price=$floor_price, last_sale_price=$last_sale_price, volume_24h=$volume_24h for collection_symbol=$collection_symbol", 'nft_valuation_log.txt');
             ?>
