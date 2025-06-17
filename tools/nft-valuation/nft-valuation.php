@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/nft-valuation/nft-valuation.php
-// Description: Check real-time market valuation for Solana NFT Collections.
+// Description: Check real-time market valuation for Solana NFT Collections using MagicEden API.
 // Created by: Vina Network
 // ============================================================================
 
@@ -55,6 +55,30 @@ if (!file_exists($api_helper_path)) {
 }
 include $api_helper_path;
 
+// MagicEden API helper function
+function callMagicEdenAPI($endpoint) {
+    $url = "https://api-mainnet.magiceden.dev/v2/collections/$endpoint";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($http_code !== 200) {
+        log_message("nft-valuation: MagicEden API error - Endpoint: $endpoint, HTTP: $http_code, Response: $response", 'nft_valuation_log.txt', 'ERROR');
+        throw new Exception("MagicEden API error: HTTP $http_code");
+    }
+
+    $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        log_message("nft-valuation: MagicEden JSON decode error - Endpoint: $endpoint, Response: $response", 'nft_valuation_log.txt', 'ERROR');
+        throw new Exception("Invalid MagicEden API response");
+    }
+
+    return $data;
+}
+
 // Set up page variables
 $root_path = '../../';
 $page_title = 'Check NFT Valuation - Vina Network';
@@ -92,36 +116,45 @@ include $root_path . 'include/navbar.php';
 
             // Validate address format (base58, 32–44 characters)
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
+                log_message("nft-valuation: Invalid mintAddress format: $mintAddress", 'nft_valuation_log.txt', 'ERROR');
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
 
-            // Fetch assets from Helius API
+            // Step 1: Get collection_symbol from Helius API
             $params = [
                 'groupKey' => 'collection',
                 'groupValue' => $mintAddress,
                 'page' => 1,
-                'limit' => 100 // Reduced for performance
+                'limit' => 1
             ];
-            $data = callAPI('getAssetsByGroup', $params, 'POST');
+            $helius_data = callAPI('getAssetsByGroup', $params, 'POST');
 
-            if (isset($data['error'])) {
-                $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
-                throw new Exception("API error: $errorMessage");
+            if (isset($helius_data['error'])) {
+                $errorMessage = is_array($helius_data['error']) && isset($helius_data['error']['message']) ? $helius_data['error']['message'] : json_encode($helius_data['error']);
+                log_message("nft-valuation: Helius API error for mintAddress=$mintAddress: $errorMessage", 'nft_valuation_log.txt', 'ERROR');
+                throw new Exception("Helius API error: $errorMessage");
             }
 
-            // Validate API response
-            if (!isset($data['result']['items'])) {
-                log_message("nft-valuation: Invalid API response, no items found for mintAddress=$mintAddress", 'nft_valuation_log.txt', 'ERROR');
-                throw new Exception("Invalid API response: No NFTs found in collection.");
+            if (!isset($helius_data['result']['items'][0]['content']['metadata']['collection']['name'])) {
+                log_message("nft-valuation: No collection name found for mintAddress=$mintAddress", 'nft_valuation_log.txt', 'ERROR');
+                throw new Exception("Collection not found. Please check the collection address.");
             }
 
-            // Placeholder: No price data available in getAssetsByGroup
-            $result = [
-                'floor_price' => 'N/A', // Need Helius endpoint for listings
-                'last_sale_price' => '0.00', // Need getSales endpoint
-                'volume_24h' => '0.00' // Need getSales endpoint
-            ];
-            log_message("nft-valuation: Retrieved total_items=" . count($data['result']['items']) . ", floor_price={$result['floor_price']}, last_sale_price={$result['last_sale_price']}, volume_24h={$result['volume_24h']} for mintAddress=$mintAddress", 'nft_valuation_log.txt');
+            $collection_symbol = strtolower(str_replace(' ', '_', $helius_data['result']['items'][0]['content']['metadata']['collection']['name']));
+            log_message("nft-valuation: Found collection_symbol=$collection_symbol for mintAddress=$mintAddress", 'nft_valuation_log.txt');
+
+            // Step 2: Get valuation data from MagicEden API
+            $stats = callMagicEdenAPI("$collection_symbol/stats");
+            $activities = callMagicEdenAPI("$collection_symbol/activities?type=sale&limit=1");
+
+            // Convert floor price (lamports to SOL)
+            $floor_price = isset($stats['floorPrice']) ? $stats['floorPrice'] / 1000000000 : 'N/A';
+            // Get last sale price (first sale from activities)
+            $last_sale_price = isset($activities[0]['price']) ? $activities[0]['price'] : '0.00';
+            // Get 24h volume (lamports to SOL)
+            $volume_24h = isset($stats['volume24h']) ? $stats['volume24h'] / 1000000000 : '0.00';
+
+            log_message("nft-valuation: Retrieved floor_price=$floor_price, last_sale_price=$last_sale_price, volume_24h=$volume_24h for collection_symbol=$collection_symbol", 'nft_valuation_log.txt');
             ?>
 
             <!-- Display valuation table -->
@@ -136,13 +169,13 @@ include $root_path . 'include/navbar.php';
                     </thead>
                     <tbody>
                         <tr>
-                            <td><?php echo $result['floor_price']; ?></td>
-                            <td><?php echo number_format($result['last_sale_price'], 2); ?></td>
-                            <td><?php echo number_format($result['volume_24h'], 2); ?></td>
+                            <td><?php echo is_numeric($floor_price) ? number_format($floor_price, 2) : $floor_price; ?></td>
+                            <td><?php echo number_format($last_sale_price, 2); ?></td>
+                            <td><?php echo number_format($volume_24h, 2); ?></td>
                         </tr>
                     </tbody>
                 </table>
-                <p class="result-error">Note: Valuation data is placeholder due to missing Helius endpoint for market stats. Please provide endpoint for floor price, last sale, and 24h volume.</p>
+                <p>Collection: <?php echo htmlspecialchars($collection_symbol); ?></p>
             </div>
             <?php
         } catch (Exception $e) {
@@ -158,7 +191,7 @@ include $root_path . 'include/navbar.php';
         <h2>About NFT Valuation Checker</h2>
         <p>
             The NFT Valuation Tool allows you to view real-time market valuation for a specific Solana NFT Collection by entering its on-chain collection address.
-            This tool aims to provide key financial metrics such as floor price, last sale price, and 24-hour trading volume, useful for NFT creators, collectors, or investors.
+            This tool provides key financial metrics such as floor price, last sale price, and 24-hour trading volume, useful for NFT creators, collectors, or investors.
         </p>
     </div>
 </div>
