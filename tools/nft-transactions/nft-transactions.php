@@ -40,11 +40,17 @@ if (time() - $rate_limit_time > 60) {
 }
 
 $api_helper_path = __DIR__ . '/../tools-api.php';
+$api_helper2_path = __DIR__ . '/../tools-api2.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-transactions: tools-api.php not found at $api_helper_path", 'nft_transactions_log.txt', 'ERROR');
     die('Internal Server Error: Missing tools-api.php');
 }
+if (!file_exists($api_helper2_path)) {
+    log_message("nft-transactions: tools-api2.php not found at $api_helper2_path", 'nft_transactions_log.txt', 'ERROR');
+    die('Internal Server Error: Missing tools-api2.php');
+}
 include $api_helper_path;
+include $api_helper2_path;
 
 // Fetch JSON from URI
 function fetchJsonUri($uri) {
@@ -71,15 +77,16 @@ function exportToCsv($transactions, $mintAddress) {
         mkdir(__DIR__ . '/exports', 0755, true);
     }
     $fp = fopen($filepath, 'w');
-    fputcsv($fp, ['Signature', 'Type', 'Timestamp', 'From', 'To', 'Price (SOL)']);
+    fputcsv($fp, ['Signature', 'Type', 'Source', 'Timestamp', 'From', 'To', 'Price (SOL)']);
     foreach ($transactions as $tx) {
         fputcsv($fp, [
             $tx['signature'] ?? 'N/A',
             $tx['type'] ?? 'Unknown',
+            $tx['source'] ?? 'Unknown',
             isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A',
-            $tx['source'] ?? 'N/A',
-            $tx['destination'] ?? 'N/A',
-            number_format(($tx['amount'] ?? 0) / 1e9, 2) // Convert lamports to SOL
+            $tx['from'] ?? 'N/A',
+            $tx['to'] ?? 'N/A',
+            number_format(($tx['amount'] ?? 0) / 1e9, 2)
         ]);
     }
     fclose($fp);
@@ -122,7 +129,7 @@ include $root_path . 'include/navbar.php';
                 throw new Exception("Invalid mint address. Please enter a valid Solana mint address (32-44 characters, base58).");
             }
 
-            // Get NFT/Collection metadata
+            // Get NFT/Collection metadata (using tools-api.php)
             $params = ['id' => $mintAddress];
             $asset_data = callAPI('getAsset', $params, 'POST');
 
@@ -141,9 +148,9 @@ include $root_path . 'include/navbar.php';
             }
             log_message("nft-transactions: Interface: $interface, Collection name: $collection_name for mintAddress=$mintAddress, json_uri: $json_uri", 'nft_transactions_log.txt');
 
-            // Get transactions using v0/addresses
+            // Get transactions using v0/addresses (using tools-api2.php)
             $params = ['address' => $mintAddress];
-            $transactions = callAPI('v0/addresses', $params, 'GET');
+            $transactions = callAPI2('v0/addresses', $params, 'GET');
 
             if (isset($transactions['error'])) {
                 $errorMessage = is_array($transactions['error']) && isset($transactions['error']['message']) ? $transactions['error']['message'] : json_encode($transactions['error']);
@@ -157,17 +164,26 @@ include $root_path . 'include/navbar.php';
                 throw new Exception("No transactions found for the provided mint address.");
             }
 
-            // Normalize transaction data
+            // Normalize and filter transaction data
             $normalized_transactions = [];
+            $valid_types = ['NFT_SALE', 'TRANSFER', 'MINT', 'NFT_MINT', 'NFT_BURN'];
             foreach ($transactions as $tx) {
-                $normalized_transactions[] = [
-                    'signature' => $tx['signature'] ?? 'N/A',
-                    'type' => $tx['type'] ?? 'Unknown',
-                    'timestamp' => $tx['timestamp'] ?? ($tx['blockTime'] ?? null),
-                    'source' => $tx['accounts'][0]['address'] ?? 'N/A',
-                    'destination' => $tx['accounts'][1]['address'] ?? 'N/A',
-                    'amount' => $tx['nativeTransfers'][0]['amount'] ?? ($tx['amount'] ?? 0)
-                ];
+                $tx_type = $tx['type'] ?? 'UNKNOWN';
+                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers'])) {
+                    $normalized_transactions[] = [
+                        'signature' => $tx['signature'] ?? 'N/A',
+                        'type' => $tx_type,
+                        'source' => $tx['source'] ?? 'Unknown',
+                        'timestamp' => $tx['timestamp'] ?? ($tx['blockTime'] ?? null),
+                        'from' => $tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A'),
+                        'to' => $tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A'),
+                        'amount' => $tx['nativeTransfers'][0]['amount'] ?? ($tx['amount'] ?? 0)
+                    ];
+                }
+            }
+
+            if (empty($normalized_transactions)) {
+                throw new Exception("No NFT-related transactions found for the provided mint address.");
             }
 
             // Export to CSV
@@ -181,6 +197,7 @@ include $root_path . 'include/navbar.php';
                         <tr>
                             <th>Signature</th>
                             <th>Type</th>
+                            <th>Source</th>
                             <th>Timestamp</th>
                             <th>From</th>
                             <th>To</th>
@@ -192,9 +209,10 @@ include $root_path . 'include/navbar.php';
                             <tr>
                                 <td><a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['signature']); ?>" target="_blank"><?php echo htmlspecialchars(substr($tx['signature'], 0, 10)) . '...'; ?></a></td>
                                 <td><?php echo htmlspecialchars($tx['type']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['source']); ?></td>
                                 <td><?php echo isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A'; ?></td>
-                                <td><?php echo htmlspecialchars(substr($tx['source'], 0, 10)) . '...'; ?></td>
-                                <td><?php echo htmlspecialchars(substr($tx['destination'], 0, 10)) . '...'; ?></td>
+                                <td><?php echo htmlspecialchars(substr($tx['from'], 0, 10)) . '...'; ?></td>
+                                <td><?php echo htmlspecialchars(substr($tx['to'], 0, 10)) . '...'; ?></td>
                                 <td><?php echo number_format(($tx['amount'] ?? 0) / 1e9, 2); ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -218,7 +236,7 @@ include $root_path . 'include/navbar.php';
         <h2>About NFT Transactions Checker</h2>
         <p>
             The NFT Transactions Tool allows you to view the transaction history for a specific Solana NFT or Collection by entering its mint address.
-            This tool provides details such as transaction signature, type, timestamp, and price, useful for tracking NFT activity.
+            This tool provides details such as transaction signature, type, source, timestamp, and price, useful for tracking NFT activity.
         </p>
     </div>
 </div>
