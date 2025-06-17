@@ -65,7 +65,6 @@ h1, h2 {text-align: center;}
     background: #c3c3c4;
     position: relative; /* Ensures .loader is centered */
 }
-.t-7 input {width: 700px;}
 
 /* loader for checkboxes */
 .loader {
