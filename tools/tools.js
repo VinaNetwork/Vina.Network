@@ -2,6 +2,7 @@
 // File: tools/tools.js
 // Description: Script of the entire tool page.
 // Created by: Vina Network
+// Updated: 17/06/2025 - Add support for nftValuationForm, nftTransactionsForm
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -170,8 +171,95 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Handle all other form submissions (valuation, analysis, holders lookup, etc.)
-        if (e.target.matches('#nftValuationForm, .transaction-form, #walletAnalysisForm, #nftHoldersForm')) {
+        // Handle NFT Valuation and NFT Transactions forms
+        if (e.target.matches('#nftValuationForm, #nftTransactionsForm')) {
+            e.preventDefault();
+            const form = e.target;
+            const mintAddress = form.querySelector(`#${form.id === 'nftValuationForm' ? 'mintAddressValuation' : 'mintAddressTransactions'}`).value;
+            const resultDiv = document.querySelector('.result-section');
+            const errorDiv = document.querySelector('.result-error');
+            const loader = document.querySelector('.loader');
+
+            if (!mintAddress) {
+                errorDiv.innerHTML = `<p>Please enter a valid ${form.id === 'nftValuationForm' ? 'Collection' : 'Mint'} Address.</p>`;
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            resultDiv.innerHTML = '';
+            errorDiv.style.display = 'none';
+            loader.style.display = 'block';
+
+            const apiEndpoint = form.id === 'nftValuationForm' ? '/tools/tools-api.php' : '/tools/tools-api2.php';
+            const requestBody = form.id === 'nftValuationForm' 
+                ? { endpoint: 'getAsset', params: { id: mintAddress } }
+                : { endpoint: 'v0/addresses', params: { address: mintAddress } };
+
+            log_message(`${form.id}: Client - mintAddress=${mintAddress}, endpoint=${requestBody.endpoint}`, 'client_log.txt');
+
+            fetch(apiEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error.message || 'API error');
+                }
+
+                if (form.id === 'nftTransactionsForm' && !data.length) {
+                    errorDiv.innerHTML = '<p>No transactions found for this Mint Address.</p>';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                if (form.id === 'nftValuationForm' && !data.result.grouping?.[0]?.group_value) {
+                    errorDiv.innerHTML = '<p>No valuation data found for this Collection Address.</p>';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                // Reload tool content to display results
+                const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
+                const formData = new FormData(form);
+                fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    return response.text();
+                })
+                .then(data => {
+                    document.querySelector('.t-4').innerHTML = data;
+                    errorDiv.innerHTML = '<p>Data loaded successfully.</p>';
+                    errorDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error reloading tool content:', error);
+                    errorDiv.innerHTML = `<p>Error loading content: ${error.message}. Please try again.</p>`;
+                    errorDiv.style.display = 'block';
+                });
+            })
+            .catch(error => {
+                console.error(`${form.id} error:`, error);
+                errorDiv.innerHTML = `<p>${error.message.includes('No valuation data found') || error.message.includes('No transactions found') ? error.message : 'Error loading content: ' + error.message + '. Please try again.'}</p>`;
+                errorDiv.style.display = 'block';
+            })
+            .finally(() => {
+                loader.style.display = 'none';
+            });
+
+            return;
+        }
+
+        // Handle other form submissions (walletAnalysisForm, nftHoldersForm, etc.)
+        if (e.target.matches('#walletAnalysisForm, #nftHoldersForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
