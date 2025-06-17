@@ -166,18 +166,20 @@ include $root_path . 'include/navbar.php';
 
             // Normalize and filter transaction data
             $normalized_transactions = [];
-            $valid_types = ['NFT_SALE', 'TRANSFER', 'MINT', 'NFT_MINT', 'NFT_BURN'];
+            $valid_types = ['NFT_SALE', 'TRANSFER', 'MINT', 'NFT_MINT', 'NFT_BURN', 'ACCEPT_ESCROW_ARTIST', 'NFT_BID'];
             foreach ($transactions as $tx) {
                 $tx_type = $tx['type'] ?? 'UNKNOWN';
-                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers'])) {
+                $has_nft_event = !empty($tx['events']['nft']);
+                // Hiển thị nếu là valid type, có tokenTransfers, có NFT event, hoặc Mint Address trong accounts
+                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || in_array($mintAddress, array_column($tx['accounts'] ?? [], 'address'))) {
                     $normalized_transactions[] = [
                         'signature' => $tx['signature'] ?? 'N/A',
-                        'type' => $tx_type,
-                        'source' => $tx['source'] ?? 'Unknown',
+                        'type' => $has_nft_event ? ($tx['events']['nft']['type'] ?? $tx_type) : $tx_type,
+                        'source' => $has_nft_event ? ($tx['events']['nft']['source'] ?? $tx['source'] ?? 'Unknown') : ($tx['source'] ?? 'Unknown'),
                         'timestamp' => $tx['timestamp'] ?? ($tx['blockTime'] ?? null),
-                        'from' => $tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A'),
-                        'to' => $tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A'),
-                        'amount' => $tx['nativeTransfers'][0]['amount'] ?? ($tx['amount'] ?? 0)
+                        'from' => $has_nft_event ? ($tx['events']['nft']['seller'] ?? ($tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A'))) : ($tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A')),
+                        'to' => $has_nft_event ? ($tx['events']['nft']['buyer'] ?? ($tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A'))) : ($tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A')),
+                        'amount' => $has_nft_event ? ($tx['events']['nft']['amount'] ?? ($tx['nativeTransfers'][0]['amount'] ?? ($tx['amount'] ?? 0))) : ($tx['nativeTransfers'][0]['amount'] ?? ($tx['amount'] ?? 0))
                     ];
                 }
             }
