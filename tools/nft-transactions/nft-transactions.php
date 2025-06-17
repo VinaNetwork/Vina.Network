@@ -1,256 +1,115 @@
 <?php
 // ============================================================================
-// File: tools/nft-transactions/nft-transactions.php
-// Description: Check transaction history for Solana NFT/Collection using Helius API.
+// File: tools/nft-transactions.php
+// Description: NFT transaction verification function.
 // Created by: Vina Network
-// Updated: 17/06/2025 - Support SWAP, UNKNOWN + LAUNCH_MY_NFT; use tools-api2.php only
 // ============================================================================
 
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
-
-$bootstrap_path = __DIR__ . '/../bootstrap.php';
-if (!file_exists($bootstrap_path)) {
-    log_message("nft-transactions: bootstrap.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
-    die('Error: bootstrap.php not found');
-}
-require_once $bootstrap_path;
-
-session_start();
-ini_set('log_errors', true);
-ini_set('error_log', ERROR_LOG_PATH);
-
-// Rate limiting: 5 requests per minute per IP
-$ip = $_SERVER['REMOTE_ADDR'];
-$rate_limit_key = "rate_limit:$ip";
-$rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
-$rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
-if (time() - $rate_limit_time > 60) {
-    $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-    log_message("nft-transactions: Reset rate limit for IP=$ip, count=1", 'nft_transactions_log.txt');
-} elseif ($rate_limit_count >= 5) {
-    log_message("nft-transactions: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_transactions_log.txt', 'ERROR');
-    die("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
-} else {
-    $_SESSION[$rate_limit_key]['count']++;
-    log_message("nft-transactions: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_transactions_log.txt');
-}
-
-$api_helper2_path = __DIR__ . '/../tools-api2.php';
-if (!file_exists($api_helper2_path)) {
-    log_message("nft-transactions: tools-api2.php not found at $api_helper2_path", 'nft_transactions_log.txt', 'ERROR');
-    die('Internal Server Error: Missing tools-api2.php');
-}
-include $api_helper2_path;
-
-// Fetch JSON from URI
-function fetchJsonUri($uri) {
-    $ch = curl_init($uri);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    $data = json_decode($response, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("nft-transactions: JSON URI decode error - URI: $uri, Response: $response", 'nft_transactions_log.txt', 'ERROR');
-        return null;
-    }
-    return $data;
-}
-
-// CSV export function
-function exportToCsv($transactions, $mintAddress) {
-    $filename = "nft_transactions_{$mintAddress}_" . date('YmdHis') . ".csv";
-    $filepath = __DIR__ . "/exports/{$filename}";
-    if (!is_dir(__DIR__ . '/exports')) {
-        mkdir(__DIR__ . '/exports', 0755, true);
-    }
-    $fp = fopen($filepath, 'w');
-    fputcsv($fp, ['Signature', 'Type', 'Source', 'Timestamp', 'From', 'To', 'Price (SOL)']);
-    foreach ($transactions as $tx) {
-        fputcsv($fp, [
-            $tx['signature'] ?? 'N/A',
-            $tx['type'] ?? 'Unknown',
-            $tx['source'] ?? 'Unknown',
-            isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A',
-            $tx['from'] ?? 'N/A',
-            $tx['to'] ?? 'N/A',
-            number_format(($tx['amount'] ?? 0) / 1e9, 2)
-        ]);
-    }
-    fclose($fp);
-    return $filename;
-}
-
-$root_path = '../../';
-$page_title = 'Check NFT Transactions - Vina Network';
-$page_description = 'Check transaction history for a Solana NFT or Collection.';
-$page_css = ['../../css/vina.css', '../tools.css'];
-include $root_path . 'include/header.php';
-include $root_path . 'include/navbar.php';
+include '../tools-api.php';
+error_log("nft-transactions.php loaded"); // Debug
 ?>
 
 <div class="t-6 nft-transactions-content">
     <div class="t-7">
         <h2>Check NFT Transactions</h2>
-        <p>Enter the <strong>NFT or Collection Mint Address</strong> to view its transaction history.</p>
-        <form id="nftTransactionsForm" method="POST" action="">
-            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-            <input type="text" name="mintAddress" id="mintAddressTransactions" placeholder="Enter Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+        <p>Enter the address of the NFT to see its transaction history.</p>
+
+        <form class="transaction-form" method="POST" action="">
+            <input type="text" name="mintAddressTransactions" id="mintAddressTransactions" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
             <button type="submit" class="cta-button">Check Transactions</button>
         </form>
-        <div class="loader"></div>
     </div>
 
     <?php
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
-        try {
-            if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
-                log_message("nft-transactions: Invalid CSRF token for mintAddress=" . ($_POST['mintAddress'] ?? 'unknown'), 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("Invalid CSRF token. Please try again.");
-            }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressTransactions'])) {
+	$mintAddress = trim($_POST['mintAddressTransactions']);
+	$page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
+	$transactions_per_page = 10;
+	$offset = ($page - 1) * $transactions_per_page;
 
-            $mintAddress = trim($_POST['mintAddress']);
-            log_message("nft-transactions: Form submitted with mintAddress=$mintAddress", 'nft_transactions_log.txt');
+	// Gọi API để lấy lịch sử giao dịch
+	error_log("nft-transactions.php: Fetching transactions for mintAddress = $mintAddress, page = $page");
+	$transactions_data = getNFTTransactions($mintAddress, $page);
 
-            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-                log_message("nft-transactions: Invalid mintAddress format: $mintAddress", 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("Invalid mint address. Please enter a valid Solana mint address (32-44 characters, base58).");
-            }
+	if (isset($transactions_data['error'])) {
+		echo "<div class='result-error'><p>" . htmlspecialchars($transactions_data['error']) . "</p></div>";
+		error_log("nft-transactions.php: Error - {$transactions_data['error']}");
+	} elseif ($transactions_data && !empty($transactions_data['transactions'])) {
+		$total_transactions = count($transactions_data['transactions']);
+		$paginated_transactions = array_slice($transactions_data['transactions'], $offset, $transactions_per_page);
 
-            // Get NFT/Collection metadata (using tools-api2.php for getAsset)
-            $params = ['id' => $mintAddress];
-            $asset_data = callAPI2('getAsset', $params, 'POST');
+		echo "<div class='result-section'>";
+		echo "<h3>Results</h3>";
+		echo "<table class='transaction-table'>";
+		echo "<tr><th>Transaction ID</th><th>Buyer</th><th>Seller</th><th>Price (SOL)</th><th>Timestamp</th></tr>";
+		foreach ($paginated_transactions as $transaction) {
+			echo "<tr>";
+			echo "<td><a href='https://solscan.io/tx/" . htmlspecialchars($transaction['signature']) . "' target='_blank'>" . htmlspecialchars(substr($transaction['signature'], 0, 8)) . "...</a></td>";
+			echo "<td>" . htmlspecialchars($transaction['buyer'] ?? 'N/A') . "</td>";
+			echo "<td>" . htmlspecialchars($transaction['seller'] ?? 'N/A') . "</td>";
+			echo "<td>" . htmlspecialchars($transaction['price'] ?? 'N/A') . "</td>";
+			echo "<td>" . htmlspecialchars($transaction['timestamp'] ?? 'N/A') . "</td>";
+			echo "</tr>";
+		}
+		echo "</table>";
 
-            if (isset($asset_data['error'])) {
-                $errorMessage = is_array($asset_data['error']) && isset($asset_data['error']['message']) ? $asset_data['error']['message'] : json_encode($asset_data['error']);
-                log_message("nft-transactions: Helius getAsset error for mintAddress=$mintAddress: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("Helius API error: $errorMessage");
-            }
-
-            $interface = $asset_data['result']['interface'] ?? 'Unknown';
-            $json_uri = $asset_data['result']['content']['json_uri'] ?? null;
-            $collection_name = 'Unknown';
-            if ($json_uri) {
-                $json_data = fetchJsonUri($json_uri);
-                $collection_name = $json_data['collection']['name'] ?? $json_data['name'] ?? 'Unknown';
-            }
-            log_message("nft-transactions: Interface: $interface, Collection name: $collection_name for mintAddress=$mintAddress, json_uri: $json_uri", 'nft_transactions_log.txt');
-
-            // Get transactions using v0/addresses (using tools-api2.php)
-            $params = ['address' => $mintAddress];
-            $transactions = callAPI2('v0/addresses', $params, 'GET');
-
-            if (isset($transactions['error'])) {
-                $errorMessage = is_array($transactions['error']) && isset($transactions['error']['message']) ? $transactions['error']['message'] : json_encode($transactions['error']);
-                log_message("nft-transactions: Helius v0/addresses error for mintAddress=$mintAddress: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("Helius API error: $errorMessage");
-            }
-
-            log_message("nft-transactions: Helius v0/addresses response: " . json_encode($transactions, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), 'nft_transactions_log.txt');
-
-            if (empty($transactions)) {
-                throw new Exception("No transactions found for the provided mint address.");
-            }
-
-            // Normalize and filter transaction data
-            $normalized_transactions = [];
-            $valid_types = ['NFT_SALE', 'MINT', 'NFT_MINT', 'NFT_BURN', 'ACCEPT_ESCROW_ARTIST', 'NFT_BID'];
-            $candy_machine_program = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK';
-            $valid_sources = ['LAUNCH_MY_NFT', 'MAGIC_EDEN', 'TENSOR', 'FORMFUNCTION'];
-            foreach ($transactions as $tx) {
-                $tx_type = $tx['type'] ?? 'UNKNOWN';
-                $tx_source = $tx['source'] ?? 'UNKNOWN';
-                $has_nft_event = !empty($tx['events']['nft']);
-                $has_candy_machine = in_array($candy_machine_program, array_column($tx['instructions'] ?? [], 'programId') ?: []);
-                $has_mint_address = in_array($mintAddress, array_column($tx['accounts'] ?? [], 'address') ?: []);
-                // Giữ transaction UNKNOWN từ LAUNCH_MY_NFT nếu có Mint Address và nativeTransfers
-                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || 
-                    ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event)) || 
-                    ($tx_type === 'SWAP' && ($has_candy_machine || $has_mint_address || !empty($tx['tokenTransfers']))) || 
-                    ($tx_type === 'UNKNOWN' && in_array($tx_source, $valid_sources) && $has_mint_address && !empty($tx['nativeTransfers']))) {
-                    $normalized_transactions[] = [
-                        'signature' => $tx['signature'] ?? 'N/A',
-                        'type' => $has_nft_event ? ($tx['events']['nft']['type'] ?? $tx_type) : ($tx_source === 'LAUNCH_MY_NFT' && $has_mint_address ? 'NFT_MINT' : $tx_type),
-                        'source' => $has_nft_event ? ($tx['events']['nft']['source'] ?? $tx_source) : $tx_source,
-                        'timestamp' => $tx['timestamp'] ?? ($tx['blockTime'] ?? null),
-                        'from' => $has_nft_event ? ($tx['events']['nft']['seller'] ?? ($tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A'))) : ($tx['accounts'][0]['address'] ?? ($tx['nativeTransfers'][0]['fromUserAccount'] ?? 'N/A')),
-                        'to' => $has_nft_event ? ($tx['events']['nft']['buyer'] ?? ($tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A'))) : ($tx['accounts'][1]['address'] ?? ($tx['nativeTransfers'][0]['toUserAccount'] ?? 'N/A')),
-                        'amount' => $has_nft_event ? ($tx['events']['nft']['amount'] ?? ($tx['nativeTransfers'][0]['amount'] ?? ($tx['amount'] ?? 0))) : ($tx['nativeTransfers'][0]['amount'] ?? ($tx['amount'] ?? 0))
-                    ];
-                }
-            }
-
-            if (empty($normalized_transactions)) {
-                log_message("nft-transactions: No NFT-related transactions found for mintAddress=$mintAddress after filtering", 'nft_transactions_log.txt', 'WARNING');
-                throw new Exception("No NFT-related transactions found for the provided mint address. Try a different mint address or check later.");
-            }
-
-            // Export to CSV
-            $csv_filename = exportToCsv($normalized_transactions, $mintAddress);
-            ?>
-
-            <!-- Display transactions table -->
-            <div class="result-section">
-                <table class="transaction-table">
-                    <thead>
-                        <tr>
-                            <th>Signature</th>
-                            <th>Type</th>
-                            <th>Source</th>
-                            <th>Timestamp</th>
-                            <th>From</th>
-                            <th>To</th>
-                            <th>Price (SOL)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($normalized_transactions as $tx) : ?>
-                            <tr>
-                                <td><a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['signature']); ?>" target="_blank"><?php echo htmlspecialchars(substr($tx['signature'], 0, 10)) . '...'; ?></a></td>
-                                <td><?php echo htmlspecialchars($tx['type']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['source']); ?></td>
-                                <td><?php echo isset($tx['timestamp']) ? date('Y-m-d H:i:s', $tx['timestamp']) : 'N/A'; ?></td>
-                                <td><?php echo htmlspecialchars(substr($tx['from'], 0, 10)) . '...'; ?></td>
-                                <td><?php echo htmlspecialchars(substr($tx['to'], 0, 10)) . '...'; ?></td>
-                                <td><?php echo number_format(($tx['amount'] ?? 0) / 1e9, 2); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <p>Mint Address: <?php echo htmlspecialchars($mintAddress); ?></p>
-                <p>Interface: <?php echo htmlspecialchars($interface); ?></p>
-                <p>Collection: <?php echo htmlspecialchars($collection_name); ?></p>
-                <a href="exports/<?php echo htmlspecialchars($csv_filename); ?>" download class="cta-button">Download CSV</a>
-            </div>
-            <?php
-        } catch (Exception $e) {
-            $error_msg = "Error processing request: " . $e->getMessage();
-            log_message("nft-transactions: Exception - $error_msg", 'nft_transactions_log.txt', 'ERROR');
-            echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
-        }
+		// Phân trang
+		echo "<div class='pagination'>";
+		$total_pages = ceil($total_transactions / $transactions_per_page);
+		if ($page > 1) {
+			echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddressTransactions' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-btn'>Previous</button></form>";
+		}
+		for ($i = 1; $i <= $total_pages; $i++) {
+			if ($i === $page) {
+				echo "<span class='active-page'>$i</span>";
+			} else {
+				echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddressTransactions' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit' class='page-btn'>$i</button></form>";
+			}
+		}
+		if ($page < $total_pages) {
+			echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddressTransactions' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-btn'>Next</button></form>";
+		}
+		echo "</div>";
+		echo "</div>";
+	} else {
+		echo "<div class='result-error'><p>No transaction history found or invalid mint address.</p></div>";
+		error_log("nft-transactions.php: No transactions found for $mintAddress"); // Debug
+	}
     }
     ?>
 
+    <!-- Thêm mô tả chi tiết chức năng của tab -->
     <div class="t-9">
-        <h2>About NFT Transactions Checker</h2>
+        <h3>About NFT Transactions Checker</h3>
         <p>
-            The NFT Transactions Tool allows you to view the transaction history for a specific Solana NFT or Collection by entering its mint address.
-            This tool provides details such as transaction signature, type, source, timestamp, and price, useful for tracking NFT activity.
+            The NFT Transactions Checker allows you to view the transaction history of a specific Solana NFT by entering its mint address. 
+            It retrieves details such as transaction IDs, buyer and seller addresses, sale prices, and timestamps, with pagination for easy browsing. 
+            This tool is valuable for NFT analysts, traders, or collectors who want to track the trading activity of an NFT on the Solana blockchain.
         </p>
     </div>
 </div>
 
 <?php
-ob_start();
-include $root_path . 'include/footer.php';
-$footer_output = ob_get_clean();
-log_message("nft-transactions: Footer output length: " . strlen($footer_output), 'nft_transactions_log.txt');
-echo $footer_output;
+function getNFTTransactions($mintAddress, $page = 1) {
+	$payload = [
+		"mint" => $mintAddress,
+		"limit" => 1000,
+		"page" => $page
+	];
+	
+	error_log("nft-transactions.php: Calling Helius API for mintAddress = $mintAddress, page = $page");
+	$data = callHeliusAPI('transactions', $payload);
+	if (isset($data['error'])) {
+		error_log("nft-transactions.php: Helius API error - {$data['error']}"); // Debug
+		return ['error' => $data['error']];
+	}
+	
+	if (isset($data['transactions'])) {
+		error_log("nft-transactions.php: Retrieved " . count($data['transactions']) . " transactions");
+		return ['transactions' => $data['transactions']];
+	}
+	
+	error_log("nft-transactions.php: No transaction data found for $mintAddress"); // Debug
+	return ['error' => 'No transaction data found for this mint address.'];
+}
 ?>
