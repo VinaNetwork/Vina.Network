@@ -3,7 +3,7 @@
 // File: tools/nft-transactions/nft-transactions.php
 // Description: Check transaction history for Solana NFT/Collection using Helius API.
 // Created by: Vina Network
-// Updated: 17/06/2025 - Removed native SOL transfers without tokenTransfers or events.nft
+// Updated: 17/06/2025 - Support SWAP with Candy Machine or Mint Address in accounts
 // ============================================================================
 
 ini_set('display_errors', 0);
@@ -168,11 +168,14 @@ include $root_path . 'include/navbar.php';
             // Normalize and filter transaction data
             $normalized_transactions = [];
             $valid_types = ['NFT_SALE', 'MINT', 'NFT_MINT', 'NFT_BURN', 'ACCEPT_ESCROW_ARTIST', 'NFT_BID'];
+            $candy_machine_program = 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK';
             foreach ($transactions as $tx) {
                 $tx_type = $tx['type'] ?? 'UNKNOWN';
                 $has_nft_event = !empty($tx['events']['nft']);
-                // Chỉ giữ TRANSFER nếu có tokenTransfers hoặc events.nft
-                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event))) {
+                $has_candy_machine = in_array($candy_machine_program, array_column($tx['instructions'] ?? [], 'programId') ?: []);
+                $has_mint_address = in_array($mintAddress, array_column($tx['accounts'] ?? [], 'address') ?: []);
+                // Giữ SWAP hoặc transaction liên quan Candy Machine/Mint Address
+                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event)) || ($tx_type === 'SWAP' && ($has_candy_machine || $has_mint_address || !empty($tx['tokenTransfers'])))) {
                     $normalized_transactions[] = [
                         'signature' => $tx['signature'] ?? 'N/A',
                         'type' => $has_nft_event ? ($tx['events']['nft']['type'] ?? $tx_type) : $tx_type,
@@ -186,7 +189,8 @@ include $root_path . 'include/navbar.php';
             }
 
             if (empty($normalized_transactions)) {
-                throw new Exception("No NFT-related transactions found for the provided mint address.");
+                log_message("nft-transactions: No NFT-related transactions found for mintAddress=$mintAddress after filtering", 'nft_transactions_log.txt', 'WARNING');
+                throw new Exception("No NFT-related transactions found for the provided mint address. Try a different mint address or check later.");
             }
 
             // Export to CSV
