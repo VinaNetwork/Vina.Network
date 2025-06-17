@@ -15,9 +15,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 // ---------------------------------------------------
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('TOOLS_PATH', ROOT_PATH . 'tools/');
-define('LOGS_PATH', TOOLS_PATH . 'logs/'); // Added for log directory
+define('LOGS_PATH', TOOLS_PATH . 'logs/'); // Log directory
+define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt'); // PHP error log
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
-define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt'); // Define error log path
 
 // ---------------------------------------------------
 // Load configuration file
@@ -33,15 +33,28 @@ require_once ROOT_PATH . 'config/config.php';
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
 function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') {
-    $log_path = LOGS_PATH . $log_file; // Use LOGS_PATH instead of TOOLS_PATH
+    $log_path = LOGS_PATH . $log_file;
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
     try {
+        // Create LOGS_PATH if it doesn't exist
         if (!is_dir(LOGS_PATH)) {
-            mkdir(LOGS_PATH, 0755, true);
+            if (!mkdir(LOGS_PATH, 0755, true)) {
+                error_log("Failed to create log directory: " . LOGS_PATH);
+                return;
+            }
+            // Set ownership to www-data:www-data
             chown(LOGS_PATH, 'www-data');
             chgrp(LOGS_PATH, 'www-data');
+            chmod(LOGS_PATH, 0755);
+        }
+        // Ensure log file exists with correct permissions
+        if (!file_exists($log_path)) {
+            touch($log_path);
+            chown($log_path, 'www-data');
+            chgrp($log_path, 'www-data');
+            chmod($log_path, 0664);
         }
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
