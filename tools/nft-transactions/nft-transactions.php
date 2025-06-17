@@ -3,6 +3,7 @@
 // File: tools/nft-transactions/nft-transactions.php
 // Description: Check transaction history for Solana NFT/Collection using Helius API.
 // Created by: Vina Network
+// Updated: 17/06/2025 - Removed native SOL transfers without tokenTransfers or events.nft
 // ============================================================================
 
 ini_set('display_errors', 0);
@@ -166,12 +167,12 @@ include $root_path . 'include/navbar.php';
 
             // Normalize and filter transaction data
             $normalized_transactions = [];
-            $valid_types = ['NFT_SALE', 'TRANSFER', 'MINT', 'NFT_MINT', 'NFT_BURN', 'ACCEPT_ESCROW_ARTIST', 'NFT_BID'];
+            $valid_types = ['NFT_SALE', 'MINT', 'NFT_MINT', 'NFT_BURN', 'ACCEPT_ESCROW_ARTIST', 'NFT_BID'];
             foreach ($transactions as $tx) {
                 $tx_type = $tx['type'] ?? 'UNKNOWN';
                 $has_nft_event = !empty($tx['events']['nft']);
-                // Hiển thị nếu là valid type, có tokenTransfers, có NFT event, hoặc Mint Address trong accounts
-                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || in_array($mintAddress, array_column($tx['accounts'] ?? [], 'address'))) {
+                // Chỉ giữ TRANSFER nếu có tokenTransfers hoặc events.nft
+                if (in_array($tx_type, $valid_types) || !empty($tx['tokenTransfers']) || $has_nft_event || ($tx_type === 'TRANSFER' && (!empty($tx['tokenTransfers']) || $has_nft_event))) {
                     $normalized_transactions[] = [
                         'signature' => $tx['signature'] ?? 'N/A',
                         'type' => $has_nft_event ? ($tx['events']['nft']['type'] ?? $tx_type) : $tx_type,
