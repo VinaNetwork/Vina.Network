@@ -15,7 +15,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 // ---------------------------------------------------
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('TOOLS_PATH', ROOT_PATH . 'tools/');
+define('LOGS_PATH', TOOLS_PATH . 'logs/'); // Added for log directory
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
+define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt'); // Define error log path
 
 // ---------------------------------------------------
 // Load configuration file
@@ -27,15 +29,20 @@ require_once ROOT_PATH . 'config/config.php';
 // Writes timestamped messages to the specified log file
 //
 // @param string $message    - The log content/message
-// @param string $log_file   - Filename within TOOLS_PATH to write logs
+// @param string $log_file   - Filename within LOGS_PATH to write logs
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
 function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') {
-    $log_path = TOOLS_PATH . $log_file;
+    $log_path = LOGS_PATH . $log_file; // Use LOGS_PATH instead of TOOLS_PATH
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
     try {
+        if (!is_dir(LOGS_PATH)) {
+            mkdir(LOGS_PATH, 0755, true);
+            chown(LOGS_PATH, 'www-data');
+            chgrp(LOGS_PATH, 'www-data');
+        }
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
         }
