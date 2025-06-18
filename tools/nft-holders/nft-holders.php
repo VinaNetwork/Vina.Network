@@ -22,7 +22,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("nft-holders: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'ERROR');
-    die('Error: bootstrap.php not found');
+    exit('Error: Cannot find bootstrap.php');
 }
 require_once $bootstrap_path;
 
@@ -41,7 +41,7 @@ if (time() - $rate_limit_time > 60) {
     log_message("nft-holders: Reset rate limit for IP=$ip, count=1", 'nft_holders_log.txt');
 } elseif ($rate_limit_count >= 5) {
     log_message("nft-holders: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_holders_log.txt', 'ERROR');
-    die("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
+    exit("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
 } else {
     $_SESSION[$rate_limit_key]['count']++;
     log_message("nft-holders: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_holders_log.txt');
@@ -55,7 +55,7 @@ $cache_file = $cache_dir . 'nft_holders_cache.json';
 if (!is_dir($cache_dir)) {
     if (!mkdir($cache_dir, 0755, true)) {
         log_message("nft-holders: Failed to create cache directory at $cache_dir", 'nft_holders_log.txt', 'ERROR');
-        die('Error: Unable to create cache directory');
+        exit('Error: Unable to create cache directory');
     }
     log_message("nft-holders: Created cache directory at $cache_dir", 'nft_holders_log.txt');
 }
@@ -64,7 +64,7 @@ if (!is_dir($cache_dir)) {
 if (!file_exists($cache_file)) {
     if (file_put_contents($cache_file, json_encode([])) === false) {
         log_message("nft-holders: Failed to create cache file at $cache_file", 'nft_holders_log.txt', 'ERROR');
-        die('Error: Unable to create cache file');
+        exit('Error: Unable to create cache file');
     }
     chmod($cache_file, 0644);
     log_message("nft-holders: Created cache file at $cache_file", 'nft_holders_log.txt');
@@ -73,7 +73,7 @@ if (!file_exists($cache_file)) {
 // Check cache file permissions
 if (!is_writable($cache_file)) {
     log_message("nft-holders: Cache file $cache_file is not writable", 'nft_holders_log.txt', 'ERROR');
-    die('Error: Cache file is not writable');
+    exit('Error: Cache file is not writable');
 }
 
 // Set up page variables and include layout headers
@@ -88,10 +88,10 @@ include $root_path . 'include/navbar.php';
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-holders: tools-api.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
-    die('Internal Server Error: Missing tools-api.php');
+    exit('Internal Server Error: Missing tools-api.php');
 }
 log_message("nft-holders: Including tools-api.php from $api_helper_path", 'nft_holders_log.txt');
-include $api_helper_path;
+require_once $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
@@ -117,14 +117,15 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 throw new Exception("Invalid CSRF token. Please try again.");
             }
 
-            $mintAddress = strtolower(trim($_POST['mintAddress']));
-            log_message("nft-holders: Raw mintAddress=" . $_POST['mintAddress'] . ", Processed mintAddress=$mintAddress", 'nft_holders_log.txt');
+            $mintAddress = trim($_POST['mintAddress']);
+            $mintAddress = preg_replace('/\s+/', '', $mintAddress); // Remove all whitespace
+            log_message("nft-holders: Raw mintAddress=" . ($_POST['mintAddress'] ?? 'null') . ", Processed mintAddress=$mintAddress", 'nft_holders_log.txt', 'DEBUG');
             $limit = 1000;
             $max_pages = 100; // Limit max API page iterations
             $cache_expiration = 3 * 3600; // 3 hours in seconds
 
             // Validate address format (base58, 32–44 characters)
-            if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $mintAddress)) {
+            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 log_message("nft-holders: Invalid mintAddress format: $mintAddress", 'nft_holders_log.txt', 'ERROR');
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
@@ -180,7 +181,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     ];
                     log_message("nft-holders: Calling API for total items, page=$api_page, params=" . json_encode($total_params), 'nft_holders_log.txt');
                     $total_data = callAPI('getAssetsByGroup', $total_params, 'POST');
-                    log_message("nft-holders: Total API response (page $api_page): URL=https://mainnet.helius-rpc.com/?api-key=****, Response=" . json_encode($total_data, JSON_PRETTY_PRINT), 'nft_holders_log.txt');
+                    log_message("nft-holders: API raw response for mintAddress=$mintAddress, page=$api_page: " . json_encode($total_data), 'nft_holders_log.txt', 'DEBUG');
 
                     if (isset($total_data['error'])) {
                         $errorMessage = is_array($total_data['error']) && isset($total_data['error']['message']) ? $total_data['error']['message'] : json_encode($total_data['error']);
