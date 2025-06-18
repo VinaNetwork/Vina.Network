@@ -31,6 +31,12 @@ session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
+// Check logs directory permissions
+if (!is_writable(LOGS_PATH)) {
+    error_log("nft-holders: Logs directory $LOGS_PATH is not writable");
+    exit('Error: Logs directory is not writable');
+}
+
 // Rate limiting: 5 requests per minute per IP
 $ip = $_SERVER['REMOTE_ADDR'];
 $rate_limit_key = "rate_limit:$ip";
