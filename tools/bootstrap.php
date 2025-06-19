@@ -1,9 +1,10 @@
 <?php
-// tools/bootstrap.php
+// ============================================================================
+// File: tools/bootstrap.php
+// Description: Security check: Prevent direct access to this file
+// Created by: Vina Network
+// ============================================================================
 
-// ---------------------------------------------------
-// Security check: Prevent direct access to this file
-// ---------------------------------------------------
 if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct access allowed!');
