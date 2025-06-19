@@ -2,7 +2,6 @@
 // File: tools/tools.js
 // Description: Script of the entire tool page.
 // Created by: Vina Network
-// Updated: 17/06/2025 - Add support for nftValuationForm, nftTransactionsForm
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
