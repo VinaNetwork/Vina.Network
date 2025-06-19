@@ -127,6 +127,7 @@
 - Owner/Group: www-data:www-data
 - Description: Directory for NFT Holders cache files, writable by www-data for PHP caching.
 - Commands:
+  mkdir /var/www/vinanetwork/public_html/tools/nft-holders/cache
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-holders/cache
   sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-holders/cache
 
@@ -135,6 +136,7 @@
 - Owner/Group: www-data:www-data
 - Description: Cache file for NFT Holders data, written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_holders_cache.json
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
 
@@ -167,6 +169,7 @@
 - Owner/Group: www-data:www-data
 - Description: Directory for NFT transactions cache files, writable by www-data for PHP caching.
 - Commands:
+  mkdir /var/www/vinanetwork/public_html/tools/nft-transactions/cache
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-transactions/cache
   sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-transactions/cache
 
@@ -175,6 +178,7 @@
 - Owner/Group: www-data:www-data
 - Description: Cache file for NFT transactions data, written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_transactions_cache.json
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_transactions_cache.json
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_htransactions_cache.json
 
@@ -183,6 +187,7 @@
 - Owner/Group: www-data:www-data
 - Description: Directory for log files, writable by www-data for PHP logging.
 - Commands:
+  mkdir /var/www/vinanetwork/public_html/tools/logs/
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs
   sudo chmod 764 /var/www/vinanetwork/public_html/tools/logs
 
@@ -191,6 +196,7 @@
 - Owner/Group: www-data:www-data
 - Description: Logs API requests/responses, written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/logs/api_log.txt
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/api_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/api_log.txt
 
@@ -199,6 +205,7 @@
 - Owner/Group: www-data:www-data
 - Description: Logs client-side interactions, written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/logs/client_log.txt
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/client_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/client_log.txt
 
@@ -207,6 +214,7 @@
 - Owner/Group: www-data:www-data
 - Description: Logs tool loading events, written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/logs/load_tool_log.txt
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/load_tool_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/load_tool_log.txt
 
@@ -215,6 +223,7 @@
 - Owner/Group: www-data:www-data
 - Description: Logs NFT Holders processing (mintAddress, cache, API), written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/logs/nft_holders_log.txt
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/nft_holders_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/nft_holders_log.txt
 
@@ -223,6 +232,7 @@
 - Owner/Group: www-data:www-data
 - Description: Logs NFT transactions processing (mintAddress, cache, API), written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/logs/nft_transactions_log.txt
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/nft_transactions_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/nft_transactions_log.txt
 
@@ -231,6 +241,7 @@
 - Owner/Group: www-data:www-data
 - Description: Logs PHP errors, written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/logs/php_errors.txt
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/php_errors.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/php_errors.txt
 
@@ -239,6 +250,7 @@
 - Owner/Group: www-data:www-data
 - Description: General logs for Tools functionality, written by PHP.
 - Commands:
+  touch /var/www/vinanetwork/public_html/tools/logs/tools_log.txt
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/tools_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/tools_log.txt
 
