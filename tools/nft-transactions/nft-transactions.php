@@ -21,8 +21,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Load bootstrap dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap1.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft-transactions: bootstrap1.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
-    exit('Error: Cannot find bootstrap1.php');
+    error_log("nft-transactions: bootstrap1.php not found at $bootstrap_path");
+    echo "<div class='result-error'><p>Error: Cannot find bootstrap1.php</p></div>";
+    exit;
 }
 require_once $bootstrap_path;
 
@@ -32,10 +33,14 @@ ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
 // Check logs directory permissions
-if (!is_writable(LOGS_PATH)) {
-    log_message("nft-transactions: Logs directory $LOGS_PATH is not writable", 'nft_transactions_log.txt', 'ERROR');
-    exit('Error: Logs directory is not writable');
+if (!defined('LOGS_PATH') || !is_writable(LOGS_PATH)) {
+    error_log("nft-transactions: Logs directory " . (defined('LOGS_PATH') ? LOGS_PATH : 'undefined') . " is not writable");
+    echo "<div class='result-error'><p>Error: Logs directory is not writable</p></div>";
+    exit;
 }
+
+// Log initial script load
+log_message("nft-transactions: Script loaded successfully", 'nft_transactions_log.txt', 'DEBUG');
 
 // Rate limiting: 5 requests per minute per IP
 $ip = $_SERVER['REMOTE_ADDR'];
@@ -47,7 +52,8 @@ if (time() - $rate_limit_time > 60) {
     log_message("nft-transactions: Reset rate limit for IP=$ip, count=1", 'nft_transactions_log.txt');
 } elseif ($rate_limit_count >= 5) {
     log_message("nft-transactions: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_transactions_log.txt', 'ERROR');
-    exit("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
+    echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+    exit;
 } else {
     $_SESSION[$rate_limit_key]['count']++;
     log_message("nft-transactions: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_transactions_log.txt');
@@ -61,28 +67,31 @@ $cache_file = $cache_dir . 'nft_transactions_cache.json';
 if (!is_dir($cache_dir)) {
     if (!mkdir($cache_dir, 0755, true)) {
         log_message("nft-transactions: Failed to create cache directory at $cache_dir", 'nft_transactions_log.txt', 'ERROR');
-        exit('Error: Unable to create cache directory');
+        echo "<div class='result-error'><p>Error: Unable to create cache directory</p></div>";
+        exit;
     }
     log_message("nft-transactions: Created cache directory at $cache_dir", 'nft_transactions_log.txt');
-    chown($cache_dir, 'www-data');
-    chgrp($cache_dir, 'www-data');
-    chmod($cache_dir, 0755);
+    @chown($cache_dir, 'www-data');
+    @chgrp($cache_dir, 'www-data');
+    @chmod($cache_dir, 0755);
 }
 
 // Ensure cache file exists
 if (!file_exists($cache_file)) {
     if (file_put_contents($cache_file, json_encode([])) === false) {
         log_message("nft-transactions: Failed to create cache file at $cache_file", 'nft_transactions_log.txt', 'ERROR');
-        exit('Error: Unable to create cache file');
+        echo "<div class='result-error'><p>Error: Unable to create cache file</p></div>";
+        exit;
     }
-    chmod($cache_file, 0644);
+    @chmod($cache_file, 0644);
     log_message("nft-transactions: Created cache file at $cache_file", 'nft_transactions_log.txt');
 }
 
 // Check cache file permissions
 if (!is_writable($cache_file)) {
     log_message("nft-transactions: Cache file $cache_file is not writable", 'nft_transactions_log.txt', 'ERROR');
-    exit('Error: Cache file is not writable');
+    echo "<div class='result-error'><p>Error: Cache file is not writable</p></div>";
+    exit;
 }
 
 // Set up page variables and include layout headers
@@ -90,14 +99,23 @@ $root_path = '../../';
 $page_title = 'Check NFT Transactions - Vina Network';
 $page_description = 'Check transaction history for a Solana NFT collection address.';
 $page_css = ['../../css/vina.css', '../tools1.css'];
-include $root_path . 'include/header.php';
-include $root_path . 'include/navbar.php';
+
+try {
+    log_message("nft-transactions: Including header and navbar", 'nft_transactions_log.txt', 'DEBUG');
+    include $root_path . 'include/header.php';
+    include $root_path . 'include/navbar.php';
+} catch (Exception $e) {
+    log_message("nft-transactions: Error including header/navbar: " . $e->getMessage(), 'nft_transactions_log.txt', 'ERROR');
+    echo "<div class='result-error'><p>Error loading page layout: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+    exit;
+}
 
 // Include tools API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api1.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-transactions: tools-api1.php not found at $api_helper_path", 'nft_transactions_log.txt', 'ERROR');
-    exit('Internal Server Error: Missing tools-api1.php');
+    echo "<div class='result-error'><p>Error: Missing tools-api1.php</p></div>";
+    exit;
 }
 log_message("nft-transactions: Including tools-api1.php from $api_helper_path", 'nft_transactions_log.txt');
 require_once $api_helper_path;
@@ -120,6 +138,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
     // Handle form submission and transaction data fetching
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         try {
+            log_message("nft-transactions: Processing form submission, mintAddress=" . $_POST['mintAddress'], 'nft_transactions_log.txt', 'DEBUG');
             // Validate CSRF token
             if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
                 log_message("nft-transactions: Invalid CSRF token for mintAddress=" . ($_POST['mintAddress'] ?? 'unknown'), 'nft_transactions_log.txt', 'ERROR');
@@ -215,7 +234,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
 
                     $has_more = $item_count >= $limit;
                     $api_page++;
-                    usleep(2000000); // 2-second delay to avoid rate limit
+                    usleep(3000000); // Increase delay to 3s to avoid rate limit
                 }
 
                 // Step 2: Get transaction history for each asset
@@ -250,7 +269,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
                     }, $page_txs));
                     $total_transactions += $tx_count;
                     log_message("nft-transactions: Added $tx_count transactions for asset_id=$asset_id, total_transactions=$total_transactions", 'nft_transactions_log.txt');
-                    usleep(2000000); // 2-second delay
+                    usleep(3000000); // Increase delay to 3s
                 }
 
                 // Store in file cache with timestamp
@@ -359,9 +378,15 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
 
 <?php
 // Output and log footer
-ob_start();
-include $root_path . 'include/footer.php';
-$footer_output = ob_get_clean();
-log_message("nft-transactions: Footer output length: " . strlen($footer_output), 'nft_transactions_log.txt');
-echo $footer_output;
+try {
+    ob_start();
+    log_message("nft-transactions: Including footer", 'nft_transactions_log.txt', 'DEBUG');
+    include $root_path . 'include/footer.php';
+    $footer_output = ob_get_clean();
+    log_message("nft-transactions: Footer output length: " . strlen($footer_output), 'nft_transactions_log.txt');
+    echo $footer_output;
+} catch (Exception $e) {
+    log_message("nft-transactions: Error including footer: " . $e->getMessage(), 'nft_transactions_log.txt', 'ERROR');
+    echo "<div class='result-error'><p>Error loading footer: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+}
 ?>
