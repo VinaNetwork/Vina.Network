@@ -353,25 +353,10 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
     </div>
 </div>
 <?php
-try {
-    ob_start();
-    log_message("nft-transactions: Including footer", 'nft_transactions_log.txt', 'DEBUG');
-    if (!file_exists($root_path . 'include/footer.php')) {
-        log_message("nft-transactions: footer.php not found at {$root_path}include/footer.php", 'nft_transactions_log.txt', 'ERROR');
-        echo "<div class='result-error'><p>Error: Footer file not found</p></div>";
-        echo "</body></html>";
-    } else {
-        include $root_path . 'include/footer.php';
-        $footer_output = ob_get_clean();
-        log_message("nft-transactions: Footer output length: " . strlen($footer_output), 'nft_transactions_log.txt');
-        if (strlen($footer_output) === 0) {
-            log_message("nft-transactions: Warning - Footer output is empty", 'nft_transactions_log.txt', 'WARNING');
-        }
-        echo $footer_output;
-    }
-} catch (Exception $e) {
-    log_message("nft-transactions: Error including footer: " . $e->getMessage(), 'nft_transactions_log.txt', 'ERROR');
-    echo "<div class='result-error'><p>Error loading footer: " . htmlspecialchars($e->getMessage()) . "</p></div>";
-    echo "</body></html>";
-}
+// Output and log footer
+ob_start();
+include $root_path . 'include/footer.php';
+$footer_output = ob_get_clean();
+log_message("nft-holders: Footer output length: " . strlen($footer_output), 'nft_holders_log.txt');
+echo $footer_output;
 ?>
