@@ -202,7 +202,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
                     $page_items = $data['result']['items'];
                     $item_count = count($page_items);
                     $asset_ids = array_merge($asset_ids, array_map(function($item) {
-                        return $item['id'] ?? null;
+                        return $item['id'] ?? $item['content']['metadata']['mint'] ?? null; // Lấy mint nếu có
                     }, $page_items));
                     $asset_ids = array_filter($asset_ids);
                     log_message("nft-transactions: Page $api_page added $item_count assets, total_assets=" . count($asset_ids), 'nft_transactions_log.txt');
@@ -224,17 +224,22 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
                     }
 
                     $page_txs = array_filter($tx_data, function($tx) {
-                        return isset($tx['type']) && $tx['type'] === 'NFT_SALE' && isset($tx['events']['nft']);
+                        // Lọc giao dịch liên quan đến NFT (NFT_SALE, NFT_BID, NFT_TRANSFER, COMPRESSED_NFT_MINT)
+                        return isset($tx['events']['nft']) || 
+                               isset($tx['events']['compressed']) || 
+                               (isset($tx['type']) && in_array($tx['type'], ['NFT_SALE', 'NFT_BID', 'NFT_TRANSFER', 'COMPRESSED_NFT_MINT']));
                     });
                     $tx_count = count($page_txs);
+                    log_message("nft-transactions: Raw transaction count for asset_id=$asset_id: $tx_count, data: " . json_encode($page_txs, JSON_PRETTY_PRINT), 'nft_transactions_log.txt', 'DEBUG');
                     $transactions = array_merge($transactions, array_map(function($tx) {
-                        $nft_event = $tx['events']['nft'];
+                        $nft_event = $tx['events']['nft'] ?? $tx['events']['compressed'][0] ?? [];
                         return [
                             'signature' => $tx['signature'] ?? 'N/A',
                             'timestamp' => isset($tx['timestamp']) ? date('d M Y, H:i', $tx['timestamp']) : 'N/A',
                             'price' => isset($nft_event['amount']) ? $nft_event['amount'] / 1e9 : 0,
-                            'buyer' => $nft_event['buyer'] ?? 'N/A',
-                            'seller' => $nft_event['seller'] ?? 'N/A'
+                            'buyer' => $nft_event['buyer'] ?? $nft_event['newLeafOwner'] ?? 'N/A',
+                            'seller' => $nft_event['seller'] ?? $nft_event['oldLeafOwner'] ?? 'N/A',
+                            'type' => $tx['type'] ?? 'N/A' // Thêm type để debug
                         ];
                     }, $page_txs));
                     $total_transactions += $tx_count;
@@ -287,6 +292,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
                                     <th>Price (SOL)</th>
                                     <th>Buyer</th>
                                     <th>Seller</th>
+                                    <th>Type</th> <!-- Thêm cột Type để debug -->
                                 </tr>
                             </thead>
                             <tbody>
@@ -297,6 +303,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
                                         <td><?php echo number_format($tx['price'], 2); ?></td>
                                         <td><?php echo htmlspecialchars(substr($tx['buyer'], 0, 8)) . '...'; ?></td>
                                         <td><?php echo htmlspecialchars(substr($tx['seller'], 0, 8)) . '...'; ?></td>
+                                        <td><?php echo htmlspecialchars($tx['type']); ?></td> <!-- Hiển thị Type -->
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
