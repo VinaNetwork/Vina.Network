@@ -20,7 +20,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // Load bootstrap dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap1.php';
-log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddress'] ?? 'none'), 'nft_transactions_log.txt', 'DEBUG');
 if (!file_exists($bootstrap_path)) {
     log_message("nft-transactions: bootstrap1.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
     exit('Error: Cannot find bootstrap1.php');
@@ -34,7 +33,7 @@ ini_set('error_log', ERROR_LOG_PATH);
 
 // Check logs directory permissions
 if (!is_writable(LOGS_PATH)) {
-    error_log("nft-transactions: Logs directory $LOGS_PATH is not writable");
+    log_message("nft-transactions: Logs directory $LOGS_PATH is not writable", 'nft_transactions_log.txt', 'ERROR');
     exit('Error: Logs directory is not writable');
 }
 
@@ -65,6 +64,9 @@ if (!is_dir($cache_dir)) {
         exit('Error: Unable to create cache directory');
     }
     log_message("nft-transactions: Created cache directory at $cache_dir", 'nft_transactions_log.txt');
+    chown($cache_dir, 'www-data');
+    chgrp($cache_dir, 'www-data');
+    chmod($cache_dir, 0755);
 }
 
 // Ensure cache file exists
@@ -100,7 +102,7 @@ if (!file_exists($api_helper_path)) {
 log_message("nft-transactions: Including tools-api1.php from $api_helper_path", 'nft_transactions_log.txt');
 require_once $api_helper_path;
 
-log_message("nft-transactions: Loaded at " . date('Y-m-d H:i:s'), 'nft_transactions_log.txt');
+log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddress'] ?? 'none'), 'nft_transactions_log.txt', 'DEBUG');
 ?>
 <!-- Render input form for NFT Collection address -->
 <div class="t-6 nft-transactions-content">
@@ -188,11 +190,13 @@ log_message("nft-transactions: Loaded at " . date('Y-m-d H:i:s'), 'nft_transacti
                         'page' => $api_page,
                         'limit' => $limit
                     ];
-                    log_message("nft-transactions: Calling API for assets, page=$api_page, params=" . json_encode($params), 'nft_transactions_log.txt');
+                    log_message("nft-transactions: Calling API for assets, page=$api_page, params=" . json_encode($params), 'nft_transactions_log.txt', 'DEBUG');
                     $data = callAPI('getAssetsByGroup', $params, 'POST');
+                    log_message("nft-transactions: API response for getAssetsByGroup, page=$api_page: " . json_encode($data, JSON_PRETTY_PRINT), 'nft_transactions_log.txt', 'DEBUG');
 
                     if (isset($data['error'])) {
                         $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
+                        log_message("nft-transactions: API error for getAssetsByGroup: $errorMessage", 'nft_transactions_log.txt', 'ERROR');
                         throw new Exception("API error: " . $errorMessage);
                     }
 
@@ -217,8 +221,9 @@ log_message("nft-transactions: Loaded at " . date('Y-m-d H:i:s'), 'nft_transacti
                 // Step 2: Get transaction history for each asset
                 foreach ($asset_ids as $asset_id) {
                     $tx_params = ['id' => $asset_id];
-                    log_message("nft-transactions: Calling API for asset activity, asset_id=$asset_id", 'nft_transactions_log.txt');
+                    log_message("nft-transactions: Calling API for asset activity, asset_id=$asset_id", 'nft_transactions_log.txt', 'DEBUG');
                     $tx_data = callAPI('getAssetActivity', $tx_params, 'POST');
+                    log_message("nft-transactions: API response for getAssetActivity, asset_id=$asset_id: " . json_encode($tx_data, JSON_PRETTY_PRINT), 'nft_transactions_log.txt', 'DEBUG');
 
                     if (isset($tx_data['error'])) {
                         log_message("nft-transactions: API error for asset_id=$asset_id: " . json_encode($tx_data['error']), 'nft_transactions_log.txt', 'WARNING');
