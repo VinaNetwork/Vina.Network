@@ -12,7 +12,7 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 require_once __DIR__ . '/../bootstrap.php';
-require_once dirname(__DIR__) . '/tools-api.php';
+require_once dirname(__DIR__) . '/tools-api1.php';
 
 $mintAddress = $_POST['mintAddress'] ?? '';
 $mintAddress = trim(preg_replace('/\s+/', '', $mintAddress));
