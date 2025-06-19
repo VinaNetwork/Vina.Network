@@ -18,14 +18,18 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
+// Log initial script start
+error_log("nft-transactions: Starting script");
+
 // Load bootstrap dependencies
-$bootstrap_path = __DIR__ . '/../bootstrap1.php';
+$bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    error_log("nft-transactions: bootstrap1.php not found at $bootstrap_path");
-    echo "<div class='result-error'><p>Error: Cannot find bootstrap1.php</p></div>";
+    error_log("nft-transactions: bootstrap.php not found at $bootstrap_path");
+    echo "<div class='result-error'><p>Error: Cannot find bootstrap.php</p></div>";
     exit;
 }
 require_once $bootstrap_path;
+error_log("nft-transactions: bootstrap.php loaded");
 
 // Start session and configure error logging
 session_start();
@@ -39,7 +43,7 @@ if (!defined('LOGS_PATH') || !is_writable(LOGS_PATH)) {
     exit;
 }
 
-// Log initial script load
+// Log bootstrap loaded
 log_message("nft-transactions: Script loaded successfully", 'nft_transactions_log.txt', 'DEBUG');
 
 // Rate limiting: 5 requests per minute per IP
@@ -111,13 +115,13 @@ try {
 }
 
 // Include tools API helper
-$api_helper_path = dirname(__DIR__) . '/tools-api1.php';
+$api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft-transactions: tools-api1.php not found at $api_helper_path", 'nft_transactions_log.txt', 'ERROR');
-    echo "<div class='result-error'><p>Error: Missing tools-api1.php</p></div>";
+    log_message("nft-transactions: tools-api.php not found at $api_helper_path", 'nft_transactions_log.txt', 'ERROR');
+    echo "<div class='result-error'><p>Error: Missing tools-api.php</p></div>";
     exit;
 }
-log_message("nft-transactions: Including tools-api1.php from $api_helper_path", 'nft_transactions_log.txt');
+log_message("nft-transactions: Including tools-api.php from $api_helper_path", 'nft_transactions_log.txt');
 require_once $api_helper_path;
 
 log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddress'] ?? 'none'), 'nft_transactions_log.txt', 'DEBUG');
@@ -128,7 +132,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
         <h2>Check NFT Transactions</h2>
         <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to view transaction history. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
         <form id="nftTransactionsForm" method="POST" action="">
-            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo function_exists('generate_csrf_token') ? generate_csrf_token() : ''; ?>">
             <input type="text" name="mintAddress" id="mintAddressTransactions" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
             <button type="submit" class="cta-button">Check Transactions</button>
         </form>
@@ -140,7 +144,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
         try {
             log_message("nft-transactions: Processing form submission, mintAddress=" . $_POST['mintAddress'], 'nft_transactions_log.txt', 'DEBUG');
             // Validate CSRF token
-            if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+            if (!function_exists('validate_csrf_token') || !isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
                 log_message("nft-transactions: Invalid CSRF token for mintAddress=" . ($_POST['mintAddress'] ?? 'unknown'), 'nft_transactions_log.txt', 'ERROR');
                 throw new Exception("Invalid CSRF token. Please try again.");
             }
@@ -234,7 +238,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
 
                     $has_more = $item_count >= $limit;
                     $api_page++;
-                    usleep(3000000); // Increase delay to 3s to avoid rate limit
+                    usleep(3000000); // 3-second delay to avoid rate limit
                 }
 
                 // Step 2: Get transaction history for each asset
@@ -269,7 +273,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
                     }, $page_txs));
                     $total_transactions += $tx_count;
                     log_message("nft-transactions: Added $tx_count transactions for asset_id=$asset_id, total_transactions=$total_transactions", 'nft_transactions_log.txt');
-                    usleep(3000000); // Increase delay to 3s
+                    usleep(3000000); // 3-second delay
                 }
 
                 // Store in file cache with timestamp
