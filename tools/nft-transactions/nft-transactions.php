@@ -20,6 +20,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // Load bootstrap dependencies
 $bootstrap_path = __DIR__ . '/../bootstrap1.php';
+log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddress'] ?? 'none'), 'nft_transactions_log.txt', 'DEBUG');
 if (!file_exists($bootstrap_path)) {
     log_message("nft-transactions: bootstrap1.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
     exit('Error: Cannot find bootstrap1.php');
