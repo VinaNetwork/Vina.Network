@@ -37,26 +37,27 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);
 
             if (!empty($params)) {
-                // Prepare standard JSON-RPC payload
-                $postData = json_encode([
-                    'jsonrpc' => '2.0',
-                    'id' => '1',
-                    'method' => $endpoint,
-                    'params' => $params
-                ]);
+                // Prepare JSON-RPC payload based on endpoint
+                if ($endpoint === 'getAssetActivity') {
+                    // getAssetActivity requires params as array of values
+                    $postData = json_encode([
+                        'jsonrpc' => '2.0',
+                        'id' => '1',
+                        'method' => $endpoint,
+                        'params' => [isset($params['id']) ? $params['id'] : '']
+                    ]);
+                } else {
+                    // Standard payload for other endpoints (e.g., getAssetsByGroup)
+                    $postData = json_encode([
+                        'jsonrpc' => '2.0',
+                        'id' => '1',
+                        'method' => $endpoint,
+                        'params' => $params
+                    ]);
+                }
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
                 log_message("api-helper: API request - URL: $log_url, Endpoint: $endpoint, Params: " . substr($postData, 0, 100) . "...", 'api_log.txt');
-
-                // Prepare alternative format (array payload) in case standard fails
-                $postDataArray = json_encode([
-                    'jsonrpc' => '2.0',
-                    'id' => '1',
-                    'method' => $endpoint,
-                    'params' => [$params]
-                ]);
-                log_message("api-helper: Alternative payload - Params: " . substr($postDataArray, 0, 100) . "...", 'api_log.txt');
             }
-
         } elseif ($method === 'GET') {
             if (!empty($params)) {
                 $url .= '&' . http_build_query($params);
@@ -77,7 +78,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $headers = curl_getinfo($ch, CURLINFO_HEADER_OUT);
 
-        // (Optional) Check for rate limit from response headers
+        // Check for rate limit from response headers
         if (preg_match('/X-Rate-Limit-Remaining: (\d+)/i', $headers, $matches)) {
             $remaining = (int)$matches[1];
             if ($remaining < 10) {
@@ -101,27 +102,8 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             return ['error' => 'Rate limit exceeded after retries.'];
         }
 
-        // Fallback retry logic for 404 or failed POST
         if ($httpCode !== 200) {
             log_message("api-error: API request failed - HTTP: $httpCode, URL: $log_url, Response: $response", 'api_log.txt', 'ERROR');
-
-            // Retry with alternative param format if POST fails
-            if ($method === 'POST' && $httpCode === 404) {
-                log_message("api-helper: Retrying with array params payload, URL: $log_url", 'api_log.txt');
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                curl_setopt($ch, CURLOPT_POST, 1);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $postDataArray);
-                $response = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                curl_close($ch);
-                log_message("api-helper: Retry response - HTTP: $httpCode, URL: $log_url, Body: " . substr($response, 0, 500) . "...", 'api_log.txt');
-            }
-        }
-
-        if ($httpCode !== 200) {
             return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
         }
 
