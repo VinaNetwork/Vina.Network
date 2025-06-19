@@ -1,115 +1,361 @@
 <?php
 // ============================================================================
-// File: tools/nft-transactions.php
-// Description: NFT transaction verification function.
+// File: tools/nft-transactions/nft-transactions.php
+// Description: Check transaction history for a Solana NFT collection.
 // Created by: Vina Network
 // ============================================================================
 
-include '../tools-api.php';
-error_log("nft-transactions.php loaded"); // Debug
-?>
+// Disable display of errors in production
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
 
+// Define constants to mark script entry
+if (!defined('VINANETWORK')) {
+    define('VINANETWORK', true);
+}
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+// Load bootstrap dependencies
+$bootstrap_path = __DIR__ . '/../bootstrap1.php';
+if (!file_exists($bootstrap_path)) {
+    log_message("nft-transactions: bootstrap1.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
+    exit('Error: Cannot find bootstrap1.php');
+}
+require_once $bootstrap_path;
+
+// Start session and configure error logging
+session_start();
+ini_set('log_errors', true);
+ini_set('error_log', ERROR_LOG_PATH);
+
+// Check logs directory permissions
+if (!is_writable(LOGS_PATH)) {
+    error_log("nft-transactions: Logs directory $LOGS_PATH is not writable");
+    exit('Error: Logs directory is not writable');
+}
+
+// Rate limiting: 5 requests per minute per IP
+$ip = $_SERVER['REMOTE_ADDR'];
+$rate_limit_key = "rate_limit:$ip";
+$rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
+$rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
+if (time() - $rate_limit_time > 60) {
+    $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
+    log_message("nft-transactions: Reset rate limit for IP=$ip, count=1", 'nft_transactions_log.txt');
+} elseif ($rate_limit_count >= 5) {
+    log_message("nft-transactions: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_transactions_log.txt', 'ERROR');
+    exit("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
+} else {
+    $_SESSION[$rate_limit_key]['count']++;
+    log_message("nft-transactions: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_transactions_log.txt');
+}
+
+// Define cache directory and file
+$cache_dir = __DIR__ . '/cache/';
+$cache_file = $cache_dir . 'nft_transactions_cache.json';
+
+// Ensure cache directory exists
+if (!is_dir($cache_dir)) {
+    if (!mkdir($cache_dir, 0755, true)) {
+        log_message("nft-transactions: Failed to create cache directory at $cache_dir", 'nft_transactions_log.txt', 'ERROR');
+        exit('Error: Unable to create cache directory');
+    }
+    log_message("nft-transactions: Created cache directory at $cache_dir", 'nft_transactions_log.txt');
+}
+
+// Ensure cache file exists
+if (!file_exists($cache_file)) {
+    if (file_put_contents($cache_file, json_encode([])) === false) {
+        log_message("nft-transactions: Failed to create cache file at $cache_file", 'nft_transactions_log.txt', 'ERROR');
+        exit('Error: Unable to create cache file');
+    }
+    chmod($cache_file, 0644);
+    log_message("nft-transactions: Created cache file at $cache_file", 'nft_transactions_log.txt');
+}
+
+// Check cache file permissions
+if (!is_writable($cache_file)) {
+    log_message("nft-transactions: Cache file $cache_file is not writable", 'nft_transactions_log.txt', 'ERROR');
+    exit('Error: Cache file is not writable');
+}
+
+// Set up page variables and include layout headers
+$root_path = '../../';
+$page_title = 'Check NFT Transactions - Vina Network';
+$page_description = 'Check transaction history for a Solana NFT collection address.';
+$page_css = ['../../css/vina.css', '../tools1.css'];
+include $root_path . 'include/header.php';
+include $root_path . 'include/navbar.php';
+
+// Include tools API helper
+$api_helper_path = dirname(__DIR__) . '/tools-api1.php';
+if (!file_exists($api_helper_path)) {
+    log_message("nft-transactions: tools-api1.php not found at $api_helper_path", 'nft_transactions_log.txt', 'ERROR');
+    exit('Internal Server Error: Missing tools-api1.php');
+}
+log_message("nft-transactions: Including tools-api1.php from $api_helper_path", 'nft_transactions_log.txt');
+require_once $api_helper_path;
+
+log_message("nft-transactions: Loaded at " . date('Y-m-d H:i:s'), 'nft_transactions_log.txt');
+?>
+<!-- Render input form for NFT Collection address -->
 <div class="t-6 nft-transactions-content">
     <div class="t-7">
         <h2>Check NFT Transactions</h2>
-        <p>Enter the address of the NFT to see its transaction history.</p>
-
-        <form class="transaction-form" method="POST" action="">
-            <input type="text" name="mintAddressTransactions" id="mintAddressTransactions" placeholder="Enter NFT Address (e.g., 4x7g2KuZvUraiF3txNjrJ8cAEfRh1ZzsSaWr18gtV3Mt)" required>
+        <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to view transaction history. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
+        <form id="nftTransactionsForm" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+            <input type="text" name="mintAddress" id="mintAddressTransactions" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
             <button type="submit" class="cta-button">Check Transactions</button>
         </form>
+        <div class="loader"></div>
     </div>
-
     <?php
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddressTransactions'])) {
-	$mintAddress = trim($_POST['mintAddressTransactions']);
-	$page = isset($_POST['page']) && is_numeric($_POST['page']) ? (int)$_POST['page'] : 1;
-	$transactions_per_page = 10;
-	$offset = ($page - 1) * $transactions_per_page;
+    // Handle form submission and transaction data fetching
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
+        try {
+            // Validate CSRF token
+            if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+                log_message("nft-transactions: Invalid CSRF token for mintAddress=" . ($_POST['mintAddress'] ?? 'unknown'), 'nft_transactions_log.txt', 'ERROR');
+                throw new Exception("Invalid CSRF token. Please try again.");
+            }
 
-	// Gọi API để lấy lịch sử giao dịch
-	error_log("nft-transactions.php: Fetching transactions for mintAddress = $mintAddress, page = $page");
-	$transactions_data = getNFTTransactions($mintAddress, $page);
+            $mintAddress = trim($_POST['mintAddress']);
+            $mintAddress = preg_replace('/\s+/', '', $mintAddress); // Remove all whitespace
+            log_message("nft-transactions: Raw mintAddress=" . ($_POST['mintAddress'] ?? 'null') . ", Processed mintAddress=$mintAddress", 'nft_transactions_log.txt', 'DEBUG');
+            $limit = 100;
+            $max_pages = 10; // Limit max API page iterations
+            $cache_expiration = 3 * 3600; // 3 hours in seconds
 
-	if (isset($transactions_data['error'])) {
-		echo "<div class='result-error'><p>" . htmlspecialchars($transactions_data['error']) . "</p></div>";
-		error_log("nft-transactions.php: Error - {$transactions_data['error']}");
-	} elseif ($transactions_data && !empty($transactions_data['transactions'])) {
-		$total_transactions = count($transactions_data['transactions']);
-		$paginated_transactions = array_slice($transactions_data['transactions'], $offset, $transactions_per_page);
+            // Validate address format (base58, 32–44 characters)
+            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
+                log_message("nft-transactions: Invalid mintAddress format: $mintAddress", 'nft_transactions_log.txt', 'ERROR');
+                throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
+            }
 
-		echo "<div class='result-section'>";
-		echo "<h3>Results</h3>";
-		echo "<table class='transaction-table'>";
-		echo "<tr><th>Transaction ID</th><th>Buyer</th><th>Seller</th><th>Price (SOL)</th><th>Timestamp</th></tr>";
-		foreach ($paginated_transactions as $transaction) {
-			echo "<tr>";
-			echo "<td><a href='https://solscan.io/tx/" . htmlspecialchars($transaction['signature']) . "' target='_blank'>" . htmlspecialchars(substr($transaction['signature'], 0, 8)) . "...</a></td>";
-			echo "<td>" . htmlspecialchars($transaction['buyer'] ?? 'N/A') . "</td>";
-			echo "<td>" . htmlspecialchars($transaction['seller'] ?? 'N/A') . "</td>";
-			echo "<td>" . htmlspecialchars($transaction['price'] ?? 'N/A') . "</td>";
-			echo "<td>" . htmlspecialchars($transaction['timestamp'] ?? 'N/A') . "</td>";
-			echo "</tr>";
-		}
-		echo "</table>";
+            // Load cache from file
+            $cache_data = [];
+            if (file_exists($cache_file)) {
+                $cache_content = file_get_contents($cache_file);
+                if ($cache_content !== false) {
+                    $cache_data = json_decode($cache_content, true);
+                    if (!is_array($cache_data)) {
+                        $cache_data = [];
+                        log_message("nft-transactions: Failed to decode cache, resetting cache", 'nft_transactions_log.txt', 'ERROR');
+                    }
+                } else {
+                    log_message("nft-transactions: Failed to read cache file, initializing empty cache", 'nft_transactions_log.txt', 'WARNING');
+                }
+            }
 
-		// Phân trang
-		echo "<div class='pagination'>";
-		$total_pages = ceil($total_transactions / $transactions_per_page);
-		if ($page > 1) {
-			echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddressTransactions' value='$mintAddress'><input type='hidden' name='page' value='" . ($page - 1) . "'><button type='submit' class='page-btn'>Previous</button></form>";
-		}
-		for ($i = 1; $i <= $total_pages; $i++) {
-			if ($i === $page) {
-				echo "<span class='active-page'>$i</span>";
-			} else {
-				echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddressTransactions' value='$mintAddress'><input type='hidden' name='page' value='$i'><button type='submit' class='page-btn'>$i</button></form>";
-			}
-		}
-		if ($page < $total_pages) {
-			echo "<form method='POST' class='page-form'><input type='hidden' name='mintAddressTransactions' value='$mintAddress'><input type='hidden' name='page' value='" . ($page + 1) . "'><button type='submit' class='page-btn'>Next</button></form>";
-		}
-		echo "</div>";
-		echo "</div>";
-	} else {
-		echo "<div class='result-error'><p>No transaction history found or invalid mint address.</p></div>";
-		error_log("nft-transactions.php: No transactions found for $mintAddress"); // Debug
-	}
+            // Check if cache exists and is not expired
+            $cache_valid = isset($cache_data[$mintAddress]) && 
+                           isset($cache_data[$mintAddress]['timestamp']) && 
+                           (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
+
+            if (!$cache_valid) {
+                // Cache expired or not set, fetch from API
+                if (isset($cache_data[$mintAddress]['timestamp']) && !$cache_valid) {
+                    log_message("nft-transactions: Cache expired for mintAddress=$mintAddress, fetching new data", 'nft_transactions_log.txt');
+                } elseif (!isset($cache_data[$mintAddress])) {
+                    log_message("nft-transactions: No cache found for mintAddress=$mintAddress, fetching new data", 'nft_transactions_log.txt');
+                }
+
+                // Clean up expired cache entries
+                foreach ($cache_data as $address => $data) {
+                    if (!isset($data['timestamp']) || (time() - $data['timestamp'] > $cache_expiration)) {
+                        unset($cache_data[$address]);
+                        log_message("nft-transactions: Removed expired cache for mintAddress=$address", 'nft_transactions_log.txt');
+                    }
+                }
+
+                // Fetch assets in collection to get transaction history
+                $total_transactions = 0;
+                $api_page = 1;
+                $has_more = true;
+                $transactions = [];
+                $asset_ids = [];
+
+                // Step 1: Get all assets in the collection
+                while ($has_more && $api_page <= $max_pages) {
+                    $params = [
+                        'groupKey' => 'collection',
+                        'groupValue' => $mintAddress,
+                        'page' => $api_page,
+                        'limit' => $limit
+                    ];
+                    log_message("nft-transactions: Calling API for assets, page=$api_page, params=" . json_encode($params), 'nft_transactions_log.txt');
+                    $data = callAPI('getAssetsByGroup', $params, 'POST');
+
+                    if (isset($data['error'])) {
+                        $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
+                        throw new Exception("API error: " . $errorMessage);
+                    }
+
+                    if (!isset($data['result']['items'])) {
+                        log_message("nft-transactions: Invalid API response, no items found for page=$api_page, mintAddress=$mintAddress", 'nft_transactions_log.txt', 'ERROR');
+                        throw new Exception("Invalid API response: No items found.");
+                    }
+
+                    $page_items = $data['result']['items'];
+                    $item_count = count($page_items);
+                    $asset_ids = array_merge($asset_ids, array_map(function($item) {
+                        return $item['id'] ?? null;
+                    }, $page_items));
+                    $asset_ids = array_filter($asset_ids);
+                    log_message("nft-transactions: Page $api_page added $item_count assets, total_assets=" . count($asset_ids), 'nft_transactions_log.txt');
+
+                    $has_more = $item_count >= $limit;
+                    $api_page++;
+                    usleep(2000000); // 2-second delay to avoid rate limit
+                }
+
+                // Step 2: Get transaction history for each asset
+                foreach ($asset_ids as $asset_id) {
+                    $tx_params = ['id' => $asset_id];
+                    log_message("nft-transactions: Calling API for asset activity, asset_id=$asset_id", 'nft_transactions_log.txt');
+                    $tx_data = callAPI('getAssetActivity', $tx_params, 'POST');
+
+                    if (isset($tx_data['error'])) {
+                        log_message("nft-transactions: API error for asset_id=$asset_id: " . json_encode($tx_data['error']), 'nft_transactions_log.txt', 'WARNING');
+                        continue;
+                    }
+
+                    if (!isset($tx_data['result'])) {
+                        log_message("nft-transactions: Invalid API response for asset_id=$asset_id", 'nft_transactions_log.txt', 'WARNING');
+                        continue;
+                    }
+
+                    $page_txs = array_filter($tx_data['result'], function($tx) {
+                        return $tx['type'] === 'NFT_SALE';
+                    });
+                    $tx_count = count($page_txs);
+                    $transactions = array_merge($transactions, array_map(function($tx) {
+                        return [
+                            'signature' => $tx['signature'] ?? 'N/A',
+                            'timestamp' => isset($tx['timestamp']) ? date('d M Y, H:i', $tx['timestamp']) : 'N/A',
+                            'price' => isset($tx['amount']) ? $tx['amount'] / 1e9 : 0,
+                            'buyer' => $tx['buyer'] ?? 'N/A',
+                            'seller' => $tx['seller'] ?? 'N/A'
+                        ];
+                    }, $page_txs));
+                    $total_transactions += $tx_count;
+                    log_message("nft-transactions: Added $tx_count transactions for asset_id=$asset_id, total_transactions=$total_transactions", 'nft_transactions_log.txt');
+                    usleep(2000000); // 2-second delay
+                }
+
+                // Store in file cache with timestamp
+                $cache_data[$mintAddress] = [
+                    'total_transactions' => $total_transactions,
+                    'transactions' => $transactions,
+                    'timestamp' => time()
+                ];
+                $fp = fopen($cache_file, 'c');
+                if (flock($fp, LOCK_EX)) {
+                    if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
+                        log_message("nft-transactions: Failed to write cache to $cache_file", 'nft_transactions_log.txt', 'ERROR');
+                        flock($fp, LOCK_UN);
+                        fclose($fp);
+                        throw new Exception("Failed to save cache data");
+                    }
+                    flock($fp, LOCK_UN);
+                } else {
+                    log_message("nft-transactions: Failed to lock cache file $cache_file", 'nft_transactions_log.txt', 'ERROR');
+                    fclose($fp);
+                    throw new Exception("Failed to lock cache file");
+                }
+                fclose($fp);
+                log_message("nft-transactions: Cached total_transactions=$total_transactions for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_transactions_log.txt');
+            } else {
+                $total_transactions = $cache_data[$mintAddress]['total_transactions'] ?? 0;
+                $transactions = $cache_data[$mintAddress]['transactions'] ?? [];
+                $cache_timestamp = $cache_data[$mintAddress]['timestamp'];
+                log_message("nft-transactions: Retrieved total_transactions=$total_transactions from cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $cache_timestamp), 'nft_transactions_log.txt');
+            }
+
+            log_message("nft-transactions: Final total_transactions=$total_transactions for $mintAddress", 'nft_transactions_log.txt');
+
+            // Handle edge case: no transactions
+            if ($total_transactions === 0) {
+                throw new Exception("No transactions found for this collection.");
+            }
+            ?>
+            <!-- Display transaction table -->
+            <div class="result-section">
+                <div class="transactions-table">
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Signature</th>
+                                <th>Time</th>
+                                <th>Price (SOL)</th>
+                                <th>Buyer</th>
+                                <th>Seller</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($transactions as $tx): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars(substr($tx['signature'], 0, 8)) . '...'; ?></td>
+                                    <td><?php echo htmlspecialchars($tx['timestamp']); ?></td>
+                                    <td><?php echo number_format($tx['price'], 2); ?></td>
+                                    <td><?php echo htmlspecialchars(substr($tx['buyer'], 0, 8)) . '...'; ?></td>
+                                    <td><?php echo htmlspecialchars(substr($tx['seller'], 0, 8)) . '...'; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Data last updated -->
+                <?php if ($cache_valid): ?>
+                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
+                <?php endif; ?>
+
+                <!-- Export controls -->
+                <div class="export-section">
+                    <form method="POST" action="/tools/nft-transactions/nft-transactions-export.php" class="export-form">
+                        <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
+                        <div class="export-controls">
+                            <select name="export_format" class="export-format">
+                                <option value="csv">CSV</option>
+                                <option value="json">JSON</option>
+                            </select>
+                            <button type="submit" name="export_type" value="all" class="cta-button export-btn" id="export-all-btn">Export All Transactions</button>
+                        </div>
+                    </form>
+                    <div class="progress-container" style="display: none;">
+                        <p>Exporting... Please wait.</p>
+                        <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+                    </div>
+                </div>
+            </div>
+            <?php
+        } catch (Exception $e) {
+            $error_msg = "Error processing request: " . $e->getMessage();
+            log_message("nft-transactions: Exception - $error_msg", 'nft_transactions_log.txt', 'ERROR');
+            echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
+        }
     }
     ?>
-
-    <!-- Thêm mô tả chi tiết chức năng của tab -->
+    <!-- Informational block -->
     <div class="t-9">
-        <h3>About NFT Transactions Checker</h3>
+        <h2>About NFT Transactions Checker</h2>
         <p>
-            The NFT Transactions Checker allows you to view the transaction history of a specific Solana NFT by entering its mint address. 
-            It retrieves details such as transaction IDs, buyer and seller addresses, sale prices, and timestamps, with pagination for easy browsing. 
-            This tool is valuable for NFT analysts, traders, or collectors who want to track the trading activity of an NFT on the Solana blockchain.
+            The NFT Transactions Checker allows you to view the transaction history for a specific Solana NFT collection by entering its On-chain Collection address. 
+            This tool is useful for tracking sales, analyzing market activity, and understanding the trading history of a collection on the Solana blockchain.
         </p>
     </div>
 </div>
 
 <?php
-function getNFTTransactions($mintAddress, $page = 1) {
-	$payload = [
-		"mint" => $mintAddress,
-		"limit" => 1000,
-		"page" => $page
-	];
-	
-	error_log("nft-transactions.php: Calling Helius API for mintAddress = $mintAddress, page = $page");
-	$data = callHeliusAPI('transactions', $payload);
-	if (isset($data['error'])) {
-		error_log("nft-transactions.php: Helius API error - {$data['error']}"); // Debug
-		return ['error' => $data['error']];
-	}
-	
-	if (isset($data['transactions'])) {
-		error_log("nft-transactions.php: Retrieved " . count($data['transactions']) . " transactions");
-		return ['transactions' => $data['transactions']];
-	}
-	
-	error_log("nft-transactions.php: No transaction data found for $mintAddress"); // Debug
-	return ['error' => 'No transaction data found for this mint address.'];
-}
+// Output and log footer
+ob_start();
+include $root_path . 'include/footer.php';
+$footer_output = ob_get_clean();
+log_message("nft-transactions: Footer output length: " . strlen($footer_output), 'nft_transactions_log.txt');
+echo $footer_output;
 ?>
