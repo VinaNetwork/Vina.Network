@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: tools/bootstrap.php
+// File: tools/bootstrap1.php
 // Description: Security check: Prevent direct access to this file
 // Created by: Vina Network
 // ============================================================================
