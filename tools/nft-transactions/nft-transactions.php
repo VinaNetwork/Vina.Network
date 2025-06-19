@@ -46,7 +46,7 @@ if (!defined('LOGS_PATH') || !is_writable(LOGS_PATH)) {
 // Log bootstrap loaded
 log_message("nft-transactions: Script loaded successfully", 'nft_transactions_log.txt', 'DEBUG');
 
-// Rate limiting: 5 requests per minute per IP
+// Rate limiting: 10 requests per minute per IP
 $ip = $_SERVER['REMOTE_ADDR'];
 $rate_limit_key = "rate_limit:$ip";
 $rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
@@ -54,7 +54,7 @@ $rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key
 if (time() - $rate_limit_time > 60) {
     $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
     log_message("nft-transactions: Reset rate limit for IP=$ip, count=1", 'nft_transactions_log.txt');
-} elseif ($rate_limit_count >= 5) {
+} elseif ($rate_limit_count >= 10) {
     log_message("nft-transactions: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_transactions_log.txt', 'ERROR');
     echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
     exit;
@@ -238,7 +238,7 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
 
                     $has_more = $item_count >= $limit;
                     $api_page++;
-                    usleep(3000000); // 3-second delay to avoid rate limit
+                    usleep(3000000); // 3-second delay
                 }
 
                 // Step 2: Get transaction history for each asset
@@ -307,62 +307,64 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
 
             log_message("nft-transactions: Final total_transactions=$total_transactions for $mintAddress", 'nft_transactions_log.txt');
 
-            // Handle edge case: no transactions
+            // Display results
             if ($total_transactions === 0) {
-                throw new Exception("No transactions found for this collection.");
-            }
-            ?>
-            <!-- Display transaction table -->
-            <div class="result-section">
-                <div class="transactions-table">
-                    <table class="transaction-table">
-                        <thead>
-                            <tr>
-                                <th>Signature</th>
-                                <th>Time</th>
-                                <th>Price (SOL)</th>
-                                <th>Buyer</th>
-                                <th>Seller</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($transactions as $tx): ?>
+                log_message("nft-transactions: No transactions found for mintAddress=$mintAddress", 'nft_transactions_log.txt', 'WARNING');
+                echo "<div class='result-error'><p>No transactions found for this collection. Please verify the collection address or try again later.</p></div>";
+            } else {
+                ?>
+                <!-- Display transaction table -->
+                <div class="result-section">
+                    <div class="transactions-table">
+                        <table class="transaction-table">
+                            <thead>
                                 <tr>
-                                    <td><?php echo htmlspecialchars(substr($tx['signature'], 0, 8)) . '...'; ?></td>
-                                    <td><?php echo htmlspecialchars($tx['timestamp']); ?></td>
-                                    <td><?php echo number_format($tx['price'], 2); ?></td>
-                                    <td><?php echo htmlspecialchars(substr($tx['buyer'], 0, 8)) . '...'; ?></td>
-                                    <td><?php echo htmlspecialchars(substr($tx['seller'], 0, 8)) . '...'; ?></td>
+                                    <th>Signature</th>
+                                    <th>Time</th>
+                                    <th>Price (SOL)</th>
+                                    <th>Buyer</th>
+                                    <th>Seller</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($transactions as $tx): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars(substr($tx['signature'], 0, 8)) . '...'; ?></td>
+                                        <td><?php echo htmlspecialchars($tx['timestamp']); ?></td>
+                                        <td><?php echo number_format($tx['price'], 2); ?></td>
+                                        <td><?php echo htmlspecialchars(substr($tx['buyer'], 0, 8)) . '...'; ?></td>
+                                        <td><?php echo htmlspecialchars(substr($tx['seller'], 0, 8)) . '...'; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <!-- Data last updated -->
-                <?php if ($cache_valid): ?>
-                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
-                <?php endif; ?>
+                    <!-- Data last updated -->
+                    <?php if ($cache_valid): ?>
+                        <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
+                    <?php endif; ?>
 
-                <!-- Export controls -->
-                <div class="export-section">
-                    <form method="POST" action="/tools/nft-transactions/nft-transactions-export.php" class="export-form">
-                        <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
-                        <div class="export-controls">
-                            <select name="export_format" class="export-format">
-                                <option value="csv">CSV</option>
-                                <option value="json">JSON</option>
-                            </select>
-                            <button type="submit" name="export_type" value="all" class="cta-button export-btn" id="export-all-btn">Export All Transactions</button>
+                    <!-- Export controls -->
+                    <div class="export-section">
+                        <form method="POST" action="/tools/nft-transactions/nft-transactions-export.php" class="export-form">
+                            <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
+                            <div class="export-controls">
+                                <select name="export_format" class="export-format">
+                                    <option value="csv">CSV</option>
+                                    <option value="json">JSON</option>
+                                </select>
+                                <button type="submit" name="export_type" value="all" class="cta-button export-btn" id="export-all-btn">Export All Transactions</button>
+                            </div>
+                        </form>
+                        <div class="progress-container" style="display: none;">
+                            <p>Exporting... Please wait.</p>
+                            <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
                         </div>
-                    </form>
-                    <div class="progress-container" style="display: none;">
-                        <p>Exporting... Please wait.</p>
-                        <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
                     </div>
                 </div>
-            </div>
-            <?php
+                <?php
+            }
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . $e->getMessage();
             log_message("nft-transactions: Exception - $error_msg", 'nft_transactions_log.txt', 'ERROR');
@@ -385,12 +387,22 @@ log_message("nft-transactions: Script started, mintAddress=" . ($_POST['mintAddr
 try {
     ob_start();
     log_message("nft-transactions: Including footer", 'nft_transactions_log.txt', 'DEBUG');
-    include $root_path . 'include/footer.php';
-    $footer_output = ob_get_clean();
-    log_message("nft-transactions: Footer output length: " . strlen($footer_output), 'nft_transactions_log.txt');
-    echo $footer_output;
+    if (!file_exists($root_path . 'include/footer.php')) {
+        log_message("nft-transactions: footer.php not found at {$root_path}include/footer.php", 'nft_transactions_log.txt', 'ERROR');
+        echo "<div class='result-error'><p>Error: Footer file not found</p></div>";
+        echo "</body></html>";
+    } else {
+        include $root_path . 'include/footer.php';
+        $footer_output = ob_get_clean();
+        log_message("nft-transactions: Footer output length: " . strlen($footer_output), 'nft_transactions_log.txt');
+        if (strlen($footer_output) === 0) {
+            log_message("nft-transactions: Warning - Footer output is empty", 'nft_transactions_log.txt', 'WARNING');
+        }
+        echo $footer_output;
+    }
 } catch (Exception $e) {
     log_message("nft-transactions: Error including footer: " . $e->getMessage(), 'nft_transactions_log.txt', 'ERROR');
     echo "<div class='result-error'><p>Error loading footer: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+    echo "</body></html>";
 }
 ?>
