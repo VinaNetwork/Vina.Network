@@ -1,5 +1,5 @@
 Sitemap: Vina Network
-/var/www/vinanetwork/public_html
+/root (/var/www/vinanetwork/public_html)
 ├── index.php
 ├── robots.txt
 ├── .htaccess
@@ -51,13 +51,11 @@ Sitemap: Vina Network
 │   │   ├── nft-holders-export.php
 │   │   ├── cache/
 │   │       └── nft_holders_cache.json
-│   ├── nft-transactions/
-│   │   ├── nft-transactions.php
-│   │   ├── nft-transactions-export.php
+│   ├── nft-info/
+│   │   ├── nft-info.php
+│   │   ├── nft-info-export.php
 │   │   ├── cache/
-│   │       └── nft_transactions_cache.json
-│   ├── nft-valuation/
-│   │   ├── nft-valuation.php
+│   │       └── nft_info_cache.json
 │   ├── wallet-analysis/
 │   │   ├── wallet-analysis.php
 │   ├── image/
