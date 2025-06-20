@@ -330,4 +330,10 @@ h1, h2 {text-align: center;}
         overflow-x: auto;
         white-space: nowrap;
     }
+    .wallet-address {
+        font-size: 12px;
+    }
+    .copy-icon {
+        font-size: 14px;
+    }
 }
