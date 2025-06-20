@@ -4,16 +4,20 @@
 // Created by: Vina Network
 // ============================================================================
 
-define('VINANETWORK', true);
-define('VINANETWORK_ENTRY', true);
-require_once 'bootstrap.php';
+if (!defined('VINANETWORK')) {
+    define('VINANETWORK', true);
+}
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+require_once dirname(__DIR__) . '/bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
     $api_key = HELIUS_API_KEY;
     $log_url = "https://mainnet.helius-rpc.com/?api-key=****";
 
     // Log PHP and cURL versions
-    log_message("api-helper: PHP version: " . phpversion() . ", cURL version: " . curl_version()['version'], 'api_log.txt');
+    log_message("api_helper: PHP version: " . phpversion() . ", cURL version: " . curl_version()['version'], 'api_log.txt', true);
 
     $max_retries = 3;
     $retry_count = 0;
@@ -21,7 +25,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
     do {
         $ch = curl_init();
         if (!$ch) {
-            log_message("api-helper: cURL initialization failed.", 'api_log.txt', 'ERROR');
+            log_message("api_error: cURL initialization failed.", 'api_log.txt', true);
             return ['error' => 'Failed to initialize cURL.'];
         }
 
@@ -34,7 +38,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             }
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-            log_message("api-helper: GET request - URL: " . str_replace($api_key, '****', $url), 'api_log.txt');
+            log_message("api_helper: GET request - URL: " . str_replace($api_key, '****', $url), 'api_log.txt', true);
         } else {
             // POST request for JSON-RPC endpoints
             $url = "https://mainnet.helius-rpc.com/?api-key=$api_key";
@@ -49,30 +53,31 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                     'params' => $params
                 ]);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-                log_message("api-helper: API request - URL: $log_url, Endpoint: $endpoint, Params: " . substr($postData, 0, 100) . "...", 'api_log.txt');
+                log_message("api_helper: POST request - URL: $log_url, Endpoint: $endpoint, Params: " . substr($postData, 0, 500) . "...", 'api_log.txt', true);
             }
         }
 
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 
         $response = curl_exec($ch);
-        if ($response === false) {
-            $curlError = curl_error($ch);
-            log_message("api-error: cURL error: $curlError, URL: " . str_replace($api_key, '****', $url), 'api_log.txt', 'ERROR');
-            curl_close($ch);
-            return ['error' => 'cURL error: ' . $curlError];
-        }
-
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        $curl_errno = curl_errno($ch);
         curl_close($ch);
 
-        log_message("api-helper: Response - HTTP: $httpCode, URL: " . str_replace($api_key, '****', $url) . ", Body: " . substr($response, 0, 500) . "...", 'api_log.txt');
+        log_message("api_helper: Response - HTTP: $http_code, URL: " . str_replace($api_key, '****', $url) . ", Body: " . substr($response, 0, 1000) . "...", 'api_log.txt', true);
 
-        if ($httpCode === 429) {
-            log_message("api-helper: Rate limit exceeded (429), retrying ($retry_count/$max_retries), URL: " . str_replace($api_key, '****', $url), 'api_log.txt', 'WARNING');
+        if ($response === false) {
+            log_message("api_error: cURL error - Code: $curl_errno, Message: $curl_error, URL: " . str_replace($api_key, '****', $url), 'api_log.txt', true);
+            return ['error' => "cURL error: $curl_error (Code: $curl_errno)"];
+        }
+
+        if ($http_code === 429) {
+            log_message("api_helper: Rate limit exceeded (429), retrying ($retry_count/$max_retries), URL: " . str_replace($api_key, '****', $url), 'api_log.txt', true);
             if ($retry_count < $max_retries) {
                 $retry_count++;
                 usleep(2000000); // Wait 2 seconds
@@ -81,25 +86,26 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             return ['error' => 'Rate limit exceeded after retries.'];
         }
 
-        if ($httpCode !== 200) {
-            log_message("api-error: API request failed - HTTP: $httpCode, URL: " . str_replace($api_key, '****', $url) . ", Response: $response", 'api_log.txt', 'ERROR');
-            return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
+        if ($http_code !== 200) {
+            log_message("api_error: API request failed - HTTP: $http_code, URL: " . str_replace($api_key, '****', $url) . ", Response: " . substr($response, 0, 1000), 'api_log.txt', true);
+            return ['error' => "API request failed. HTTP Code: $http_code, Response: $response"];
         }
 
         $data = json_decode($response, true);
         if ($data === null) {
-            log_message("api-error: Failed to parse API response as JSON. URL: " . str_replace($api_key, '****', $url) . ", Response: $response", 'api_log.txt', 'ERROR');
-            return ['error' => 'Failed to parse API response as JSON.'];
+            log_message("api_error: Failed to parse API response as JSON - Error: " . json_last_error_msg() . ", URL: " . str_replace($api_key, '****', $url) . ", Response: " . substr($response, 0, 1000), 'api_log.txt', true);
+            return ['error' => 'Failed to parse API response as JSON: ' . json_last_error_msg()];
         }
 
         if (isset($data['error'])) {
-            $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
-            log_message("api-error: API error - Code: " . ($data['error']['code'] ?? 'N/A') . ", Message: $errorMessage, URL: " . str_replace($api_key, '****', $url), 'api_log.txt', 'ERROR');
-            return ['error' => $errorMessage];
+            $error_message = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
+            log_message("api_error: API error - Code: " . ($data['error']['code'] ?? 'N/A') . ", Message: $error_message, URL: " . str_replace($api_key, '****', $url), 'api_log.txt', true);
+            return ['error' => $error_message];
         }
 
-        log_message("api-success: API success - Endpoint: $endpoint, URL: " . str_replace($api_key, '****', $url) . ", Response: " . substr(json_encode($data), 0, 100) . "...", 'api_log.txt');
-        return $data;
+        log_message("api_success: API success - Endpoint: $endpoint, URL: " . str_replace($api_key, '****', $url) . ", Response: " . substr(json_encode($data, JSON_PRETTY_PRINT), 0, 1000) . "...", 'api_log.txt', true);
+        // Return result for JSON-RPC endpoints, full data for others
+        return isset($data['result']) ? $data['result'] : $data;
 
     } while ($retry_count < $max_retries);
 
