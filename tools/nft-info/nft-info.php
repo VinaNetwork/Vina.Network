@@ -237,12 +237,3 @@ log_message("nft-info: Rendering form", 'nft_info_log.txt', 'INFO');
         <p>The Check NFT Info tool allows you to view detailed information for a specific Solana NFT by entering its Mint Address.</p>
     </div>
 </div>
-
-<?php
-ob_start();
-log_message("nft-info: Including footer.php", 'nft_info_log.txt', 'INFO');
-include_once $root_path . 'include/footer.php';
-$footer_output = ob_get_clean();
-log_message("nft-info: Footer output length: " . strlen($footer_output), 'nft_info_log.txt', 'INFO');
-echo $footer_output;
-?>
