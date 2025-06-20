@@ -35,12 +35,12 @@ ini_set('error_log', ERROR_LOG_PATH);
 
 // Get the requested tool from the query string
 $tool = isset($_GET['tool']) ? trim($_GET['tool']) : '';
-log_message("load-tool: Request received - tool=$tool, method={$_SERVER['REQUEST_METHOD']}", 'load_tool_log.txt');
+log_message("load-tool: Request received - tool=$tool, method={$_SERVER['REQUEST_METHOD']}", 'tools_load_log.txt');
 
 // Validate the 'tool' parameter against allowed values
 $valid_tools = ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'];
 if (!in_array($tool, $valid_tools)) {
-    log_message("load-tool: Invalid tool parameter - tool=$tool", 'load_tool_log.txt', 'ERROR');
+    log_message("load-tool: Invalid tool parameter - tool=$tool", 'tools_load_log.txt', 'ERROR');
     http_response_code(400);
     echo 'Error: Invalid tool parameter';
     exit;
@@ -49,17 +49,16 @@ if (!in_array($tool, $valid_tools)) {
 // Define corresponding file path for each tool
 $tool_files = [
     'nft-holders' => 'nft-holders/nft-holders.php',
-    'nft-valuation' => 'nft-valuation/nft-valuation.php',
-    'nft-transactions' => 'nft-transactions/nft-transactions.php',
+    'nft-info' => 'nft-info/nft-info.php',
     'wallet-analysis' => 'wallet-analysis/wallet-analysis.php'
 ];
 
 $tool_file = __DIR__ . '/' . $tool_files[$tool];
-log_message("load-tool: Attempting to include file - $tool_file", 'load_tool_log.txt');
+log_message("load-tool: Attempting to include file - $tool_file", 'tools_load_log.txt');
 
 // Check if the tool file exists
 if (!file_exists($tool_file)) {
-    log_message("load-tool: Tool file not found - $tool_file", 'load_tool_log.txt', 'ERROR');
+    log_message("load-tool: Tool file not found - $tool_file", 'tools_load_log.txt', 'ERROR');
     http_response_code(404);
     echo 'Error: Tool file not found';
     exit;
@@ -70,10 +69,10 @@ try {
     ob_start();
     include $tool_file;
     $output = ob_get_clean();
-    log_message("load-tool: Output length: " . strlen($output), 'load_tool_log.txt');
+    log_message("load-tool: Output length: " . strlen($output), 'tools_load_log.txt');
     echo $output;
 } catch (Exception $e) {
-    log_message("load-tool: Exception in $tool_file - " . $e->getMessage(), 'load_tool_log.txt', 'ERROR');
+    log_message("load-tool: Exception in $tool_file - " . $e->getMessage(), 'tools_load_log.txt', 'ERROR');
     http_response_code(500);
     echo 'Error: Failed to load tool - ' . htmlspecialchars($e->getMessage());
 }
