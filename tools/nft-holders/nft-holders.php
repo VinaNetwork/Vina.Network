@@ -361,3 +361,12 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         </p>
     </div>
 </div>
+
+<?php
+// NFT Holders: Output and log footer
+ob_start();
+include $root_path . 'include/footer.php';
+$footer_output = ob_get_clean();
+log_message("nft-holders: Footer output length: " . strlen($footer_output), 'nft_holders_log.txt');
+echo $footer_output;
+?>
