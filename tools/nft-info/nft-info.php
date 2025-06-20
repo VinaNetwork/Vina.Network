@@ -1,19 +1,24 @@
 <?php
+// ============================================================================
 // File: tools/nft-info/nft-info.php
 // Description: Check detailed information for a single Solana NFT using its Mint Address.
 // Author: Vina Network
 // ============================================================================
 
+// Disable error display
 ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
+iniSet('display_startup_errors', true);
 error_reporting(E_ALL);
 
 // Define constants
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
+// Log script start
+log_message("nft-info: Script started, method={$_SERVER['REQUEST_METHOD']}", 'nft_info_log.txt', 'INFO');
+
 // Load bootstrap
-$bootstrap_path = __DIR__ . '/../bootstrap.php';
+$bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("nft-info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'ERROR');
     exit("<div class='result-error'><p>Error: Cannot find bootstrap.php</p></div>");
@@ -24,9 +29,6 @@ require_once $bootstrap_path;
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
-
-// Log script start
-log_message("nft-info: Script started, method=" . $_SERVER['REQUEST_METHOD'], 'nft_info_log.txt', 'INFO');
 
 // Cache directory and file
 $cache_dir = __DIR__ . '/cache/';
@@ -44,14 +46,14 @@ if (!file_exists($cache_file)) {
             chmod($cache_file, 0644);
             log_message("nft-info: Created cache file at $cache_file", 'nft_info_log.txt', 'INFO');
             break;
-        }
-        $attempts--;
-        sleep(1);
     }
-    if (!file_exists($cache_file)) {
-        log_message("nft-info: Failed to create cache file at $cache_file", 'nft_info_log.txt', 'ERROR');
-        exit("<div class='result-error'><p>Error: Cannot create cache file</p></div>");
-    }
+    $attempts--;
+    sleep(1);
+}
+if (!file_exists($cache_file)) {
+    log_message("nft-info: Failed to create cache file at $cache_file", 'nft_info_log.txt', 'ERROR');
+    exit("<div class='result-error'><p>Error: Cannot create cache file</p></div>");
+}
 }
 if (!is_writable($cache_file)) {
     log_message("nft-info: Cache file $cache_file is not writable", 'nft_info_log.txt', 'ERROR');
@@ -74,6 +76,7 @@ if (!file_exists($api_helper_path)) {
 }
 require_once $api_helper_path;
 
+log_message("nft-info: Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'INFO');
 ?>
 
 <div class="t-6 nft-info-content">
@@ -107,7 +110,7 @@ require_once $api_helper_path;
                 $mintAddress = preg_replace('/\s+/', '', $mintAddress);
                 log_message("nft-info: Validating mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
                 if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-                    throw new Exception("Invalid Mint Address.");
+                    throw new Exception("Invalid Mint Address format.");
                 }
 
                 // Check cache
@@ -122,13 +125,13 @@ require_once $api_helper_path;
                     $params = ['id' => $mintAddress];
                     $response = call_api('POST', 'https://api.helius.xyz/v1/getAsset', $params, ['api-key' => HELIUS_API_KEY]);
 
-                    log_message("nft-info: API response status=" . $response['statusCode'] . ", response=" . substr($response['response'] ?? '', 0, 500), 'nft_info_log.txt', 'INFO');
+                    log_message("nft-info: API response status=" . $response['statusCode'] . ", response=" . substr(json_encode($response['response'] ?? ''), 0, 500), 'nft_info_log.txt', 'INFO');
                     if ($response['statusCode'] !== 200) {
-                        throw new Exception("API error: " . ($response['error'] ?? 'Unknown error'));
+                        throw new Exception("API error: " . ($response['error'] ?? 'Unknown error') . " - Response: " . substr(json_encode($response['response'] ?? ''), 0, 500));
                     }
                     $asset = json_decode($response['response'], true)['result'] ?? [];
                     if (empty($asset)) {
-                        throw new Exception("NFT not found.");
+                        throw new Exception("NFT not found for Mint Address: $mintAddress");
                     }
 
                     // Format data
