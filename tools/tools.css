@@ -280,17 +280,20 @@ h1, h2 {text-align: center;}
 /* Wallet Address Container */
 .wallet-address {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    gap: 8px;
+    font-size: 20px;
     color: #555;
-    margin: 0;
+    font-weight: 500;
+    margin: 0 auto; /* Center block element */
     max-width: 100%;
 }
 
 /* Short Address */
-.short-address {
-    font-weight: 500;
+.short-address-card {
+    font-weight: bold;
+    color: #333;
 }
 
 /* Full Address (Hidden) */
@@ -301,12 +304,15 @@ h1, h2 {text-align: center;}
 /* Copy Icon */
 .copy-icon {
     cursor: pointer;
-    font-size: 16px;
-    color: #007bff; /* Match with fa-wallet */
-    transition: color 0.2s ease;
+    font-size: 20px;
+    color: #007bff;
+    transition: color 0.3s ease;
 }
 .copy-icon:hover {
-    color: #0056b3; /* Darker blue on hover */
+    color: #0056b3;
+}
+.copy-icon.copied {
+    color: #28a745; /* Green for success */
 }
 
 /* Responsive adjustments for small screens */
@@ -331,9 +337,10 @@ h1, h2 {text-align: center;}
         white-space: nowrap;
     }
     .wallet-address {
-        font-size: 12px;
+        font-size: 16px;
+        gap: 6px;
     }
     .copy-icon {
-        font-size: 14px;
+        font-size: 16px;
     }
 }
