@@ -17,8 +17,8 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft_info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', true);
-    echo json_encode(['error' => 'Cannot find bootstrap.php']);
+    log_message("nft_info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
 require_once $bootstrap_path;
@@ -27,7 +27,7 @@ require_once $bootstrap_path;
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
-log_message("nft_info: Session started, session_id=" . session_id(), 'nft_info_log.txt', true);
+log_message("nft_info: Session started, session_id=" . session_id(), 'nft_info_log.txt', 'INFO');
 
 // Cache directory and file
 $cache_dir = __DIR__ . '/cache/';
@@ -35,22 +35,25 @@ $cache_file = $cache_dir . 'nft_info_cache.json';
 
 // Create cache directory if it doesn't exist
 if (!is_dir($cache_dir)) {
-    mkdir($cache_dir, 0755, true);
-    log_message("nft_info: Created cache directory at $cache_dir", 'nft_info_log.txt', true);
-}
-if (!file_exists($cache_file)) {
-    if (file_put_contents($cache_file, json_encode([]))) {
-        chmod($cache_file, 0644);
-        log_message("nft_info: Created cache file at $cache_file", 'nft_info_log.txt', true);
-    } else {
-        log_message("nft_info: Failed to create cache file at $cache_file", 'nft_info_log.txt', true);
-        echo json_encode(['error' => 'Cannot create cache file']);
+    if (!mkdir($cache_dir, 0755, true)) {
+        log_message("nft_info: Failed to create cache directory at $cache_dir", 'nft_info_log.txt', 'ERROR');
+        echo '<div class="result-error"><p>Cannot create cache directory</p></div>';
         exit;
     }
+    log_message("nft_info: Created cache directory at $cache_dir", 'nft_info_log.txt', 'INFO');
+}
+if (!file_exists($cache_file)) {
+    if (file_put_contents($cache_file, json_encode([])) === false) {
+        log_message("nft_info: Failed to create cache file at $cache_file", 'nft_info_log.txt', 'ERROR');
+        echo '<div class="result-error"><p>Cannot create cache file</p></div>';
+        exit;
+    }
+    chmod($cache_file, 0644);
+    log_message("nft_info: Created cache file at $cache_file", 'nft_info_log.txt', 'INFO');
 }
 if (!is_writable($cache_file)) {
-    log_message("nft_info: Cache file $cache_file is not writable", 'nft_info_log.txt', true);
-    echo json_encode(['error' => 'Cache file is not writable']);
+    log_message("nft_info: Cache file $cache_file is not writable", 'nft_info_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cache file is not writable</p></div>';
     exit;
 }
 
@@ -60,22 +63,22 @@ $page_title = 'Check NFT Info - Vina Network';
 $page_description = 'Check detailed information for a single Solana NFT using its Mint Address.';
 $page_css = ['../../css/vina.css', '../tools.css'];
 
-log_message("nft_info: Including header.php", 'nft_info_log.txt', true);
+log_message("nft_info: Including header.php", 'nft_info_log.txt', 'INFO');
 include_once $root_path . 'include/header.php';
-log_message("nft_info: Including navbar.php", 'nft_info_log.txt', true);
+log_message("nft_info: Including navbar.php", 'nft_info_log.txt', 'INFO');
 include_once $root_path . 'include/navbar.php';
 
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft_info_log.txt', true);
-    echo json_encode(['error' => 'Missing tools-api.php']);
+    log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft_info_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
-log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', true);
+log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 
-log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
+log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
 ?>
 
 <div class="t-6 nft-info-content">
@@ -91,85 +94,89 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
     </div>
 
     <?php
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', true);
-        if (!isset($_POST['mintAddress'])) {
-            log_message("nft_info: Missing mintAddress in POST data", 'nft_info_log.txt', true);
-            echo json_encode(['error' => 'Mint Address is required']);
-            exit;
-        }
-
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
+        log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'INFO');
         try {
             // Validate CSRF token
-            log_message("nft_info: Validating CSRF token", 'nft_info_log.txt', true);
-            if (!validate_csrf_token($_POST['csrf_token'])) {
-                log_message("nft_info: Invalid CSRF token", 'nft_info_log.txt', true);
-                echo json_encode(['error' => 'Invalid CSRF token']);
-                exit;
+            log_message("nft_info: Validating CSRF token", 'nft_info_log.txt', 'INFO');
+            if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+                log_message("nft_info: Invalid CSRF token", 'nft_info_log.txt', 'ERROR');
+                throw new Exception('Invalid CSRF token');
             }
 
             // Validate Mint Address
             $mintAddress = trim($_POST['mintAddress']);
             $mintAddress = preg_replace('/\s+/', '', $mintAddress);
-            log_message("nft_info: Validating mintAddress=$mintAddress", 'nft_info_log.txt', true);
+            log_message("nft_info: Validating mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-                log_message("nft_info: Invalid Mint Address format", 'nft_info_log.txt', true);
-                echo json_encode(['error' => 'Invalid Mint Address format']);
-                exit;
+                log_message("nft_info: Invalid Mint Address format", 'nft_info_log.txt', 'ERROR');
+                throw new Exception('Invalid Mint Address format');
             }
 
             // Check cache
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600; // Cache for 3 hours
             $cache_valid = isset($cache_data[$mintAddress]) && (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
-            log_message("nft_info: Cache valid=$cache_valid for mintAddress=$mintAddress", 'nft_info_log.txt', true);
+            log_message("nft_info: Cache valid=$cache_valid for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
 
             if (!$cache_valid) {
                 // Call getAsset API
-                log_message("nft_info: Calling getAsset API for mintAddress=$mintAddress", 'nft_info_log.txt', true);
+                log_message("nft_info: Calling getAsset API for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
                 $params = ['id' => $mintAddress];
                 $asset = callAPI('getAsset', $params, 'POST');
 
-                log_message("nft_info: API response=" . json_encode($asset, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_info_log.txt', true);
+                log_message("nft_info: API raw response=" . json_encode($asset, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_info_log.txt', 'DEBUG');
                 if (isset($asset['error'])) {
-                    log_message("nft_info: API error: " . $asset['error'], 'nft_info_log.txt', true);
-                    echo json_encode(['error' => $asset['error']]);
-                    exit;
+                    log_message("nft_info: API error: " . json_encode($asset['error']), 'nft_info_log.txt', 'ERROR');
+                    throw new Exception(is_array($asset['error']) ? ($asset['error']['message'] ?? 'API error') : $asset['error']);
                 }
-                if (empty($asset)) {
-                    log_message("nft_info: NFT not found for mintAddress=$mintAddress", 'nft_info_log.txt', true);
-                    echo json_encode(['error' => 'NFT not found for Mint Address']);
-                    exit;
+                if (empty($asset['result']) || !isset($asset['result']['id'])) {
+                    log_message("nft_info: NFT not found or invalid response for mintAddress=$mintAddress", 'nft_info_log.txt', 'ERROR');
+                    throw new Exception('NFT not found for Mint Address');
                 }
+
+                // Extract result from API response
+                $asset = $asset['result'];
 
                 // Format data
                 $formatted_data = [
-                    'mint_address' => $asset['id'] ?? 'N/A',
+                    'mint_address' => $asset['id'] ?? $mintAddress,
                     'name' => $asset['content']['metadata']['name'] ?? 'N/A',
                     'image' => $asset['content']['links']['image'] ?? '',
-                    'attributes' => isset($asset['content']['metadata']['attributes']) ? json_encode($asset['content']['metadata']['attributes'], JSON_PRETTY_PRINT) : 'N/A',
+                    'attributes' => isset($asset['content']['metadata']['attributes']) && !empty($asset['content']['metadata']['attributes']) ? json_encode($asset['content']['metadata']['attributes'], JSON_PRETTY_PRINT) : 'N/A',
                     'owner' => $asset['ownership']['owner'] ?? 'N/A',
                     'collection' => isset($asset['grouping'][0]['group_value']) ? $asset['grouping'][0]['group_value'] : 'N/A',
-                    'is_compressed' => $asset['compression']['compressed'] ?? false,
-                    'is_burned' => $asset['ownership']['frozen'] ?? false,
+                    'is_compressed' => isset($asset['compression']['compressed']) ? $asset['compression']['compressed'] : false,
+                    'is_burned' => isset($asset['ownership']['frozen']) ? $asset['ownership']['frozen'] : false,
                     'is_listed' => isset($asset['marketplace_listings']) && !empty($asset['marketplace_listings']) ? true : false,
                     'timestamp' => time()
                 ];
-                log_message("nft_info: Formatted data for mintAddress=$mintAddress", 'nft_info_log.txt', true);
+                log_message("nft_info: Formatted data=" . json_encode($formatted_data, JSON_PRETTY_PRINT), 'nft_info_log.txt', 'DEBUG');
 
                 // Save to cache
                 $cache_data[$mintAddress] = [
                     'data' => $formatted_data,
                     'timestamp' => time()
                 ];
-                if (!file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
-                    log_message("nft_info: Failed to write to cache file", 'nft_info_log.txt', true);
-                    echo json_encode(['error' => 'Failed to write to cache file']);
-                    exit;
+                $fp = fopen($cache_file, 'c');
+                if (flock($fp, LOCK_EX)) {
+                    if (!file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
+                        log_message("nft_info: Failed to write to cache file", 'nft_info_log.txt', 'ERROR');
+                        flock($fp, LOCK_UN);
+                        fclose($fp);
+                        throw new Exception('Failed to write to cache file');
+                    }
+                    flock($fp, LOCK_UN);
+                } else {
+                    log_message("nft_info: Failed to lock cache file", 'nft_info_log.txt', 'ERROR');
+                    fclose($fp);
+                    throw new Exception('Failed to lock cache file');
                 }
-                log_message("nft_info: Cache updated for mintAddress=$mintAddress", 'nft_info_log.txt', true);
+                fclose($fp);
+                log_message("nft_info: Cache updated for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
             } else {
                 $formatted_data = $cache_data[$mintAddress]['data'];
+                log_message("nft_info: Retrieved from cache for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
             }
 
             // Output results as HTML
@@ -222,15 +229,15 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
             </div>
             <?php
             $output = ob_get_clean();
-            log_message("nft_info: Output length: " . strlen($output), 'nft_info_log.txt', true);
+            log_message("nft_info: Output length: " . strlen($output), 'nft_info_log.txt', 'INFO');
             echo $output;
         } catch (Exception $e) {
-            log_message("nft_info: Exception - Message: " . $e->getMessage() . ", File: " . $e->getFile() . ", Line: " . $e->getLine(), 'nft_info_log.txt', true);
-            echo json_encode(['error' => $e->getMessage()]);
-            exit;
+            $error_msg = "Error processing request: " . $e->getMessage();
+            log_message("nft_info: Exception - Message: $error_msg, File: " . $e->getFile() . ", Line: " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
+            echo "<div class='result-error'><p>$error_msg</p></div>";
         }
     }
-    log_message("nft_info: Script ended", 'nft_info_log.txt', true);
+    log_message("nft_info: Script ended", 'nft_info_log.txt', 'INFO');
     ?>
 
     <div class="t-9">
