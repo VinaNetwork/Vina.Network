@@ -231,6 +231,53 @@ h1, h2 {text-align: center;}
     border: 1px solid #ddd;
 }
 
+/* Wallet Analysis Styles */
+.wallet-info-table, .token-table, .nft-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    overflow-x: auto; /* Scroll ngang trên mobile */
+}
+
+/* Table headers */
+.wallet-info-table th, .token-table th, .nft-table th {
+    background: #f0f4f8; /* Light gray-blue */
+    color: #333;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+/* Table cells */
+.wallet-info-table td, .token-table td, .nft-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    color: #555;
+    font-size: 14px;
+    word-break: break-all; /* Địa chỉ dài xuống dòng */
+    max-width: 250px; /* Giới hạn chiều rộng cột */
+}
+
+/* Right-align numeric columns */
+.token-table td:nth-child(3), .token-table td:nth-child(4) {
+    text-align: right;
+}
+
+/* Hover effect */
+.wallet-info-table tr:hover, .token-table tr:hover, .nft-table tr:hover {
+    background: #f9fbfd; /* Very light blue */
+}
+
+/* Ensure tables are contained */
+.result-section {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
     .t-1 {
@@ -245,4 +292,15 @@ h1, h2 {text-align: center;}
     }
     .t-7 input {width: 100%;}
     .summary-card {max-width: 100%}
+
+    /* Wallet Analysis Styles */
+    .wallet-info-table, .token-table, .nft-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .wallet-info-table th, .token-table th, .nft-table th,
+    .wallet-info-table td, .token-table td, .nft-table td {
+        min-width: 120px;
+    }
 }
