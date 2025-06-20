@@ -324,6 +324,19 @@ h1, h2 {text-align: center;}
 .copy-icon.copied {
     color: #28a745; /* Green for success */
 }
+.copy-tooltip {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #28a745;
+    color: #fff;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+}
 
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
@@ -352,5 +365,10 @@ h1, h2 {text-align: center;}
     }
     .copy-icon {
         font-size: 16px;
+    }
+    .copy-tooltip {
+        font-size: 10px;
+        padding: 3px 6px;
+        top: -20px;
     }
 }
