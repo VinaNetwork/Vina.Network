@@ -85,7 +85,7 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
         <form id="nftInfoForm" method="POST" action="" style="display: block !important;">
             <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-            <button type="submit" class="cta-button">Check NFT Info</button>
+            <button type="submit" class="cta-button">Check Info</button>
         </form>
         <div class="loader"></div>
     </div>
