@@ -1,7 +1,7 @@
 // ============================================================================
 // File: tools/tools1.js
-// Description: Script of the entire tool page.
-// Created by: Vina Network
+// Description: Script for the entire tool page, including tab navigation, form submission, and export functionality.
+// Author: Vina Network
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -108,9 +108,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 300);
             }
 
+            // Determine export path based on tool
+            let exportPath;
+            if (form.action.includes('nft-info')) {
+                exportPath = '/tools/nft-info/nft-info-export.php';
+            } else if (form.action.includes('nft-holders')) {
+                exportPath = '/tools/nft-holders/nft-holders-export.php';
+            } else {
+                exportPath = '/tools/nft-transactions/nft-transactions-export.php'; // Fallback for legacy
+            }
+
             // Submit the export form via fetch
             const formData = new FormData(form);
-            const exportPath = form.action.includes('nft-transactions') ? '/tools/nft-transactions/nft-transactions-export.php' : '/tools/nft-holders/nft-holders-export.php';
             fetch(exportPath, {
                 method: 'POST',
                 body: formData,
@@ -145,7 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${exportPath.includes('nft-transactions') ? 'transactions' : 'holders'}_all_${mintAddress}.${exportFormat}`;
+                const toolName = exportPath.includes('nft-info') ? 'nft_info' : exportPath.includes('nft-holders') ? 'holders' : 'transactions';
+                a.download = `${toolName}_all_${mintAddress.substring(0, 8)}.${exportFormat}`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -171,8 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Handle other form submissions (walletAnalysisForm, nftHoldersForm, nftTransactionsForm)
-        if (e.target.matches('#walletAnalysisForm, #nftHoldersForm, #nftTransactionsForm')) {
+        // Handle other form submissions (walletAnalysisForm, nftHoldersForm, nftInfoForm)
+        if (e.target.matches('#walletAnalysisForm, #nftHoldersForm, #nftInfoForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
