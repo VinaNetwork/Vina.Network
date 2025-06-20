@@ -127,29 +127,15 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
             if (!$cache_valid) {
                 // Call getAsset API
                 log_message("nft_info: Calling getAsset API for mintAddress=$mintAddress", 'nft_info_log.txt', true);
-                $params = [
-                    'jsonrpc' => '2.0',
-                    'id' => '1',
-                    'method' => 'getAsset',
-                    'params' => ['id' => $mintAddress]
-                ];
-                $response = call_api('POST', 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY, $params, ['Content-Type' => 'application/json'], 'getAsset');
+                $params = ['id' => $mintAddress];
+                $asset = callAPI('getAsset', $params, 'POST');
 
-                log_message("nft_info: API response status=" . $response['statusCode'] . ", response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_info_log.txt', true);
-                if ($response['statusCode'] !== 200) {
-                    $error_message = $response['error'] ?? 'Unknown error';
-                    log_message("nft_info: API error: $error_message", 'nft_info_log.txt', true);
-                    echo json_encode(['error' => "API error: $error_message"]);
-                    exit;
-                }
-
-                $asset = $response['response'];
+                log_message("nft_info: API response=" . json_encode($asset, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_info_log.txt', true);
                 if (isset($asset['error'])) {
-                    log_message("nft_info: API error: " . $asset['error']['message'], 'nft_info_log.txt', true);
-                    echo json_encode(['error' => $asset['error']['message']]);
+                    log_message("nft_info: API error: " . $asset['error'], 'nft_info_log.txt', true);
+                    echo json_encode(['error' => $asset['error']]);
                     exit;
                 }
-                $asset = $asset['result'] ?? [];
                 if (empty($asset)) {
                     log_message("nft_info: NFT not found for mintAddress=$mintAddress", 'nft_info_log.txt', true);
                     echo json_encode(['error' => 'NFT not found for Mint Address']);
@@ -194,9 +180,9 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
                     <h3>NFT Details</h3>
                     <div class="nft-card">
                         <div class="nft-image">
-                            <?php if ($formatted_data['image']): ?>
+                            <?php if ($formatted_data['image']) : ?>
                                 <img src="<?php echo htmlspecialchars($formatted_data['image']); ?>" alt="NFT Image" style="max-width: 100%;">
-                            <?php else: ?>
+                            <?php else : ?>
                                 <p>No image available</p>
                             <?php endif; ?>
                         </div>
@@ -214,7 +200,7 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
                         </div>
                     </div>
                 </div>
-                <?php if ($cache_valid): ?>
+                <?php if ($cache_valid) : ?>
                     <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?></p>
                 <?php endif; ?>
                 <div class="export-section">
