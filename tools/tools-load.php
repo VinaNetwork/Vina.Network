@@ -22,6 +22,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $bootstrap_path = __DIR__ . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     error_log("load-tool: bootstrap.php not found at $bootstrap_path");
+    log_message("load-tool: bootstrap.php not found at $bootstrap_path", 'tools_load_log.txt', 'ERROR');
     http_response_code(500);
     echo 'Error: bootstrap.php not found';
     exit;
@@ -35,10 +36,10 @@ ini_set('error_log', ERROR_LOG_PATH);
 
 // Get the requested tool from the query string
 $tool = isset($_GET['tool']) ? trim($_GET['tool']) : '';
-log_message("load-tool: Request received - tool=$tool, method={$_SERVER['REQUEST_METHOD']}", 'tools_load_log.txt');
+log_message("load-tool: Request received - tool=$tool, method={$_SERVER['REQUEST_METHOD']}", 'tools_load_log.txt', 'INFO');
 
 // Validate the 'tool' parameter against allowed values
-$valid_tools = ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'];
+$valid_tools = ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis', 'nft-info']; // Added nft-info
 if (!in_array($tool, $valid_tools)) {
     log_message("load-tool: Invalid tool parameter - tool=$tool", 'tools_load_log.txt', 'ERROR');
     http_response_code(400);
@@ -53,8 +54,8 @@ $tool_files = [
     'wallet-analysis' => 'wallet-analysis/wallet-analysis.php'
 ];
 
-$tool_file = __DIR__ . '/' . $tool_files[$tool];
-log_message("load-tool: Attempting to include file - $tool_file", 'tools_load_log.txt');
+$tool_file = __DIR__ . '/' . ($tool_files[$tool] ?? '');
+log_message("load-tool: Attempting to include file - $tool_file", 'tools_load_log.txt', 'INFO');
 
 // Check if the tool file exists
 if (!file_exists($tool_file)) {
@@ -69,10 +70,11 @@ try {
     ob_start();
     include $tool_file;
     $output = ob_get_clean();
-    log_message("load-tool: Output length: " . strlen($output), 'tools_load_log.txt');
+    log_message("load-tool: Output length: " . strlen($output), 'tools_load_log.txt', 'INFO');
     echo $output;
 } catch (Exception $e) {
-    log_message("load-tool: Exception in $tool_file - " . $e->getMessage(), 'tools_load_log.txt', 'ERROR');
+    log_message("load-tool: Exception in $tool_file - " . $e->getMessage() . " at line " . $e->getLine(), 'tools_load_log.txt', 'ERROR');
     http_response_code(500);
     echo 'Error: Failed to load tool - ' . htmlspecialchars($e->getMessage());
 }
+?>
