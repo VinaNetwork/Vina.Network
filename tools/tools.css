@@ -187,8 +187,7 @@ h1, h2 {text-align: center;}
     gap: 20px;
     background: #f9f9f9;
     padding: 20px;
-    border-radius: 8px;
-    margin-top: 20px;
+    border-radius: 10px;
 }
 
 .nft-image {
