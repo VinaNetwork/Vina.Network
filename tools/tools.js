@@ -294,25 +294,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Copy
-    $(document).on('click', '.copy-icon', function() {
+    /* Copy functionality for wallet and table addresses */
+$(document).on('click', '.copy-icon', function() {
     var $this = $(this);
-    var fullAddress = $this.siblings('.full-address').text();
-    var $temp = $('<textarea>');
-    $('body').append($temp);
-    $temp.val(fullAddress).select();
-    try {
-        document.execCommand('copy');
+    var $container = $this.closest('.wallet-address, .address-cell');
+    var fullAddress = $container.find('.full-address').text().trim();
+    
+    if (!fullAddress) {
+        console.error('Copy failed: No full address found');
+        alert('Không thể sao chép địa chỉ');
+        return;
+    }
+
+    // Use Clipboard API
+    navigator.clipboard.writeText(fullAddress).then(function() {
+        // Show feedback
         $this.addClass('copied');
-        $this.attr('title', 'Copied!');
+        var $tooltip = $('<span class="copy-tooltip">Copied!</span>');
+        $this.after($tooltip);
         setTimeout(function() {
             $this.removeClass('copied');
-            $this.attr('title', 'Copy full address');
+            $tooltip.remove();
         }, 1000);
-    } catch (err) {
+    }).catch(function(err) {
         console.error('Copy failed:', err);
-        alert('Failed to copy địa chỉ ví');
-    }
-    $temp.remove();
+        alert('Không thể sao chép địa chỉ: ' + err);
+    });
 });
 });
