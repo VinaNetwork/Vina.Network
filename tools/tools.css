@@ -180,6 +180,58 @@ h1, h2 {text-align: center;}
     transition: width 0.3s ease;
 }
 
+/* NFT Info */
+.nft-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.nft-image {
+    flex: 1;
+    min-width: 200px;
+}
+
+.nft-image img {
+    max-width: 100%;
+    border-radius: 8px;
+}
+
+.nft-info-table {
+    flex: 2;
+    min-width: 300px;
+}
+
+.nft-info-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.nft-info-table th, 
+.nft-info-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.nft-info-table th {
+    background: #eee;
+    font-weight: bold;
+}
+
+.nft-info-table pre {
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
     .t-1 {
