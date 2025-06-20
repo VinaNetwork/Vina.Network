@@ -306,7 +306,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 <?php if ($total_wallets === 0): ?>
                     <p class="result-error">No holders found for this collection.</p>
                 <?php else: ?>
-                    <div class="holders-summary">
+                    <div class="t-8-1 holders-summary">
                         <div class="summary-card">
                             <div class="summary-item">
                                 <i class="fas fa-wallet"></i>
