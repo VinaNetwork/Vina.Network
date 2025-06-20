@@ -209,7 +209,7 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                     </div>
                 </div>
                 <?php if ($cache_valid): ?>
-                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?></p>
+                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
                 <?php endif; ?>
                 <div class="export-section">
                     <form method="POST" action="/tools/nft-info/nft-info-export.php" class="export-form">
