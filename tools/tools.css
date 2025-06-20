@@ -277,6 +277,38 @@ h1, h2 {text-align: center;}
     overflow-x: auto;
 }
 
+/* Wallet Address Container */
+.wallet-address {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #555;
+    margin: 0;
+    max-width: 100%;
+}
+
+/* Short Address */
+.short-address {
+    font-weight: 500;
+}
+
+/* Full Address (Hidden) */
+.full-address.hidden {
+    display: none;
+}
+
+/* Copy Icon */
+.copy-icon {
+    cursor: pointer;
+    font-size: 16px;
+    color: #007bff; /* Match with fa-wallet */
+    transition: color 0.2s ease;
+}
+.copy-icon:hover {
+    color: #0056b3; /* Darker blue on hover */
+}
+
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
     .t-1 {
