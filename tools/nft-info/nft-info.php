@@ -195,11 +195,11 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                         </div>
                         <div class="nft-info-table">
                             <table>
-                                <tr><th>Mint Address</th><td><?php echo htmlspecialchars(substr($formatted_data['mint_address'], 0, 8)) . '...'; ?></td></tr>
+                                <tr><th>Mint Address</th><td style="word-break: break-all;"><?php echo htmlspecialchars($formatted_data['mint_address']); ?></td></tr>
                                 <tr><th>Name</th><td><?php echo htmlspecialchars($formatted_data['name']); ?></td></tr>
                                 <tr><th>Attributes</th><td><pre><?php echo htmlspecialchars($formatted_data['attributes']); ?></pre></td></tr>
-                                <tr><th>Owner</th><td><?php echo htmlspecialchars(substr($formatted_data['owner'], 0, 8)) . '...'; ?></td></tr>
-                                <tr><th>Collection</th><td><?php echo htmlspecialchars(substr($formatted_data['collection'], 0, 8)) . '...'; ?></td></tr>
+                                <tr><th>Owner</th><td style="word-break: break-all;"><?php echo htmlspecialchars($formatted_data['owner']); ?></td></tr>
+                                <tr><th>Collection</th><td style="word-break: break-all;"><?php echo htmlspecialchars($formatted_data['collection']); ?></td></tr>
                                 <tr><th>Compressed</th><td><?php echo $formatted_data['is_compressed'] ? 'Yes' : 'No'; ?></td></tr>
                                 <tr><th>Burned</th><td><?php echo $formatted_data['is_burned'] ? 'Yes' : 'No'; ?></td></tr>
                                 <tr><th>Listed</th><td><?php echo $formatted_data['is_listed'] ? 'Yes' : 'No'; ?></td></tr>
