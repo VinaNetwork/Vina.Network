@@ -300,8 +300,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 echo "<div class='result-error'><p>Warning: Total items ($total_items) is a multiple of API limit ($limit). Actual number may be higher. For full details, check directly on the Solana blockchain or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
             }
             ?>
+                
             <!-- Display summary card -->
-            <div class="result-section">
+            <div class="t-8 result-section">
                 <?php if ($total_wallets === 0): ?>
                     <p class="result-error">No holders found for this collection.</p>
                 <?php else: ?>
