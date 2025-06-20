@@ -183,7 +183,7 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
             ob_start();
             ?>
             <div class="t-8 result-section">
-                <div class="nft-details">
+                <div class="t-8-1 nft-details">
                     <h2>NFT Details</h2>
                     <div class="nft-card">
                         <div class="nft-image">
