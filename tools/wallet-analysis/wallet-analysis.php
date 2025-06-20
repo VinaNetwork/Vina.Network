@@ -219,7 +219,7 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
                 <div class="token-details">
                     <div class="token-table">
                         <table>
-                            <tr><th>Mint Address</th><th>Name</th><th>Balance</th><th>Value (USD)</th></tr>
+                            <tr><th>Token Address</th><th>Name</th><th>Balance</th><th>Value (USD)</th></tr>
                             <?php foreach ($formatted_data['tokens'] as $token): ?>
                             <tr>
                                 <td style="word-break: break-all;"><?php echo htmlspecialchars($token['mint']); ?></td>
