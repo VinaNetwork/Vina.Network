@@ -202,22 +202,26 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
             // Output results as HTML
             ob_start();
             ?>
-            <div class="result-section">
-                <div class="wallet-details">
-                    <h3>Wallet Details</h3>
-                    <div class="wallet-card">
-                        <div class="wallet-info-table">
-                            <table>
-                                <tr><th>Wallet Address</th><td style="word-break: break-all;"><?php echo htmlspecialchars($formatted_data['wallet_address']); ?></td></tr>
-                                <tr><th>SOL Balance</th><td><?php echo number_format($formatted_data['sol_balance'], 9) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></td></tr>
-                            </table>
+            <div class="t-8 result-section">
+                <h2>Wallet Details</h2>
+                <div class="t-8-1 wallet-details">
+                    <div class="summary-card">
+                        <div class="summary-item">
+                            <i class="fas fa-wallet"></i>
+                            <p>Wallet Address</p>
+                            <h3><?php echo htmlspecialchars($formatted_data['wallet_address']); ?></h3>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-wallet"></i>
+                            <p>SOL Balance</p>
+                            <h3><?php echo number_format($formatted_data['sol_balance'], 9) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></h3>
                         </div>
                     </div>
                 </div>
 
                 <?php if (!empty($formatted_data['tokens'])): ?>
+                <h2>SPL Tokens</h2>
                 <div class="token-details">
-                    <h3>SPL Tokens</h3>
                     <div class="token-table">
                         <table>
                             <tr><th>Mint Address</th><th>Name</th><th>Balance</th><th>Value (USD)</th></tr>
