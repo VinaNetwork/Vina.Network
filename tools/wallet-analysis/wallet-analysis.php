@@ -208,7 +208,7 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
                         <div class="summary-item">
                             <i class="fas fa-wallet"></i>
                             <p class="wallet-address">
-                                <span class="short-address"><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...'; ?></span>
+                                <span class="short-address"><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['wallet_address']), -4); ?></span>
                                 <span class="full-address hidden"><?php echo htmlspecialchars($formatted_data['wallet_address']); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address"></i>
                             </p>
