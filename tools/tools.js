@@ -293,4 +293,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Copy
+    $(document).on('click', '.copy-icon', function() {
+    var $this = $(this);
+    var fullAddress = $this.siblings('.full-address').text();
+    var $temp = $('<textarea>');
+    $('body').append($temp);
+    $temp.val(fullAddress).select();
+    try {
+        document.execCommand('copy');
+        $this.addClass('copied');
+        $this.attr('title', 'Copied!');
+        setTimeout(function() {
+            $this.removeClass('copied');
+            $this.attr('title', 'Copy full address');
+        }, 1000);
+    } catch (err) {
+        console.error('Copy failed:', err);
+        alert('Failed to copy địa chỉ ví');
+    }
+    $temp.remove();
+});
 });
