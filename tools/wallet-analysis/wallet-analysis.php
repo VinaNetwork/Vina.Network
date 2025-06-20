@@ -227,7 +227,11 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
                             <?php foreach ($formatted_data['tokens'] as $token): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($token['name']); ?></td>
-                                <td style="word-break: break-all;"><?php echo htmlspecialchars($token['mint']); ?></td>
+                                <td class="address-cell">
+                                    <span class="short-address"><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
+                                    <span class="full-address hidden"><?php echo htmlspecialchars($token['mint']); ?></span>
+                                    <i class="fas fa-copy copy-icon" title="Copy full address"></i>
+                                </td>
                                 <td><?php echo number_format($token['balance'], 6); ?></td>
                                 <td><?php echo number_format($token['price_usd'], 2); ?></td>
                             </tr>
@@ -246,7 +250,11 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
                             <?php foreach ($formatted_data['nfts'] as $nft): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($nft['name']); ?></td>
-                                <td style="word-break: break-all;"><?php echo htmlspecialchars($nft['mint']); ?></td>
+                                <td class="address-cell">
+                                    <span class="short-address"><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
+                                    <span class="full-address hidden"><?php echo htmlspecialchars($nft['mint']); ?></span>
+                                    <i class="fas fa-copy copy-icon" title="Copy full address"></i>
+                                </td>
                                 <td style="word-break: break-all;"><?php echo htmlspecialchars($nft['collection']); ?></td>
                             </tr>
                             <?php endforeach; ?>
