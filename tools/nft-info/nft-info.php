@@ -180,9 +180,9 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
                     <h3>NFT Details</h3>
                     <div class="nft-card">
                         <div class="nft-image">
-                            <?php if ($formatted_data['image']) : ?>
+                            <?php if ($formatted_data['image']): ?>
                                 <img src="<?php echo htmlspecialchars($formatted_data['image']); ?>" alt="NFT Image" style="max-width: 100%;">
-                            <?php else : ?>
+                            <?php else: ?>
                                 <p>No image available</p>
                             <?php endif; ?>
                         </div>
@@ -200,7 +200,7 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
                         </div>
                     </div>
                 </div>
-                <?php if ($cache_valid) : ?>
+                <?php if ($cache_valid): ?>
                     <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?></p>
                 <?php endif; ?>
                 <div class="export-section">
