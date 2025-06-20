@@ -187,8 +187,8 @@
 - Owner/Group: www-data:www-data
 - Description: Directory for log files, writable by www-data for PHP logging.
 - Commands:
-  mkdir /var/www/vinanetwork/public_html/tools/logs/
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs
+  sudo mkdir /var/www/vinanetwork/public_html/tools/logs/
+  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/logs
   sudo chmod 764 /var/www/vinanetwork/public_html/tools/logs
 
 │   │   ├── api_log.txt
