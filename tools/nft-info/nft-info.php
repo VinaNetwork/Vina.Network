@@ -58,7 +58,7 @@ if (!is_writable($cache_file)) {
 $root_path = '../../';
 $page_title = 'Check NFT Info - Vina Network';
 $page_description = 'Check detailed information for a single Solana NFT using its Mint Address.';
-$page_css = ['../../css/vina.css', '../tools1.css'];
+$page_css = ['../../css/vina.css', '../tools.css'];
 
 log_message("nft_info: Including header.php", 'nft_info_log.txt', true);
 include_once $root_path . 'include/header.php';
