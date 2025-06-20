@@ -60,13 +60,13 @@ include $header_path;
 
             <!-- Tool Navigation Menu -->
             <div class="t-3">
-                <!-- Tool Tab: Check NFT Info -->
-                <a href="?tool=nft-info" class="t-link <?php echo $tool === 'nft-info' ? 'active' : ''; ?>" data-tool="nft-info">
-                    <i class="fas fa-chart-line"></i> NFT Info
-                </a>
                 <!-- Tool Tab: Check NFT Holders -->
                 <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
                     <i class="fas fa-wallet"></i> NFT Holders
+                </a>
+                <!-- Tool Tab: Check NFT Info -->
+                <a href="?tool=nft-info" class="t-link <?php echo $tool === 'nft-info' ? 'active' : ''; ?>" data-tool="nft-info">
+                    <i class="fas fa-chart-line"></i> NFT Info
                 </a>
                 <!-- Tool Tab: Check Wallet -->
                 <a href="?tool=wallet-analysis" class="t-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
