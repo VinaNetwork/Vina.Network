@@ -58,6 +58,8 @@ Sitemap: Vina Network
 │   │       └── nft_info_cache.json
 │   ├── wallet-analysis/
 │   │   ├── wallet-analysis.php
+│   │   ├── cache/
+│   │       └── wallet_analysis_cache.json
 │   ├── image/
 │   │   ├── ...
 │   ├── logs/
