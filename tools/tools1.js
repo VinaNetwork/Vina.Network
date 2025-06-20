@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update URL and load the corresponding tool content
             const tool = this.getAttribute('data-tool');
-            console.log(`Loading tool: ${tool}`); // Debug log
+            console.log(`Loading tool: ${tool}`);
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
             fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
@@ -68,24 +68,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
-                console.log(`Tool ${tool} fetch status: ${response.status}`); // Debug log
+                console.log(`Tool ${tool} fetch status: ${response.status}`);
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
             .then(data => {
-                console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`); // Debug log
+                console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`);
                 document.querySelector('.t-4').innerHTML = data;
             })
             .catch(error => {
                 console.error(`Error loading tool ${tool}:`, error);
-                document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
+                document.querySelector('.t-4').innerHTML = `<div class="result-error"><p>Error loading tool: ${error.message}</p></div>`;
             });
         });
     });
 
     // Handle form submissions
     document.addEventListener('submit', (e) => {
-        // Debug: Log all form submissions
         console.log('Form submitted:', e.target.id, 'Action:', e.target.action);
 
         // Export form submission
@@ -100,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const progressContainer = document.querySelector('.progress-container');
             const progressBarFill = document.querySelector('.progress-bar-fill');
 
-            console.log('Export form submitted:', { // Debug log
+            console.log('Export form submitted:', {
                 formId: form.id,
                 exportType,
                 mintAddress,
@@ -114,13 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Client-side log
             log_message(`export: Client - exportType=${exportType}, mintAddress=${mintAddress}, format=${exportFormat}`, 'client_log.txt');
 
-            // Show loading indicator
             if (loader) loader.style.display = 'block';
 
-            // Simulate progress bar
             if (progressContainer && progressBarFill) {
                 progressContainer.style.display = 'block';
                 let progress = 0;
@@ -131,27 +127,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 300);
             }
 
-            // Determine export path based on tool
             let exportPath;
             if (form.action.includes('nft-info')) {
                 exportPath = '/tools/nft-info/nft-info-export.php';
             } else if (form.action.includes('nft-holders')) {
                 exportPath = '/tools/nft-holders/nft-holders-export.php';
             } else {
-                exportPath = '/tools/nft-transactions/nft-transactions-export.php'; // Fallback for legacy
+                exportPath = '/tools/nft-transactions/nft-transactions-export.php';
             }
-            console.log('Export path:', exportPath); // Debug log
+            console.log('Export path:', exportPath);
 
-            // Submit the export form via fetch
             const formData = new FormData(form);
-            console.log('Export form data:', Object.fromEntries(formData)); // Debug log
+            console.log('Export form data:', Object.fromEntries(formData));
             fetch(exportPath, {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
-                console.log(`Export fetch status: ${response.status}`); // Debug log
+                console.log(`Export fetch status: ${response.status}`);
                 if (!response.ok) {
                     return response.text().then(text => {
                         try {
@@ -163,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 const contentType = response.headers.get('Content-Type');
-                console.log('Export content type:', contentType); // Debug log
+                console.log('Export content type:', contentType);
                 if (contentType.includes('text/csv') || contentType.includes('application/json')) {
                     return response.blob().then(blob => ({ blob, contentType }));
                 }
@@ -177,19 +171,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             })
             .then(({ blob, contentType }) => {
-                // Create a temporary download link
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 const toolName = exportPath.includes('nft-info') ? 'nft_info' : exportPath.includes('nft-holders') ? 'holders' : 'transactions';
                 a.download = `${toolName}_all_${mintAddress.substring(0, 8)}.${exportFormat}`;
-                console.log('Export file:', a.download); // Debug log
+                console.log('Export file:', a.download);
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url);
 
-                // Hide loader and reset progress
                 if (loader) loader.style.display = 'none';
                 if (progressContainer) {
                     progressContainer.style.display = 'none';
@@ -215,8 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const form = e.target;
             const loader = document.querySelector('.loader');
             const tool = document.querySelector('.t-link.active')?.getAttribute('data-tool') || 'unknown';
-            
-            console.log('Form submission:', { // Debug log
+
+            console.log('Form submission:', {
                 formId: form.id,
                 tool,
                 formData: Object.fromEntries(new FormData(form))
@@ -231,32 +223,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
-                console.log(`Form fetch status for ${form.id}: ${response.status}`); // Debug log
+                console.log(`Form fetch status for ${form.id}: ${response.status}`);
                 if (!response.ok) {
                     return response.text().then(text => {
-                        throw new Error(`HTTP error! Status: ${response.status}, Response: ${text}`);
+                        try {
+                            const json = JSON.parse(text);
+                            throw new Error(json.error || `HTTP error! Status: ${response.status}`);
+                        } catch (e) {
+                            throw new Error(`HTTP error! Status: ${response.status}, Response: ${text}`);
+                        }
                     });
                 }
                 return response.text();
             })
             .then(data => {
-                console.log(`Form ${form.id} response length: ${data.length}`); // Debug log
-                document.querySelector('.t-4').innerHTML = data;
+                console.log(`Form ${form.id} response length: ${data.length}`);
+                try {
+                    const json = JSON.parse(data);
+                    if (json.error) {
+                        document.querySelector('.t-4').innerHTML = `<div class="result-error"><p>Error: ${json.error}</p></div>`;
+                        return;
+                    }
+                } catch (e) {
+                    // Not JSON, assume HTML
+                    document.querySelector('.t-4').innerHTML = data;
+                }
                 if (loader) loader.style.display = 'none';
             })
             .catch(error => {
                 console.error(`Error submitting form ${form.id}:`, error);
-                document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
+                document.querySelector('.t-4').innerHTML = `<div class="result-error"><p>Error submitting form: ${error.message}</p></div>`;
                 if (loader) loader.style.display = 'none';
             });
         } else {
-            console.warn('Unknown form submitted:', e.target.id); // Debug log
+            console.warn('Unknown form submitted:', e.target.id);
         }
     });
 
     // Send client-side log message to the server (client_log.php)
     function log_message(message, file) {
-        console.log('Logging to client_log:', message); // Debug log
+        console.log('Logging to client_log:', message);
         fetch('/tools/logs/client_log.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
