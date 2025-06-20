@@ -211,22 +211,6 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                 <?php if ($cache_valid): ?>
                     <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
                 <?php endif; ?>
-                <div class="export-section">
-                    <form method="POST" action="/tools/nft-info/nft-info-export.php" class="export-form">
-                        <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
-                        <div class="export-controls">
-                            <select name="export_format" class="export-format">
-                                <option value="csv">CSV</option>
-                                <option value="json">JSON</option>
-                            </select>
-                            <button type="submit" name="export_type" value="all" class="cta-button export-btn">Export NFT Info</button>
-                        </div>
-                    </form>
-                    <div class="progress-container" style="display: none;">
-                        <p>Exporting... Please wait.</p>
-                        <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
-                    </div>
-                </div>
             </div>
             <?php
             $output = ob_get_clean();
