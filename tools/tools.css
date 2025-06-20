@@ -335,7 +335,7 @@ h1, h2 {text-align: center;}
     padding: 4px 8px;
     border-radius: 4px;
     white-space: nowrap;
-    z-index: 10;
+    z-index: 1000;
 }
 
 /* Responsive adjustments for small screens */
