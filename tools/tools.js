@@ -295,30 +295,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* Copy functionality for wallet and table addresses */
-$(document).on('click', '.copy-icon', function() {
-    var $this = $(this);
-    var $container = $this.closest('.wallet-address, .address-cell');
-    var fullAddress = $container.find('.full-address').text().trim();
-    
-    if (!fullAddress) {
-        console.error('Copy failed: No full address found');
-        alert('Không thể sao chép địa chỉ');
-        return;
-    }
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('copy-icon')) {
+        e.preventDefault();
+        const container = e.target.closest('.wallet-address, .address-cell');
+        if (!container) {
+            console.error('Copy failed: No container (.wallet-address or .address-cell) found');
+            alert('Không thể sao chép địa chỉ');
+            return;
+        }
 
-    // Use Clipboard API
-    navigator.clipboard.writeText(fullAddress).then(function() {
-        // Show feedback
-        $this.addClass('copied');
-        var $tooltip = $('<span class="copy-tooltip">Copied!</span>');
-        $this.after($tooltip);
-        setTimeout(function() {
-            $this.removeClass('copied');
-            $tooltip.remove();
-        }, 1000);
-    }).catch(function(err) {
-        console.error('Copy failed:', err);
-        alert('Không thể sao chép địa chỉ: ' + err);
-    });
+        const fullAddress = container.querySelector('.full-address')?.textContent.trim();
+        if (!fullAddress) {
+            console.error('Copy failed: No full address found');
+            alert('Không thể sao chép địa chỉ');
+            return;
+        }
+
+        console.log('Attempting to copy address:', fullAddress);
+
+        // Try Clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(fullAddress).then(function() {
+                showCopyFeedback(e.target);
+            }).catch(function(err) {
+                console.error('Clipboard API failed:', err);
+                fallbackCopy(fullAddress, e.target);
+            });
+        } else {
+            console.warn('Clipboard API not available, using fallback');
+            fallbackCopy(fullAddress, e.target);
+        }
+    }
 });
+
+function fallbackCopy(text, icon) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showCopyFeedback(icon);
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        alert('Không thể sao chép địa chỉ: ' + err);
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function showCopyFeedback(icon) {
+    icon.classList.add('copied');
+    const tooltip = document.createElement('span');
+    tooltip.className = 'copy-tooltip';
+    tooltip.textContent = 'Copied!';
+    icon.parentNode.style.position = 'relative';
+    icon.parentNode.appendChild(tooltip);
+    setTimeout(function() {
+        icon.classList.remove('copied');
+        tooltip.remove();
+    }, 1000);
+    console.log('Copy successful');
+}
 });
