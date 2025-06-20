@@ -82,7 +82,7 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', true);
     <div class="t-7">
         <h2>Check NFT Info</h2>
         <p>Enter the <strong>NFT Mint Address</strong> to view detailed information. For example, find this address on MagicEden under "Details" > "Mint Address".</p>
-        <form id="nftInfoForm" method="POST" action="" style="display: block !important;">
+        <form id="nftInfoForm" method="POST" action="">
             <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
             <button type="submit" class="cta-button">Check Info</button>
