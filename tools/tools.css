@@ -88,8 +88,8 @@ h1, h2 {text-align: center;}
 }
 
 /* Holder results summary */
-.result-section {margin: 20px 0;}
-.holders-summary {
+.t-8 {margin: 20px 0;}
+.t-8-1 {
     justify-content: center;
     margin-bottom: 20px;
     display: flex;
