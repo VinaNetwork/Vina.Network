@@ -169,7 +169,7 @@
 - Owner/Group: www-data:vinanetwork
 - Description: Directory for NFT info cache files, writable by www-data for PHP caching.
 - Commands:
-  mkdir /var/www/vinanetwork/public_html/tools/www-info/cache
+  mkdir /var/www/vinanetwork/public_html/tools/nft-info/cache
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-info/cache
   sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-info/cache
 
