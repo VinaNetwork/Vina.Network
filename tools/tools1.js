@@ -11,11 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabsContainer = document.querySelector('.t-3');
     let activeTab = document.querySelector('.t-link.active');
 
+    // Debug: Log initial tool and active tab
+    console.log('Initial tool from URL:', tool);
+    console.log('Active tab element:', activeTab);
+
     // If no tab is active but a tool is specified in the URL, activate the corresponding tab
     if (!activeTab && tool) {
         activeTab = document.querySelector(`.t-link[data-tool="${tool}"]`);
         if (activeTab) {
             activeTab.classList.add('active');
+            console.log(`Activated tab for tool: ${tool}`);
         } else {
             console.error(`No tab found for tool: ${tool}`);
         }
@@ -30,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
                 behavior: 'smooth'
             });
+            console.log('Scrolled to active tab:', activeTab.getAttribute('data-tool'));
         }, 100);
     }
 
@@ -54,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update URL and load the corresponding tool content
             const tool = this.getAttribute('data-tool');
+            console.log(`Loading tool: ${tool}`); // Debug log
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
 
             fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
@@ -61,12 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
+                console.log(`Tool ${tool} fetch status: ${response.status}`); // Debug log
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 return response.text();
             })
-            .then(data => document.querySelector('.t-4').innerHTML = data)
+            .then(data => {
+                console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`); // Debug log
+                document.querySelector('.t-4').innerHTML = data;
+            })
             .catch(error => {
-                console.error('Error loading tool content:', error);
+                console.error(`Error loading tool ${tool}:`, error);
                 document.querySelector('.t-4').innerHTML = '<p>Error loading content. Please try again.</p>';
             });
         });
@@ -74,6 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle form submissions
     document.addEventListener('submit', (e) => {
+        // Debug: Log all form submissions
+        console.log('Form submitted:', e.target.id, 'Action:', e.target.action);
+
         // Export form submission
         if (e.target.matches('.export-form')) {
             e.preventDefault();
@@ -86,7 +100,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const progressContainer = document.querySelector('.progress-container');
             const progressBarFill = document.querySelector('.progress-bar-fill');
 
+            console.log('Export form submitted:', { // Debug log
+                formId: form.id,
+                exportType,
+                mintAddress,
+                exportFormat,
+                action: form.action
+            });
+
             if (exportType !== 'all') {
+                console.warn('Invalid export type:', exportType);
                 alert('Invalid export type');
                 return;
             }
@@ -117,15 +140,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 exportPath = '/tools/nft-transactions/nft-transactions-export.php'; // Fallback for legacy
             }
+            console.log('Export path:', exportPath); // Debug log
 
             // Submit the export form via fetch
             const formData = new FormData(form);
+            console.log('Export form data:', Object.fromEntries(formData)); // Debug log
             fetch(exportPath, {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
+                console.log(`Export fetch status: ${response.status}`); // Debug log
                 if (!response.ok) {
                     return response.text().then(text => {
                         try {
@@ -137,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 const contentType = response.headers.get('Content-Type');
+                console.log('Export content type:', contentType); // Debug log
                 if (contentType.includes('text/csv') || contentType.includes('application/json')) {
                     return response.blob().then(blob => ({ blob, contentType }));
                 }
@@ -156,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.href = url;
                 const toolName = exportPath.includes('nft-info') ? 'nft_info' : exportPath.includes('nft-holders') ? 'holders' : 'transactions';
                 a.download = `${toolName}_all_${mintAddress.substring(0, 8)}.${exportFormat}`;
+                console.log('Export file:', a.download); // Debug log
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -186,37 +214,53 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
+            const tool = document.querySelector('.t-link.active')?.getAttribute('data-tool') || 'unknown';
+            
+            console.log('Form submission:', { // Debug log
+                formId: form.id,
+                tool,
+                formData: Object.fromEntries(new FormData(form))
+            });
+
             if (loader) loader.style.display = 'block';
 
             const formData = new FormData(form);
-            const tool = document.querySelector('.t-link.active').getAttribute('data-tool');
             fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
             .then(response => {
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                console.log(`Form fetch status for ${form.id}: ${response.status}`); // Debug log
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP error! Status: ${response.status}, Response: ${text}`);
+                    });
+                }
                 return response.text();
             })
             .then(data => {
+                console.log(`Form ${form.id} response length: ${data.length}`); // Debug log
                 document.querySelector('.t-4').innerHTML = data;
                 if (loader) loader.style.display = 'none';
             })
             .catch(error => {
-                console.error('Error submitting form:', error);
+                console.error(`Error submitting form ${form.id}:`, error);
                 document.querySelector('.t-4').innerHTML = '<p>Error submitting form. Please try again.</p>';
                 if (loader) loader.style.display = 'none';
             });
+        } else {
+            console.warn('Unknown form submitted:', e.target.id); // Debug log
         }
     });
 
     // Send client-side log message to the server (client_log.php)
     function log_message(message, file) {
+        console.log('Logging to client_log:', message); // Debug log
         fetch('/tools/logs/client_log.php', {
             method: 'POST',
-            headers: {'Content-Type: 'application/json'},
-            body: JSON.stringify({message, file})
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ message, file })
         }).catch(err => console.error('Log error:', err));
     }
 });
