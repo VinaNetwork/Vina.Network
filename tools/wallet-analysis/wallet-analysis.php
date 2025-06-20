@@ -204,13 +204,9 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
             ?>
             <div class="t-8 result-section">
                 <h2>Wallet Details</h2>
+                <h3><?php echo htmlspecialchars($formatted_data['wallet_address']); ?></h3>
                 <div class="t-8-1 wallet-details">
                     <div class="summary-card">
-                        <div class="summary-item">
-                            <i class="fas fa-wallet"></i>
-                            <p>Wallet Address</p>
-                            <h3><?php echo htmlspecialchars($formatted_data['wallet_address']); ?></h3>
-                        </div>
                         <div class="summary-item">
                             <i class="fas fa-wallet"></i>
                             <p>SOL Balance</p>
@@ -220,7 +216,7 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
                 </div>
 
                 <?php if (!empty($formatted_data['tokens'])): ?>
-                <h2>SPL Tokens</h2>
+                <h2>Tokens details</h2>
                 <div class="token-details">
                     <div class="token-table">
                         <table>
@@ -239,8 +235,8 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
                 <?php endif; ?>
 
                 <?php if (!empty($formatted_data['nfts'])): ?>
+                <h2>NFTs details</h2>
                 <div class="nft-details">
-                    <h3>NFTs</h3>
                     <div class="nft-table">
                         <table>
                             <tr><th>Mint Address</th><th>Name</th><th>Collection</th></tr>
