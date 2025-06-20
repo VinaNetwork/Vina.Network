@@ -182,9 +182,9 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
             // Output results as HTML
             ob_start();
             ?>
-            <div class="result-section">
+            <div class="t-8 result-section">
                 <div class="nft-details">
-                    <h3>NFT Details</h3>
+                    <h2>NFT Details</h2>
                     <div class="nft-card">
                         <div class="nft-image">
                             <?php if ($formatted_data['image']): ?>
