@@ -188,7 +188,7 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                     <div class="nft-card">
                         <div class="nft-image">
                             <?php if ($formatted_data['image']): ?>
-                                <img src="<?php echo htmlspecialchars($formatted_data['image']); ?>" alt="NFT Image" style="max-width: 100%;">
+                                <img src="<?php echo htmlspecialchars($formatted_data['image']); ?>" alt="NFT Image">
                             <?php else: ?>
                                 <p>No image available</p>
                             <?php endif; ?>
