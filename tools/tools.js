@@ -269,4 +269,28 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({ message, file })
         }).catch(err => console.error('Log error:', err));
     }
+
+    // Wallet Analysis
+    $(document).on('submit', '#walletAnalysisForm', function(e) {
+        e.preventDefault();
+        var $form = $(this);
+        var $loader = $form.next('.loader');
+        $.ajax({
+            url: '/tools/tools-load.php',
+            type: 'POST',
+            data: $form.serialize() + '&tool=wallet-analysis',
+            beforeSend: function() {
+                $loader.show();
+            },
+            success: function(response) {
+                $loader.hide();
+                $form.closest('.wallet-analysis-content').find('.result-section, .result-error').remove();
+                $form.closest('.t-7').after(response);
+            },
+            error: function(xhr) {
+                $loader.hide();
+                alert('Error: ' + xhr.status + ', ' + xhr.responseText);
+            }
+        });
+    });
 });
