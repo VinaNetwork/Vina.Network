@@ -45,9 +45,8 @@
                 <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="https://www.vina.network/tools/?tool=nft-holders" class="dropdown-link"><i class="fas fa-wallet"></i> NFT Holders</a></li>
-                <li><a href="https://www.vina.network/tools/?tool=nft-valuation" class="dropdown-link"><i class="fas fa-chart-line"></i> NFT Valuation</a></li>
-                <li><a href="https://www.vina.network/tools/?tool=nft-transactions" class="dropdown-link"><i class="fas fa-history"></i> NFT Transactions</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=nft-info" class="dropdown-link"><i class="fas fa-wallet"></i> Check NFT Info</a></li>
+                <li><a href="https://www.vina.network/tools/?tool=nft-holders" class="dropdown-link"><i class="fas fa-chart-line"></i> Check NFT Holders</a></li>
                 <li><a href="https://www.vina.network/tools/?tool=wallet-analysis" class="dropdown-link"><i class="fas fa-search"></i> Wallet Analysis</a></li>
             </ul>
         </li>
