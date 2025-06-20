@@ -80,7 +80,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 
 log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
 ?>
-
+<!-- Render input form for NFT Mint address -->
 <div class="t-6 nft-info-content">
     <div class="t-7">
         <h2>Check NFT Info</h2>
@@ -182,8 +182,9 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
             // Output results as HTML
             ob_start();
             ?>
+            <!-- Display info card -->
             <div class="t-8 result-section">
-                <div class="t-8-1 nft-details">
+                <div class="t-8-1 nft-summary">
                     <h2>NFT Details</h2>
                     <div class="nft-card">
                         <div class="nft-image">
