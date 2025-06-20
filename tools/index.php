@@ -60,19 +60,15 @@ include $header_path;
 
             <!-- Tool Navigation Menu -->
             <div class="t-3">
-                <!-- Tool Tab: NFT Holders -->
+                <!-- Tool Tab: Check NFT Info -->
+                <a href="?tool=nft-info" class="t-link <?php echo $tool === 'nft-info' ? 'active' : ''; ?>" data-tool="nft-info">
+                    <i class="fas fa-chart-line"></i> NFT Info
+                </a>
+                <!-- Tool Tab: Check NFT Holders -->
                 <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
                     <i class="fas fa-wallet"></i> NFT Holders
                 </a>
-                <!-- Tool Tab: NFT Valuation -->
-                <a href="?tool=nft-valuation" class="t-link <?php echo $tool === 'nft-valuation' ? 'active' : ''; ?>" data-tool="nft-valuation">
-                    <i class="fas fa-chart-line"></i> NFT Valuation
-                </a>
-                <!-- Tool Tab: NFT Transactions -->
-                <a href="?tool=nft-transactions" class="t-link <?php echo $tool === 'nft-transactions' ? 'active' : ''; ?>" data-tool="nft-transactions">
-                    <i class="fas fa-history"></i> NFT Transactions
-                </a>
-                <!-- Tool Tab: Wallet Analysis -->
+                <!-- Tool Tab: Check Wallet -->
                 <a href="?tool=wallet-analysis" class="t-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
                     <i class="fas fa-user"></i> Wallet Analysis
                 </a>
@@ -87,7 +83,7 @@ include $header_path;
                     log_message("index: tool = $tool", 'tools_log.txt');
 
                     // Validate selected tool, fallback to default
-                    if (!in_array($tool, ['nft-holders', 'nft-valuation', 'nft-transactions', 'wallet-analysis'])) {
+                    if (!in_array($tool, ['nft-holders', 'nft-info', 'wallet-analysis'])) {
                         $tool = 'nft-holders';
                         log_message("index: Invalid tool, defaulted to nft-holders", 'tools_log.txt', 'ERROR');
                     }
@@ -95,10 +91,8 @@ include $header_path;
                     // Define the file path for the selected tool
                     if ($tool === 'nft-holders') {
                         $tool_file = __DIR__ . '/nft-holders/nft-holders.php';
-                    } elseif ($tool === 'nft-valuation') {
-                        $tool_file = __DIR__ . '/nft-valuation/nft-valuation.php';
-                    } elseif ($tool === 'nft-transactions') {
-                        $tool_file = __DIR__ . '/nft-transactions/nft-transactions.php';
+                    } elseif ($tool === 'nft-info') {
+                        $tool_file = __DIR__ . '/nft-info/nft-info.php';
                     } elseif ($tool === 'wallet-analysis') {
                         $tool_file = __DIR__ . '/wallet-analysis/wallet-analysis.php';
                     }
@@ -148,7 +142,6 @@ include $header_path;
     <script>console.log('Attempting to load JS files...');</script>
     <script src="../js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
     <script src="../js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/navbar.js')"></script>
-    <script src="../js/chart.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/chart.js')"></script>
     <script src="tools.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load tools/tools.js')"></script>
 </body>
 </html>
