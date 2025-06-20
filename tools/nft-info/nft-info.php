@@ -5,53 +5,31 @@
 // Author: Vina Network
 // ============================================================================
 
-// Disable error display, enable startup errors for debugging
+// Disable error display
 ini_set('display_errors', 0);
-ini_set('display_startup_errors', 1);
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
 // Define constants
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
-// Define log_message if not exists
-if (!function_exists('log_message')) {
-    function log_message($message, $file, $level = 'INFO') {
-        $log_dir = __DIR__ . '/../logs/';
-        $log_file = $log_dir . $file;
-        $timestamp = date('Y-m-d H:i:s');
-        $log_entry = "[$timestamp] [$level] nft-info: $message\n";
-        file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
-    }
-}
-
 // Log script start
-log_message("Script started, method={$_SERVER['REQUEST_METHOD']}", 'nft_info_log.txt', 'INFO');
+log_message("nft-info: Script started, method={$_SERVER['REQUEST_METHOD']}", 'nft_info_log.txt', 'INFO');
 
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'ERROR');
+    log_message("nft-info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'ERROR');
     exit("<div class='result-error'><p>Error: Cannot find bootstrap.php</p></div>");
 }
-try {
-    require_once $bootstrap_path;
-    log_message("bootstrap.php loaded successfully", 'nft_info_log.txt', 'INFO');
-} catch (Throwable $e) {
-    log_message("Error loading bootstrap.php: " . $e->getMessage() . " at line " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
-    exit("<div class='result-error'><p>Error: Failed to load bootstrap.php - " . htmlspecialchars($e->getMessage()) . "</p></div>");
-}
+require_once $bootstrap_path;
 
 // Start session and configure error logging
-try {
-    session_start();
-    ini_set('log_errors', true);
-    ini_set('error_log', ERROR_LOG_PATH);
-    log_message("Session started, session_id=" . session_id(), 'nft_info_log.txt', 'INFO');
-} catch (Throwable $e) {
-    log_message("Error starting session: " . $e->getMessage() . " at line " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
-    exit("<div class='result-error'><p>Error: Failed to start session - " . htmlspecialchars($e->getMessage()) . "</p></div>");
-}
+session_start();
+ini_set('log_errors', true);
+ini_set('error_log', ERROR_LOG_PATH);
+log_message("nft-info: Session started, session_id=" . session_id(), 'nft_info_log.txt', 'INFO');
 
 // Cache directory and file
 $cache_dir = __DIR__ . '/cache/';
@@ -59,30 +37,27 @@ $cache_file = $cache_dir . 'nft_info_cache.json';
 
 // Create cache directory if it doesn't exist
 if (!is_dir($cache_dir)) {
-    if (!mkdir($cache_dir, 0755, true)) {
-        log_message("Failed to create cache directory at $cache_dir", 'nft_info_log.txt', 'ERROR');
-        exit("<div class='result-error'><p>Error: Cannot create cache directory</p></div>");
-    }
-    log_message("Created cache directory at $cache_dir", 'nft_info_log.txt', 'INFO');
+    mkdir($cache_dir, 0755, true);
+    log_message("nft-info: Created cache directory at $cache_dir", 'nft_info_log.txt', 'INFO');
 }
 if (!file_exists($cache_file)) {
     $attempts = 3;
     while ($attempts > 0) {
         if (file_put_contents($cache_file, json_encode([]))) {
             chmod($cache_file, 0644);
-            log_message("Created cache file at $cache_file", 'nft_info_log.txt', 'INFO');
+            log_message("nft-info: Created cache file at $cache_file", 'nft_info_log.txt', 'INFO');
             break;
         }
         $attempts--;
         sleep(1);
     }
     if (!file_exists($cache_file)) {
-        log_message("Failed to create cache file at $cache_file", 'nft_info_log.txt', 'ERROR');
+        log_message("nft-info: Failed to create cache file at $cache_file", 'nft_info_log.txt', 'ERROR');
         exit("<div class='result-error'><p>Error: Cannot create cache file</p></div>");
     }
 }
 if (!is_writable($cache_file)) {
-    log_message("Cache file $cache_file is not writable", 'nft_info_log.txt', 'ERROR');
+    log_message("nft-info: Cache file $cache_file is not writable", 'nft_info_log.txt', 'ERROR');
     exit("<div class='result-error'><p>Error: Cache file is not writable</p></div>");
 }
 
@@ -92,58 +67,21 @@ $page_title = 'Check NFT Info - Vina Network';
 $page_description = 'Check detailed information for a single Solana NFT using its Mint Address.';
 $page_css = ['../../css/vina.css', '../tools1.css'];
 
-// Debug includes
-try {
-    log_message("Including header.php", 'nft_info_log.txt', 'INFO');
-    if (!file_exists($root_path . 'include/header.php')) {
-        log_message("header.php not found at {$root_path}include/header.php", 'nft_info_log.txt', 'ERROR');
-        exit("<div class='result-error'><p>Error: Cannot find header.php</p></div>");
-    }
-    include_once $root_path . 'include/header.php';
-    log_message("header.php included successfully", 'nft_info_log.txt', 'INFO');
-
-    log_message("Including navbar.php", 'nft_info_log.txt', 'INFO');
-    if (!file_exists($root_path . 'include/navbar.php')) {
-        log_message("navbar.php not found at {$root_path}include/navbar.php", 'nft_info_log.txt', 'ERROR');
-        exit("<div class='result-error'><p>Error: Cannot find navbar.php</p></div>");
-    }
-    include_once $root_path . 'include/navbar.php';
-    log_message("navbar.php included successfully", 'nft_info_log.txt', 'INFO');
-} catch (Throwable $e) {
-    log_message("Error including header/navbar: " . $e->getMessage() . " at line " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
-    exit("<div class='result-error'><p>Error: Failed to include header/navbar - " . htmlspecialchars($e->getMessage()) . "</p></div>");
-}
+log_message("nft-info: Including header.php", 'nft_info_log.txt', 'INFO');
+include_once $root_path . 'include/header.php';
+log_message("nft-info: Including navbar.php", 'nft_info_log.txt', 'INFO');
+include_once $root_path . 'include/navbar.php';
 
 // Load API helper
-try {
-    $api_helper_path = dirname(__DIR__) . '/tools-api.php';
-    if (!file_exists($api_helper_path)) {
-        log_message("tools-api.php not found at $api_helper_path", 'nft_info_log.txt', 'ERROR');
-        exit("<div class='result-error'><p>Error: Missing tools-api.php</p></div>");
-    }
-    require_once $api_helper_path;
-    log_message("tools-api.php loaded successfully", 'nft_info_log.txt', 'INFO');
-} catch (Throwable $e) {
-    log_message("Error loading tools-api.php: " . $e->getMessage() . " at line " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
-    exit("<div class='result-error'><p>Error: Failed to load tools-api.php - " . htmlspecialchars($e->getMessage()) . "</p></div>");
+$api_helper_path = dirname(__DIR__) . '/tools-api.php';
+if (!file_exists($api_helper_path)) {
+    log_message("nft-info: tools-api.php not found at $api_helper_path", 'nft_info_log.txt', 'ERROR');
+    exit("<div class='result-error'><p>Error: Missing tools-api.php</p></div>");
 }
+require_once $api_helper_path;
+log_message("nft-info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 
-// Define fallback for CSRF functions if not exists
-if (!function_exists('generate_csrf_token')) {
-    function generate_csrf_token() {
-        if (empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-        return $_SESSION['csrf_token'];
-    }
-}
-if (!function_exists('validate_csrf_token')) {
-    function validate_csrf_token($token) {
-        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
-    }
-}
-
-log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'INFO');
+log_message("nft-info: Rendering form", 'nft_info_log.txt', 'INFO');
 ?>
 
 <div class="t-6 nft-info-content">
@@ -162,14 +100,14 @@ log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'I
 
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        log_message("POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'INFO');
+        log_message("nft-info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'INFO');
         if (!isset($_POST['mintAddress'])) {
-            log_message("Missing mintAddress in POST data", 'nft_info_log.txt', 'ERROR');
+            log_message("nft-info: Missing mintAddress in POST data", 'nft_info_log.txt', 'ERROR');
             echo "<div class='result-error'><p>Error: Mint Address is required.</p></div>";
         } else {
             try {
                 // Validate CSRF token
-                log_message("Validating CSRF token", 'nft_info_log.txt', 'INFO');
+                log_message("nft-info: Validating CSRF token", 'nft_info_log.txt', 'INFO');
                 if (!validate_csrf_token($_POST['csrf_token'])) {
                     throw new Exception("Invalid CSRF token.");
                 }
@@ -177,7 +115,7 @@ log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'I
                 // Validate Mint Address
                 $mintAddress = trim($_POST['mintAddress']);
                 $mintAddress = preg_replace('/\s+/', '', $mintAddress);
-                log_message("Validating mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
+                log_message("nft-info: Validating mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
                 if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                     throw new Exception("Invalid Mint Address format.");
                 }
@@ -186,15 +124,15 @@ log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'I
                 $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
                 $cache_expiration = 3 * 3600; // Cache for 3 hours
                 $cache_valid = isset($cache_data[$mintAddress]) && (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
-                log_message("Cache valid=$cache_valid for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
+                log_message("nft-info: Cache valid=$cache_valid for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
 
                 if (!$cache_valid) {
                     // Call getAsset API
-                    log_message("Calling getAsset API for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
+                    log_message("nft-info: Calling getAsset API for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
                     $params = ['id' => $mintAddress];
-                    $response = call_api('POST', 'https://api.helius.xyz/v0/addresses/' . $mintAddress . '/nft-metadata', $params, ['x-api-key' => HELIUS_API_KEY]);
+                    $response = call_api('POST', 'https://api.helius.xyz/v1/getAsset', $params, ['api-key' => HELIUS_API_KEY]);
 
-                    log_message("API response status=" . $response['statusCode'] . ", response=" . substr(json_encode($response['response'] ?? ''), 0, 500), 'nft_info_log.txt', 'INFO');
+                    log_message("nft-info: API response status=" . $response['statusCode'] . ", response=" . substr(json_encode($response['response'] ?? ''), 0, 500), 'nft_info_log.txt', 'INFO');
                     if ($response['statusCode'] !== 200) {
                         throw new Exception("API error: " . ($response['error'] ?? 'Unknown error') . " - Response: " . substr(json_encode($response['response'] ?? ''), 0, 500));
                     }
@@ -216,7 +154,7 @@ log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'I
                         'is_listed' => isset($asset['marketplace_listings']) && !empty($asset['marketplace_listings']) ? true : false,
                         'timestamp' => time()
                     ];
-                    log_message("Formatted data for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
+                    log_message("nft-info: Formatted data for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
 
                     // Save to cache
                     $cache_data[$mintAddress] = [
@@ -226,15 +164,15 @@ log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'I
                     if (!file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
                         throw new Exception("Failed to write to cache file.");
                     }
-                    log_message("Cache updated for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
+                    log_message("nft-info: Cache updated for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
                 } else {
                     $formatted_data = $cache_data[$mintAddress]['data'];
                 }
 
                 // Display results
-                log_message("Displaying results for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
+                log_message("nft-info: Displaying results for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
                 if (empty($formatted_data)) {
-                    log_message("No data found for mintAddress=$mintAddress", 'nft_info_log.txt', 'ERROR');
+                    log_message("nft-info: No data found for mintAddress=$mintAddress", 'nft_info_log.txt', 'ERROR');
                     echo "<div class='result-error'><p>No data found for this NFT.</p></div>";
                 } else {
                     ?>
@@ -285,13 +223,13 @@ log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'I
                     </div>
                     <?php
                 }
-            } catch (Throwable $e) {
-                log_message("Exception - " . $e->getMessage() . " at line " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
+            } catch (Exception $e) {
+                log_message("nft-info: Exception - " . $e->getMessage() . " at line " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
                 echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
             }
         }
     }
-    log_message("Script ended", 'nft_info_log.txt', 'INFO');
+    log_message("nft-info: Script ended", 'nft_info_log.txt', 'INFO');
     ?>
 
     <div class="t-9">
@@ -301,19 +239,10 @@ log_message("Rendering form, session_id=" . session_id(), 'nft_info_log.txt', 'I
 </div>
 
 <?php
-try {
-    ob_start();
-    log_message("Including footer.php", 'nft_info_log.txt', 'INFO');
-    if (!file_exists($root_path . 'include/footer.php')) {
-        log_message("footer.php not found at {$root_path}include/footer.php", 'nft_info_log.txt', 'ERROR');
-        exit("<div class='result-error'><p>Error: Cannot find footer.php</p></div>");
-    }
-    include_once $root_path . 'include/footer.php';
-    $footer_output = ob_get_clean();
-    log_message("Footer output length: " . strlen($footer_output), 'nft_info_log.txt', 'INFO');
-    echo $footer_output;
-} catch (Throwable $e) {
-    log_message("Error including footer.php: " . $e->getMessage() . " at line " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
-    exit("<div class='result-error'><p>Error: Failed to include footer.php - " . htmlspecialchars($e->getMessage()) . "</p></div>");
-}
+ob_start();
+log_message("nft-info: Including footer.php", 'nft_info_log.txt', 'INFO');
+include_once $root_path . 'include/footer.php';
+$footer_output = ob_get_clean();
+log_message("nft-info: Footer output length: " . strlen($footer_output), 'nft_info_log.txt', 'INFO');
+echo $footer_output;
 ?>
