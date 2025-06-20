@@ -140,47 +140,47 @@
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
 
-│   ├── nft-transactions/
+│   ├── nft-info/
 - Permissions: drwxr-xr-x (755)
 - Owner/Group: www-data:www-data
-- Description: Directory for NFT transactions functionality, contains PHP scripts and cache.
+- Description: Directory for NFT info functionality, contains PHP scripts and cache.
 - Commands:
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-transactions
-  sudo chmod 755 /var/www/vinanetwork/public_html/tools/nft-transactions
+  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-info
+  sudo chmod 755 /var/www/vinanetwork/public_html/tools/nft-info
 
-│   │   ├── nft-transactions.php
+│   │   ├── nft-info.php
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:www-data
-- Description: Main script for NFT transactions, processes collection addresses, logs, caches.
+- Description: Main script for NFT info, processes collection addresses, logs, caches.
 - Commands:
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-holders/nft-transactions.php
-  sudo chmod 644 /var/www/vinanetwork/public_html/tools/nft-holders/nft-transactions.php
+  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-info/nft-info.php
+  sudo chmod 644 /var/www/vinanetwork/public_html/tools/nft-info/nft-info.php
 
-│   │   ├── nft-transactions-export.php
+│   │   ├── nft-info-export.php
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:www-data
-- Description: Script for exporting NFT transactions data, read/executed by Apache.
+- Description: Script for exporting NFT info data, read/executed by Apache.
 - Commands:
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-transactions/nft-transactions-export.php
-  sudo chmod 644 /var/www/vinanetwork/public_html/tools/nft-transactions/nft-transactions-export.php
+  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-info/nft-info-export.php
+  sudo chmod 644 /var/www/vinanetwork/public_html/tools/nft-info/nft-info-export.php
 
 │   │   ├── cache/
 - Permissions: drwxrw-r-- (764)
 - Owner/Group: www-data:www-data
-- Description: Directory for NFT transactions cache files, writable by www-data for PHP caching.
+- Description: Directory for NFT info cache files, writable by www-data for PHP caching.
 - Commands:
-  mkdir /var/www/vinanetwork/public_html/tools/nft-transactions/cache
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-transactions/cache
-  sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-transactions/cache
+  mkdir /var/www/vinanetwork/public_html/tools/www-info/cache
+  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-info/cache
+  sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-info/cache
 
-│   │   │   └── nft_transactions_cache.json
+│   │   │   └── nft_info_cache.json
 - Permissions: -rw-rw-r-- (664)
 - Owner/Group: www-data:www-data
-- Description: Cache file for NFT transactions data, written by PHP.
+- Description: Cache file for NFT info data, written by PHP.
 - Commands:
-  touch /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_transactions_cache.json
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_transactions_cache.json
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_htransactions_cache.json
+  touch /var/www/vinanetwork/public_html/tools/nft-info/cache/nft_info_cache.json
+  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/nft-info/cache/nft_info_cache.json
+  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-info/cache/nft_info_cache.json
 
 │   ├── logs/
 - Permissions: drwxrw-r-- (764)
@@ -209,14 +209,14 @@
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/client_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/client_log.txt
 
-│   │   ├── load_tool_log.txt
+│   │   ├── tools_load_log.txt
 - Permissions: -rw-rw-r-- (664)
 - Owner/Group: www-data:www-data
 - Description: Logs tool loading events, written by PHP.
 - Commands:
-  touch /var/www/vinanetwork/public_html/tools/logs/load_tool_log.txt
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/load_tool_log.txt
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/load_tool_log.txt
+  touch /var/www/vinanetwork/public_html/tools/logs/tools_load_log.txt
+  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/tools_load_log.txt
+  sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/tools_load_log.txt
 
 │   │   ├── nft_holders_log.txt
 - Permissions: -rw-rw-r-- (664)
@@ -227,14 +227,14 @@
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/nft_holders_log.txt
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/nft_holders_log.txt
 
-│   │   ├── nft_transactions_log.txt
+│   │   ├── nft_info_log.txt
 - Permissions: -rw-rw-r-- (664)
 - Owner/Group: www-data:www-data
-- Description: Logs NFT transactions processing (mintAddress, cache, API), written by PHP.
+- Description: Logs NFT info processing (mintAddress, cache, API), written by PHP.
 - Commands:
-  touch /var/www/vinanetwork/public_html/tools/logs/nft_transactions_log.txt
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/nft_transactions_log.txt
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/nft_transactions_log.txt
+  touch /var/www/vinanetwork/public_html/tools/logs/nft_info_log.txt
+  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/logs/nft_info_log.txt
+  sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/nft_info_log.txt
 
 │   │   ├── php_errors.txt
 - Permissions: -rw-rw-r-- (664)
