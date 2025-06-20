@@ -203,14 +203,13 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
             ob_start();
             ?>
             <div class="t-8 result-section">
-                <h2>Wallet Details</h2>
-                <h3><?php echo htmlspecialchars($formatted_data['wallet_address']); ?></h3>
                 <div class="t-8-1 wallet-details">
                     <div class="summary-card">
                         <div class="summary-item">
                             <i class="fas fa-wallet"></i>
-                            <p>SOL Balance</p>
-                            <h3><?php echo number_format($formatted_data['sol_balance'], 9) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></h3>
+                            <p><?php echo htmlspecialchars($formatted_data['wallet_address']); ?></p>
+                            <h3>SOL Balance</h3>
+                            <h4><?php echo number_format($formatted_data['sol_balance'], 9) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></h4>
                         </div>
                     </div>
                 </div>
