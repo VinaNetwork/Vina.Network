@@ -2,57 +2,57 @@
 # Purpose: Define permissions and ownership for Tools functionality and Git
 # Web Server: Apache, running as www-data:www-data
 # PHP: php-fpm, running as www-data:www-data
-# Git: Managed by user n9u93n, separate from www-data
+# Git: Managed by user vina, separate from www-data
 # Notes:
 # - Directories: 755 (rwx for owner, rx for group/others) for executable dirs
 # - PHP/CSS/JS files: 644 (rw for owner, r for group/others) for read-only
 # - Log/Cache files: 664 (rw for owner/group, r for others) for www-data write access
-# - .git/: Owned by n9u93n:n9u93n for Git operations
-# - Owner/Group: www-data:www-data for Apache/PHP, n9u93n:n9u93n for .git/
+# - .git/: Owned by vina:vinanetwork for Git operations
+# - Owner/Group: www-data:vinanetwork for Apache/PHP, vina:vinanetwork for .git/
 # - Commands are provided for each directory/file to set permissions and ownership
 # - Run commands as root (sudo) and verify after applying
 # - Parent directories (/var/www, /var/www/vinanetwork, /var/www/vinanetwork/public_html)
-#   should be 755 and owned by www-data:www-data
+#   should be 755 and owned by www-data:vinanetwork
 # - General apply commands (for bulk changes):
-#   sudo chown -R www-data:www-data /var/www/vinanetwork/public_html
+#   sudo chown -R vina:vinanetwork /var/www/vinanetwork/public_html
 #   sudo find /var/www/vinanetwork/public_html -not -path "/var/www/vinanetwork/public_html/.git/*" -type d -exec chmod 755 {} \;
 #   sudo find /var/www/vinanetwork/public_html -not -path "/var/www/vinanetwork/public_html/.git/*" -type f -exec chmod 644 {} \;
 #   sudo chmod 764 /var/www/vinanetwork/public_html/tools/logs
 #   sudo find /var/www/vinanetwork/public_html/tools/logs -type f -exec chmod 664 {} \;
 #   sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-holders/cache
 #   sudo find /var/www/vinanetwork/public_html/tools/nft-holders/cache -type f -exec chmod 664 {} \;
-#   sudo chown -R n9u93n:n9u93n /var/www/vinanetwork/public_html/.git
+#   sudo chown -R vina:vinanetwork /var/www/vinanetwork/public_html/.git
 #   sudo chmod -R u+rwX,go+rX /var/www/vinanetwork/public_html/.git
 
 [Directory Structure and Permissions]
 
 /var/www/vinanetwork/public_html/
 - Permissions: drwxr-xr-x (755)
-- Owner/Group: www-data:www-data
+- Owner/Group: www-data:vinanetwork
 - Description: Root web directory, contains Tools and .git/.
 - Commands:
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html
+  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html
   sudo chmod 755 /var/www/vinanetwork/public_html
 
 ├── .git/
 - Permissions: drwxr-xr-x (755)
-- Owner/Group: n9u93n:n9u93n
-- Description: Git repository directory, managed by n9u93n for git pull/commit/push.
+- Owner/Group: vina:vinanetwork
+- Description: Git repository directory, managed by vina for git pull/commit/push.
 - Commands:
-  sudo chown -R n9u93n:n9u93n /var/www/vinanetwork/public_html/.git
+  sudo chown -R vina:vinanetwork /var/www/vinanetwork/public_html/.git
   sudo chmod -R u+rwX,go+rX /var/www/vinanetwork/public_html/.git
 
 ├── tools/
 - Permissions: drwxr-xr-x (755)
-- Owner/Group: www-data:www-data
+- Owner/Group: vina:vinanetwork
 - Description: Root directory for Tools page, contains PHP, CSS, JS, and subdirs.
 - Commands:
-  sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools
+  sudo chown vina:vinanetwork /var/www/vinanetwork/public_html/tools
   sudo chmod 755 /var/www/vinanetwork/public_html/tools
 
 │   ├── index.php
 - Permissions: -rw-r--r-- (644)
-- Owner/Group: www-data:www-data
+- Owner/Group vina:vinanetwork
 - Description: Main entry point for Tools page, read/executed by Apache.
 - Commands:
   sudo chown www-data:www-data /var/www/vinanetwork/public_html/tools/index.php
