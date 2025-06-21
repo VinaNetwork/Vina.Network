@@ -86,7 +86,9 @@ require_once $api_helper_path;
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
 <div class="t-6 nft-holders-content">
+    <!-- Render form unless rate limit exceeded -->
     <?php
+    $rate_limit_exceeded = false;
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         // Rate limiting: 5 requests per minute per IP for form submission
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -98,13 +100,31 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             log_message("nft-holders: Reset rate limit for IP=$ip, count=1", 'nft_holders_log.txt');
         } elseif ($rate_limit_count >= 5) {
             log_message("nft-holders: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_holders_log.txt', 'ERROR');
+            $rate_limit_exceeded = true;
             echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
-            exit;
         } else {
             $_SESSION[$rate_limit_key]['count']++;
             log_message("nft-holders: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_holders_log.txt');
         }
+    }
 
+    if (!$rate_limit_exceeded) {
+        log_message("nft-holders: Rendering form", 'nft_holders_log.txt');
+        ?>
+        <div class="t-7">
+            <h2>Check NFT Holders</h2>
+            <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
+            <form id="nftHoldersForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <button type="submit" class="cta-button">Check Holders</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$rate_limit_exceeded) {
         try {
             // Validate CSRF token
             if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
@@ -325,20 +345,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         } catch (Exception $e) {
             echo "<div class='result-error'><p>Error processing request: " . $e->getMessage() . "</p></div>";
         }
-    } else {
-        log_message("nft-holders: Rendering form", 'nft_holders_log.txt');
-        ?>
-        <div class="t-7">
-            <h2>Check NFT Holders</h2>
-            <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
-            <form id="nftHoldersForm" method="POST" action="">
-                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-                <button type="submit" class="cta-button">Check Holders</button>
-            </form>
-            <div class="loader"></div>
-        </div>
-        <?php
     }
     ?>
     <div class="t-9">
