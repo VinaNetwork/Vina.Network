@@ -80,6 +80,18 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 ?>
 
 <div class="t-6 wallet-analysis-content">
+    <!-- Always render input form unless rate limit exceeded -->
+    <div class="t-7">
+        <h2>Check Wallet Analysis</h2>
+        <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
+        <form id="walletAnalysisForm" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+            <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
+            <button type="submit" class="cta-button">Check Wallet</button>
+        </form>
+        <div class="loader"></div>
+    </div>
+
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
         // Rate limiting: 5 requests per minute per IP for form submission
@@ -243,20 +255,6 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
         } catch (Exception $e) {
             echo "<div class='result-error'><p>Error processing request: " . $e->getMessage() . "</p></div>";
         }
-    } else {
-        log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO');
-        ?>
-        <div class="t-7">
-            <h2>Check Wallet Analysis</h2>
-            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
-            <form id="walletAnalysisForm" method="POST" action="">
-                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
-                <button type="submit" class="cta-button">Check Wallet</button>
-            </form>
-            <div class="loader"></div>
-        </div>
-        <?php
     }
     ?>
 
