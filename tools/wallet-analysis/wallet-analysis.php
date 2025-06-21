@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
 
             <?php if (!empty($formatted_data['tokens'])): ?>
             <h2>Tokens details</h2>
-            <div class="token-details">
+            <div class="t-8-2 token-details">
                 <div class="token-table">
                     <table>
                         <tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Value (USD)</th></tr>
@@ -201,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
 
             <?php if (!empty($formatted_data['nfts'])): ?>
             <h2>NFTs details</h2>
-            <div class="nft-details">
+            <div class="t-8-2 nft-details">
                 <div class="nft-table">
                     <table>
                         <tr><th>Name</th><th>Mint Address</th><th>Collection</th></tr>
