@@ -296,9 +296,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* Copy functionality for wallet and table addresses */
 function setupCopyFunctionality() {
+    console.log('Setting up copy functionality');
     document.querySelectorAll('.copy-icon').forEach(icon => {
-        icon.removeEventListener('click', handleCopy); // Avoid duplicate listeners
+        if (!icon.isConnected) return; // Skip disconnected nodes
+        icon.removeEventListener('click', handleCopy);
         icon.addEventListener('click', handleCopy);
+        console.log('Bound click event to copy-icon:', icon);
     });
 }
 
@@ -337,6 +340,7 @@ function handleCopy(e) {
 }
 
 function fallbackCopy(text, icon) {
+    console.log('Using fallback copy for:', text);
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.style.position = 'fixed';
@@ -355,6 +359,7 @@ function fallbackCopy(text, icon) {
 }
 
 function showCopyFeedback(icon) {
+    console.log('Showing copy feedback');
     icon.classList.add('copied');
     const tooltip = document.createElement('span');
     tooltip.className = 'copy-tooltip';
@@ -373,14 +378,15 @@ setupCopyFunctionality();
 
 // Watch for DOM changes (AJAX loads)
 const observer = new MutationObserver((mutations) => {
+    console.log('DOM changed, mutations:', mutations.length);
     mutations.forEach(mutation => {
         if (mutation.addedNodes.length) {
-            console.log('DOM changed, re-binding copy icons');
+            console.log('New nodes added, re-binding copy icons');
             setupCopyFunctionality();
         }
     });
 });
-observer.observe(document.querySelector('.t-4') || document.body, {
+observer.observe(document.body, {
     childList: true,
     subtree: true
 });
