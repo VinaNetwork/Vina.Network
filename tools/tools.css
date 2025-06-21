@@ -288,7 +288,7 @@ h1, h2 {text-align: center;}
     font-weight: 500;
     margin: 0 auto;
     max-width: 100%;
-    position: relative;
+    position: relative !important;
 }
 
 /* Address Cell (Table Columns) */
@@ -300,7 +300,7 @@ h1, h2 {text-align: center;}
     color: #555;
     font-weight: 500;
     max-width: 250px;
-    position: relative;
+    position: relative !important;
 }
 
 /* Short Address */
@@ -311,16 +311,19 @@ h1, h2 {text-align: center;}
 
 /* Full Address (Hidden) */
 .full-address.hidden {
-    display: none;
+    display: none !important;
 }
 
 /* Copy Icon */
 .copy-icon {
-    cursor: pointer;
+    cursor: pointer !important;
     font-size: 20px;
     color: #007bff;
     transition: color 0.3s ease;
     pointer-events: auto !important;
+    z-index: 1000 !important;
+    user-select: none !important;
+    display: inline-block !important;
 }
 
 /* Copy Icon Hover and Copied States */
@@ -343,12 +346,12 @@ h1, h2 {text-align: center;}
     padding: 4px 8px;
     border-radius: 4px;
     white-space: nowrap;
-    z-index: 1000 !important;
+    z-index: 1001 !important;
 }
 
 /* Ensure containers are below tooltip */
 .summary-card, .token-table, .nft-table {
-    z-index: 1;
+    z-index: 1 !important;
 }
 
 /* Responsive adjustments for small screens */
