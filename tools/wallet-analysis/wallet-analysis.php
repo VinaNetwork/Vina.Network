@@ -147,7 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                     $formatted_data['nfts'][] = [
                         'mint' => $item['id'] ?? 'N/A',
                         'name' => $item['content']['metadata']['name'] ?? 'N/A',
-                        'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
+                        log_message("wallet_analysis: Grouping data for NFT id={$item['id']}: " . json_encode($item['grouping'] ?? []), 'wallet_analysis_log.txt', 'DEBUG');
+                        $collection = !empty($item['grouping']) && isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A';
                     ];
                 }
             }
@@ -212,7 +213,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                                 <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                             </td>
-                            <td><?php echo htmlspecialchars($nft['collection']); ?></td>
+                            <td class="address-cell">
+                                <?php if ($nft['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $nft['collection'])): ?>
+                                    <span><?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?></span>
+                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
+                                <?php else: ?>
+                                    <span>N/A</span>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
