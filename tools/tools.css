@@ -311,7 +311,12 @@ h1, h2 {text-align: center;}
 
 /* Full Address (Hidden) */
 .full-address.hidden {
-    display: none !important;
+    visibility: hidden;
+    position: absolute;
+    pointer-events: none;
+    height: 0;
+    width: 0;
+    overflow: hidden;
 }
 
 /* Copy Icon */
