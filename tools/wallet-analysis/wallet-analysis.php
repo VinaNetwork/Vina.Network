@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                     <div class="summary-item">
                         <i class="fas fa-wallet"></i>
                         <p class="wallet-address">
-                            <span class="short-address"><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['wallet_address']), -4); ?></span>
+                            <span><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['wallet_address']), -4); ?></span>
                             <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['wallet_address']); ?>"></i>
                         </p>
                         <h3>SOL Balance</h3>
@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
 
             <?php if (!empty($formatted_data['tokens'])): ?>
             <h2>Tokens details</h2>
-            <div class="token-details">
+            <div class="t-8-2 token-details">
                 <div class="token-table">
                     <table>
                         <tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Value (USD)</th></tr>
@@ -187,10 +187,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                         <tr>
                             <td><?php echo htmlspecialchars($token['name']); ?></td>
                             <td class="address-cell">
-                                <span class="short-address"><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
+                                <span><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
                             </td>
-                            <td><?php echo number_format($token['balance'], 6); ?></td>
+                            <td><?php echo number_format($token['balance'], 2); ?></td>
                             <td><?php echo number_format($token['price_usd'], 2); ?></td>
                         </tr>
                         <?php endforeach; ?>
@@ -201,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
 
             <?php if (!empty($formatted_data['nfts'])): ?>
             <h2>NFTs details</h2>
-            <div class="nft-details">
+            <div class="t-8-2 nft-details">
                 <div class="nft-table">
                     <table>
                         <tr><th>Name</th><th>Mint Address</th><th>Collection</th></tr>
@@ -209,10 +209,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                         <tr>
                             <td><?php echo htmlspecialchars($nft['name']); ?></td>
                             <td class="address-cell">
-                                <span class="short-address"><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
+                                <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                             </td>
-                            <td style="word-break: break-all;">"><?php echo htmlspecialchars($nft['collection']); ?></td>
+                            <td><?php echo htmlspecialchars($nft['collection']); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
@@ -221,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
             <?php endif; ?>
 
             <?php if ($cache_valid): ?>
-                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?></p>
+                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
             <?php endif; ?>
         </div>
         <?php
