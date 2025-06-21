@@ -247,7 +247,7 @@ h1, h2 {text-align: center;}
     background: #f0f4f8; /* Light gray-blue */
     color: #333;
     font-weight: 600;
-    padding: 12px 16px;
+    padding: 6px 10px;
     text-align: left;
     border-bottom: 2px solid #e0e0e0;
 }
@@ -311,14 +311,13 @@ h1, h2 {text-align: center;}
 
 /* Copy Icon */
 .copy-icon {
-    cursor: pointer !important;
+    cursor: pointer;
     font-size: 20px;
     color: #007bff;
     transition: color 0.3s ease;
-    pointer-events: auto !important;
-    z-index: 1000 !important;
-    user-select: none !important;
-    display: inline-block !important;
+    pointer-events: auto;
+    user-select: none;
+    display: inline-block;
 }
 
 /* Copy Icon Hover and Copied States */
