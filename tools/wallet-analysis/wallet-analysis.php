@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                         <i class="fas fa-wallet"></i>
                         <p class="wallet-address">
                             <span class="short-address"><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['wallet_address']), -4); ?></span>
-                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></i>
+                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['wallet_address']); ?>"></i>
                         </p>
                         <h3>SOL Balance</h3>
                         <h4><?php echo number_format($formatted_data['sol_balance'], 9) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></h4>
@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                             <td><?php echo htmlspecialchars($token['name']); ?></td>
                             <td class="address-cell">
                                 <span class="short-address"><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
-                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></i>
+                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
                             </td>
                             <td><?php echo number_format($token['balance'], 6); ?></td>
                             <td><?php echo number_format($token['price_usd'], 2); ?></td>
@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                             <td><?php echo htmlspecialchars($nft['name']); ?></td>
                             <td class="address-cell">
                                 <span class="short-address"><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
-                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></i>
+                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                             </td>
                             <td style="word-break: break-all;">"><?php echo htmlspecialchars($nft['collection']); ?></td>
                         </tr>
