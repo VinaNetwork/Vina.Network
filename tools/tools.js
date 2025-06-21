@@ -293,8 +293,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+});
 
-    // ========================================================================
+// ========================================================================
     // Copy functionality for wallet and table addresses (Updated version)
     // ========================================================================
     document.addEventListener('click', function(e) {
@@ -326,5 +327,4 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Clipboard API unavailable, using fallback');
         fallbackCopy(fullAddress, icon);
     }
-});
 });
