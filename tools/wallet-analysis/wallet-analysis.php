@@ -7,7 +7,7 @@
 
 // Disable error display
 ini_set('display_errors', 0);
-ini_set('display_startup_errors', false);
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
 // Define constants
@@ -28,23 +28,6 @@ session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 log_message("wallet_analysis: Session started, session_id=" . session_id(), 'wallet_analysis_log.txt', 'INFO');
-
-// Rate limiting: 5 requests per minute per IP
-$ip = $_SERVER['REMOTE_ADDR'];
-$rate_limit_key = "rate_limit:$ip";
-$rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
-$rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
-if (time() - $rate_limit_time > 60) {
-    $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-    log_message("wallet_analysis: Reset rate limit for IP=$ip, count=1", 'wallet_analysis_log.txt', 'INFO');
-} elseif ($rate_limit_count >= 5) {
-    log_message("wallet_analysis: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_analysis_log.txt', 'ERROR');
-    echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
-    exit;
-} else {
-    $_SESSION[$rate_limit_key]['count']++;
-    log_message("wallet_analysis: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_analysis_log.txt', 'INFO');
-}
 
 // Cache directory and file
 $cache_dir = __DIR__ . '/cache/';
@@ -112,6 +95,23 @@ log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO'
 	
 	<?php
 	if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
+		// Rate limiting: 5 requests per minute per IP for form submission
+		$ip = $_SERVER['REMOTE_ADDR'];
+		$rate_limit_key = "rate_limit_wallet_analysis:$ip";
+		$rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
+		$rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
+		if (time() - $rate_limit_time > 60) {
+			$_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
+			log_message("wallet_analysis: Reset rate limit for IP=$ip, count=1", 'wallet_analysis_log.txt', 'INFO');
+		} elseif ($rate_limit_count >= 5) {
+			log_message("wallet_analysis: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_analysis_log.txt', 'ERROR');
+			echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+			exit;
+		} else {
+			$_SESSION[$rate_limit_key]['count']++;
+			log_message("wallet_analysis: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_analysis_log.txt', 'INFO');
+		}
+
 		try {
 			if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
 				throw new Exception('Invalid CSRF token');
