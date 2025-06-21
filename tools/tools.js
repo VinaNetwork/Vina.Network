@@ -294,65 +294,79 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    /* Copy functionality for wallet and table addresses */
-function setupCopyFunctionality() {
-    console.log('Setting up copy functionality');
-    document.querySelectorAll('.copy-icon').forEach(icon => {
-        if (!icon.isConnected) return; // Skip disconnected nodes
-        icon.removeEventListener('click', handleCopy);
-        icon.addEventListener('click', handleCopy);
-        console.log('Bound click event to copy-icon:', icon);
-    });
-}
+    // ============================================================================
+// Copy functionality for wallet and table addresses
+// ============================================================================
+console.log('Initializing copy functionality');
 
-function handleCopy(e) {
-    e.preventDefault();
-    console.log('Copy icon clicked:', e.target);
+document.addEventListener('click', function(e) {
+    const icon = e.target.closest('.copy-icon');
+    if (!icon) return;
 
-    const container = e.target.closest('.wallet-address, .address-cell');
+    console.log('Copy icon clicked:', icon);
+
+    const container = icon.closest('.wallet-address, .address-cell');
     if (!container) {
         console.error('Copy failed: No container (.wallet-address or .address-cell) found');
-        alert('Không thể sao chép địa chỉ');
+        alert('Không thể sao chép địa chỉ: Không tìm thấy container');
         return;
     }
+    console.log('Found container:', container);
 
-    const fullAddress = container.querySelector('.full-address')?.textContent.trim();
+    const fullAddressElement = container.querySelector('.full-address');
+    if (!fullAddressElement) {
+        console.error('Copy failed: No .full-address element found');
+        alert('Không thể sao chép địa chỉ: Không tìm thấy địa chỉ đầy đủ');
+        return;
+    }
+    console.log('Found full-address element:', fullAddressElement);
+
+    const fullAddress = fullAddressElement.textContent.trim();
     if (!fullAddress) {
-        console.error('Copy failed: No full address found');
-        alert('Không thể sao chép địa chỉ');
+        console.error('Copy failed: Full address is empty');
+        alert('Không thể sao chép địa chỉ: Địa chỉ trống');
         return;
     }
-
     console.log('Attempting to copy address:', fullAddress);
 
     // Try Clipboard API
     if (navigator.clipboard && window.isSecureContext) {
+        console.log('Using Clipboard API');
         navigator.clipboard.writeText(fullAddress).then(() => {
-            showCopyFeedback(e.target);
+            showCopyFeedback(icon);
         }).catch(err => {
             console.error('Clipboard API failed:', err);
-            fallbackCopy(fullAddress, e.target);
+            fallbackCopy(fullAddress, icon);
         });
     } else {
-        console.warn('Clipboard API not available, using fallback');
-        fallbackCopy(fullAddress, e.target);
+        console.warn('Clipboard API unavailable, using fallback');
+        fallbackCopy(fullAddress, icon);
     }
-}
+});
 
 function fallbackCopy(text, icon) {
     console.log('Using fallback copy for:', text);
     const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
     try {
-        document.execCommand('copy');
-        showCopyFeedback(icon);
+        const success = document.execCommand('copy');
+        console.log('Fallback copy result:', success);
+        if (success) {
+            showCopyFeedback(icon);
+        } else {
+            console.error('Fallback copy failed: document.execCommand returned false');
+            alert('Không thể sao chép địa chỉ: Lỗi sao chép');
+        }
     } catch (err) {
-        console.error('Fallback copy failed:', err);
-        alert('Không thể sao chép địa chỉ: ' + err);
+        console.error('Fallback copy error:', err);
+        alert('Không thể sao chép địa chỉ: ' + err.message);
     } finally {
         document.body.removeChild(textarea);
     }
@@ -364,8 +378,9 @@ function showCopyFeedback(icon) {
     const tooltip = document.createElement('span');
     tooltip.className = 'copy-tooltip';
     tooltip.textContent = 'Copied!';
-    icon.parentNode.style.position = 'relative';
-    icon.parentNode.appendChild(tooltip);
+    const parent = icon.parentNode;
+    parent.style.position = 'relative';
+    parent.appendChild(tooltip);
     setTimeout(() => {
         icon.classList.remove('copied');
         tooltip.remove();
@@ -373,21 +388,14 @@ function showCopyFeedback(icon) {
     console.log('Copy successful');
 }
 
-// Initial setup
-setupCopyFunctionality();
-
-// Watch for DOM changes (AJAX loads)
-const observer = new MutationObserver((mutations) => {
-    console.log('DOM changed, mutations:', mutations.length);
-    mutations.forEach(mutation => {
-        if (mutation.addedNodes.length) {
-            console.log('New nodes added, re-binding copy icons');
-            setupCopyFunctionality();
-        }
-    });
-});
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
+// Ensure copy works after AJAX
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing copy');
+    setTimeout(() => {
+        console.log('Re-checking copy icons after AJAX');
+        document.querySelectorAll('.copy-icon').forEach(icon => {
+            console.log('Found copy-icon after AJAX:', icon);
+        });
+    }, 1000);
 });
 });
