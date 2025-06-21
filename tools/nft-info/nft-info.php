@@ -196,14 +196,55 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                         </div>
                         <div class="nft-info-table">
                             <table>
-                                <tr><th>Mint Address</th><td><?php echo htmlspecialchars($formatted_data['mint_address']); ?></td></tr>
-                                <tr><th>Name</th><td><?php echo htmlspecialchars($formatted_data['name']); ?></td></tr>
-                                <tr><th>Attributes</th><td><pre><?php echo htmlspecialchars($formatted_data['attributes']); ?></pre></td></tr>
-                                <tr><th>Owner</th><td><?php echo htmlspecialchars($formatted_data['owner']); ?></td></tr>
-                                <tr><th>Collection</th><td><?php echo htmlspecialchars($formatted_data['collection']); ?></td></tr>
-                                <tr><th>Compressed</th><td><?php echo $formatted_data['is_compressed'] ? 'Yes' : 'No'; ?></td></tr>
-                                <tr><th>Burned</th><td><?php echo $formatted_data['is_burned'] ? 'Yes' : 'No'; ?></td></tr>
-                                <tr><th>Listed</th><td><?php echo $formatted_data['is_listed'] ? 'Yes' : 'No'; ?></td></tr>
+                                <tr>
+                                    <th>Mint Address</th>
+                                    <td>
+                                        <span><?php echo substr(htmlspecialchars($formatted_data['mint_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['mint_address']), -4); ?></span>
+                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['mint_address']); ?>"></i>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Name</th>
+                                    <td><?php echo htmlspecialchars($formatted_data['name']); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Attributes</th>
+                                    <td><pre><?php echo htmlspecialchars($formatted_data['attributes']); ?></pre></td>
+                                </tr>
+                                <tr>
+                                    <th>Owner</th>
+                                    <td>
+                                        <?php if ($formatted_data['owner'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $formatted_data['owner'])): ?>
+                                            <span><?php echo substr(htmlspecialchars($formatted_data['owner']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['owner']), -4); ?></span>
+                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['owner']); ?>"></i>
+                                        <?php else: ?>
+                                            <span>N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Collection</th>
+                                    <td>
+                                        <?php if ($formatted_data['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $formatted_data['collection'])): ?>
+                                            <span><?php echo substr(htmlspecialchars($formatted_data['collection']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['collection']), -4); ?></span>
+                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['collection']); ?>"></i>
+                                        <?php else: ?>
+                                            <span>N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Compressed</th>
+                                    <td><?php echo $formatted_data['is_compressed'] ? 'Yes' : 'No'; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Burned</th>
+                                    <td><?php echo $formatted_data['is_burned'] ? 'Yes' : 'No'; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Listed</th>
+                                    <td><?php echo $formatted_data['is_listed'] ? 'Yes' : 'No'; ?></td>
+                                </tr>
                             </table>
                         </div>
                     </div>
