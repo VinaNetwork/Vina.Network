@@ -29,23 +29,6 @@ ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 log_message("nft_info: Session started, session_id=" . session_id(), 'nft_info_log.txt', 'INFO');
 
-// Rate limiting: 5 requests per minute per IP
-$ip = $_SERVER['REMOTE_ADDR'];
-$rate_limit_key = "rate_limit:$ip";
-$rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
-$rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
-if (time() - $rate_limit_time > 60) {
-    $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-    log_message("nft_info: Reset rate limit for IP=$ip, count=1", 'nft_info_log.txt', 'INFO');
-} elseif ($rate_limit_count >= 5) {
-    log_message("nft_info: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_info_log.txt', 'ERROR');
-    echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
-    exit;
-} else {
-    $_SESSION[$rate_limit_key]['count']++;
-    log_message("nft_info: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_info_log.txt', 'INFO');
-}
-
 // Cache directory and file
 $cache_dir = __DIR__ . '/cache/';
 $cache_file = $cache_dir . 'nft_info_cache.json';
@@ -112,6 +95,23 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
 
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
+        // Rate limiting: 5 requests per minute per IP for form submission
+        $ip = $_SERVER['REMOTE_ADDR'];
+        $rate_limit_key = "rate_limit_nft_info:$ip";
+        $rate_limit_count = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['count'] : 0;
+        $rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
+        if (time() - $rate_limit_time > 60) {
+            $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
+            log_message("nft_info: Reset rate limit for IP=$ip, count=1", 'nft_info_log.txt', 'INFO');
+        } elseif ($rate_limit_count >= 5) {
+            log_message("nft_info: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_info_log.txt', 'ERROR');
+            echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+            exit;
+        } else {
+            $_SESSION[$rate_limit_key]['count']++;
+            log_message("nft_info: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_info_log.txt', 'INFO');
+        }
+
         log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'INFO');
         try {
             // Validate CSRF token
