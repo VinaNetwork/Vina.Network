@@ -295,9 +295,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* Copy functionality for wallet and table addresses */
-document.addEventListener('click', function(e) {
-    if (!e.target.classList.contains('copy-icon')) return;
+function setupCopyFunctionality() {
+    document.querySelectorAll('.copy-icon').forEach(icon => {
+        icon.removeEventListener('click', handleCopy); // Avoid duplicate listeners
+        icon.addEventListener('click', handleCopy);
+    });
+}
 
+function handleCopy(e) {
     e.preventDefault();
     console.log('Copy icon clicked:', e.target);
 
@@ -329,7 +334,7 @@ document.addEventListener('click', function(e) {
         console.warn('Clipboard API not available, using fallback');
         fallbackCopy(fullAddress, e.target);
     }
-});
+}
 
 function fallbackCopy(text, icon) {
     const textarea = document.createElement('textarea');
@@ -362,4 +367,21 @@ function showCopyFeedback(icon) {
     }, 1000);
     console.log('Copy successful');
 }
+
+// Initial setup
+setupCopyFunctionality();
+
+// Watch for DOM changes (AJAX loads)
+const observer = new MutationObserver((mutations) => {
+    mutations.forEach(mutation => {
+        if (mutation.addedNodes.length) {
+            console.log('DOM changed, re-binding copy icons');
+            setupCopyFunctionality();
+        }
+    });
+});
+observer.observe(document.querySelector('.t-4') || document.body, {
+    childList: true,
+    subtree: true
+});
 });
