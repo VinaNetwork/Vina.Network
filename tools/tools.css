@@ -254,7 +254,7 @@ h1, h2 {text-align: center;}
 
 /* Table cells */
 .wallet-info-table td, .token-table td, .nft-table td {
-    padding: 12px 16px;
+    padding: 6px 10px;
     border-bottom: 1px solid #eee;
     color: #555;
     font-size: 14px;
@@ -296,17 +296,7 @@ h1, h2 {text-align: center;}
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
-    color: #555;
-    font-weight: 500;
-    max-width: 250px;
-    position: relative !important;
-}
-
-/* Short Address */
-.short-address {
-    font-weight: 500;
-    color: #555;
+    position: relative;
 }
 
 /* Full Address (Hidden) */
@@ -351,12 +341,7 @@ h1, h2 {text-align: center;}
     padding: 4px 8px;
     border-radius: 4px;
     white-space: nowrap;
-    z-index: 1001 !important;
-}
-
-/* Ensure containers are below tooltip */
-.summary-card, .token-table, .nft-table {
-    z-index: 1 !important;
+    z-index: 1001;
 }
 
 /* Responsive adjustments for small screens */
