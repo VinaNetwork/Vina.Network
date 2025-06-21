@@ -1,4 +1,3 @@
-```php
 <?php
 // ============================================================================
 // File: tools/wallet-analysis/wallet-analysis.php
