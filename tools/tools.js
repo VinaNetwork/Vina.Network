@@ -296,36 +296,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* Copy functionality for wallet and table addresses */
 document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('copy-icon')) {
-        e.preventDefault();
-        const container = e.target.closest('.wallet-address, .address-cell');
-        if (!container) {
-            console.error('Copy failed: No container (.wallet-address or .address-cell) found');
-            alert('Không thể sao chép địa chỉ');
-            return;
-        }
+    if (!e.target.classList.contains('copy-icon')) return;
 
-        const fullAddress = container.querySelector('.full-address')?.textContent.trim();
-        if (!fullAddress) {
-            console.error('Copy failed: No full address found');
-            alert('Không thể sao chép địa chỉ');
-            return;
-        }
+    e.preventDefault();
+    console.log('Copy icon clicked:', e.target);
 
-        console.log('Attempting to copy address:', fullAddress);
+    const container = e.target.closest('.wallet-address, .address-cell');
+    if (!container) {
+        console.error('Copy failed: No container (.wallet-address or .address-cell) found');
+        alert('Không thể sao chép địa chỉ');
+        return;
+    }
 
-        // Try Clipboard API
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(fullAddress).then(function() {
-                showCopyFeedback(e.target);
-            }).catch(function(err) {
-                console.error('Clipboard API failed:', err);
-                fallbackCopy(fullAddress, e.target);
-            });
-        } else {
-            console.warn('Clipboard API not available, using fallback');
+    const fullAddress = container.querySelector('.full-address')?.textContent.trim();
+    if (!fullAddress) {
+        console.error('Copy failed: No full address found');
+        alert('Không thể sao chép địa chỉ');
+        return;
+    }
+
+    console.log('Attempting to copy address:', fullAddress);
+
+    // Try Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(fullAddress).then(() => {
+            showCopyFeedback(e.target);
+        }).catch(err => {
+            console.error('Clipboard API failed:', err);
             fallbackCopy(fullAddress, e.target);
-        }
+        });
+    } else {
+        console.warn('Clipboard API not available, using fallback');
+        fallbackCopy(fullAddress, e.target);
     }
 });
 
@@ -354,7 +356,7 @@ function showCopyFeedback(icon) {
     tooltip.textContent = 'Copied!';
     icon.parentNode.style.position = 'relative';
     icon.parentNode.appendChild(tooltip);
-    setTimeout(function() {
+    setTimeout(() => {
         icon.classList.remove('copied');
         tooltip.remove();
     }, 1000);
