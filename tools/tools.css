@@ -288,6 +288,7 @@ h1, h2 {text-align: center;}
     font-weight: 500;
     margin: 0 auto; /* Center block element */
     max-width: 100%;
+    position: relative;
 }
 
 /* Address Cell (Table Columns) */
@@ -298,12 +299,13 @@ h1, h2 {text-align: center;}
     font-size: 14px;
     color: #555;
     font-weight: 500;
+    position: relative;
 }
 
 /* Short Address */
-.short-address-card {
-    font-weight: bold;
-    color: #333;
+.short-address { /* Thay .short-address-card */
+    font-weight: 500;
+    color: #555;
 }
 
 /* Full Address (Hidden) */
