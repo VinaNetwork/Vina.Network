@@ -72,7 +72,7 @@ include_once $root_path . 'include/navbar.php';
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft_info_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
+    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
@@ -80,7 +80,9 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 ?>
 
 <div class="t-6 nft-info-content">
+    <!-- Render form unless rate limit exceeded -->
     <?php
+    $rate_limit_exceeded = false;
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         // Rate limiting: 5 requests per minute per IP for form submission
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -92,13 +94,31 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
             log_message("nft_info: Reset rate limit for IP=$ip, count=1", 'nft_info_log.txt', 'INFO');
         } elseif ($rate_limit_count >= 5) {
             log_message("nft_info: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_info_log.txt', 'ERROR');
+            $rate_limit_exceeded = true;
             echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
-            exit;
         } else {
             $_SESSION[$rate_limit_key]['count']++;
             log_message("nft_info: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_info_log.txt', 'INFO');
         }
+    }
 
+    if (!$rate_limit_exceeded) {
+        log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
+        ?>
+        <div class="t-7">
+            <h2>Check NFT Info</h2>
+            <p>Enter the <strong>NFT Mint Address</strong> to view detailed information. For example, find this address on MagicEden under "Details" > "Mint Address".</p>
+            <form id="nftInfoForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <button type="submit" class="cta-button">Check Info</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$rate_limit_exceeded) {
         log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'INFO');
         try {
             log_message("nft_info: Validating CSRF token", 'nft_info_log.txt', 'INFO');
@@ -257,20 +277,6 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
             log_message("nft_info: Exception - Message: $error_msg, File: " . $e->getFile() . ", Line: " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
             echo "<div class='result-error'><p>$error_msg</p></div>";
         }
-    } else {
-        log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
-        ?>
-        <div class="t-7">
-            <h2>Check NFT Info</h2>
-            <p>Enter the <strong>NFT Mint Address</strong> to view detailed information. For example, find this address on MagicEden under "Details" > "Mint Address".</p>
-            <form id="nftInfoForm" method="POST" action="">
-                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-                <button type="submit" class="cta-button">Check Info</button>
-            </form>
-            <div class="loader"></div>
-        </div>
-        <?php
     }
     log_message("nft_info: Script ended", 'nft_info_log.txt', 'INFO');
     ?>
