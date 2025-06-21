@@ -297,92 +297,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================================================================
     // Copy functionality for wallet and table addresses (Updated version)
     // ========================================================================
-    console.log('Initializing copy functionality');
-
     document.addEventListener('click', function(e) {
-        const icon = e.target.closest('.copy-icon');
-        if (!icon) return;
+    const icon = e.target.closest('.copy-icon');
+    if (!icon) return;
 
-        console.log('Copy icon clicked:', icon);
+    console.log('Copy icon clicked:', icon);
 
-        // ✅ Updated: Get full address from data-full attribute
-        const fullAddress = icon.getAttribute('data-full');
-        if (!fullAddress) {
-            console.error('Copy failed: data-full attribute not found or empty');
-            alert('Không thể sao chép địa chỉ: Địa chỉ không hợp lệ');
-            return;
-        }
+    // Updated: Get full address from data attribute
+    const fullAddress = icon.getAttribute('data-full');
+    if (!fullAddress) {
+        console.error('Copy failed: data-full attribute not found or empty');
+        alert('Không thể sao chép địa chỉ: Địa chỉ không hợp lệ');
+        return;
+    }
 
-        console.log('Attempting to copy address from data-full:', fullAddress);
+    console.log('Attempting to copy address from data-full:', fullAddress);
 
-        // Try Clipboard API
-        if (navigator.clipboard && window.isSecureContext) {
-            console.log('Using Clipboard API');
-            navigator.clipboard.writeText(fullAddress).then(() => {
-                showCopyFeedback(icon);
-            }).catch(err => {
-                console.error('Clipboard API failed:', err);
-                fallbackCopy(fullAddress, icon);
-            });
-        } else {
-            console.warn('Clipboard API unavailable, using fallback');
+    // Try Clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+        console.log('Using Clipboard API');
+        navigator.clipboard.writeText(fullAddress).then(() => {
+            showCopyFeedback(icon);
+        }).catch(err => {
+            console.error('Clipboard API failed:', err);
             fallbackCopy(fullAddress, icon);
-        }
-    });
-
-    function fallbackCopy(text, icon) {
-        console.log('Using fallback copy for:', text);
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.top = '0';
-        textarea.style.left = '0';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        try {
-            const success = document.execCommand('copy');
-            console.log('Fallback copy result:', success);
-            if (success) {
-                showCopyFeedback(icon);
-            } else {
-                console.error('Fallback copy failed: document.execCommand returned false');
-                alert('Không thể sao chép địa chỉ: Lỗi sao chép');
-            }
-        } catch (err) {
-            console.error('Fallback copy error:', err);
-            alert('Không thể sao chép địa chỉ: ' + err.message);
-        } finally {
-            document.body.removeChild(textarea);
-        }
+        });
+    } else {
+        console.warn('Clipboard API unavailable, using fallback');
+        fallbackCopy(fullAddress, icon);
     }
-
-    function showCopyFeedback(icon) {
-        console.log('Showing copy feedback');
-        icon.classList.add('copied');
-        const tooltip = document.createElement('span');
-        tooltip.className = 'copy-tooltip';
-        tooltip.textContent = 'Copied!';
-        const parent = icon.parentNode;
-        parent.style.position = 'relative';
-        parent.appendChild(tooltip);
-        setTimeout(() => {
-            icon.classList.remove('copied');
-            tooltip.remove();
-        }, 1000);
-        console.log('Copy successful');
-    }
-
-    // Ensure copy works after AJAX
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded, initializing copy');
-        setTimeout(() => {
-            console.log('Re-checking copy icons after AJAX');
-            document.querySelectorAll('.copy-icon').forEach(icon => {
-                console.log('Found copy-icon after AJAX:', icon);
-            });
-        }, 1000);
-    });
 });
 });
