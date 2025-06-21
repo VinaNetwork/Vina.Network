@@ -80,7 +80,9 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 ?>
 
 <div class="t-6 wallet-analysis-content">
+    <!-- Render form unless rate limit exceeded -->
     <?php
+    $rate_limit_exceeded = false;
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
         // Rate limiting: 5 requests per minute per IP for form submission
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -92,13 +94,31 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
             log_message("wallet_analysis: Reset rate limit for IP=$ip, count=1", 'wallet_analysis_log.txt', 'INFO');
         } elseif ($rate_limit_count >= 5) {
             log_message("wallet_analysis: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_analysis_log.txt', 'ERROR');
+            $rate_limit_exceeded = true;
             echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
-            exit;
         } else {
             $_SESSION[$rate_limit_key]['count']++;
             log_message("wallet_analysis: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_analysis_log.txt', 'INFO');
         }
+    }
 
+    if (!$rate_limit_exceeded) {
+        log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO');
+        ?>
+        <div class="t-7">
+            <h2>Check Wallet Analysis</h2>
+            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
+            <form id="walletAnalysisForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
+                <button type="submit" class="cta-button">Check Wallet</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !$rate_limit_exceeded) {
         try {
             if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
                 throw new Exception('Invalid CSRF token');
@@ -243,23 +263,6 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
         } catch (Exception $e) {
             echo "<div class='result-error'><p>Error processing request: " . $e->getMessage() . "</p></div>";
         }
-    }
-
-    // Render form unless rate limit exceeded
-    if (!isset($rate_limit_count) || $rate_limit_count < 5) {
-        log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO');
-        ?>
-        <div class="t-7">
-            <h2>Check Wallet Analysis</h2>
-            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
-            <form id="walletAnalysisForm" method="POST" action="">
-                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
-                <button type="submit" class="cta-button">Check Wallet</button>
-            </form>
-            <div class="loader"></div>
-        </div>
-        <?php
     }
     ?>
 
