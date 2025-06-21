@@ -57,7 +57,7 @@
                 <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="https://www.vina.network/notification/" class="dropdown-link"><i class="fas fa-paw"></i> Kimo</a></li>
+                <li><a href="https://www.vina.network/notification/" class="dropdown-link"><i class="fa-solid fa-crown"></i> Kimo</a></li>
             </ul>
         </li>
 
