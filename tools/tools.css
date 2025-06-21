@@ -292,24 +292,6 @@ h1, h2 {text-align: center;}
     position: relative;
 }
 
-/* Address Cell (Table Columns) */
-.address-cell {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: relative;
-}
-
-/* Full Address (Hidden) */
-.full-address.hidden {
-    visibility: hidden;
-    position: absolute;
-    pointer-events: none;
-    height: 0;
-    width: 0;
-    overflow: hidden;
-}
-
 /* Copy Icon */
 .copy-icon {
     cursor: pointer;
@@ -322,12 +304,8 @@ h1, h2 {text-align: center;}
 }
 
 /* Copy Icon Hover and Copied States */
-.copy-icon:hover {
-    color: #0056b3;
-}
-.copy-icon.copied {
-    color: #28a745;
-}
+.copy-icon:hover {color: #0056b3;}
+.copy-icon.copied {color: #28a745;}
 
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
@@ -353,12 +331,6 @@ h1, h2 {text-align: center;}
     .wallet-address {
         font-size: 16px;
         gap: 6px;
-    }
-    .address-cell {
-        font-size: 12px;
-        gap: 6px;
-    }
-    .copy-icon {
-        font-size: 16px;
-    }
+    } 
+    .copy-icon {font-size: 16px;}
 }
