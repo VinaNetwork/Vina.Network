@@ -212,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                                 <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                             </td>
-                            <td class="address-cell"><?php echo htmlspecialchars($nft['collection']); ?></td>
+                            <td><?php echo htmlspecialchars($nft['collection']); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
