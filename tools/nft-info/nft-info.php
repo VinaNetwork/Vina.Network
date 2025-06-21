@@ -77,22 +77,9 @@ if (!file_exists($api_helper_path)) {
 }
 require_once $api_helper_path;
 log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
-
-log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
 ?>
-<!-- Render input form for NFT Mint address -->
-<div class="t-6 nft-info-content">
-    <div class="t-7">
-        <h2>Check NFT Info</h2>
-        <p>Enter the <strong>NFT Mint Address</strong> to view detailed information. For example, find this address on MagicEden under "Details" > "Mint Address".</p>
-        <form id="nftInfoForm" method="POST" action="">
-            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-            <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-            <button type="submit" class="cta-button">Check Info</button>
-        </form>
-        <div class="loader"></div>
-    </div>
 
+<div class="t-6 nft-info-content">
     <?php
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         // Rate limiting: 5 requests per minute per IP for form submission
@@ -114,14 +101,12 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
 
         log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'INFO');
         try {
-            // Validate CSRF token
             log_message("nft_info: Validating CSRF token", 'nft_info_log.txt', 'INFO');
             if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
                 log_message("nft_info: Invalid CSRF token", 'nft_info_log.txt', 'ERROR');
                 throw new Exception('Invalid CSRF token');
             }
 
-            // Validate Mint Address
             $mintAddress = trim($_POST['mintAddress']);
             $mintAddress = preg_replace('/\s+/', '', $mintAddress);
             log_message("nft_info: Validating mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
@@ -130,14 +115,12 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                 throw new Exception('Invalid Mint Address format');
             }
 
-            // Check cache
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
-            $cache_expiration = 3 * 3600; // Cache for 3 hours
+            $cache_expiration = 3 * 3600;
             $cache_valid = isset($cache_data[$mintAddress]) && (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
             log_message("nft_info: Cache valid=$cache_valid for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
 
             if (!$cache_valid) {
-                // Call getAsset API
                 log_message("nft_info: Calling getAsset API for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
                 $params = ['id' => $mintAddress];
                 $asset = callAPI('getAsset', $params, 'POST');
@@ -152,10 +135,8 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                     throw new Exception('NFT not found for Mint Address');
                 }
 
-                // Extract result from API response
                 $asset = $asset['result'];
 
-                // Format data
                 $formatted_data = [
                     'mint_address' => $asset['id'] ?? $mintAddress,
                     'name' => $asset['content']['metadata']['name'] ?? 'N/A',
@@ -170,7 +151,6 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                 ];
                 log_message("nft_info: Formatted data=" . json_encode($formatted_data, JSON_PRETTY_PRINT), 'nft_info_log.txt', 'DEBUG');
 
-                // Save to cache
                 $cache_data[$mintAddress] = [
                     'data' => $formatted_data,
                     'timestamp' => time()
@@ -196,10 +176,8 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
                 log_message("nft_info: Retrieved from cache for mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
             }
 
-            // Output results as HTML
             ob_start();
             ?>
-            <!-- Display info card -->
             <div class="t-8 result-section">
                 <h2>NFT Details</h2>
                 <div class="t-8-1 nft-summary">
@@ -279,6 +257,20 @@ log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
             log_message("nft_info: Exception - Message: $error_msg, File: " . $e->getFile() . ", Line: " . $e->getLine(), 'nft_info_log.txt', 'ERROR');
             echo "<div class='result-error'><p>$error_msg</p></div>";
         }
+    } else {
+        log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
+        ?>
+        <div class="t-7">
+            <h2>Check NFT Info</h2>
+            <p>Enter the <strong>NFT Mint Address</strong> to view detailed information. For example, find this address on MagicEden under "Details" > "Mint Address".</p>
+            <form id="nftInfoForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <button type="submit" class="cta-button">Check Info</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
     }
     log_message("nft_info: Script ended", 'nft_info_log.txt', 'INFO');
     ?>
