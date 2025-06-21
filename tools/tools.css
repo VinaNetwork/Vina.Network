@@ -232,6 +232,7 @@ h1, h2 {text-align: center;}
 }
 
 /* Wallet Analysis Styles */
+.t-8-2 table {width: 100%;}
 .token-table, .nft-table {
     width: 100%;
     border-collapse: collapse;
@@ -244,7 +245,7 @@ h1, h2 {text-align: center;}
 
 /* Table headers */
 .token-table th, .nft-table th {
-    background: #f0f4f8; /* Light gray-blue */
+    background: #f0f4f8;
     color: #333;
     font-weight: 600;
     padding: 6px 10px;
@@ -268,7 +269,7 @@ h1, h2 {text-align: center;}
 
 /* Hover effect */
 .token-table tr:hover, .nft-table tr:hover {
-    background: #f9fbfd; /* Very light blue */
+    background: #f9fbfd;
 }
 
 /* Ensure tables are contained */
@@ -288,7 +289,7 @@ h1, h2 {text-align: center;}
     font-weight: 500;
     margin: 0 auto;
     max-width: 100%;
-    position: relative !important;
+    position: relative;
 }
 
 /* Address Cell (Table Columns) */
