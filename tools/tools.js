@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('submit', (e) => {
         console.log('Form submitted:', e.target.id, 'Action:', e.target.action);
 
-        // Export form submission
+        // Export form submission (only for nft-holders)
         if (e.target.matches('.export-form')) {
             e.preventDefault();
 
@@ -128,12 +128,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let exportPath;
-            if (form.action.includes('nft-info')) {
-                exportPath = '/tools/nft-info/nft-info-export.php';
-            } else if (form.action.includes('nft-holders')) {
+            if (form.action.includes('nft-holders')) {
                 exportPath = '/tools/nft-holders/nft-holders-export.php';
             } else {
-                exportPath = '/tools/nft-transactions/nft-transactions-export.php';
+                console.error('Invalid export form action:', form.action);
+                alert('Invalid export form action');
+                if (loader) loader.style.display = 'none';
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                    progressBarFill.style.width = '0%';
+                }
+                return;
             }
             console.log('Export path:', exportPath);
 
@@ -174,8 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                const toolName = exportPath.includes('nft-info') ? 'nft_info' : exportPath.includes('nft-holders') ? 'holders' : 'transactions';
-                a.download = `${toolName}_all_${mintAddress.substring(0, 8)}.${exportFormat}`;
+                const toolName = 'holders';
+                a.download = `holders_all_${mintAddress.substring(0, 8)}.${exportFormat}`;
                 console.log('Export file:', a.download);
                 document.body.appendChild(a);
                 a.click();
@@ -271,9 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ============================================================================
 // Copy functionality for wallet and table addresses
-// ============================================================================
 console.log('Initializing copy functionality');
 
 document.addEventListener('click', function(e) {
