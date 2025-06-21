@@ -190,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                                 <span class="short-address"><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
                             </td>
-                            <td><?php echo number_format($token['balance'], 6); ?></td>
+                            <td><?php echo number_format($token['balance'], 2); ?></td>
                             <td><?php echo number_format($token['price_usd'], 2); ?></td>
                         </tr>
                         <?php endforeach; ?>
@@ -212,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
                                 <span class="short-address"><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                             </td>
-                            <td style="word-break: break-all;">"><?php echo htmlspecialchars($nft['collection']); ?></td>
+                            <td><?php echo htmlspecialchars($nft['collection']); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </table>
@@ -221,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
             <?php endif; ?>
 
             <?php if ($cache_valid): ?>
-                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?></p>
+                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
             <?php endif; ?>
         </div>
         <?php
