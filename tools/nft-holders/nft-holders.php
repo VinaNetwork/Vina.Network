@@ -127,7 +127,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             $mintAddress = preg_replace('/\s+/', '', $mintAddress); // Remove all whitespace
             log_message("nft-holders: Raw mintAddress=" . ($_POST['mintAddress'] ?? 'null') . ", Processed mintAddress=$mintAddress", 'nft_holders_log.txt', 'DEBUG');
             $limit = 1000;
-            $max_pages = 100; // Limit max API page iterations
+            $max_pages = 500; // Tăng lên 500
+            $timeout = 60; // Timeout 60 giây
+            $start_time = time();
             $cache_expiration = 3 * 3600; // 3 hours in seconds
 
             // Validate address format (base58, 32–44 characters)
@@ -178,7 +180,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 $api_page = 1;
                 $has_more = true;
                 $items = [];
-                while ($has_more && $api_page <= $max_pages) {
+                while ($has_more && $api_page <= $max_pages && (time() - $start_time < $timeout)) {
                     $total_params = [
                         'groupKey' => 'collection',
                         'groupValue' => $mintAddress,
@@ -221,17 +223,23 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
 
                     $has_more = $item_count >= $limit;
                     $api_page++;
-                    usleep(2000000); // 2-second delay to avoid rate limit
+                    usleep(500000); // 0.5-second delay
                 }
 
                 // Warning when max pages reached
                 if ($api_page > $max_pages && $has_more) {
                     $max_items_possible = $max_pages * $limit;
                     log_message("nft-holders: Reached max pages ($max_pages) for $mintAddress, data may be incomplete. Total items fetched: $total_items", 'nft_holders_log.txt', 'WARNING');
-                    echo "<div class='result-error'>";
-                    echo "<p><strong>Warning:</strong> The collection is too large, and only the first $max_items_possible NFTs were retrieved due to API limitations.</p>";
-                    echo "<p>This data may be incomplete. For full details, consider checking directly on the Solana blockchain or <a href='mailto:support@vina.network'>contact our support team</a>.</p>";
+                    echo "<div class='result-info'>";
+                    echo "<p><strong>Note:</strong> The collection is too large, and only the first $max_items_possible NFTs were retrieved due to API limitations.</p>";
+                    echo "<p>Verify full details on <a href='https://solscan.io/collection/$mintAddress' target='_blank'>Solscan</a> or <a href='mailto:support@vina.network'>contact support</a>.</p>";
                     echo "</div>";
+                }
+
+                // Warning when timed out
+                if (time() - $start_time >= $timeout) {
+                    log_message("nft-holders: API call timed out after $timeout seconds for $mintAddress, total_items=$total_items", 'nft_holders_log.txt', 'WARNING');
+                    echo "<div class='result-info'><p><strong>Note:</strong> Data retrieval timed out after $timeout seconds. Only $total_items NFTs retrieved. Verify full details on <a href='https://solscan.io/collection/$mintAddress' target='_blank'>Solscan</a> or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
                 }
 
                 // Deduplicate wallet holders
@@ -292,12 +300,12 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
 
             log_message("nft-holders: Final total_items=$total_items, total_wallets=$total_wallets for $mintAddress", 'nft_holders_log.txt');
 
-            // Handle edge case: total = 0 or looks incomplete
+            // Handle edge case: total = 0
             if ($total_items === 0) {
                 throw new Exception("No items found or invalid collection address.");
-            } elseif ($limit > 0 && $total_items % $limit === 0 && $total_items >= $limit) {
-                log_message("nft-holders: Suspicious total_items ($total_items) is a multiple of limit for $mintAddress", 'nft_holders_log.txt', 'WARNING');
-                echo "<div class='result-error'><p>Warning: Total items ($total_items) is a multiple of API limit ($limit). Actual number may be higher. For full details, check directly on the Solana blockchain or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
+            } elseif ($limit > 0 && $total_items % $limit === 0 && $total_items >= $limit && $api_page > $max_pages) {
+                log_message("nft-holders: Suspicious total_items ($total_items) is a multiple of limit for $mintAddress, possibly incomplete", 'nft_holders_log.txt', 'WARNING');
+                echo "<div class='result-info'><p><strong>Note:</strong> Total items ($total_items) may be incomplete due to API limit ($limit). Verify full details on <a href='https://solscan.io/collection/$mintAddress' target='_blank'>Solscan</a> or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
             }
             ?>
                 
@@ -353,6 +361,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         }
     }
     ?>
+	
     <!-- Informational block -->
     <div class="t-9">
         <h2>About NFT Holders Checker</h2>
