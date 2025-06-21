@@ -85,20 +85,8 @@ require_once $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
-<!-- Render input form for NFT Collection address -->
 <div class="t-6 nft-holders-content">
-    <div class="t-7">
-        <h2>Check NFT Holders</h2>
-        <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
-        <form id="nftHoldersForm" method="POST" action="">
-            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-            <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-            <button type="submit" class="cta-button">Check Holders</button>
-        </form>
-        <div class="loader"></div>
-    </div>
     <?php
-    // Handle form submission and NFT data fetching
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
         // Rate limiting: 5 requests per minute per IP for form submission
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -110,7 +98,8 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             log_message("nft-holders: Reset rate limit for IP=$ip, count=1", 'nft_holders_log.txt');
         } elseif ($rate_limit_count >= 5) {
             log_message("nft-holders: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_holders_log.txt', 'ERROR');
-            exit("<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>");
+            echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+            exit;
         } else {
             $_SESSION[$rate_limit_key]['count']++;
             log_message("nft-holders: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_holders_log.txt');
@@ -124,21 +113,19 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             }
 
             $mintAddress = trim($_POST['mintAddress']);
-            $mintAddress = preg_replace('/\s+/', '', $mintAddress); // Remove all whitespace
+            $mintAddress = preg_replace('/\s+/', '', $mintAddress);
             log_message("nft-holders: Raw mintAddress=" . ($_POST['mintAddress'] ?? 'null') . ", Processed mintAddress=$mintAddress", 'nft_holders_log.txt', 'DEBUG');
             $limit = 1000;
-            $max_pages = 500; // Tăng lên 500
-            $timeout = 60; // Timeout 60 giây
+            $max_pages = 500;
+            $timeout = 60;
             $start_time = time();
-            $cache_expiration = 3 * 3600; // 3 hours in seconds
+            $cache_expiration = 3 * 3600;
 
-            // Validate address format (base58, 32–44 characters)
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 log_message("nft-holders: Invalid mintAddress format: $mintAddress", 'nft_holders_log.txt', 'ERROR');
                 throw new Exception("Invalid collection address. Please enter a valid Solana collection address (32-44 characters, base58).");
             }
 
-            // Load cache from file
             $cache_data = [];
             if (file_exists($cache_file)) {
                 $cache_content = file_get_contents($cache_file);
@@ -153,20 +140,17 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 }
             }
 
-            // Check if cache exists and is not expired
             $cache_valid = isset($cache_data[$mintAddress]) && 
                            isset($cache_data[$mintAddress]['timestamp']) && 
                            (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
 
             if (!$cache_valid) {
-                // Cache expired or not set, fetch from API
                 if (isset($cache_data[$mintAddress]['timestamp']) && !$cache_valid) {
                     log_message("nft-holders: Cache expired for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
                 } elseif (!isset($cache_data[$mintAddress])) {
                     log_message("nft-holders: No cache found for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
                 }
 
-                // Clean up expired cache entries
                 foreach ($cache_data as $address => $data) {
                     if (!isset($data['timestamp']) || (time() - $data['timestamp'] > $cache_expiration)) {
                         unset($cache_data[$address]);
@@ -174,7 +158,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     }
                 }
 
-                // Increase memory limit for large collections
                 ini_set('memory_limit', '512M');
                 $total_items = 0;
                 $api_page = 1;
@@ -196,13 +179,11 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                         throw new Exception("API error: " . $errorMessage);
                     }
 
-                    // Validate API response
                     if (!isset($total_data['result']['items'])) {
                         log_message("nft-holders: Invalid API response, no items found for page=$api_page, mintAddress=$mintAddress", 'nft_holders_log.txt', 'ERROR');
                         throw new Exception("Invalid API response: No items found.");
                     }
 
-                    // Merge items and count
                     $page_items = $total_data['result']['items'];
                     $item_count = count($page_items);
                     $items = array_merge($items, array_map(function($item) {
@@ -215,7 +196,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                             'amount' => 1
                         ];
                     }, $page_items));
-                    // Filter out null items
                     $items = array_filter($items);
                     $total_items += $item_count;
 
@@ -223,10 +203,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
 
                     $has_more = $item_count >= $limit;
                     $api_page++;
-                    usleep(500000); // 0.5-second delay
+                    usleep(500000);
                 }
 
-                // Warning when max pages reached
                 if ($api_page > $max_pages && $has_more) {
                     $max_items_possible = $max_pages * $limit;
                     log_message("nft-holders: Reached max pages ($max_pages) for $mintAddress, data may be incomplete. Total items fetched: $total_items", 'nft_holders_log.txt', 'WARNING');
@@ -236,13 +215,11 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     echo "</div>";
                 }
 
-                // Warning when timed out
                 if (time() - $start_time >= $timeout) {
                     log_message("nft-holders: API call timed out after $timeout seconds for $mintAddress, total_items=$total_items", 'nft_holders_log.txt', 'WARNING');
                     echo "<div class='result-info'><p><strong>Note:</strong> Data retrieval timed out after $timeout seconds. Only $total_items NFTs retrieved. Verify full details on <a href='https://solscan.io/collection/$mintAddress' target='_blank'>Solscan</a> or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
                 }
 
-                // Deduplicate wallet holders
                 $unique_wallets = [];
                 foreach ($items as $item) {
                     if (!isset($item['owner'])) {
@@ -259,13 +236,11 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 $wallets = array_values($unique_wallets);
                 $total_wallets = count($wallets);
 
-                // Validate data before caching
                 if ($total_items > 0 && $total_wallets === 0) {
                     log_message("nft-holders: Inconsistent data: total_items=$total_items but total_wallets=0 for $mintAddress", 'nft_holders_log.txt', 'ERROR');
                     throw new Exception("Failed to retrieve wallet data. Please try again or contact support.");
                 }
 
-                // Store in file cache with timestamp
                 $cache_data[$mintAddress] = [
                     'total_items' => $total_items,
                     'total_wallets' => $total_wallets,
@@ -300,7 +275,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
 
             log_message("nft-holders: Final total_items=$total_items, total_wallets=$total_wallets for $mintAddress", 'nft_holders_log.txt');
 
-            // Handle edge case: total = 0
             if ($total_items === 0) {
                 throw new Exception("No items found or invalid collection address.");
             } elseif ($limit > 0 && $total_items % $limit === 0 && $total_items >= $limit && $api_page > $max_pages) {
@@ -308,8 +282,6 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 echo "<div class='result-info'><p><strong>Note:</strong> Total items ($total_items) may be incomplete due to API limit ($limit). Verify full details on <a href='https://solscan.io/collection/$mintAddress' target='_blank'>Solscan</a> or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
             }
             ?>
-                
-            <!-- Display summary card -->
             <div class="t-8 result-section">
                 <?php if ($total_wallets === 0): ?>
                     <p class="result-error">No holders found for this collection.</p>
@@ -328,13 +300,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                             </div>
                         </div>
                     </div>
-
-                    <!-- Data last updated -->
                     <?php if ($cache_valid): ?>
                         <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
                     <?php endif; ?>
-                
-                    <!-- Export controls -->
                     <div class="export-section">
                         <form method="POST" action="/tools/nft-holders/nft-holders-export.php" class="export-form">
                             <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
@@ -355,19 +323,26 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             </div>
             <?php
         } catch (Exception $e) {
-            $error_msg = "Error processing request: " . $e->getMessage();
-            log_message("nft-holders: Exception - $error_msg", 'nft_holders_log.txt', 'ERROR');
-            echo "<div class='result-error'><p>$error_msg. Please try again.</p></div>";
+            echo "<div class='result-error'><p>Error processing request: " . $e->getMessage() . "</p></div>";
         }
+    } else {
+        log_message("nft-holders: Rendering form", 'nft_holders_log.txt');
+        ?>
+        <div class="t-7">
+            <h2>Check NFT Holders</h2>
+            <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
+            <form id="nftHoldersForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <button type="submit" class="cta-button">Check Holders</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
     }
     ?>
-	
-    <!-- Informational block -->
     <div class="t-9">
         <h2>About NFT Holders Checker</h2>
-        <p>
-            The NFT Holders Checker allows you to view the total number of holders and NFTs for a specific Solana NFT collection by entering its On-chain Collection address. 
-            This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of a collection on the Solana blockchain.
-        </p>
+        <p>The NFT Holders Checker allows you to view the total number of holders and NFTs for a specific Solana NFT collection by entering its On-chain Collection address. This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of a collection on the Solana blockchain.</p>
     </div>
 </div>
