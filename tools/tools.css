@@ -232,7 +232,7 @@ h1, h2 {text-align: center;}
 }
 
 /* Wallet Analysis Styles */
-.wallet-info-table, .token-table, .nft-table {
+.token-table, .nft-table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
@@ -243,7 +243,7 @@ h1, h2 {text-align: center;}
 }
 
 /* Table headers */
-.wallet-info-table th, .token-table th, .nft-table th {
+.token-table th, .nft-table th {
     background: #f0f4f8; /* Light gray-blue */
     color: #333;
     font-weight: 600;
@@ -253,7 +253,7 @@ h1, h2 {text-align: center;}
 }
 
 /* Table cells */
-.wallet-info-table td, .token-table td, .nft-table td {
+.token-table td, .nft-table td {
     padding: 6px 10px;
     border-bottom: 1px solid #eee;
     color: #555;
@@ -267,7 +267,7 @@ h1, h2 {text-align: center;}
 }
 
 /* Hover effect */
-.wallet-info-table tr:hover, .token-table tr:hover, .nft-table tr:hover {
+.token-table tr:hover, .nft-table tr:hover {
     background: #f9fbfd; /* Very light blue */
 }
 
@@ -328,21 +328,6 @@ h1, h2 {text-align: center;}
     color: #28a745;
 }
 
-/* Copy Tooltip */
-.copy-tooltip {
-    position: absolute;
-    top: -28px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #28a745;
-    color: #fff;
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    z-index: 1001;
-}
-
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
     .t-1 {
@@ -359,7 +344,7 @@ h1, h2 {text-align: center;}
     .summary-card {max-width: 100%}
     
     /* Wallet Analysis Styles */
-    .wallet-info-table, .token-table, .nft-table {
+    .token-table, .nft-table {
         display: block;
         overflow-x: auto;
         white-space: nowrap;
@@ -374,10 +359,5 @@ h1, h2 {text-align: center;}
     }
     .copy-icon {
         font-size: 16px;
-    }
-    .copy-tooltip {
-        font-size: 10px;
-        padding: 3px 6px;
-        top: -24px;
     }
 }
