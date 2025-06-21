@@ -80,7 +80,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 ?>
 
 <div class="t-6 wallet-analysis-content">
-    <!-- Always render input form unless rate limit exceeded -->
+    <!-- Render input form -->
     <div class="t-7">
         <h2>Check Wallet Analysis</h2>
         <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
