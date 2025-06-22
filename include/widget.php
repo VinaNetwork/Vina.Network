@@ -1,6 +1,6 @@
 <?php
 // --------------------------------------------------------------------------
-// File: include/widget-crypto.php
+// File: include/widget.php
 // Description: Reusable section to display real-time crypto prices (BTC, ETH, SOL).
 // Created by: Vina Network
 // --------------------------------------------------------------------------
