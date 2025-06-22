@@ -302,18 +302,18 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 echo "<div class='result-info'><p><strong>Note:</strong> Total items ($total_items) may be incomplete due to API limit ($limit). Verify full details on <a href='https://solscan.io/collection/$mintAddress' target='_blank'>Solscan</a> or <a href='mailto:support@vina.network'>contact support</a>.</p></div>";
             }
             ?>
-            <div class="t-8 result-section">
+            <div class="tools-result nft-holders-result">
                 <?php if ($total_wallets === 0): ?>
                     <p class="result-error">No holders found for this collection.</p>
                 <?php else: ?>
-                    <div class="t-8-1 holders-summary">
-                        <div class="summary-card">
-                            <div class="summary-item">
+                    <div class="result-summary">
+                        <div class="result-card">
+                            <div class="result-item">
                                 <i class="fas fa-wallet"></i>
                                 <p>Total wallets</p>
                                 <h3><?php echo number_format($total_wallets); ?></h3>
                             </div>
-                            <div class="summary-item">
+                            <div class="result-item">
                                 <i class="fas fa-image"></i>
                                 <p>Total NFTs</p>
                                 <h3><?php echo number_format($total_items); ?></h3>
