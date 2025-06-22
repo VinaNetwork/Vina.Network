@@ -210,18 +210,18 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 <div class="wallet-details token-details">
                     <div class="token-table">
                         <table>
-                            <tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Value (USD)</th></tr>
-                            <?php foreach ($formatted_data['tokens'] as $token): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($token['name']); ?></td>
-                                <td>
-                                    <span><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
-                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
-                                </td>
-                                <td><?php echo number_format($token['balance'], 2); ?></td>
-                                <td><?php echo number_format($token['price_usd'], 2); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
+						<tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Value (USD)</th></tr>
+						<?php foreach ($formatted_data['tokens'] as $token): ?>
+						<tr>
+						<td><?php echo htmlspecialchars($token['name']); ?></td>
+						<td>
+						<span><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
+						<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
+						</td>
+						<td><?php echo number_format($token['balance'], 2); ?></td>
+						<td><?php echo number_format($token['price_usd'], 2); ?></td>
+						</tr>
+						<?php endforeach; ?>
                         </table>
                     </div>
                 </div>
@@ -232,24 +232,24 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 <div class="wallet-details nft-details">
                     <div class="nft-table">
                         <table>
-                            <tr><th>Name</th><th>Mint Address</th><th>Collection</th></tr>
-                            <?php foreach ($formatted_data['nfts'] as $nft): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($nft['name']); ?></td>
-                                <td>
-                                    <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
-                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
-                                </td>
-                                <td>
-                                    <?php if ($nft['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $nft['collection'])): ?>
-                                        <span><?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?></span>
-                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
-                                    <?php else: ?>
-                                        <span>N/A</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
+						<tr><th>Name</th><th>Mint Address</th><th>Collection</th></tr>
+						<?php foreach ($formatted_data['nfts'] as $nft): ?>
+						<tr>
+						<td><?php echo htmlspecialchars($nft['name']); ?></td>
+						<td>
+						<span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
+						<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
+						</td>
+						<td>
+						<?php if ($nft['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $nft['collection'])): ?>
+							<span><?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?></span>
+							<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
+						<?php else: ?>
+							<span>N/A</span>
+						<?php endif; ?>
+						</td>
+						</tr>
+						<?php endforeach; ?>
                         </table>
                     </div>
                 </div>
