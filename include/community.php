@@ -1,17 +1,8 @@
-<!--
-	// ============================================================================
-	// File: include/community.php
-	// Description: Reusable section for displaying links to Vina Network's social media.
-	// Created by: Vina Network
-	// ============================================================================ -->
-
-<!-- Join Our Community -->
+<!-- File: include/community.php -->
 <section class="community">
 	<h2 class="fade-in" data-delay="0">Join Our Community</h2>
-	<p class="fade-in" data-delay="200">
-		Be a part of the Vina Network revolution. Connect with us and stay updated!
-	</p>
-
+	<p class="fade-in" data-delay="200">Be a part of the Vina Network revolution. Connect with us and stay updated!</p>
+	
 	<div class="community-link fade-in" data-delay="400">
 		<a href="https://x.com/Vina_Network" target="_blank" class="cta-button">
 			<i class="fab fa-x-twitter"></i> Twitter
