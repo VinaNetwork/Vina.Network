@@ -1,7 +1,7 @@
+# -------------------------------------
 GUIDE TO CREATE A GIT MANAGEMENT ACCOUNT ON VPS
 Synchronize code from GitHub to VPS using SSH Key
 
-# -------------------------------------
 # Configure Git using SSH Key
 ## Main directory of the website: /var/www/vinanetwork/public_html
 ## Assign read/write/execute permissions to the directory: sudu chmod -R 775 /var/www/vinanetwork/public_html
