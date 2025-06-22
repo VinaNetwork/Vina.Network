@@ -1,23 +1,19 @@
 /* ============================================================================
  * File: contact/contact.css
  * Description: Styles specific to the Contact page of Vina Network.
- *              Provides layout, design, and responsive behavior for the
- *              contact methods: X (Twitter), Telegram, and Email.
  * Created by: Vina Network
  * ========================================================================== */
 
- /* Contact Info Section Wrapper */
-.c-1 {
+ /* Contact */
+.contact {
     margin-top: 72px;
     text-align: center;
 }
 
-/* Inner container & heading styles */
-.c-2 {padding: 20px;}
-.c-2 h1 {color: #4a90e2;}
+.contact-content {padding: 20px;}
+.contact-content h1 {color: #4a90e2;}
 
-/* Contact methods container */
-.c-3 {
+.contact-table {
     display: flex;
     justify-content: center;
     gap: 30px;
@@ -25,8 +21,7 @@
     margin-top: 20px;
 }
 
-/* Individual Contact Card */
-.c-4 {
+.contact-item {
     background-color: #fff;
     border-radius: 10px;
     padding: 20px;
@@ -35,30 +30,27 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Hover effect for contact cards */
-.c-4:hover {
+.contact-item:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Icon style inside each contact card */
-.c-4 i {
+.contact-item i {
     font-size: 2em;
     color: #ff6f91;
     margin-bottom: 15px;
 }
 
-/* Text and link styles */
-.c-4 h2 {color: #4a90e2;}
-.c-4 p {color: #666;}
-.c-4 a {
+.contact-item h2 {color: #4a90e2;}
+.contact-item p {color: #666;}
+.contact-item a {
     color: #ff6f91;
     transition: color 0.3s;
 }
-.c-4 a:hover {color: #ff85a1;}
+.contact-item a:hover {color: #ff85a1;}
 
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
-    .c-1 {margin-top: 64px;}
-    .c-4 { width: 100%;}
+    .contact {margin-top: 64px;}
+    .contact-item { width: 100%;}
 }
