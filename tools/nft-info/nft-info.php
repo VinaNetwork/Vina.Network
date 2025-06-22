@@ -79,7 +79,7 @@ require_once $api_helper_path;
 log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 ?>
 
-<div class="t-6 nft-info-content">
+<div class="nft-info">
     <!-- Render form unless rate limit exceeded -->
     <?php
     $rate_limit_exceeded = false;
@@ -105,7 +105,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
     if (!$rate_limit_exceeded) {
         log_message("nft_info: Rendering form", 'nft_info_log.txt', 'INFO');
         ?>
-        <div class="t-7">
+        <div class="tools-form">
             <h2>Check NFT Info</h2>
             <p>Enter the <strong>NFT Mint Address</strong> to view detailed information. For example, find this address on MagicEden under "Details" > "Mint Address".</p>
             <form id="nftInfoForm" method="POST" action="">
@@ -211,55 +211,55 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                         </div>
                         <div class="nft-info-table">
                             <table>
-                                <tr>
-                                    <th>Mint Address</th>
-                                    <td>
-                                        <span><?php echo substr(htmlspecialchars($formatted_data['mint_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['mint_address']), -4); ?></span>
-                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['mint_address']); ?>"></i>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Name</th>
-                                    <td><?php echo htmlspecialchars($formatted_data['name']); ?></td>
-                                </tr>
-                                <tr>
-                                    <th>Attributes</th>
-                                    <td><pre><?php echo htmlspecialchars($formatted_data['attributes']); ?></pre></td>
-                                </tr>
-                                <tr>
-                                    <th>Owner</th>
-                                    <td>
-                                        <?php if ($formatted_data['owner'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $formatted_data['owner'])): ?>
-                                            <span><?php echo substr(htmlspecialchars($formatted_data['owner']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['owner']), -4); ?></span>
-                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['owner']); ?>"></i>
-                                        <?php else: ?>
-                                            <span>N/A</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Collection</th>
-                                    <td>
-                                        <?php if ($formatted_data['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $formatted_data['collection'])): ?>
-                                            <span><?php echo substr(htmlspecialchars($formatted_data['collection']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['collection']), -4); ?></span>
-                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['collection']); ?>"></i>
-                                        <?php else: ?>
-                                            <span>N/A</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th>Compressed</th>
-                                    <td><?php echo $formatted_data['is_compressed'] ? 'Yes' : 'No'; ?></td>
-                                </tr>
-                                <tr>
-                                    <th>Burned</th>
-                                    <td><?php echo $formatted_data['is_burned'] ? 'Yes' : 'No'; ?></td>
-                                </tr>
-                                <tr>
-                                    <th>Listed</th>
-                                    <td><?php echo $formatted_data['is_listed'] ? 'Yes' : 'No'; ?></td>
-                                </tr>
+							<tr>
+							<th>Mint Address</th>
+							<td>
+							<span><?php echo substr(htmlspecialchars($formatted_data['mint_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['mint_address']), -4); ?></span>
+							<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['mint_address']); ?>"></i>
+							</td>
+							</tr>
+							<tr>
+							<th>Name</th>
+							<td><?php echo htmlspecialchars($formatted_data['name']); ?></td>
+							</tr>
+							<tr>
+							<th>Attributes</th>
+							<td><pre><?php echo htmlspecialchars($formatted_data['attributes']); ?></pre></td>
+							</tr>
+							<tr>
+							<th>Owner</th>
+							<td>
+							<?php if ($formatted_data['owner'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $formatted_data['owner'])): ?>
+								<span><?php echo substr(htmlspecialchars($formatted_data['owner']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['owner']), -4); ?></span>
+								<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['owner']); ?>"></i>
+							<?php else: ?>
+								<span>N/A</span>
+							<?php endif; ?>
+							</td>
+							</tr>
+							<tr>
+							<th>Collection</th>
+							<td>
+							<?php if ($formatted_data['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $formatted_data['collection'])): ?>
+								<span><?php echo substr(htmlspecialchars($formatted_data['collection']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['collection']), -4); ?></span>
+								<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['collection']); ?>"></i>
+							<?php else: ?>
+								<span>N/A</span>
+							<?php endif; ?>
+							</td>
+							</tr>
+							<tr>
+							<th>Compressed</th>
+							<td><?php echo $formatted_data['is_compressed'] ? 'Yes' : 'No'; ?></td>
+							</tr>
+							<tr>
+							<th>Burned</th>
+							<td><?php echo $formatted_data['is_burned'] ? 'Yes' : 'No'; ?></td>
+							</tr>
+							<tr>
+							<th>Listed</th>
+							<td><?php echo $formatted_data['is_listed'] ? 'Yes' : 'No'; ?></td>
+							</tr>
                             </table>
                         </div>
                     </div>
@@ -281,7 +281,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
     log_message("nft_info: Script ended", 'nft_info_log.txt', 'INFO');
     ?>
 
-    <div class="t-9">
+    <div class="tools-about">
         <h2>About Check NFT Info</h2>
         <p>The Check NFT Info tool allows you to view detailed information for a specific Solana NFT by entering its Mint Address.</p>
     </div>
