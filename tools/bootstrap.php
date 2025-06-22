@@ -25,6 +25,11 @@ define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
 // ---------------------------------------------------
 require_once ROOT_PATH . 'config/config.php';
 
+// Check session status before starting
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // ---------------------------------------------------
 // Logging utility function
 // Writes timestamped messages to the specified log file
@@ -48,6 +53,11 @@ function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') 
             chown(LOGS_PATH, 'www-data');
             chgrp(LOGS_PATH, 'www-data');
             chmod(LOGS_PATH, 0764);
+        }
+        // Check if LOGS_PATH is writable
+        if (!is_writable(LOGS_PATH)) {
+            error_log("Log directory $LOGS_PATH is not writable");
+            return;
         }
         // Ensure log file exists
         if (!file_exists($log_path)) {
