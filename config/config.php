@@ -1,14 +1,12 @@
 <?php
-/*
- * ============================================================================
+/* ============================================================================
  * File: config/config.php
  * Description: Central configuration file for Vina Network.
  *              Defines global constants such as API keys, base paths,
  *              error logging settings, and security access control.
  *              Used throughout the entire project.
  * Created by: Vina Network
- * ============================================================================
- */
+ * ============================================================================ */
 
 // Prevent direct access to this config file
 if (!defined('VINANETWORK_ENTRY')) {
@@ -23,7 +21,7 @@ if (!defined('HELIUS_API_KEY')) {
 
 // Logging and Path Configuration
 if (!defined('ERROR_LOG_PATH')) {
-    define('ERROR_LOG_PATH', '/var/www/vinanetwork/public_html/tools/error_log.txt'); // Path to error log file
+    define('ERROR_LOG_PATH', '/var/www/vinanetwork/public_html/tools/error_log.txt');
 }
 
 if (!defined('BASE_PATH')) {
