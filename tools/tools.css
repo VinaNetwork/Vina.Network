@@ -88,19 +88,19 @@ h1, h2 {text-align: center;}
 }
 
 /* Result checked */
-.result-section {
+.tools-result {
     max-width: 100%;
     overflow-x: auto;
 	margin: 20px 0;
 }
 
 /* Holder results summary */
-.t-8-1 {
+.result-summary {
     justify-content: center;
     margin-bottom: 20px;
     display: flex;
 }
-.summary-card {
+.result-card {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
@@ -111,18 +111,18 @@ h1, h2 {text-align: center;}
     max-width: 600px;
     width: 100%;
 }
-.summary-item {
+.result-item {
     flex: 1;
     text-align: center;
     padding: 10px;
 }
-.summary-item i {
+.result-item i {
     font-size: 24px;
     color: #0097ff;
     margin-bottom: 10px;
 }
-.summary-item p {color: #666;}
-.summary-item h3 {color: #333;}
+.result-item p {color: #666;}
+.result-item h3 {color: #333;}
 
 /* Cache timestamp */
 .cache-timestamp {
@@ -180,7 +180,7 @@ h1, h2 {text-align: center;}
 }
 
 /* NFT Info */
-.nft-card {
+.result-card {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
@@ -313,7 +313,7 @@ h1, h2 {text-align: center;}
         align-items: center;
     }
     .tools-form input {width: 100%;}
-    .summary-card {max-width: 100%}
+    .result-card {max-width: 100%}
     
     /* Wallet Analysis Styles */
     .token-table, .nft-table {
