@@ -59,13 +59,13 @@ h1, h2 {text-align: center;}
     margin: 20px 0;
 }
 
-.t-7 {
+.tools-form {
     padding: 20px;
     border-radius: 10px;
     background: #c3c3c4;
     position: relative;
 }
-.t-7 input {width: 700px;}
+.tools-form input {width: 700px;}
 
 /* loader for checkboxes */
 .loader {
@@ -87,8 +87,14 @@ h1, h2 {text-align: center;}
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
+/* Result checked */
+.result-section {
+    max-width: 100%;
+    overflow-x: auto;
+	margin: 20px 0;
+}
+
 /* Holder results summary */
-.t-8 {margin: 20px 0;}
 .t-8-1 {
     justify-content: center;
     margin-bottom: 20px;
@@ -265,12 +271,6 @@ h1, h2 {text-align: center;}
     background: #f9fbfd;
 }
 
-/* Ensure tables are contained */
-.result-section {
-    max-width: 100%;
-    overflow-x: auto;
-}
-
 /* Wallet Address Container */
 .wallet-address {
     display: flex;
@@ -312,7 +312,7 @@ h1, h2 {text-align: center;}
         flex-direction: column;
         align-items: center;
     }
-    .t-7 input {width: 100%;}
+    .tools-form input {width: 100%;}
     .summary-card {max-width: 100%}
     
     /* Wallet Analysis Styles */
