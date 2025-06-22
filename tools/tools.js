@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get the "tool" parameter from URL to determine which tab should be active
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
-    const tabsContainer = document.querySelector('.t-3');
+    const tabsContainer = document.querySelector('.tools-nav');
     let activeTab = document.querySelector('.t-link.active');
 
     // Debug: Log initial tool and active tab
@@ -74,11 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(data => {
                 console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`);
-                document.querySelector('.t-4').innerHTML = data;
+                document.querySelector('.tools-content').innerHTML = data;
             })
             .catch(error => {
                 console.error(`Error loading tool ${tool}:`, error);
-                document.querySelector('.t-4').innerHTML = `<div class="result-error"><p>Error loading tool: ${error.message}</p></div>`;
+                document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error loading tool: ${error.message}</p></div>`;
             });
         });
     });
@@ -246,18 +246,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const json = JSON.parse(data);
                     if (json.error) {
-                        document.querySelector('.t-4').innerHTML = `<div class="result-error"><p>Error: ${json.error}</p></div>`;
+                        document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error: ${json.error}</p></div>`;
                         return;
                     }
                 } catch (e) {
                     // Not JSON, assume HTML
-                    document.querySelector('.t-4').innerHTML = data;
+                    document.querySelector('.tools-content').innerHTML = data;
                 }
                 if (loader) loader.style.display = 'none';
             })
             .catch(error => {
                 console.error(`Error submitting form ${form.id}:`, error);
-                document.querySelector('.t-4').innerHTML = `<div class="result-error"><p>Error submitting form: ${error.message}</p></div>`;
+                document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error submitting form: ${error.message}</p></div>`;
                 if (loader) loader.style.display = 'none';
             });
         } else {
