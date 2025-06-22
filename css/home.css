@@ -106,24 +106,6 @@ section h3 {
     transform: scale(1.1) rotate(15deg);
 }
 
-/*  Crypto Widget */
-.crypto-widget {
-    text-align: center;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-}
-
-.coinmarketcap-currency-widget {
-    flex: 1;
-    background: #fff;
-    border-radius: 10px;
-}
-
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
     .home-container {margin-top: 64px;}
@@ -146,12 +128,4 @@ section h3 {
         align-items: center;
     }
     .home-item {width: 100%;}
-	
-    .crypto-widget {
-        flex-direction: column;
-        align-items: center;
-    }
-    .coinmarketcap-currency-widget {
-        width: 100%;
-    }
 }
