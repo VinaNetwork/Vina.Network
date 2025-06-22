@@ -3,27 +3,64 @@
 # Web Server: Apache, running as www-data:vinanetwork
 # PHP: php-fpm, running as www-data:vinanetwork
 # Git: Managed by user vina, separate from www-data
-# Notes:
-# - Directories: 755 (rwx for owner, rx for group/others) for executable dirs
-# - PHP/CSS/JS files: 644 (rw for owner, r for group/others) for read-only
-# - Log/Cache files: 664 (rw for owner/group, r for others) for www-data write access
-# - .git/: Owned by vina:vinanetwork for Git operations
-# - Owner/Group: www-data:vinanetwork for Apache/PHP, vina:vinanetwork for .git/
-# - Commands are provided for each directory/file to set permissions and ownership
-# - Run commands as root (sudo) and verify after applying
-# - Parent directories (/var/www, /var/www/vinanetwork, /var/www/vinanetwork/public_html)
-#   should be 755 and owned by www-data:vinanetwork
-# - General apply commands (for bulk changes):
-#   sudo chown -R vina:vinanetwork /var/www/vinanetwork/public_html
-#   sudo find /var/www/vinanetwork/public_html -not -path "/var/www/vinanetwork/public_html/.git/*" -type d -exec chmod 755 {} \;
-#   sudo find /var/www/vinanetwork/public_html -not -path "/var/www/vinanetwork/public_html/.git/*" -type f -exec chmod 644 {} \;
-#   sudo chmod 764 /var/www/vinanetwork/public_html/tools/logs
-#   sudo find /var/www/vinanetwork/public_html/tools/logs -type f -exec chmod 664 {} \;
-#   sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-holders/cache
-#   sudo find /var/www/vinanetwork/public_html/tools/nft-holders/cache -type f -exec chmod 664 {} \;
-#   sudo chown -R vina:vinanetwork /var/www/vinanetwork/public_html/.git
-#   sudo chmod -R u+rwX,go+rX /var/www/vinanetwork/public_html/.git
 
+# -------------------------------------
+# Configure Git using SSH Key
+## Main directory of the website: /var/www/vinanetwork/public_html
+## Assign read/write/execute permissions to the directory: sudu chmod -R 775 /var/www/vinanetwork/public_html
+## Steps to follow:
+1. Create Git management user (password is blank)
+sudo adduser vina
+
+2. Create a shared group between Git and Apache
+sudo groupadd vinanetwork
+	
+3. Add vina and www-data accounts to vinanetwork group
+sudo usermod -aG vinanetwork www-data
+sudo usermod -aG vinanetwork vina
+	
+4. Change vinanetwork group to main group for vina account
+sudo usermod -g vinanetwork vina
+	
+5. Transfer folder ownership to vinanetwork group
+sudo chgrp -R vinanetwork /var/www/vinanetwork/public_html
+
+Set group permissions, make sure any newly created folders and files belong to the vinanetwork group
+sudo find /var/www/vinanetwork/public_html -type d -exec chmod g+s {} \;
+	
+6. Create SSH Key for vina account
+sudo su - vina
+ssh-keygen -t ed25519 -C
+"admin@vina.network"
+
+Node: Press enter repeatedly to get the default path ~/.ssh/id_ed25519.pub
+--> View and copy SSH Key: cat ~/.ssh/id_ed25519.pub
+
+7. Add SSH Key to Github
+-> Github -> Setting -> SSH and GPG Keys -> New SSH Key
+
+8. Create commit information (Optional)
+cd /var/www/vinanetwork/public_html
+git config user.name "Vina Network"
+git config user.email "contact@vina.network"
+
+9. Sync code from Github to VPS
+-> If first sync:
+cd /var/www/vinanetwork/public_html
+git clone git@github.com:VinaNetwork/Vina.Network.git .
+
+-> If previously synced using HTTPS:
+cd /var/www/vinanetwork/public_html
+git remote set-url origin git@github.com:VinaNetwork/Vina.Network.git
+
+10. Next syncs
+sudo su - vina
+cd /var/www/vinanetwork/public_html
+git pull origin main
+
+--> If you need to overwrite (sync from Git to VPS): sudo git reset --hard origin/main
+
+# -------------------------------------
 [Directory Structure and Permissions]
 
 /var/www/vinanetwork/public_html/
@@ -132,13 +169,6 @@
   sudo chmod 775 /var/www/vinanetwork/public_html/tools/nft-holders/cache
 
 │   │   │   └── nft_holders_cache.json
-- Permissions: -rw-rw-r-- (664)
-- Owner/Group: www-data:vinanetwork
-- Description: Cache file for NFT Holders data, written by PHP.
-- Commands:
-  touch /var/www/vinanetwork/public_html/tools/nft-transactions/cache/nft_holders_cache.json
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
 
 │   ├── nft-info/
 - Permissions: drwxr-xr-x (755)
@@ -166,13 +196,6 @@
   sudo chmod 775 /var/www/vinanetwork/public_html/tools/nft-info/cache
 
 │   │   │   └── nft_info_cache.json
-- Permissions: -rw-rw-r-- (664)
-- Owner/Group: www-data:vinanetwork
-- Description: Cache file for NFT info data, written by PHP.
-- Commands:
-  touch /var/www/vinanetwork/public_html/tools/nft-info/cache/nft_info_cache.json
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-info/cache/nft_info_cache.json
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-info/cache/nft_info_cache.json
   
 │   ├── wallet-analysis/
 - Permissions: drwxr-xr-x (755)
@@ -200,13 +223,6 @@
   sudo chmod 775 /var/www/vinanetwork/public_html/tools/wallet-analysis/cache
 
 │   │   │   └── nft_info_cache.json
-- Permissions: -rw-rw-r-- (664)
-- Owner/Group: www-data:vinanetwork
-- Description: Cache file for NFT info data, written by PHP.
-- Commands:
-  touch /var/www/vinanetwork/public_html/tools/wallet-analysis/cache/nft_info_cache.json
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/wallet-analysis/cache/nft_info_cache.json
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/wallet-analysis/cache/nft_info_cache.json
 
 │   ├── logs/
 - Permissions: drwxr-xr-x (775)
@@ -227,54 +243,11 @@
 │   │   └── tools_log.txt
 
 [Git Setup Instructions]
-# Ensure n9u93n can manage Git while www-data runs Apache/PHP
-# 1. Setup SSH key for n9u93n (no passphrase)
-mv ~/.ssh/id_ed25519 ~/.ssh/id_ed25519_old
-mv ~/.ssh/id_ed25519.pub ~/.ssh/id_ed25519_old.pub
-ssh-keygen -t ed25519 -C "n9u93n@vinanetwork" -f ~/.ssh/id_ed25519 -N ""
-cat ~/.ssh/id_ed25519.pub  # Copy output to GitHub (Settings > SSH and GPG keys)
-ssh -T git@github.com  # Verify: "Hi VinaNetwork! You've successfully authenticated..."
+# Ensure vina can manage Git while www-data runs Apache/PHP
+# 1. Setup SSH key for vina (no passphrase)
+
 # 2. Configure Git to use SSH
-cd /var/www/vinanetwork/public_html
-git remote set-url origin git@github.com:VinaNetwork/Vina.Network.git
+
 # 3. Test Git
 git pull origin main
-# 4. Optional: Automate git pull with script
-nano ~/git-pull.sh
-# Add:
-# #!/bin/bash
-# cd /var/www/vinanetwork/public_html
-# git pull origin main
-# echo "Git pull completed at $(date)"
-chmod +x ~/git-pull.sh
-~/git-pull.sh  # Test
-# 5. Optional: Schedule with cron
-crontab -e
-# Add: 0 * * * * /home/n9u93n/git-pull.sh >> /home/n9u93n/git-pull.log 2>&1
 
-[Commands to Verify Permissions]
-# Run these to check current permissions:
-ls -ld /var/www/vinanetwork/public_html/ /var/www/vinanetwork/public_html/.git/
-ls -l /var/www/vinanetwork/public_html/.git/
-ls -ld /var/www/vinanetwork/public_html/tools/
-ls -l /var/www/vinanetwork/public_html/tools/
-ls -ld /var/www/vinanetwork/public_html/tools/{nft-holders,logs}/
-ls -l /var/www/vinanetwork/public_html/tools/nft-holders/
-ls -l /var/www/vinanetwork/public_html/tools/nft-holders/cache/
-ls -l /var/www/vinanetwork/public_html/tools/logs/
-
-[Notes]
-- Ensure Apache/PHP run as www-data (check with `ps aux | grep apache2` and `ps aux | grep php`).
-- .git/ is owned by n9u93n:n9u93n to allow git pull/commit/push, separate from www-data.
-- Use `find ... -not -path ...` to avoid overwriting .git/ when setting www-data permissions.
-- If permissions issues persist, check parent dirs (/var/www, /var/www/vinanetwork) for 755 and www-data:vinanetwork.
-- Log and cache files need 664 to allow PHP (www-data) write access while readable by others.
-- No executable permissions (x) needed for PHP/CSS/JS/log/cache files, only for directories.
-- Apply changes carefully to avoid downtime; test after applying (e.g., https://vina.network/tools/check-nft-holders).
-- If /nft-holders/cache/ or nft_holders_cache.json does not exist, create them:
-  sudo mkdir -p /var/www/vinanetwork/public_html/tools/nft-holders/cache
-  sudo touch /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-holders/cache
-  sudo chmod 764 /var/www/vinanetwork/public_html/tools/nft-holders/cache
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-holders/cache/nft_holders_cache.json
