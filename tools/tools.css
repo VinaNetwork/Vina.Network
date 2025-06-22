@@ -5,18 +5,18 @@
  * ========================================================================== */
 
 /* Headings */
-h1, h2 {text-align: center;}
+h1, h2, h3 {text-align: center;}
 
-/* Container spacing */
-.tools {margin-top: 72px;}
+/* Tools Container */
 .tools-container {
+    margin-top: 72px;
     max-width: 1000px;
     background: #ffffff;
     padding: 30px;
     margin: 0 auto;
 }
 
-/* Tab navigation bar */
+/* Tab navigation */
 .tools-nav {
     display: flex;
     gap: 20px;
@@ -29,7 +29,6 @@ h1, h2 {text-align: center;}
 .tools-nav::-webkit-scrollbar {height: 2px;}
 .tools-nav::-webkit-scrollbar-track {background: #333;}
 
-/* Tab buttons */
 .t-link {
     display: flex;
     align-items: center;
@@ -51,23 +50,22 @@ h1, h2 {text-align: center;}
 }
 
 /* Search input form */
-.tools-content form {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    position: relative;
-    margin: 20px 0;
-}
-
 .tools-form {
     padding: 20px;
     border-radius: 10px;
     background: #c3c3c4;
     position: relative;
 }
+.tools-form form {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    margin: 20px 0;
+}
 .tools-form input {width: 700px;}
 
-/* loader for checkboxes */
+/* Loader for checkboxes */
 .loader {
     border: 4px solid #333;
     border-top: 4px solid #007bff;
@@ -87,14 +85,12 @@ h1, h2 {text-align: center;}
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* Result checked */
+/* Tools Result */
 .tools-result {
     max-width: 100%;
     overflow-x: auto;
 	margin: 20px 0;
 }
-
-/* Holder results summary */
 .result-summary {
     justify-content: center;
     margin-bottom: 20px;
@@ -123,14 +119,13 @@ h1, h2 {text-align: center;}
 }
 .result-item p {color: #666;}
 .result-item h3 {color: #333;}
-
-/* Cache timestamp */
 .cache-timestamp {
     text-align: center;
     color: #666;
 }
+.result-details table {width: 100%;}
 
-/* Output & error sections */
+/* Result error sections */
 .result-error, .result-info {
     background: #ffebee;
     color: #c62828;
@@ -160,7 +155,7 @@ h1, h2 {text-align: center;}
     box-sizing: border-box;
 }
 
-/* Progress bar for loading or fetch progress */
+/* NFT Holders Export: Loader */
 .progress-container {
     margin: 10px 0;
     text-align: left;
@@ -179,48 +174,33 @@ h1, h2 {text-align: center;}
     transition: width 0.3s ease;
 }
 
-/* NFT Info */
-.result-card {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 10px;
-}
-
+/* NFT Info Result */
 .nft-image {
     flex: 1;
     min-width: 200px;
 }
-
 .nft-image img {
     max-width: 100%;
     border-radius: 8px;
 }
-
 .nft-info-table {
     flex: 2;
     min-width: 300px;
 }
-
 .nft-info-table table {
     width: 100%;
     border-collapse: collapse;
 }
-
 .nft-info-table th, 
 .nft-info-table td {
     padding: 10px;
     text-align: left;
     border-bottom: 1px solid #ddd;
 }
-
 .nft-info-table th {
     background: #eee;
     font-weight: bold;
 }
-
 .nft-info-table pre {
     white-space: pre-wrap;
     max-height: 200px;
@@ -230,8 +210,7 @@ h1, h2 {text-align: center;}
     border: 1px solid #ddd;
 }
 
-/* Wallet Analysis Styles */
-.t-8-2 table {width: 100%;}
+/* Wallet Analysis Result */
 .token-table, .nft-table {
     width: 100%;
     border-collapse: collapse;
@@ -241,8 +220,6 @@ h1, h2 {text-align: center;}
     margin-bottom: 20px;
     overflow-x: auto;
 }
-
-/* Table headers */
 .token-table th, .nft-table th {
     background: #f0f4f8;
     color: #333;
@@ -251,8 +228,6 @@ h1, h2 {text-align: center;}
     text-align: left;
     border-bottom: 2px solid #e0e0e0;
 }
-
-/* Table cells */
 .token-table td, .nft-table td {
     padding: 4px 10px;
     border-bottom: 1px solid #eee;
@@ -260,18 +235,14 @@ h1, h2 {text-align: center;}
     font-size: 14px;
     word-break: break-all;
 }
-
-/* Right-align numeric columns */
-.token-table td:nth-child(3), .token-table td:nth-child(4) {
+.token-table td:nth-child(3), 
+.token-table td:nth-child(4) {
     text-align: right;
 }
-
-/* Hover effect */
-.token-table tr:hover, .nft-table tr:hover {
+.token-table tr:hover, 
+.nft-table tr:hover {
     background: #f9fbfd;
 }
-
-/* Wallet Address Container */
 .wallet-address {
     display: flex;
     justify-content: center;
@@ -284,8 +255,6 @@ h1, h2 {text-align: center;}
     max-width: 100%;
     position: relative;
 }
-
-/* Copy Icon */
 .copy-icon {
     cursor: pointer;
     font-size: 20px;
@@ -295,18 +264,16 @@ h1, h2 {text-align: center;}
     user-select: none;
     display: inline-block;
 }
-
-/* Copy Icon Hover and Copied States */
 .copy-icon:hover {color: #0056b3;}
 .copy-icon.copied {color: #28a745;}
 
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
-    .tools {
-        margin-top: 64px;
-        max-width: 100%;
+    .tools-container {
+	margin-top: 64px;
+	max-width: 100%;
+	padding: 20px;
     }
-    .tools-container {padding: 20px;}
     .tools-nav {gap: 6px;}
     .tools-content form {
         flex-direction: column;
@@ -315,7 +282,7 @@ h1, h2 {text-align: center;}
     .tools-form input {width: 100%;}
     .result-card {max-width: 100%}
     
-    /* Wallet Analysis Styles */
+    /* Wallet Analysis Result */
     .token-table, .nft-table {
         display: block;
         overflow-x: auto;
