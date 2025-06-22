@@ -32,6 +32,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_HEADER, true); // Include response headers
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);
@@ -75,9 +76,11 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         }
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headers = curl_getinfo($ch, CURLINFO_HEADER_OUT);
+        $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $headers = substr($response, 0, $header_size);
+        $body = substr($response, $header_size);
 
-        // (Optional) Check for rate limit from response headers
+        // Check for rate limit from response headers
         if (preg_match('/X-Rate-Limit-Remaining: (\d+)/i', $headers, $matches)) {
             $remaining = (int)$matches[1];
             if ($remaining < 10) {
@@ -88,7 +91,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         curl_close($ch);
 
-        log_message("api-helper: Response - HTTP: $httpCode, URL: $log_url, Body: " . substr($response, 0, 500) . "...", 'tools_api_log.txt');
+        log_message("api-helper: Response - HTTP: $httpCode, URL: $log_url, Body: " . substr($body, 0, 500) . "...", 'tools_api_log.txt');
 
         // Retry if rate limited (HTTP 429)
         if ($httpCode === 429) {
@@ -103,7 +106,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         // Fallback retry logic for 404 or failed POST
         if ($httpCode !== 200) {
-            log_message("api-error: API request failed - HTTP: $httpCode, URL: $log_url, Response: $response", 'tools_api_log.txt', 'ERROR');
+            log_message("api-error: API request failed - HTTP: $httpCode, URL: $log_url, Response: $body", 'tools_api_log.txt', 'ERROR');
 
             // Retry with alternative param format if POST fails
             if ($method === 'POST' && $httpCode === 404) {
@@ -114,10 +117,14 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
                 curl_setopt($ch, CURLOPT_POST, 1);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $postDataArray);
+                curl_setopt($ch, CURLOPT_HEADER, true);
                 $response = curl_exec($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+                $headers = substr($response, 0, $header_size);
+                $body = substr($response, $header_size);
                 curl_close($ch);
-                log_message("api-helper: Retry response - HTTP: $httpCode, URL: $log_url, Body: " . substr($response, 0, 500) . "...", 'tools_api_log.txt');
+                log_message("api-helper: Retry response - HTTP: $httpCode, URL: $log_url, Body: " . substr($body, 0, 500) . "...", 'tools_api_log.txt');
             }
         }
 
@@ -126,9 +133,9 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         }
 
         // Decode JSON response
-        $data = json_decode($response, true);
+        $data = json_decode($body, true);
         if ($data === null) {
-            log_message("api-error: Failed to parse API response as JSON. URL: $log_url, Response: $response", 'tools_api_log.txt', 'ERROR');
+            log_message("api-error: Failed to parse API response as JSON. URL: $log_url, Response: $body", 'tools_api_log.txt', 'ERROR');
             return ['error' => 'Failed to parse API response as JSON.'];
         }
 
