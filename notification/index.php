@@ -33,7 +33,7 @@ include '../include/header.php';
 </section>
 
 <!-- Include community -->
-<?php include __DIR__ . '/include/community.php'; ?>
+<?php include '../include/community.php'; ?>
 <!-- Include footer -->
 <?php include '../include/footer.php'; ?>
 
