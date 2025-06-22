@@ -131,7 +131,7 @@ include __DIR__ . '/include/header.php';
 </div>
 
 <?php include __DIR__ . '/include/community.php'; ?>
-<?php include __DIR__ . 'include/widget.php'; ?>
+<?php include __DIR__ . '/include/crypto_widget.php'; ?>
 <?php include __DIR__ . '/include/footer.php'; ?>
 
 <!-- Back to Top Button -->
