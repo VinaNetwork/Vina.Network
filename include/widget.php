@@ -7,7 +7,7 @@
 ?>
 
 <!-- Crypto Price Widget Section -->
-<section class="widget-crypto">
+<section class="widget-crypto crypto-widget">
     <!-- Bitcoin ($BTC) Widget -->
     <div class="widget-crypto-item coinmarketcap-currency-widget"
          data-currencyid="1"
