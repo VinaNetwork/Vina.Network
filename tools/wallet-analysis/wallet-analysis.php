@@ -79,7 +79,7 @@ require_once $api_helper_path;
 log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 'INFO');
 ?>
 
-<div class="t-6 wallet-analysis-content">
+<div class="wallet-analysis">
     <!-- Render form unless rate limit exceeded -->
     <?php
     $rate_limit_exceeded = false;
@@ -105,7 +105,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
     if (!$rate_limit_exceeded) {
         log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO');
         ?>
-        <div class="t-7">
+        <div class="tools-form">
             <h2>Check Wallet Analysis</h2>
             <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
             <form id="walletAnalysisForm" method="POST" action="">
@@ -266,7 +266,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
     }
     ?>
 
-    <div class="t-9">
+    <div class="tools-about">
         <h2>About Check Wallet Analysis</h2>
         <p>The Check Wallet Analysis tool allows you to view the balance and assets of a Solana wallet, including SOL, SPL tokens, and NFTs.</p>
     </div>
