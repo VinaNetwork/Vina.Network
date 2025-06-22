@@ -29,7 +29,7 @@ h1, h2, h3 {text-align: center;}
 .tools-nav::-webkit-scrollbar {height: 2px;}
 .tools-nav::-webkit-scrollbar-track {background: #333;}
 
-.t-link {
+.tools-nav-link {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -38,12 +38,12 @@ h1, h2, h3 {text-align: center;}
     transition: all 0.3s;
     flex-shrink: 0;
 }
-.t-link i {font-size: 1.1em;}
-.t-link:hover {
+.tools-nav-link i {font-size: 1.1em;}
+.tools-nav-link:hover {
     color: #007bff;
     border-bottom: 4px solid #007bff;
 }
-.t-link.active {
+.tools-nav-link.active {
     font-weight: bold;
     color: #007bff;
     border-bottom: 4px solid #007bff;
