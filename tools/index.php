@@ -60,13 +60,13 @@ include $navbar_path;
         <h1>Vina Network Tools</h1>
         <!-- Tool Navigation Menu -->
         <div class="tools-nav"> 
-            <a href="?tool=nft-info" class="t-link <?php echo $tool === 'nft-info' ? 'active' : ''; ?>" data-tool="nft-info">
+            <a href="?tool=nft-info" class="tools-nav-link <?php echo $tool === 'nft-info' ? 'active' : ''; ?>" data-tool="nft-info">
                 <i class="fa-solid fa-circle-info"></i> NFT Info
             </a>
-            <a href="?tool=nft-holders" class="t-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
+            <a href="?tool=nft-holders" class="tools-nav-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
                 <i class="fas fa-user"></i> NFT Holders
             </a>
-            <a href="?tool=wallet-analysis" class="t-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
+            <a href="?tool=wallet-analysis" class="tools-nav-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
                 <i class="fas fa-wallet"></i>  Wallet Analysis
             </a>
         </div>
