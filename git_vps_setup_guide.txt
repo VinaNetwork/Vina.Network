@@ -1,75 +1,59 @@
 GUIDE TO CREATE A GIT MANAGEMENT ACCOUNT ON VPS
 Synchronize code from GitHub to VPS using SSH Key
 
-## CHECKING ACCOUNTS
-1. List all accounts on the system:
-cut -d: -f1 /etc/passwd
-# Or
-getent passwd | cut -d: -f1
-# Both commands display all accounts, including created user accounts.
+# -------------------------------------
+# Configure Git using SSH Key
+## Main directory of the website: /var/www/vinanetwork/public_html
+## Assign read/write/execute permissions to the directory: sudu chmod -R 775 /var/www/vinanetwork/public_html
+## Steps to follow:
+1. Create Git management user (password is blank)
+sudo adduser vina
 
-2. Filter users with SSH access:
-awk -F: '/\/bin\/bash/ { print $1 }' /etc/passwd
-
-3. Check Apache user:
-ps aux | grep apache
-# Or
-ps aux | grep httpd
-
-4. Check users with SSH Key:
-for user in $(cut -d: -f1 /etc/passwd); do
-    home=$(eval echo ~$user)
-    if [ -f "$home/.ssh/authorized_keys" ]; then
-        echo "$user has SSH key configured."
-    fi
-done
-
-## SETUP STEPS
-1. Create a new user for Git management:
-sudo adduser n9u93n
-# Leave password blank as SSH key will be used.
-
-2. Create a common group for Apache and Git:
+2. Create a shared group between Git and Apache
 sudo groupadd vinanetwork
-
-3. Add Apache and Git users to the group:
+	
+3. Add vina and www-data accounts to vinanetwork group
 sudo usermod -aG vinanetwork www-data
-sudo usermod -aG vinanetwork n9u93n
-
-4. Assign web directory permissions to the group:
+sudo usermod -aG vinanetwork vina
+	
+4. Change vinanetwork group to main group for vina account
+sudo usermod -g vinanetwork vina
+	
+5. Transfer folder ownership to vinanetwork group
 sudo chgrp -R vinanetwork /var/www/vinanetwork/public_html
-sudo chmod -R 775 /var/www/vinanetwork/public_html
-# Permission 775: group has read, write, execute (rwx-rwx-r--).
 
-5. Set Sticky Group:
+Set group permissions, make sure any newly created folders and files belong to the vinanetwork group
 sudo find /var/www/vinanetwork/public_html -type d -exec chmod g+s {} \;
-# Ensure new files/folders belong to the vinanetwork group.
+	
+6. Create SSH Key for vina account
+sudo su - vina
+ssh-keygen -t ed25519 -C
+"admin@vina.network"
 
-6. Generate SSH Key for the new user:
-su - n9u93n
-ssh-keygen -t ed25519 -C "admin@vina.network"
-# Press Enter to accept the default path ~/.ssh/id_ed25519.
-# Display public key:
-cat ~/.ssh/id_ed25519.pub
+Node: Press enter repeatedly to get the default path ~/.ssh/id_ed25519.pub
+--> View and copy SSH Key: cat ~/.ssh/id_ed25519.pub
 
-7. Add SSH Key to GitHub:
-- Copy the public key.
-- GitHub → Settings → SSH and GPG Keys → New SSH Key.
-- Title: VPS Key (or custom name).
-- Paste the public key.
+7. Add SSH Key to Github
+-> Github -> Setting -> SSH and GPG Keys -> New SSH Key
 
-8. Clone repository via SSH:
-cd /var/www/vinanetwork/public_html
-# If not cloned yet:
-git clone git@github.com:VinaNetwork/Vina.Network.git .
-# If previously cloned via HTTPS, switch to SSH:
-git remote set-url origin git@github.com:VinaNetwork/Vina.Network.git
-
-9. Set commit information:
+8. Create commit information (Optional)
 cd /var/www/vinanetwork/public_html
 git config user.name "Vina Network"
-git config user.email "admin@vina.network"
+git config user.email "contact@vina.network"
 
-10. Pull code from GitHub:
+9. Sync code from Github to VPS
+-> If first sync:
+cd /var/www/vinanetwork/public_html
+git clone git@github.com:VinaNetwork/Vina.Network.git .
+
+-> If previously synced using HTTPS:
+cd /var/www/vinanetwork/public_html
+git remote set-url origin git@github.com:VinaNetwork/Vina.Network.git
+
+10. Next syncs
+sudo su - vina
 cd /var/www/vinanetwork/public_html
 git pull origin main
+
+--> If you need to overwrite (sync from Git to VPS): sudo git reset --hard origin/main
+# -------------------------------------
