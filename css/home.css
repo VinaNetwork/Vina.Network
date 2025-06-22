@@ -4,8 +4,6 @@
  * Created by: Vina Network
  * -------------------------------------------------------------------------- */
 
-
-
 /* Section headings */
 section h2,
 section h3 {
@@ -126,7 +124,7 @@ section h3 {
     border-radius: 10px;
 }
 
-/*  Responsive Design: Adjust layout and components for small screens */
+/*  Responsive Design */
 @media screen and (max-width: 768px) {
     .home-container {margin-top: 64px;}
 	.home-head {
