@@ -207,7 +207,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
                 <?php if (!empty($formatted_data['tokens'])): ?>
                 <h2>Tokens details</h2>
-                <div class="t-8-2 token-details">
+                <div class="result-details token-details">
                     <div class="token-table">
                         <table>
                             <tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Value (USD)</th></tr>
@@ -229,7 +229,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
                 <?php if (!empty($formatted_data['nfts'])): ?>
                 <h2>NFTs details</h2>
-                <div class="t-8-2 nft-details">
+                <div class="result-details nft-details">
                     <div class="nft-table">
                         <table>
                             <tr><th>Name</th><th>Mint Address</th><th>Collection</th></tr>
