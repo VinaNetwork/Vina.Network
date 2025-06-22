@@ -9,7 +9,7 @@
 <!-- Crypto Price Widget Section -->
 <section class="widget-crypto">
     <!-- Bitcoin ($BTC) Widget -->
-    <div class="widget-crypto-item"
+    <div class="widget-crypto-item coinmarketcap-currency-widget"
          data-currencyid="1"
          data-base="USD"
          data-secondary=""
@@ -20,7 +20,7 @@
          data-stats="USD">
     </div>
     <!-- Ethereum ($ETH) Widget -->
-    <div class="widget-crypto-item"
+    <div class="widget-crypto-item coinmarketcap-currency-widget"
          data-currencyid="1027"
          data-base="USD"
          data-secondary=""
@@ -31,7 +31,7 @@
          data-stats="USD">
     </div>
     <!-- Solana ($SOL) Widget -->
-    <div class="widget-crypto-item"
+    <div class="widget-crypto-item coinmarketcap-currency-widget"
          data-currencyid="5426"
          data-base="USD"
          data-secondary=""
