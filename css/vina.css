@@ -1,8 +1,6 @@
 /* ============================================================================
  * File: css/vina.css
  * Description: Global stylesheet for Vina Network website. 
- *              Defines base layout, typography, navbar, footer, animations, 
- *              buttons, responsive adjustments and common UI elements.
  * Created by: Vina Network
  * ========================================================================== */
 
@@ -269,13 +267,17 @@ input {
 }
 
 /* Community Section */
-.community-1 {
+.community {
     padding: 20px;
     background: #c3c7c4;
     text-align: center;
 }
-.community-2 p {
-    margin-bottom: 20px !important;
+.community-link {
+	display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+	margin: 20px 0;
 }
 
 /*  Footer Section */
