@@ -20,10 +20,6 @@ error_reporting(E_ALL);
 
 // Define log path
 define('EXPORT_LOG_PATH', LOGS_PATH . 'holders_export_log.txt');
-if (!is_writable(LOGS_PATH)) {
-    error_log("Log directory $LOGS_PATH is not writable");
-    return;
-}
 file_put_contents(EXPORT_LOG_PATH, "export-holders: Script started - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
 // Define cache file
