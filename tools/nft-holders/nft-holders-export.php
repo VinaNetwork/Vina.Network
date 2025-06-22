@@ -14,12 +14,21 @@ require_once '../tools-api.php';
 
 session_start();
 ini_set('log_errors', 1);
-ini_set('error_log', '/var/www/vinanetwork/public_html/nft-holders/nfts/logs/php_error.log');
+ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Define log path
+// Define log path using LOGS_PATH from bootstrap.php
 define('EXPORT_LOG_PATH', LOGS_PATH . 'holders_export_log.txt');
+
+// Check if LOGS_PATH is writable
+if (!is_writable(LOGS_PATH)) {
+    error_log("export-holders: Logs directory $LOGS_PATH is not writable");
+    http_response_code(500);
+    echo json_encode(['error' => 'Server error: Logs directory is not writable']);
+    exit;
+}
+
 file_put_contents(EXPORT_LOG_PATH, "export-holders: Script started - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
 // Define cache file
