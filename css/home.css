@@ -4,7 +4,7 @@
  * Created by: Vina Network
  * -------------------------------------------------------------------------- */
 
-.home-container {margin-top: 72px;}
+
 
 /* Section headings */
 section h2,
@@ -14,7 +14,8 @@ section h3 {
     text-align: center;
 }
 
-/* Hero Section: Fullscreen top section with gradient background and animated text */
+.home-container {margin-top: 72px;}
+/* Hero head */
 .home-head {
     height: 100vh;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
@@ -59,14 +60,11 @@ section h3 {
     to { opacity: 1; transform: scale(1); }
 }
 
-/*  Card Sections: Layout and style for feature/info cards */
+/* Hero content */
 .home-content {padding: 20px;}
-
 .home-2 {background: #c3c7c4;}
 
-.home-12, 
-.home-22, 
-.home-32 {
+.home-table {
     display: flex;
     justify-content: center;
     gap: 2rem;
@@ -145,9 +143,7 @@ section h3 {
         word-wrap: break-word;
         animation: zoomIn 1s ease-out forwards 0.5s;
     }
-    .home-12, 
-    .home-22, 
-    .home-32 {
+    .home-table {
         flex-direction: column;
         align-items: center;
     }
