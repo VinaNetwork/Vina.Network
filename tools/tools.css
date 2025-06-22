@@ -139,8 +139,7 @@ h1, h2, h3 {text-align: center;}
 .export-section {margin: 20px 0;}
 .export-form {
     display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
+    justify-content: center;
 }
 .export-controls {
     display: flex;
