@@ -190,10 +190,10 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
             }
 
             ?>
-            <div class="t-8 result-section">
-                <div class="t-8-1 wallet-details">
-                    <div class="summary-card">
-                        <div class="summary-item">
+            <div class="tools-result wallet-analysis-result">
+                <div class="result-summary">
+                    <div class="result-card">
+                        <div class="result-item">
                             <i class="fas fa-wallet"></i>
                             <p class="wallet-address">
                                 <span><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['wallet_address']), -4); ?></span>
