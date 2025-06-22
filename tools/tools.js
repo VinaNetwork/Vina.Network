@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
     const tabsContainer = document.querySelector('.tools-nav');
-    let activeTab = document.querySelector('.t-link.active');
+    let activeTab = document.querySelector('.tools-nav-link.active');
 
     // Debug: Log initial tool and active tab
     console.log('Initial tool from URL:', tool);
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // If no tab is active but a tool is specified in the URL, activate the corresponding tab
     if (!activeTab && tool) {
-        activeTab = document.querySelector(`.t-link[data-tool="${tool}"]`);
+        activeTab = document.querySelector(`.tools-nav-link[data-tool="${tool}"]`);
         if (activeTab) {
             activeTab.classList.add('active');
             console.log(`Activated tab for tool: ${tool}`);
@@ -40,12 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Handle tab click events
-    document.querySelectorAll('.t-link').forEach(link => {
+    document.querySelectorAll('.tools-nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
 
             // Remove active class from all tabs and set the clicked tab as active
-            document.querySelectorAll('.t-link').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tools-nav-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
             // Scroll the clicked tab into center view
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            const tool = document.querySelector('.t-link.active')?.getAttribute('data-tool') || 'unknown';
+            const tool = document.querySelector('.tools-nav-link.active')?.getAttribute('data-tool') || 'unknown';
 
             console.log('Form submission:', {
                 formId: form.id,
