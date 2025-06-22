@@ -19,7 +19,7 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 // Define log path
-define('EXPORT_LOG_PATH', '/var/www/vinanetwork/public_html/nft-holders/nfts/logs/holders_export_log.txt');
+define('EXPORT_LOG_PATH', LOGS_PATH . 'holders_export_log.txt');
 file_put_contents(EXPORT_LOG_PATH, "export-holders: Script started - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
 
 // Define cache file
