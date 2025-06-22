@@ -5,17 +5,16 @@
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Get the "tool" parameter from URL to determine which tab should be active
+    // Initialize tab navigation
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
     const tabsContainer = document.querySelector('.tools-nav');
     let activeTab = document.querySelector('.tools-nav-link.active');
 
-    // Debug: Log initial tool and active tab
     console.log('Initial tool from URL:', tool);
     console.log('Active tab element:', activeTab);
 
-    // If no tab is active but a tool is specified in the URL, activate the corresponding tab
+    // Activate tab based on URL if no active tab
     if (!activeTab && tool) {
         activeTab = document.querySelector(`.tools-nav-link[data-tool="${tool}"]`);
         if (activeTab) {
@@ -26,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Scroll the active tab into view
+    // Scroll active tab into view
     if (tabsContainer && activeTab) {
         setTimeout(() => {
             const tabRect = activeTab.getBoundingClientRect();
@@ -44,11 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
 
-            // Remove active class from all tabs and set the clicked tab as active
+            // Update active tab
             document.querySelectorAll('.tools-nav-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
-            // Scroll the clicked tab into center view
+            // Scroll tab into center
             if (tabsContainer) {
                 const tabRect = this.getBoundingClientRect();
                 const containerRect = tabsContainer.getBoundingClientRect();
@@ -58,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Update URL and load the corresponding tool content
+            // Load tool content
             const tool = this.getAttribute('data-tool');
             console.log(`Loading tool: ${tool}`);
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
@@ -87,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('submit', (e) => {
         console.log('Form submitted:', e.target.id, 'Action:', e.target.action);
 
-        // Export form submission (only for nft-holders)
+        // Export form submission (NFT Holders)
         if (e.target.matches('.export-form')) {
             e.preventDefault();
 
@@ -112,8 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Invalid export type');
                 return;
             }
-
-            log_message(`export: Client - exportType=${exportType}, mintAddress=${mintAddress}, format=${exportFormat}`, 'client_log.txt');
 
             if (loader) loader.style.display = 'block';
 
@@ -179,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                const toolName = 'holders';
                 a.download = `holders_all_${mintAddress.substring(0, 8)}.${exportFormat}`;
                 console.log('Export file:', a.download);
                 document.body.appendChild(a);
@@ -265,15 +261,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Send client-side log message to the server (client_log.php)
-    function log_message(message, file) {
-        console.log('Logging to client_log:', message);
-        fetch('/tools/logs/client_log.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ message, file })
-        }).catch(err => console.error('Log error:', err));
-    }
+    // Debug copy icons after AJAX
+    console.log('DOM loaded, initializing copy debug');
+    setTimeout(() => {
+        console.log('Re-checking copy icons after AJAX');
+        document.querySelectorAll('.copy-icon').forEach(icon => {
+            console.log('Found copy-icon after AJAX:', icon, 'data-full:', icon.getAttribute('data-full'));
+        });
+    }, 1000);
 });
 
 // Copy functionality for wallet and table addresses
@@ -327,7 +322,7 @@ function fallbackCopy(text, icon) {
         if (success) {
             showCopyFeedback(icon);
         } else {
-            console.error('Fallback copy failed: document.execCommand returned false');
+            console.error('Fallback copy failed');
             alert('Không thể sao chép địa chỉ: Lỗi sao chép');
         }
     } catch (err) {
@@ -353,14 +348,3 @@ function showCopyFeedback(icon) {
     }, 1000);
     console.log('Copy successful');
 }
-
-// Debug copy icons after AJAX
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing copy debug');
-    setTimeout(() => {
-        console.log('Re-checking copy icons after AJAX');
-        document.querySelectorAll('.copy-icon').forEach(icon => {
-            console.log('Found copy-icon after AJAX:', icon, 'data-full:', icon.getAttribute('data-full'));
-        });
-    }, 1000);
-});
