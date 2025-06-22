@@ -1,15 +1,15 @@
 <?php
 // --------------------------------------------------------------------------
-// File: include/crypto_widget.php
+// File: include/widget-crypto.php
 // Description: Reusable section to display real-time crypto prices (BTC, ETH, SOL).
 // Created by: Vina Network
 // --------------------------------------------------------------------------
 ?>
 
 <!-- Crypto Price Widget Section -->
-<section class="crypto-widget">
+<section class="widget-crypto">
     <!-- Bitcoin ($BTC) Widget -->
-    <div class="coinmarketcap-currency-widget"
+    <div class="widget-crypto-item"
          data-currencyid="1"
          data-base="USD"
          data-secondary=""
@@ -19,9 +19,8 @@
          data-volume="true"
          data-stats="USD">
     </div>
-
     <!-- Ethereum ($ETH) Widget -->
-    <div class="coinmarketcap-currency-widget"
+    <div class="widget-crypto-item"
          data-currencyid="1027"
          data-base="USD"
          data-secondary=""
@@ -31,9 +30,8 @@
          data-volume="true"
          data-stats="USD">
     </div>
-
     <!-- Solana ($SOL) Widget -->
-    <div class="coinmarketcap-currency-widget"
+    <div class="widget-crypto-item"
          data-currencyid="5426"
          data-base="USD"
          data-secondary=""
