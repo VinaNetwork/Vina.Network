@@ -198,10 +198,10 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 
             ob_start();
             ?>
-            <div class="t-8 result-section">
+            <div class="tools-result nft-info-result">
                 <h2>NFT Details</h2>
-                <div class="t-8-1 nft-summary">
-                    <div class="nft-card">
+                <div class="result-summary">
+                    <div class="result-card">
                         <div class="nft-image">
                             <?php if ($formatted_data['image']): ?>
                                 <img src="<?php echo htmlspecialchars($formatted_data['image']); ?>" alt="NFT Image">
