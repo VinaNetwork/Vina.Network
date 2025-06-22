@@ -1,12 +1,11 @@
 /* ============================================================================
  * File: notification/notification.css
  * Description: CSS styles for the Notification page of Vina Network.
- *              This file styles the notification message shown when products are under development.
  * Created by: Vina Network
  * ========================================================================== */
 
 /* Layout & Container Styling */
-.n-1 {
+.notification {
     min-height: 100vh;
     margin-top: 72px;
     display: flex; 
@@ -16,7 +15,7 @@
 }
 
 /* Notification Card Styling */
-.n-2 {
+.notification-content {
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     border-radius: 15px; 
     padding: 2rem;
@@ -27,32 +26,32 @@
 }
 
 /* Hover Animation for Notification Card */
-.n-2:hover {
+.notification-content:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* Icon Styling */
-.n-2 i {
+.notification-content i {
     font-size: 4rem;
     color: #00d4ff;
 }
 
 /* Heading Styling */
-.n-2 h1 {color: #00d4ff;}
+.notification-content h1 {color: #00d4ff;}
 
 /* Paragraph Styling */
-.n-2 p {
+.notification-content p {
     color: #fff;
     margin-bottom: 20px !important;
 }
 
 /* Responsive Design for Mobile Screens */
 @media screen and (max-width: 768px) {
-    .n-1 {
+    .notification {
         margin-top: 64px;
         min-height: unset;
     }
 
-    .n-2 i {font-size: 2rem;}
+    .notification-content i {font-size: 2rem;}
 }
