@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: index.php
+// File: tools/nft-holders/nft-holders-export.php
 // Description: This script handles export requests for NFT holder data (CSV/JSON format).
 // Created by: Vina Network
 // ============================================================================
