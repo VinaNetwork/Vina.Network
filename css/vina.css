@@ -280,6 +280,24 @@ input {
 	margin: 20px 0;
 }
 
+/*  Crypto Widget */
+.widget-crypto {
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.widget-crypto-item {
+    flex: 1;
+    background: #fff;
+    border-radius: 10px;
+}
+
 /*  Footer Section */
 footer {
     background: #1a1a1a;
@@ -420,6 +438,17 @@ footer {
     .dropdown-toggle.active .dropdown-icon {transform: rotate(90deg);}
     .burger {display: block;}
     .logo img {height: 48px;}
+	
+	/*  Widget Section */
+	.widget-crypto {
+        flex-direction: column;
+        align-items: center;
+    }
+    .widget-crypto-item {
+        width: 100%;
+    }
+	
+	/*  Footer Section */
     .footer-1 {flex-direction: column;}
     .footer-2 {margin: .5rem 0;}
     .footer-5 {font-size: 12px;}
