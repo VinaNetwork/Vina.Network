@@ -4,7 +4,9 @@
  * Created by: Vina Network
  * -------------------------------------------------------------------------- */
 
-/* Common Section Styles: Styling for section headings */
+.home-container {margin-top: 72px;}
+
+/* Section headings */
 section h2,
 section h3 {
     color: #007bff;
@@ -13,9 +15,8 @@ section h3 {
 }
 
 /* Hero Section: Fullscreen top section with gradient background and animated text */
-.h-1 {
+.home-head {
     height: 100vh;
-    margin-top: 72px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     background: cover center fixed;
     display: flex;
@@ -26,8 +27,8 @@ section h3 {
     overflow-y: auto;
 }
 
-.h-2 {padding: 20px;}
-.h-2 h1 {
+.home-head-item {padding: 20px;}
+.home-head-item h1 {
     background: linear-gradient(45deg, #00d4ff, #ff00ff, #00ffaa, #00d4ff) 0/400%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -35,15 +36,15 @@ section h3 {
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
     animation: gradientText 8s ease infinite, zoomIn 1s ease-out forwards;
 }
-.h-2 p {
+.home-head-item p {
     color: #e0e0e0;
     margin-bottom: 20px !important;
     animation: zoomIn 1s ease-out forwards 0.5s;
 }
-.h-2 h1:hover {
+.home-head-item h1:hover {
     text-shadow: 0 0 15px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.5);
 }
-.h-2 p:hover {
+.home-head-item p:hover {
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.6);
 }
 
@@ -59,17 +60,13 @@ section h3 {
 }
 
 /*  Card Sections: Layout and style for feature/info cards */
-.h-3, 
-.h-7, 
-.h-11 {
-    padding: 20px;
-}
+.home-content {padding: 20px;}
 
-.h-7 {background: #c3c7c4;}
+.home-2 {background: #c3c7c4;}
 
-.h-5, 
-.h-9, 
-.h-13 {
+.home-12, 
+.home-22, 
+.home-32 {
     display: flex;
     justify-content: center;
     gap: 2rem;
@@ -77,9 +74,7 @@ section h3 {
     margin: 0 auto;
 }
 
-.h-6, 
-.h-10, 
-.h-14 {
+.home-item {
     background: #fff;
     border-radius: 15px;
     padding: 20px;
@@ -89,29 +84,17 @@ section h3 {
     cursor: pointer;
 }
 
-.h-6:hover, 
-.h-10:hover, 
-.h-14:hover {
+.home-item:hover {
     transform: translateY(-10px);
     box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
     background: #e6f7ff;
 }
 
-.h-6:active, 
-.h-10:active, 
-.h-14:active {
-    transform: scale(0.95);
-}
+.home-item:active {transform: scale(0.95);}
+.home-item:active h3 {color: #00d4ff;}
 
-.h-6:active h3, 
-.h-10:active h3, 
-.h-14:active h3 {
-    color: #00d4ff;
-}
-
-.h-6 img,
-.h-10 i, 
-.h-14 i {
+.home-item img,
+.home-item i {
     width: 50px;
     height: 50px;
     font-size: 2.5rem;
@@ -122,13 +105,12 @@ section h3 {
     margin: 0 auto;
 }
 
-.h-6:hover .card-icon, 
-.h-10:hover i, 
-.h-14:hover i {
+.home-item:hover .card-icon, 
+.home-item:hover i {
     transform: scale(1.1) rotate(15deg);
 }
 
-/*  Crypto Widget: Display crypto data widgets (e.g., from CoinMarketCap) */
+/*  Crypto Widget */
 .crypto-widget {
     text-align: center;
     padding: 20px;
@@ -148,32 +130,29 @@ section h3 {
 
 /*  Responsive Design: Adjust layout and components for small screens */
 @media screen and (max-width: 768px) {
-    .h-1 {
+    .home-container {margin-top: 64px;}
+	.home-head {
         background-attachment: scroll;
-        margin-top: 64px;
         height: 50vh;
     }
-    .h-2 h1 {
+    .home-head-item h1 {
         white-space: normal;
         word-wrap: break-word;
         animation: gradientText 6s ease infinite, zoomIn 1s ease-out forwards;
     }
-    .h-2 p {
+    .home-head-item p {
         white-space: normal;
         word-wrap: break-word;
         animation: zoomIn 1s ease-out forwards 0.5s;
     }
-    .h-5, 
-    .h-9, 
-    .h-13 {
+    .home-12, 
+    .home-22, 
+    .home-32 {
         flex-direction: column;
         align-items: center;
     }
-    .h-6, 
-    .h-10, 
-    .h-14 {
-        width: 100%;
-    }
+    .home-item {width: 100%;}
+	
     .crypto-widget {
         flex-direction: column;
         align-items: center;
