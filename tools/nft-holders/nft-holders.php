@@ -85,6 +85,24 @@ require_once $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
+<style>
+/* Inline CSS for NFT image in collection info table */
+.nft-holders-collection-image img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.nft-holders-collection-table {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.nft-holders-collection-table table {
+    flex: 1;
+}
+</style>
 <div class="nft-holders">
     <!-- Render form unless rate limit exceeded -->
     <?php
@@ -171,12 +189,28 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     log_message("nft-holders: No cache found for mintAddress=$mintAddress, fetching new data", 'nft_holders_log.txt');
                 }
 
-                foreach ($cache_data as $address => $data) {
-                    if (!isset($data['timestamp']) || (time() - $data['timestamp'] > $cache_expiration)) {
-                        unset($cache_data[$address]);
-                        log_message("nft-holders: Removed expired cache for mintAddress=$address", 'nft_holders_log.txt');
-                    }
+                // Fetch collection info using getAsset API
+                log_message("nft-holders: Calling getAsset API for mintAddress=$mintAddress", 'nft_holders_log.txt', 'INFO');
+                $params = ['id' => $mintAddress];
+                $asset = callAPI('getAsset', $params, 'POST');
+
+                log_message("nft-holders: API raw response for getAsset=" . json_encode($asset, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_holders_log.txt', 'DEBUG');
+                if (isset($asset['error'])) {
+                    log_message("nft-holders: API error: " . json_encode($asset['error']), 'nft_holders_log.txt', 'ERROR');
+                    throw new Exception(is_array($asset['error']) ? ($asset['error']['message'] ?? 'API error') : $asset['error']);
                 }
+                if (empty($asset['result']) || !isset($asset['result']['id'])) {
+                    log_message("nft-holders: Collection not found or invalid response for mintAddress=$mintAddress", 'nft_holders_log.txt', 'ERROR');
+                    throw new Exception('Collection not found for the provided address');
+                }
+
+                $asset = $asset['result'];
+                $collection_data = [
+                    'name' => $asset['content']['metadata']['name'] ?? 'N/A',
+                    'image' => $asset['content']['links']['image'] ?? '',
+                    'owner' => $asset['ownership']['owner'] ?? 'N/A'
+                ];
+                log_message("nft-holders: Collection data=" . json_encode($collection_data, JSON_PRETTY_PRINT), 'nft_holders_log.txt', 'DEBUG');
 
                 ini_set('memory_limit', '512M');
                 $total_items = 0;
@@ -266,6 +300,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     'total_wallets' => $total_wallets,
                     'items' => $items,
                     'wallets' => $wallets,
+                    'collection_data' => $collection_data,
                     'timestamp' => time()
                 ];
                 $fp = fopen($cache_file, 'c');
@@ -283,14 +318,19 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     throw new Exception("Failed to lock cache file");
                 }
                 fclose($fp);
-                log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
+                log_message("nft-holders: Cached total_items=$total_items, total_wallets=$total_wallets, collection_data=" . json_encode($collection_data) . " for $mintAddress with timestamp=" . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
             } else {
                 $total_items = $cache_data[$mintAddress]['total_items'] ?? 0;
                 $total_wallets = $cache_data[$mintAddress]['total_wallets'] ?? 0;
                 $items = $cache_data[$mintAddress]['items'] ?? [];
                 $wallets = $cache_data[$mintAddress]['wallets'] ?? [];
+                $collection_data = $cache_data[$mintAddress]['collection_data'] ?? [
+                    'name' => 'N/A',
+                    'image' => '',
+                    'owner' => 'N/A'
+                ];
                 $cache_timestamp = $cache_data[$mintAddress]['timestamp'];
-                log_message("nft-holders: Retrieved total_items=$total_items, total_wallets=$total_wallets from cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $cache_timestamp), 'nft_holders_log.txt');
+                log_message("nft-holders: Retrieved total_items=$total_items, total_wallets=$total_wallets, collection_data=" . json_encode($collection_data) . " from cache for $mintAddress, cached at " . date('Y-m-d H:i:s', $cache_timestamp), 'nft_holders_log.txt');
             }
 
             log_message("nft-holders: Final total_items=$total_items, total_wallets=$total_wallets for $mintAddress", 'nft_holders_log.txt');
@@ -306,6 +346,34 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                 <?php if ($total_wallets === 0): ?>
                     <p class="result-error">No holders found for this collection.</p>
                 <?php else: ?>
+                    <!-- Collection Info Table -->
+                    <div class="nft-holders-collection-table">
+                        <div class="nft-holders-collection-image">
+                            <?php if ($collection_data['image']): ?>
+                                <img src="<?php echo htmlspecialchars($collection_data['image']); ?>" alt="Collection Image">
+                            <?php else: ?>
+                                <p>No image available</p>
+                            <?php endif; ?>
+                        </div>
+                        <table>
+                            <tr>
+                                <th>Collection Name</th>
+                                <td><?php echo htmlspecialchars($collection_data['name']); ?></td>
+                            </tr>
+                            <tr>
+                                <th>Owner</th>
+                                <td>
+                                    <?php if ($collection_data['owner'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $collection_data['owner'])): ?>
+                                        <span><?php echo substr(htmlspecialchars($collection_data['owner']), 0, 4) . '...' . substr(htmlspecialchars($collection_data['owner']), -4); ?></span>
+                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($collection_data['owner']); ?>"></i>
+                                    <?php else: ?>
+                                        <span>N/A</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- Existing Summary -->
                     <div class="result-summary">
                         <div class="result-card">
                             <div class="result-item">
