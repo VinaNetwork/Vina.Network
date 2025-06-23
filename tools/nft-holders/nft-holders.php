@@ -373,9 +373,9 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                             </tr>
                         </table>
                     </div>
-                    <!-- Existing Summary -->
-                    <div class="result-summary">
-                        <!-- Collection Info Table -->
+                
+                    <!-- Collection Info Table -->
+                    <div class="collection-info">
                         <div class="result-card">
                         <div class="result-item">
                             <?php if ($collection_data['image']): ?>
@@ -404,7 +404,10 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                             </table>
                             </div>
                         </div>
-                        
+                    </div>
+                
+                    <!-- Existing Summary -->
+                    <div class="result-summary">
                         <div class="result-card">
                             <div class="result-item">
                                 <i class="fas fa-wallet"></i>
