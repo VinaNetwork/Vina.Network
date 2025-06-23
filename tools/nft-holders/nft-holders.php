@@ -347,14 +347,14 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     <p class="result-error">No holders found for this collection.</p>
                 <?php else: ?>
                     <!-- Collection Info Table -->
-                    <div class="nft-holders-collection-table">
-                        <div class="nft-holders-collection-image">
+                    <div class="nft-collection-info">
+                        
                             <?php if ($collection_data['image']): ?>
                                 <img src="<?php echo htmlspecialchars($collection_data['image']); ?>" alt="Collection Image">
                             <?php else: ?>
                                 <p>No image available</p>
                             <?php endif; ?>
-                        </div>
+                        
                         <table>
                             <tr>
                                 <th>Collection Name:</th>
