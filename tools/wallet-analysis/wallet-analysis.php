@@ -160,27 +160,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Exception('Invalid Solana wallet address format');
             }
 
-            // Read names cache with flock
-            $names_cache_data = [];
-            $fp = fopen($names_cache_file, 'r');
-            if (flock($fp, LOCK_SH)) {
-                $names_cache_content = file_get_contents($names_cache_file);
-                if ($names_cache_content === false || filesize($names_cache_file) === 0) {
-                    log_message("wallet_analysis: Failed to read names_cache.json or empty file, path=$names_cache_file", 'wallet_api_log.txt', 'ERROR');
-                    $names_cache_data = [];
-                } else {
-                    log_message("wallet_analysis: Reading names_cache.json, content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'DEBUG');
-                    $names_cache_data = json_decode($names_cache_content, true);
-                    if ($names_cache_data === null) {
-                        log_message("wallet_analysis: Failed to parse names_cache.json, error=" . json_last_error_msg() . ", content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'ERROR');
-                        $names_cache_data = [];
-                    }
-                }
-                flock($fp, LOCK_UN);
+            // Read names cache without flock
+            $names_cache_content = file_get_contents($names_cache_file);
+            if ($names_cache_content === false || filesize($names_cache_file) === 0) {
+                log_message("wallet_analysis: Failed to read names_cache.json or empty file, path=$names_cache_file", 'wallet_api_log.txt', 'ERROR');
+                $names_cache_data = [];
             } else {
-                log_message("wallet_analysis: Failed to lock names_cache.json for reading, path=$names_cache_file", 'wallet_api_log.txt', 'ERROR');
+                log_message("wallet_analysis: Reading names_cache.json, content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'DEBUG');
+                $names_cache_data = json_decode($names_cache_content, true);
+                if ($names_cache_data === null) {
+                    log_message("wallet_analysis: Failed to parse names_cache.json, error=" . json_last_error_msg() . ", content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'ERROR');
+                    $names_cache_data = [];
+                }
             }
-            fclose($fp);
 
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600; // 3h for assets
@@ -234,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if ($item['interface'] === 'FungibleToken') {
                             $formatted_data['tokens'][] = [
                                 'mint' => $item['id'] ?? 'N/A',
-                                'name' => $item['content']['metadata']['name'] ?? $item['content']['metadata']['symbol'] ?? 'Unknown',
+                                'name' => $item['content']['metadata']['name'] ? $item['content']['metadata']['name'] : ($item['content']['metadata']['symbol'] ?? 'Unknown'),
                                 'balance' => isset($item['token_info']['balance']) ? $item['token_info']['balance'] / pow(10, $item['token_info']['decimals']) : 0,
                                 'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
                             ];
