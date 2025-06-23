@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/bootstrap.php
-// Description: Security check and core path constants for tools module
+// Description: Security check: Prevent direct access to this file
 // Created by: Vina Network
 // ============================================================================
 
@@ -17,8 +17,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('TOOLS_PATH', ROOT_PATH . 'tools/');
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
-define('NFT_INFO_PATH', TOOLS_PATH . 'nft-info/'); // Added for NFT Info module
-define('WALLET_ANALYSIS_PATH', TOOLS_PATH . 'wallet-analysis/'); // Added for Wallet Analysis module
 define('LOGS_PATH', TOOLS_PATH . 'logs/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
 
@@ -60,36 +58,6 @@ function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') 
         if (!is_writable(LOGS_PATH)) {
             error_log("Log directory $LOGS_PATH is not writable");
             return;
-        }
-        // Create NFT_HOLDERS_PATH if it doesn't exist
-        if (!is_dir(NFT_HOLDERS_PATH)) {
-            if (!mkdir(NFT_HOLDERS_PATH, 0750, true)) {
-                error_log("Failed to create NFT holders directory: " . NFT_HOLDERS_PATH);
-                return;
-            }
-            chown(NFT_HOLDERS_PATH, 'www-data');
-            chgrp(NFT_HOLDERS_PATH, 'www-data');
-            chmod(NFT_HOLDERS_PATH, 0750);
-        }
-        // Create NFT_INFO_PATH if it doesn't exist
-        if (!is_dir(NFT_INFO_PATH)) {
-            if (!mkdir(NFT_INFO_PATH, 0750, true)) {
-                error_log("Failed to create NFT info directory: " . NFT_INFO_PATH);
-                return;
-            }
-            chown(NFT_INFO_PATH, 'www-data');
-            chgrp(NFT_INFO_PATH, 'www-data');
-            chmod(NFT_INFO_PATH, 0750);
-        }
-        // Create WALLET_ANALYSIS_PATH if it doesn't exist
-        if (!is_dir(WALLET_ANALYSIS_PATH)) {
-            if (!mkdir(WALLET_ANALYSIS_PATH, 0750, true)) {
-                error_log("Failed to create wallet analysis directory: " . WALLET_ANALYSIS_PATH);
-                return;
-            }
-            chown(WALLET_ANALYSIS_PATH, 'www-data');
-            chgrp(WALLET_ANALYSIS_PATH, 'www-data');
-            chmod(WALLET_ANALYSIS_PATH, 0750);
         }
         // Ensure log file exists
         if (!file_exists($log_path)) {
