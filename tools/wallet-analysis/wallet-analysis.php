@@ -82,10 +82,6 @@ require_once $api_helper_path;
 log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO');
 ?>
 
-<style>
-.tools-form { display: block; }
-</style>
-
 <div class="wallet-analysis">
     <?php
     $rate_limit_exceeded = false;
