@@ -142,6 +142,9 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             return ['error' => 'Failed to parse API response as JSON.'];
         }
 
+        // Log full response for debugging
+        log_message("api-helper: Full response - Endpoint: $endpoint, URL: $log_url, Response: " . json_encode($data), 'tools_api_log.txt', 'DEBUG');
+
         // Return error if API-level error exists
         if (isset($data['error'])) {
             $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
