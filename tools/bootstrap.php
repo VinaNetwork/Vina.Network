@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/bootstrap.php
-// Description: Security check: Prevent direct access to this file
+// Description: Security check and utility functions for tools module
 // Created by: Vina Network
 // ============================================================================
 
@@ -33,9 +33,57 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // ---------------------------------------------------
+// Ensure directory and file exist with correct permissions
+// Creates directory and file if they don't exist, sets permissions
+// @param string $dir_path  - Directory path to check/create
+// @param string $file_path - File path to check/create
+// @param string $log_file  - Log file for errors (default: debug_log.txt)
+// @return bool - True if successful, false if failed
+// ---------------------------------------------------
+function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log.txt') {
+    try {
+        // Create directory if it doesn't exist
+        if (!is_dir($dir_path)) {
+            if (!mkdir($dir_path, 0764, true)) {
+                log_message("Failed to create directory: $dir_path", $log_file, 'ERROR');
+                return false;
+            }
+            chown($dir_path, 'www-data');
+            chgrp($dir_path, 'www-data');
+            chmod($dir_path, 0764);
+            log_message("Created directory: $dir_path", $log_file, 'INFO');
+        }
+        // Check if directory is writable
+        if (!is_writable($dir_path)) {
+            log_message("Directory not writable: $dir_path", $log_file, 'ERROR');
+            return false;
+        }
+        // Create file if it doesn't exist
+        if (!file_exists($file_path)) {
+            if (file_put_contents($file_path, json_encode([])) === false) {
+                log_message("Failed to create file: $file_path", $log_file, 'ERROR');
+                return false;
+            }
+            chown($file_path, 'www-data');
+            chgrp($file_path, 'www-data');
+            chmod($file_path, 0664);
+            log_message("Created file: $file_path", $log_file, 'INFO');
+        }
+        // Check if file is writable
+        if (!is_writable($file_path)) {
+            log_message("File not writable: $file_path", $log_file, 'ERROR');
+            return false;
+        }
+        return true;
+    } catch (Exception $e) {
+        log_message("Error in ensure_directory_and_file: " . $e->getMessage(), $log_file, 'ERROR');
+        return false;
+    }
+}
+
+// ---------------------------------------------------
 // Logging utility function
 // Writes timestamped messages to the specified log file
-//
 // @param string $message    - The log content/message
 // @param string $log_file   - Filename within LOGS_PATH to write logs
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
@@ -46,27 +94,10 @@ function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') 
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
     try {
-        // Create LOGS_PATH if it doesn't exist
-        if (!is_dir(LOGS_PATH)) {
-            if (!mkdir(LOGS_PATH, 0764, true)) {
-                error_log("Failed to create log directory: " . LOGS_PATH);
-                return;
-            }
-            chown(LOGS_PATH, 'www-data');
-            chgrp(LOGS_PATH, 'www-data');
-            chmod(LOGS_PATH, 0764);
-        }
-        // Check if LOGS_PATH is writable
-        if (!is_writable(LOGS_PATH)) {
-            error_log("Log directory $LOGS_PATH is not writable");
+        // Use ensure_directory_and_file for log directory and file
+        if (!ensure_directory_and_file(LOGS_PATH, $log_path, $log_file)) {
+            error_log("Log setup failed for $log_path: $message");
             return;
-        }
-        // Ensure log file exists
-        if (!file_exists($log_path)) {
-            touch($log_path);
-            chown($log_path, 'www-data');
-            chgrp($log_path, 'www-data');
-            chmod($log_path, 0664);
         }
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
