@@ -167,6 +167,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
                 $sns_program = 'names111111111111111111111111111111111111111111';
                 foreach ($result['items'] as $item) {
+                    log_message("wallet_analysis: Processing item, interface=" . ($item['interface'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []), 'wallet_analysis_log.txt', 'DEBUG');
                     if ($item['interface'] === 'FungibleToken') {
                         $formatted_data['tokens'][] = [
                             'mint' => $item['id'] ?? 'N/A',
@@ -175,7 +176,9 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                             'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
                         ];
                     } elseif (in_array($item['interface'], ['V1_NFT', 'ProgrammableNFT'])) {
-                        if (isset($item['creators'][0]['address']) && $item['creators'][0]['address'] === $sns_program) {
+                        if ((isset($item['creators'][0]['address']) && $item['creators'][0]['address'] === $sns_program) || 
+                            (isset($item['authorities'][0]['address']) && $item['authorities'][0]['address'] === $sns_program)) {
+                            log_message("wallet_analysis: Found .sol domain, name=" . ($item['content']['metadata']['name'] ?? 'N/A'), 'wallet_analysis_log.txt', 'INFO');
                             $formatted_data['sol_domains'][] = [
                                 'domain' => $item['content']['metadata']['name'] ?? 'N/A',
                                 'mint' => $item['id'] ?? 'N/A'
@@ -212,8 +215,11 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 log_message("wallet_analysis: Cached data for walletAddress=$walletAddress, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'INFO');
             } else {
                 $formatted_data = $cache_data[$walletAddress]['data'];
-                log_message("wallet_analysis: Retrieved from cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
+                $formatted_data['sol_domains'] = $formatted_data['sol_domains'] ?? [];
+                log_message("wallet_analysis: Retrieved from cache for walletAddress=$walletAddress, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'INFO');
             }
+
+            log_message("wallet_analysis: sol_domains before render=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'DEBUG');
 
             ?>
             <div class="tools-result wallet-analysis-result">
