@@ -27,33 +27,15 @@ require_once $bootstrap_path;
 session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
-log_message("nft_info: Session started, session_id=" . session_id(), 'nft_info_log.txt', 'INFO');
 
 // Cache directory and file
 $cache_dir = NFT_INFO_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_info_cache.json';
 
-// Create cache directory if it doesn't exist
-if (!is_dir($cache_dir)) {
-    if (!mkdir($cache_dir, 0755, true)) {
-        log_message("nft_info: Failed to create cache directory at $cache_dir", 'nft_info_log.txt', 'ERROR');
-        echo '<div class="result-error"><p>Cannot create cache directory</p></div>';
-        exit;
-    }
-    log_message("nft_info: Created cache directory at $cache_dir", 'nft_info_log.txt', 'INFO');
-}
-if (!file_exists($cache_file)) {
-    if (file_put_contents($cache_file, json_encode([])) === false) {
-        log_message("nft_info: Failed to create cache file at $cache_file", 'nft_info_log.txt', 'ERROR');
-        echo '<div class="result-error"><p>Cannot create cache file</p></div>';
-        exit;
-    }
-    chmod($cache_file, 0644);
-    log_message("nft_info: Created cache file at $cache_file", 'nft_info_log.txt', 'INFO');
-}
-if (!is_writable($cache_file)) {
-    log_message("nft_info: Cache file $cache_file is not writable", 'nft_info_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Cache file is not writable</p></div>';
+// Check and create cache directory and file
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_info_log.txt')) {
+    log_message("nft_info: Cache setup failed for $cache_dir or $cache_file", 'nft_info_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
 
