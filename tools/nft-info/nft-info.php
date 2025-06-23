@@ -40,12 +40,17 @@ include_once $root_path . 'include/navbar.php';
 // Define cache file using NFT_INFO_PATH
 $cache_file = NFT_INFO_PATH . 'cache/nft_info_cache.json';
 
-// Check if cache directory is writable
-if (!is_writable(NFT_INFO_PATH . 'cache/')) {
-    log_message("Cache directory " . NFT_INFO_PATH . "cache/ is not writable", 'nft_info_log.txt', 'ERROR');
-    http_response_code(500);
-    echo '<div class="result-error"><p>Server error: Cache directory is not writable</p></div>';
-    exit;
+// Check cache directory
+$cache_dir = NFT_INFO_PATH . 'cache/';
+if (!is_dir($cache_dir)) {
+    log_message("Cache directory $cache_dir does not exist", 'nft_info_log.txt', 'ERROR');
+}
+if (!is_writable($cache_dir)) {
+    log_message("Cache directory $cache_dir is not writable", 'nft_info_log.txt', 'ERROR');
+    // Show warning but don't exit
+    $cache_error = '<div class="result-error"><p>Warning: Cache directory is not writable, results may not be cached</p></div>';
+} else {
+    $cache_error = '';
 }
 
 $cache_expiration = 3 * 3600; // 3 hours
@@ -68,56 +73,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
     if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
         log_message("nft-info: Invalid CSRF token", 'nft_info_log.txt', 'ERROR');
-        http_response_code(403);
-        echo '<div class="result-error"><p>Invalid CSRF token</p></div>';
-        exit;
-    }
-
-    // Check rate limit
-    $ip_address = $_SERVER['REMOTE_ADDR'];
-    $rate_limit_key = "rate_limit_nft_info:$ip_address";
-    $rate_limit_count = $_SESSION[$rate_limit_key] ?? 0;
-    $rate_limit_time = $_SESSION["{$rate_limit_key}_time"] ?? 0;
-
-    if (time() - $rate_limit_time > 60) {
-        $rate_limit_count = 0;
-        $_SESSION["{$rate_limit_key}_time"] = time();
-    }
-
-    if ($rate_limit_count >= 5) {
-        $rate_limit_exceeded = true;
-        log_message("nft-info: Rate limit exceeded for IP $ip_address", 'nft_info_log.txt', 'WARNING');
+        $result = ['error' => 'Invalid CSRF token'];
     } else {
-        $_SESSION[$rate_limit_key] = $rate_limit_count + 1;
-        $mintAddress = trim($_POST['mintAddress'] ?? '');
+        // Check rate limit
+        $ip_address = $_SERVER['REMOTE_ADDR'];
+        $rate_limit_key = "rate_limit_nft_info:$ip_address";
+        $rate_limit_count = $_SESSION[$rate_limit_key] ?? 0;
+        $rate_limit_time = $_SESSION["{$rate_limit_key}_time"] ?? 0;
 
-        if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-            log_message("nft-info: Invalid mint address: $mintAddress", 'nft_info_log.txt', 'ERROR');
-            $result = ['error' => 'Invalid NFT mint address'];
+        if (time() - $rate_limit_time > 60) {
+            $rate_limit_count = 0;
+            $_SESSION["{$rate_limit_key}_time"] = time();
+        }
+
+        if ($rate_limit_count >= 5) {
+            $rate_limit_exceeded = true;
+            log_message("nft-info: Rate limit exceeded for IP $ip_address", 'nft_info_log.txt', 'WARNING');
         } else {
-            // Check cache
-            if (isset($cache_data[$mintAddress]) && 
-                isset($cache_data[$mintAddress]['timestamp']) && 
-                (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration)) {
-                $result = $cache_data[$mintAddress]['data'];
-                $cache_timestamp = date('Y-m-d H:i:s', $cache_data[$mintAddress]['timestamp']);
-                log_message("nft-info: Using cache for mintAddress=$mintAddress", 'nft_info_log.txt');
+            $_SESSION[$rate_limit_key] = $rate_limit_count + 1;
+            $mintAddress = trim($_POST['mintAddress'] ?? '');
+
+            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
+                log_message("nft-info: Invalid mint address: $mintAddress", 'nft_info_log.txt', 'ERROR');
+                $result = ['error' => 'Invalid NFT mint address'];
             } else {
-                // Call API
-                $api_result = callAPI('getAsset', ['id' => $mintAddress]);
-                if (isset($api_result['error'])) {
-                    log_message("nft-info: API error for mintAddress=$mintAddress: " . json_encode($api_result['error']), 'nft_info_log.txt', 'ERROR');
-                    $result = ['error' => $api_result['error']];
+                // Check cache
+                if (isset($cache_data[$mintAddress]) && 
+                    isset($cache_data[$mintAddress]['timestamp']) && 
+                    (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration)) {
+                    $result = $cache_data[$mintAddress]['data'];
+                    $cache_timestamp = date('Y-m-d H:i:s', $cache_data[$mintAddress]['timestamp']);
+                    log_message("nft-info: Using cache for mintAddress=$mintAddress", 'nft_info_log.txt');
                 } else {
-                    $result = $api_result['result'];
-                    $cache_data[$mintAddress] = [
-                        'data' => $result,
-                        'timestamp' => time()
-                    ];
-                    if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
-                        log_message("nft-info: Failed to write cache for mintAddress=$mintAddress", 'nft_info_log.txt', 'ERROR');
+                    // Call API
+                    $api_result = callAPI('getAsset', ['id' => $mintAddress]);
+                    if (isset($api_result['error'])) {
+                        log_message("nft-info: API error for mintAddress=$mintAddress: " . json_encode($api_result['error']), 'nft_info_log.txt', 'ERROR');
+                        $result = ['error' => $api_result['error']];
                     } else {
-                        log_message("nft-info: Cached data for mintAddress=$mintAddress", 'nft_info_log.txt');
+                        $result = $api_result['result'];
+                        if (is_writable($cache_dir)) {
+                            $cache_data[$mintAddress] = [
+                                'data' => $result,
+                                'timestamp' => time()
+                            ];
+                            if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
+                                log_message("nft-info: Failed to write cache for mintAddress=$mintAddress", 'nft_info_log.txt', 'ERROR');
+                            } else {
+                                log_message("nft-info: Cached data for mintAddress=$mintAddress", 'nft_info_log.txt');
+                            }
+                        }
                     }
                 }
             }
@@ -137,8 +142,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <p class="note">Note: Only supports checking on the Solana blockchain.</p>
         <div class="tools-content">
+            <?php if ($cache_error): ?>
+                <?php echo $cache_error; ?>
+            <?php endif; ?>
             <!-- Form always displayed first -->
-            <form id="nftInfoForm" action="" method="POST" class="tools-form">
+            <form id="nftInfoForm" action="" method="POST" class="tools-form" style="display: block;">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
                 <div class="input-group">
                     <input type="text" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>" placeholder="Enter NFT Mint Address" class="form-control">
