@@ -120,6 +120,12 @@ h1, h2, h3 {text-align: center;}
 }
 .result-item p {color: #666;}
 .result-item h3 {color: #333;}
+.result-item img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+}
 .cache-timestamp {
     text-align: center;
     color: #666;
