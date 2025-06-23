@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/wallet-analysis/wallet-analysis.php
-// Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
+// Description: Check wallet balance and assets (SOL, SPL tokens, NFTs) for a Solana wallet.
 // Author: Vina Network
 // ============================================================================
 
@@ -32,7 +32,6 @@ log_message("wallet_analysis: Session started, session_id=" . session_id(), 'wal
 // Cache directory and file
 $cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_analysis_cache.json';
-$api_response_file = $cache_dir . 'api_response.json';
 
 // Create cache directory if it doesn't exist
 if (!is_dir($cache_dir)) {
@@ -61,7 +60,7 @@ if (!is_writable($cache_file)) {
 // Page configuration
 $root_path = '../../';
 $page_title = 'Check Wallet Analysis - Vina Network';
-$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs, .sol domains) of a Solana wallet by entering its address.';
+$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs) of a Solana wallet by entering its address.';
 $page_css = ['../../css/vina.css', '../tools.css'];
 
 log_message("wallet_analysis: Including header.php", 'wallet_analysis_log.txt', 'INFO');
@@ -72,8 +71,8 @@ include_once $root_path . 'include/navbar.php';
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message('wallet_analysis: tools-api.php not found at $api_helper_path', 'wallet_analysis_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Missing api.php</p></div>';
+    log_message("wallet_analysis: tools-api.php not found at $api_helper_path", 'wallet_analysis_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
@@ -108,7 +107,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
         ?>
         <div class="tools-form">
             <h2>Check Wallet Analysis</h2>
-            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), NFTs, and .sol domains.</p>
+            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
             <form id="walletAnalysisForm" method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
@@ -139,13 +138,10 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 $params = [
                     'ownerAddress' => $walletAddress,
                     'page' => 1,
-                    'limit' => 2000,
+                    'limit' => 1000,
                     'displayOptions' => [
                         'showFungible' => true,
-                        'showNonFungible' => true,
-                        'showNativeBalance' => true,
-                        'showInscription' => true,
-                        'showCollectionMetadata' => true
+                        'showNativeBalance' => true
                     ]
                 ];
                 $assets = callAPI('getAssetsByOwner', $params, 'POST');
@@ -157,10 +153,6 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     throw new Exception('No assets found for the wallet');
                 }
 
-                // Lưu API response vào file riêng
-                file_put_contents($api_response_file, json_encode($assets['result'], JSON_PRETTY_PRINT));
-                log_message("wallet_analysis: Saved API response to $api_response_file", 'wallet_analysis_log.txt', 'INFO');
-
                 $result = $assets['result'];
                 $formatted_data = [
                     'wallet_address' => $walletAddress,
@@ -168,14 +160,10 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     'sol_price_usd' => isset($result['nativeBalance']['total_price']) ? $result['nativeBalance']['total_price'] : 0.0,
                     'tokens' => [],
                     'nfts' => [],
-                    'sol_domains' => [],
                     'timestamp' => time()
                 ];
 
-                $sns_program = 'names111111111111111111111111111111111111111111';
                 foreach ($result['items'] as $item) {
-                    log_message("wallet_analysis: Processing item, id=" . ($item['id'] ?? 'N/A') . ", interface=" . ($item['interface'] ?? 'N/A') . ", name=" . ($item['content']['metadata']['name'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []) . ", grouping=" . json_encode($item['grouping'] ?? []) . ", token_standard=" . ($item['token_standard'] ?? 'N/A') . ", programId=" . ($item['programId'] ?? 'N/A') . ", attributes=" . json_encode($item['content']['metadata']['attributes'] ?? []), 'wallet_analysis_log.txt', 'DEBUG');
-                    
                     if ($item['interface'] === 'FungibleToken') {
                         $formatted_data['tokens'][] = [
                             'mint' => $item['id'] ?? 'N/A',
@@ -184,63 +172,11 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                             'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
                         ];
                     } elseif (in_array($item['interface'], ['V1_NFT', 'ProgrammableNFT'])) {
-                        $is_sns = false;
-                        // Kiểm tra tất cả creators
-                        if (isset($item['creators']) && is_array($item['creators'])) {
-                            foreach ($item['creators'] as $creator) {
-                                if (isset($creator['address']) && $creator['address'] === $sns_program) {
-                                    $is_sns = true;
-                                    break;
-                                }
-                            }
-                        }
-                        // Kiểm tra tất cả authorities
-                        if (!$is_sns && isset($item['authorities']) && is_array($item['authorities'])) {
-                            foreach ($item['authorities'] as $authority) {
-                                if (isset($authority['address']) && $authority['address'] === $sns_program) {
-                                    $is_sns = true;
-                                    break;
-                                }
-                            }
-                        }
-                        // Kiểm tra grouping
-                        if (!$is_sns && isset($item['grouping'][0]['group_value']) && $item['grouping'][0]['group_value'] === $sns_program) {
-                            $is_sns = true;
-                        }
-                        // Kiểm tra tên miền .sol trong metadata.name
-                        if (!$is_sns && isset($item['content']['metadata']['name']) && stripos($item['content']['metadata']['name'], '.sol') !== false) {
-                            log_message("wallet_analysis: Potential .sol domain detected via name, name=" . $item['content']['metadata']['name'], 'wallet_analysis_log.txt', 'INFO');
-                            $is_sns = true;
-                        }
-                        // Kiểm tra attributes
-                        if (!$is_sns && isset($item['content']['metadata']['attributes']) && is_array($item['content']['metadata']['attributes'])) {
-                            foreach ($item['content']['metadata']['attributes'] as $attr) {
-                                if (isset($attr['value']) && stripos($attr['value'], '.sol') !== false) {
-                                    log_message("wallet_analysis: Potential .sol domain detected via attributes, value=" . $attr['value'], 'wallet_analysis_log.txt', 'INFO');
-                                    $is_sns = true;
-                                    break;
-                                }
-                            }
-                        }
-                        // Kiểm tra programId
-                        if (!$is_sns && isset($item['programId']) && $item['programId'] === $sns_program) {
-                            log_message("wallet_analysis: Potential .sol domain detected via programId, id=" . ($item['id'] ?? 'N/A'), 'wallet_analysis_log.txt', 'INFO');
-                            $is_sns = true;
-                        }
-
-                        if ($is_sns) {
-                            log_message("wallet_analysis: Found .sol domain, name=" . ($item['content']['metadata']['name'] ?? 'N/A'), 'wallet_analysis_log.txt', 'INFO');
-                            $formatted_data['sol_domains'][] = [
-                                'domain' => $item['content']['metadata']['name'] ?? 'N/A',
-                                'mint' => $item['id'] ?? 'N/A'
-                            ];
-                        } else {
-                            $formatted_data['nfts'][] = [
-                                'mint' => $item['id'] ?? 'N/A',
-                                'name' => $item['content']['metadata']['name'] ?? 'N/A',
-                                'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
-                            ];
-                        }
+                        $formatted_data['nfts'][] = [
+                            'mint' => $item['id'] ?? 'N/A',
+                            'name' => $item['content']['metadata']['name'] ?? 'N/A',
+                            'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
+                        ];
                     }
                 }
 
@@ -248,29 +184,10 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     'data' => $formatted_data,
                     'timestamp' => time()
                 ];
-                $fp = fopen($cache_file, 'c');
-                if (flock($fp, LOCK_EX)) {
-                    if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-                        log_message("wallet_analysis: Failed to write cache to $cache_file", 'wallet_analysis_log.txt', 'ERROR');
-                        flock($fp, LOCK_UN);
-                        fclose($fp);
-                        throw new Exception('Failed to save cache data');
-                    }
-                    flock($fp, LOCK_UN);
-                } else {
-                    log_message("wallet_analysis: Failed to lock cache file $cache_file", 'wallet_analysis_log.txt', 'ERROR');
-                    fclose($fp);
-                    throw new Exception('Failed to lock cache file');
-                }
-                fclose($fp);
-                log_message("wallet_analysis: Cached data for walletAddress=$walletAddress, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'INFO');
+                file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
             } else {
                 $formatted_data = $cache_data[$walletAddress]['data'];
-                $formatted_data['sol_domains'] = $formatted_data['sol_domains'] ?? [];
-                log_message("wallet_analysis: Retrieved from cache for walletAddress=$walletAddress, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'INFO');
             }
-
-            log_message("wallet_analysis: sol_domains before render=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'DEBUG');
 
             ?>
             <div class="tools-result wallet-analysis-result">
@@ -338,26 +255,6 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 </div>
                 <?php endif; ?>
 
-                <?php if (!empty($formatted_data['sol_domains'])): ?>
-                <h2>.sol Domains</h2>
-                <div class="wallet-details sol-domains">
-                    <div class="sol-domains-table">
-                        <table>
-                            <tr><th>Domain Name</th><th>Mint Address</th></tr>
-                            <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($domain['domain']); ?></td>
-                                <td>
-                                    <span><?php echo substr(htmlspecialchars($domain['mint']), 0, 4) . '...' . substr(htmlspecialchars($domain['mint']), -4); ?></span>
-                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($domain['mint']); ?>"></i>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </table>
-                    </div>
-                </div>
-                <?php endif; ?>
-
                 <?php if ($cache_valid): ?>
                     <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
                 <?php endif; ?>
@@ -371,6 +268,6 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
     <div class="tools-about">
         <h2>About Check Wallet Analysis</h2>
-        <p>The Check Wallet Analysis tool allows you to view the balance and assets of a Solana wallet, including SOL, SPL tokens, NFTs, and .sol domains.</p>
+        <p>The Check Wallet Analysis tool allows you to view the balance and assets of a Solana wallet, including SOL, SPL tokens, and NFTs.</p>
     </div>
 </div>
