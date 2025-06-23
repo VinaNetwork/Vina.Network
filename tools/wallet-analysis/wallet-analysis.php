@@ -3,7 +3,7 @@
 // File: tools/wallet-analysis/wallet-analysis.php
 // Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
 // Author: Vina Network
-// Version: 23.3 (Fix cache read stability and domain message for no-domain wallets)
+// Version: 23.3 (Remove .sol-domains-loading for consistency with .loader)
 // ============================================================================
 
 ini_set('display_errors', 0);
@@ -83,21 +83,8 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
 ?>
 
 <style>
-.sol-domains-loading { display: none; text-align: center; padding: 10px; }
-.sol-domains-loading.active { display: block; }
 .tools-form { display: block; }
 </style>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('walletAnalysisForm');
-    if (form) {
-        form.addEventListener('submit', () => {
-            const loading = document.querySelector('.sol-domains-loading');
-            if (loading) loading.classList.add('active');
-        });
-    }
-});
-</script>
 
 <div class="wallet-analysis">
     <?php
@@ -161,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Exception('Invalid Solana wallet address format');
             }
 
-            $domains_available = true; // Initialize explicitly
+            $domains_available = true;
             $names_cache_data = [];
             $max_retries = 2;
             $retry_count = 0;
@@ -190,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if ($fp) fclose($fp);
                 }
                 $retry_count++;
-                usleep(100000); // Wait 100ms
+                usleep(100000);
             }
             if ($retry_count > $max_retries) {
                 log_message("wallet_analysis: Exhausted retries to read names_cache.json, using empty cache", 'wallet_api_log.txt', 'ERROR');
@@ -198,8 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
-            $cache_expiration = 3 * 3600; // 3h for assets
-            $names_cache_expiration = 24 * 3600; // 24h for domains
+            $cache_expiration = 3 * 3600;
+            $names_cache_expiration = 24 * 3600;
             $cache_valid = isset($cache_data[$walletAddress]) && (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration);
             $names_cache_valid = isset($names_cache_data[$walletAddress]) && (time() - $names_cache_data[$walletAddress]['timestamp'] < $names_cache_expiration);
 
@@ -395,7 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <?php endif; ?>
 
-                <div class="sol-domains-loading">Loading .sol domains...</div>
                 <h2>.sol Domains</h2>
                 <div class="wallet-details sol-domains">
                     <?php if (!$domains_available && empty($formatted_data['sol_domains'])): ?>
