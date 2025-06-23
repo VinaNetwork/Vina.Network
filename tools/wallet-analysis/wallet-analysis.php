@@ -40,12 +40,17 @@ include_once $root_path . 'include/navbar.php';
 // Define cache file using WALLET_ANALYSIS_PATH
 $cache_file = WALLET_ANALYSIS_PATH . 'cache/wallet_analysis_cache.json';
 
-// Check if cache directory is writable
-if (!is_writable(WALLET_ANALYSIS_PATH . 'cache/')) {
-    log_message("Cache directory " . WALLET_ANALYSIS_PATH . "cache/ is not writable", 'wallet_analysis_log.txt', 'ERROR');
-    http_response_code(500);
-    echo '<div class="result-error"><p>Server error: Cache directory is not writable</p></div>';
-    exit;
+// Check cache directory
+$cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
+if (!is_dir($cache_dir)) {
+    log_message("Cache directory $cache_dir does not exist", 'wallet_analysis_log.txt', 'ERROR');
+}
+if (!is_writable($cache_dir)) {
+    log_message("Cache directory $cache_dir is not writable", 'wallet_analysis_log.txt', 'ERROR');
+    // Show warning but don't exit
+    $cache_error = '<div class="result-error"><p>Warning: Cache directory is not writable, results may not be cached</p></div>';
+} else {
+    $cache_error = '';
 }
 
 $cache_expiration = 3 * 3600; // 3 hours
@@ -68,56 +73,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate CSRF token
     if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
         log_message("wallet-analysis: Invalid CSRF token", 'wallet_analysis_log.txt', 'ERROR');
-        http_response_code(403);
-        echo '<div class="result-error"><p>Invalid CSRF token</p></div>';
-        exit;
-    }
-
-    // Check rate limit
-    $ip_address = $_SERVER['REMOTE_ADDR'];
-    $rate_limit_key = "rate_limit_wallet_analysis:$ip_address";
-    $rate_limit_count = $_SESSION[$rate_limit_key] ?? 0;
-    $rate_limit_time = $_SESSION["{$rate_limit_key}_time"] ?? 0;
-
-    if (time() - $rate_limit_time > 60) {
-        $rate_limit_count = 0;
-        $_SESSION["{$rate_limit_key}_time"] = time();
-    }
-
-    if ($rate_limit_count >= 5) {
-        $rate_limit_exceeded = true;
-        log_message("wallet-analysis: Rate limit exceeded for IP $ip_address", 'wallet_analysis_log.txt', 'WARNING');
+        $result = ['error' => 'Invalid CSRF token'];
     } else {
-        $_SESSION[$rate_limit_key] = $rate_limit_count + 1;
-        $walletAddress = trim($_POST['walletAddress'] ?? '');
+        // Check rate limit
+        $ip_address = $_SERVER['REMOTE_ADDR'];
+        $rate_limit_key = "rate_limit_wallet_analysis:$ip_address";
+        $rate_limit_count = $_SESSION[$rate_limit_key] ?? 0;
+        $rate_limit_time = $_SESSION["{$rate_limit_key}_time"] ?? 0;
 
-        if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $walletAddress)) {
-            log_message("wallet-analysis: Invalid wallet address: $walletAddress", 'wallet_analysis_log.txt', 'ERROR');
-            $result = ['error' => 'Invalid wallet address'];
+        if (time() - $rate_limit_time > 60) {
+            $rate_limit_count = 0;
+            $_SESSION["{$rate_limit_key}_time"] = time();
+        }
+
+        if ($rate_limit_count >= 5) {
+            $rate_limit_exceeded = true;
+            log_message("wallet-analysis: Rate limit exceeded for IP $ip_address", 'wallet_analysis_log.txt', 'WARNING');
         } else {
-            // Check cache
-            if (isset($cache_data[$walletAddress]) && 
-                isset($cache_data[$walletAddress]['timestamp']) && 
-                (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration)) {
-                $result = $cache_data[$walletAddress]['data'];
-                $cache_timestamp = date('Y-m-d H:i:s', $cache_data[$walletAddress]['timestamp']);
-                log_message("wallet-analysis: Using cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt');
+            $_SESSION[$rate_limit_key] = $rate_limit_count + 1;
+            $walletAddress = trim($_POST['walletAddress'] ?? '');
+
+            if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $walletAddress)) {
+                log_message("wallet-analysis: Invalid wallet address: $walletAddress", 'wallet_analysis_log.txt', 'ERROR');
+                $result = ['error' => 'Invalid wallet address'];
             } else {
-                // Call API
-                $api_result = callAPI('getAssetsByOwner', ['ownerAddress' => $walletAddress]);
-                if (isset($api_result['error'])) {
-                    log_message("wallet-analysis: API error for walletAddress=$walletAddress: " . json_encode($api_result['error']), 'wallet_analysis_log.txt', 'ERROR');
-                    $result = ['error' => $api_result['error']];
+                // Check cache
+                if (isset($cache_data[$walletAddress]) && 
+                    isset($cache_data[$walletAddress]['timestamp']) && 
+                    (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration)) {
+                    $result = $cache_data[$walletAddress]['data'];
+                    $cache_timestamp = date('Y-m-d H:i:s', $cache_data[$walletAddress]['timestamp']);
+                    log_message("wallet-analysis: Using cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt');
                 } else {
-                    $result = $api_result['result'];
-                    $cache_data[$walletAddress] = [
-                        'data' => $result,
-                        'timestamp' => time()
-                    ];
-                    if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
-                        log_message("wallet-analysis: Failed to write cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'ERROR');
+                    // Call API
+                    $api_result = callAPI('getAssetsByOwner', ['ownerAddress' => $walletAddress]);
+                    if (isset($api_result['error'])) {
+                        log_message("wallet-analysis: API error for walletAddress=$walletAddress: " . json_encode($api_result['error']), 'wallet_analysis_log.txt', 'ERROR');
+                        $result = ['error' => $api_result['error']];
                     } else {
-                        log_message("wallet-analysis: Cached data for walletAddress=$walletAddress", 'wallet_analysis_log.txt');
+                        $result = $api_result['result'];
+                        if (is_writable($cache_dir)) {
+                            $cache_data[$walletAddress] = [
+                                'data' => $result,
+                                'timestamp' => time()
+                            ];
+                            if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
+                                log_message("wallet-analysis: Failed to write cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'ERROR');
+                            } else {
+                                log_message("wallet-analysis: Cached data for walletAddress=$walletAddress", 'wallet_analysis_log.txt');
+                            }
+                        }
                     }
                 }
             }
@@ -137,8 +142,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <p class="note">Note: Only supports checking on the Solana blockchain.</p>
         <div class="tools-content">
+            <?php if ($cache_error): ?>
+                <?php echo $cache_error; ?>
+            <?php endif; ?>
             <!-- Form always displayed first -->
-            <form id="walletAnalysisForm" action="" method="POST" class="tools-form">
+            <form id="walletAnalysisForm" action="" method="POST" class="tools-form" style="display: block;">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
                 <div class="input-group">
                     <input type="text" name="walletAddress" value="<?php echo htmlspecialchars($walletAddress); ?>" placeholder="Enter Solana Wallet Address" class="form-control">
