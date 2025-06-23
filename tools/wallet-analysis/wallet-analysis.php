@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/wallet-analysis/wallet-analysis.php
-// Description: Check wallet balance and assets (SOL, SPL tokens, NFTs) for a Solana wallet.
+// Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
 // Author: Vina Network
 // ============================================================================
 
@@ -60,7 +60,7 @@ if (!is_writable($cache_file)) {
 // Page configuration
 $root_path = '../../';
 $page_title = 'Check Wallet Analysis - Vina Network';
-$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs) of a Solana wallet by entering its address.';
+$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs, .sol domains) of a Solana wallet by entering its address.';
 $page_css = ['../../css/vina.css', '../tools.css'];
 
 log_message("wallet_analysis: Including header.php", 'wallet_analysis_log.txt', 'INFO');
@@ -107,7 +107,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
         ?>
         <div class="tools-form">
             <h2>Check Wallet Analysis</h2>
-            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
+            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), NFTs, and .sol domains.</p>
             <form id="walletAnalysisForm" method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
@@ -141,7 +141,8 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     'limit' => 1000,
                     'displayOptions' => [
                         'showFungible' => true,
-                        'showNativeBalance' => true
+                        'showNativeBalance' => true,
+                        'showInscription' => true
                     ]
                 ];
                 $assets = callAPI('getAssetsByOwner', $params, 'POST');
@@ -160,9 +161,11 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     'sol_price_usd' => isset($result['nativeBalance']['total_price']) ? $result['nativeBalance']['total_price'] : 0.0,
                     'tokens' => [],
                     'nfts' => [],
+                    'sol_domains' => [],
                     'timestamp' => time()
                 ];
 
+                $sns_program = 'names111111111111111111111111111111111111111111';
                 foreach ($result['items'] as $item) {
                     if ($item['interface'] === 'FungibleToken') {
                         $formatted_data['tokens'][] = [
@@ -172,11 +175,18 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                             'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
                         ];
                     } elseif (in_array($item['interface'], ['V1_NFT', 'ProgrammableNFT'])) {
-                        $formatted_data['nfts'][] = [
-                            'mint' => $item['id'] ?? 'N/A',
-                            'name' => $item['content']['metadata']['name'] ?? 'N/A',
-                            'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
-                        ];
+                        if (isset($item['creators'][0]['address']) && $item['creators'][0]['address'] === $sns_program) {
+                            $formatted_data['sol_domains'][] = [
+                                'domain' => $item['content']['metadata']['name'] ?? 'N/A',
+                                'mint' => $item['id'] ?? 'N/A'
+                            ];
+                        } else {
+                            $formatted_data['nfts'][] = [
+                                'mint' => $item['id'] ?? 'N/A',
+                                'name' => $item['content']['metadata']['name'] ?? 'N/A',
+                                'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
+                            ];
+                        }
                     }
                 }
 
@@ -184,9 +194,25 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     'data' => $formatted_data,
                     'timestamp' => time()
                 ];
-                file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+                $fp = fopen($cache_file, 'c');
+                if (flock($fp, LOCK_EX)) {
+                    if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
+                        log_message("wallet_analysis: Failed to write cache to $cache_file", 'wallet_analysis_log.txt', 'ERROR');
+                        flock($fp, LOCK_UN);
+                        fclose($fp);
+                        throw new Exception("Failed to save cache data");
+                    }
+                    flock($fp, LOCK_UN);
+                } else {
+                    log_message("wallet_analysis: Failed to lock cache file $cache_file", 'wallet_analysis_log.txt', 'ERROR');
+                    fclose($fp);
+                    throw new Exception("Failed to lock cache file");
+                }
+                fclose($fp);
+                log_message("wallet_analysis: Cached data for walletAddress=$walletAddress, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'INFO');
             } else {
                 $formatted_data = $cache_data[$walletAddress]['data'];
+                log_message("wallet_analysis: Retrieved from cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
             }
 
             ?>
@@ -255,6 +281,26 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 </div>
                 <?php endif; ?>
 
+                <?php if (!empty($formatted_data['sol_domains'])): ?>
+                <h2>.sol Domains</h2>
+                <div class="wallet-details sol-domains">
+                    <div class="sol-domains-table">
+                        <table>
+                            <tr><th>Domain Name</th><th>Mint Address</th></tr>
+                            <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($domain['domain']); ?></td>
+                                <td>
+                                    <span><?php echo substr(htmlspecialchars($domain['mint']), 0, 4) . '...' . substr(htmlspecialchars($domain['mint']), -4); ?></span>
+                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($domain['mint']); ?>"></i>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </table>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <?php if ($cache_valid): ?>
                     <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
                 <?php endif; ?>
@@ -268,6 +314,6 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
     <div class="tools-about">
         <h2>About Check Wallet Analysis</h2>
-        <p>The Check Wallet Analysis tool allows you to view the balance and assets of a Solana wallet, including SOL, SPL tokens, and NFTs.</p>
+        <p>The Check Wallet Analysis tool allows you to view the balance and assets of a Solana wallet, including SOL, SPL tokens, NFTs, and .sol domains.</p>
     </div>
 </div>
