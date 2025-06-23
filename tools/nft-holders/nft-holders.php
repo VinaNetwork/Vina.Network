@@ -375,6 +375,36 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     </div>
                     <!-- Existing Summary -->
                     <div class="result-summary">
+                        <!-- Collection Info Table -->
+                        <div class="result-card">
+                        <div class="result-item">
+                            <?php if ($collection_data['image']): ?>
+                                <img src="<?php echo htmlspecialchars($collection_data['image']); ?>" alt="Collection Image">
+                            <?php else: ?>
+                                <p>No image available</p>
+                            <?php endif; ?>
+                        </div>
+                        <div class="result-item">
+                        <table>
+                            <tr>
+                                <th>Collection Name:</th>
+                                <td><?php echo htmlspecialchars($collection_data['name']); ?></td>
+                            </tr>
+                            <tr>
+                                <th>Owner address:</th>
+                                <td>
+                                    <?php if ($collection_data['owner'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $collection_data['owner'])): ?>
+                                        <span><?php echo substr(htmlspecialchars($collection_data['owner']), 0, 4) . '...' . substr(htmlspecialchars($collection_data['owner']), -4); ?></span>
+                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($collection_data['owner']); ?>"></i>
+                                    <?php else: ?>
+                                        <span>N/A</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            </table>
+                            </div>
+                        </div>
+                        
                         <div class="result-card">
                             <div class="result-item">
                                 <i class="fas fa-wallet"></i>
