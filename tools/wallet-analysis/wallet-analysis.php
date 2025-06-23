@@ -3,7 +3,7 @@
 // File: tools/wallet-analysis/wallet-analysis.php
 // Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
 // Author: Vina Network
-// Version: 23.1 (Fix misleading domain message)
+// Version: 23.3 (Fix cache read stability and domain message for no-domain wallets)
 // ============================================================================
 
 ini_set('display_errors', 0);
@@ -161,13 +161,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Exception('Invalid Solana wallet address format');
             }
 
-            $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
-            $names_cache_content = file_get_contents($names_cache_file);
-            $names_cache_data = json_decode($names_cache_content, true);
-            if ($names_cache_data === null) {
-                log_message("wallet_analysis: Failed to parse names_cache.json, content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'ERROR');
+            $domains_available = true; // Initialize explicitly
+            $names_cache_data = [];
+            $max_retries = 2;
+            $retry_count = 0;
+            while ($retry_count <= $max_retries) {
+                $fp = fopen($names_cache_file, 'r');
+                if ($fp && flock($fp, LOCK_SH)) {
+                    $names_cache_content = file_get_contents($names_cache_file);
+                    log_message("wallet_analysis: Attempt $retry_count to read names_cache.json, content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'DEBUG');
+                    if ($names_cache_content !== false && $names_cache_content !== '') {
+                        $names_cache_data = json_decode($names_cache_content, true);
+                        if ($names_cache_data !== null) {
+                            log_message("wallet_analysis: Successfully parsed names_cache.json on attempt $retry_count", 'wallet_api_log.txt', 'INFO');
+                            flock($fp, LOCK_UN);
+                            fclose($fp);
+                            break;
+                        } else {
+                            log_message("wallet_analysis: Failed to parse names_cache.json on attempt $retry_count, error=" . json_last_error_msg() . ", content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'ERROR');
+                        }
+                    } else {
+                        log_message("wallet_analysis: Failed to read names_cache.json on attempt $retry_count, content is " . ($names_cache_content === false ? 'false' : 'empty'), 'wallet_api_log.txt', 'ERROR');
+                    }
+                    flock($fp, LOCK_UN);
+                    fclose($fp);
+                } else {
+                    log_message("wallet_analysis: Failed to open or lock names_cache.json on attempt $retry_count", 'wallet_api_log.txt', 'ERROR');
+                    if ($fp) fclose($fp);
+                }
+                $retry_count++;
+                usleep(100000); // Wait 100ms
+            }
+            if ($retry_count > $max_retries) {
+                log_message("wallet_analysis: Exhausted retries to read names_cache.json, using empty cache", 'wallet_api_log.txt', 'ERROR');
                 $names_cache_data = [];
             }
+
+            $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600; // 3h for assets
             $names_cache_expiration = 24 * 3600; // 24h for domains
             $cache_valid = isset($cache_data[$walletAddress]) && (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration);
@@ -240,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     $formatted_data = $cache_data[$walletAddress]['data'];
                 }
 
-                $domains_available = true;
                 if (!$names_cache_valid) {
                     $names_params = ['address' => $walletAddress];
                     $names_data = callAPI('getNamesByAddress', $names_params, 'GET');
@@ -272,15 +301,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (flock($fp, LOCK_EX)) {
                         if (file_put_contents($names_cache_file, json_encode($names_cache_data, JSON_PRETTY_PRINT)) === false) {
                             log_message("wallet_analysis: Failed to write names cache file at $names_cache_file", 'wallet_api_log.txt', 'ERROR');
-                            flock($fp, LOCK_UN);
-                            fclose($fp);
                             throw new Exception('Failed to write names cache file');
                         }
                         flock($fp, LOCK_UN);
                         log_message("wallet_analysis: Cached names data for walletAddress=$walletAddress, content=" . json_encode($names_cache_data[$walletAddress]), 'wallet_api_log.txt', 'INFO');
                     } else {
                         log_message("wallet_analysis: Failed to lock names cache file at $names_cache_file", 'wallet_api_log.txt', 'ERROR');
-                        fclose($fp);
                         throw new Exception('Failed to lock names cache file');
                     }
                     fclose($fp);
