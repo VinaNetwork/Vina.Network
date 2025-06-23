@@ -124,7 +124,6 @@ h1, h2, h3 {text-align: center;}
     text-align: center;
     color: #666;
 }
-.wallet-details table {width: 100%;}
 
 /* Result error sections */
 .result-error, .result-info {
@@ -147,6 +146,7 @@ h1, h2, h3 {text-align: center;}
     border-radius: 10px;
 }
 .nft-holders-collection-table table {
+    text-align: left;
     flex: 1;
 }
 .nft-holders-collection-image img {
@@ -231,6 +231,7 @@ h1, h2, h3 {text-align: center;}
 }
 
 /* Wallet Analysis Result */
+.wallet-details table {width: 100%;}
 .token-table, .nft-table {
     width: 100%;
     border-collapse: collapse;
