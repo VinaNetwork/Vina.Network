@@ -144,6 +144,7 @@ h1, h2, h3 {text-align: center;}
     background: #f2f0f0;
     padding: 20px;
     border-radius: 10px;
+    max-width: 600px;
 }
 .nft-holders-collection-table table {
     text-align: left;
@@ -301,7 +302,10 @@ h1, h2, h3 {text-align: center;}
         align-items: center;
     }
     .tools-form input {width: 100%;}
-    .result-card {max-width: 100%}
+    .result-card,
+    .nft-holders-collection-table {
+	max-width: 100%
+    }
     
     /* Wallet Analysis Result */
     .token-table, .nft-table {
