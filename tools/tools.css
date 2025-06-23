@@ -90,7 +90,7 @@ h1, h2, h3 {text-align: center;}
 .tools-result {
     max-width: 100%;
     overflow-x: auto;
-	margin: 20px 0;
+    margin: 20px 0;
 }
 .result-summary {
     justify-content: center;
@@ -137,20 +137,21 @@ h1, h2, h3 {text-align: center;}
 }
 
 /* NFT Holders Result */
+.nft-holders-collection-table {
+    display: flex;
+    align-items: left;
+    gap: 20px;
+    margin-bottom: 20px;
+    background: #f2f0f0;
+}
+.nft-holders-collection-table table {
+    flex: 1;
+}
 .nft-holders-collection-image img {
     width: 48px;
     height: 48px;
     object-fit: cover;
     border-radius: 4px;
-}
-.nft-holders-collection-table {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-.nft-holders-collection-table table {
-    flex: 1;
 }
 
 /* Holders Export */
