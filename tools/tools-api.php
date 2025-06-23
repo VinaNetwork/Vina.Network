@@ -21,6 +21,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
     $max_retries = 3;
     $retry_count = 0;
+    $retry_delays = [2000000, 5000000, 10000000]; // 2s, 5s, 10s
 
     do {
         $ch = curl_init();
@@ -39,7 +40,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $endpoint === 'getNamesByAddress' ? 60 : 30); // 60s for names
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_HEADER, true); // Include response headers
 
@@ -96,15 +97,15 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         log_message("api-helper: Response - HTTP: $httpCode, URL: $log_url, Body: " . substr($body, 0, 500) . "...", 'tools_api_log.txt');
 
-        // Retry if rate limited (HTTP 429)
-        if ($httpCode === 429) {
-            log_message("api-helper: Rate limit exceeded (429), retrying ($retry_count/$max_retries), URL: $log_url", 'tools_api_log.txt', 'WARNING');
+        // Retry if rate limited (HTTP 429) or gateway timeout (HTTP 504)
+        if (in_array($httpCode, [429, 504])) {
+            log_message("api-helper: HTTP $httpCode, retrying ($retry_count/$max_retries), URL: $log_url", 'tools_api_log.txt', 'WARNING');
             if ($retry_count < $max_retries) {
+                usleep($retry_delays[$retry_count]); // Wait 2s, 5s, 10s
                 $retry_count++;
-                usleep(2000000); // Wait 2 seconds
                 continue;
             }
-            return ['error' => 'Rate limit exceeded after retries.'];
+            return ['error' => "Failed to fetch data from API. HTTP Code: $httpCode after retries."];
         }
 
         // Fallback retry logic for 404 or failed POST
@@ -133,7 +134,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         if ($httpCode !== 200) {
             log_message("api-error: API request failed - HTTP: $httpCode, URL: $log_url, Response: $body", 'tools_api_log.txt', 'ERROR');
-            return ['error' => 'Failed to fetch data from API. HTTP Code: ' . $httpCode];
+            return ['error' => "Failed to fetch data from API. HTTP Code: $httpCode"];
         }
 
         // Decode JSON response
