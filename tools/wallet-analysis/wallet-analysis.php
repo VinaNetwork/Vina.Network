@@ -321,12 +321,12 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 <?php endif; ?>
 
                 <?php if (!$domains_available): ?>
-                <h2>.sol Domains</h2>
+                <h2>Domains</h2>
                 <div class="wallet-details sol-domains">
                     <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
                 </div>
                 <?php elseif (!empty($formatted_data['sol_domains'])): ?>
-                <h2>.sol Domains</h2>
+                <h2>Domains</h2>
                 <div class="wallet-details sol-domains">
                     <div class="sol-domains-table">
                         <table>
