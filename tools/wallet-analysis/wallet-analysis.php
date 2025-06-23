@@ -71,8 +71,8 @@ include_once $root_path . 'include/navbar.php';
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("wallet_analysis: tools-api.php not found at $api_helper_path", 'wallet_analysis_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
+    log_message('wallet_analysis: tools-api.php not found at $api_helper_path', 'wallet_analysis_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Missing api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
@@ -155,6 +155,9 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     throw new Exception('No assets found for the wallet');
                 }
 
+                // Log toàn bộ API response
+                log_message("wallet_analysis: Full API response=" . json_encode($assets['result'], JSON_PRETTY_PRINT), 'wallet_analysis_log.txt', 'DEBUG');
+
                 $result = $assets['result'];
                 $formatted_data = [
                     'wallet_address' => $walletAddress,
@@ -168,7 +171,8 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
                 $sns_program = 'names111111111111111111111111111111111111111111';
                 foreach ($result['items'] as $item) {
-                    log_message("wallet_analysis: Processing item, interface=" . ($item['interface'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []) . ", grouping=" . json_encode($item['grouping'] ?? []), 'wallet_analysis_log.txt', 'DEBUG');
+                    log_message("wallet_analysis: Processing item, id=" . ($item['id'] ?? 'N/A') . ", interface=" . ($item['interface'] ?? 'N/A') . ", name=" . ($item['content']['metadata']['name'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []) . ", grouping=" . json_encode($item['grouping'] ?? []) . ", token_standard=" . ($item['token_standard'] ?? 'N/A'), 'wallet_analysis_log.txt', 'DEBUG');
+                    
                     if ($item['interface'] === 'FungibleToken') {
                         $formatted_data['tokens'][] = [
                             'mint' => $item['id'] ?? 'N/A',
@@ -196,8 +200,13 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                                 }
                             }
                         }
-                        // Kiểm tra grouping (collection)
+                        // Kiểm tra grouping
                         if (!$is_sns && isset($item['grouping'][0]['group_value']) && $item['grouping'][0]['group_value'] === $sns_program) {
+                            $is_sns = true;
+                        }
+                        // Kiểm tra tên miền .sol trong metadata.name (dự phòng)
+                        if (!$is_sns && isset($item['content']['metadata']['name']) && stripos($item['content']['metadata']['name'], '.sol') !== false) {
+                            log_message("wallet_analysis: Potential .sol domain detected via name, name=" . $item['content']['metadata']['name'], 'wallet_analysis_log.txt', 'INFO');
                             $is_sns = true;
                         }
 
