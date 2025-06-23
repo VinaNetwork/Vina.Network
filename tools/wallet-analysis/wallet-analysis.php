@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/wallet-analysis/wallet-analysis.php
-// Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
+// Description: Check wallet balance and assets (SOL, SPL tokens, NFTs) for a Solana wallet.
 // Author: Vina Network
 // ============================================================================
 
@@ -29,10 +29,9 @@ ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 log_message("wallet_analysis: Session started, session_id=" . session_id(), 'wallet_analysis_log.txt', 'INFO');
 
-// Cache directory and files
+// Cache directory and file
 $cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_analysis_cache.json';
-$names_cache_file = $cache_dir . 'names_cache.json';
 
 // Create cache directory if it doesn't exist
 if (!is_dir($cache_dir)) {
@@ -52,25 +51,16 @@ if (!file_exists($cache_file)) {
     chmod($cache_file, 0644);
     log_message("wallet_analysis: Created cache file at $cache_file", 'wallet_analysis_log.txt', 'INFO');
 }
-if (!file_exists($names_cache_file)) {
-    if (file_put_contents($names_cache_file, json_encode([])) === false) {
-        log_message("wallet_analysis: Failed to create names cache file at $names_cache_file", 'wallet_analysis_log.txt', 'ERROR');
-        echo '<div class="result-error"><p>Cannot create names cache file</p></div>';
-        exit;
-    }
-    chmod($names_cache_file, 0644);
-    log_message("wallet_analysis: Created names cache file at $names_cache_file", 'wallet_analysis_log.txt', 'INFO');
-}
-if (!is_writable($cache_file) || !is_writable($names_cache_file)) {
-    log_message("wallet_analysis: Cache files not writable: $cache_file or $names_cache_file", 'wallet_analysis_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Cache files are not writable</p></div>';
+if (!is_writable($cache_file)) {
+    log_message("wallet_analysis: Cache file $cache_file is not writable", 'wallet_analysis_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cache file is not writable</p></div>';
     exit;
 }
 
 // Page configuration
 $root_path = '../../';
 $page_title = 'Check Wallet Analysis - Vina Network';
-$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs, .sol domains) of a Solana wallet by entering its address.';
+$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs) of a Solana wallet by entering its address.';
 $page_css = ['../../css/vina.css', '../tools.css'];
 
 log_message("wallet_analysis: Including header.php", 'wallet_analysis_log.txt', 'INFO');
@@ -117,7 +107,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
         ?>
         <div class="tools-form">
             <h2>Check Wallet Analysis</h2>
-            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), NFTs, and .sol domains.</p>
+            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), and NFTs.</p>
             <form id="walletAnalysisForm" method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
@@ -141,159 +131,63 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
             }
 
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
-            $names_cache_data = json_decode(file_get_contents($names_cache_file), true) ?? [];
             $cache_expiration = 3 * 3600;
             $cache_valid = isset($cache_data[$walletAddress]) && (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration);
-            $names_cache_valid = isset($names_cache_data[$walletAddress]) && (time() - $names_cache_data[$walletAddress]['timestamp'] < $cache_expiration);
 
-            if (!$cache_valid || !$names_cache_valid) {
+            if (!$cache_valid) {
+                $params = [
+                    'ownerAddress' => $walletAddress,
+                    'page' => 1,
+                    'limit' => 1000,
+                    'displayOptions' => [
+                        'showFungible' => true,
+                        'showNativeBalance' => true
+                    ]
+                ];
+                $assets = callAPI('getAssetsByOwner', $params, 'POST');
+
+                if (isset($assets['error'])) {
+                    throw new Exception(is_array($assets['error']) ? ($assets['error']['message'] ?? 'API error') : $assets['error']);
+                }
+                if (empty($assets['result']) || !isset($assets['result']['items'])) {
+                    throw new Exception('No assets found for the wallet');
+                }
+
+                $result = $assets['result'];
                 $formatted_data = [
                     'wallet_address' => $walletAddress,
-                    'sol_balance' => 0.0,
-                    'sol_price_usd' => 0.0,
+                    'sol_balance' => isset($result['nativeBalance']['lamports']) ? $result['nativeBalance']['lamports'] / 1000000000 : 0.0,
+                    'sol_price_usd' => isset($result['nativeBalance']['total_price']) ? $result['nativeBalance']['total_price'] : 0.0,
                     'tokens' => [],
                     'nfts' => [],
-                    'sol_domains' => [],
                     'timestamp' => time()
                 ];
 
-                // Gọi Helius API cho SOL, tokens, NFTs
-                if (!$cache_valid) {
-                    $params = [
-                        'ownerAddress' => $walletAddress,
-                        'page' => 1,
-                        'limit' => 1000,
-                        'displayOptions' => [
-                            'showFungible' => true,
-                            'showNativeBalance' => true
-                        ]
-                    ];
-                    $assets = callAPI('getAssetsByOwner', $params, 'POST');
-
-                    if (isset($assets['error'])) {
-                        throw new Exception(is_array($assets['error']) ? ($assets['error']['message'] ?? 'API error') : $assets['error']);
+                foreach ($result['items'] as $item) {
+                    if ($item['interface'] === 'FungibleToken') {
+                        $formatted_data['tokens'][] = [
+                            'mint' => $item['id'] ?? 'N/A',
+                            'name' => $item['content']['metadata']['name'] ?? $item['content']['metadata']['symbol'] ?? 'Unknown',
+                            'balance' => isset($item['token_info']['balance']) ? $item['token_info']['balance'] / pow(10, $item['token_info']['decimals']) : 0,
+                            'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
+                        ];
+                    } elseif (in_array($item['interface'], ['V1_NFT', 'ProgrammableNFT'])) {
+                        $formatted_data['nfts'][] = [
+                            'mint' => $item['id'] ?? 'N/A',
+                            'name' => $item['content']['metadata']['name'] ?? 'N/A',
+                            'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
+                        ];
                     }
-                    if (empty($assets['result']) || !isset($assets['result']['items'])) {
-                        throw new Exception('No assets found for the wallet');
-                    }
-
-                    $result = $assets['result'];
-                    $formatted_data['sol_balance'] = isset($result['nativeBalance']['lamports']) ? $result['nativeBalance']['lamports'] / 1000000000 : 0.0;
-                    $formatted_data['sol_price_usd'] = isset($result['nativeBalance']['total_price']) ? $result['nativeBalance']['total_price'] : 0.0;
-
-                    foreach ($result['items'] as $item) {
-                        log_message("wallet_analysis: Processing item, id=" . ($item['id'] ?? 'N/A') . ", interface=" . ($item['interface'] ?? 'N/A') . ", name=" . ($item['content']['metadata']['name'] ?? 'N/A'), 'wallet_analysis_log.txt', 'DEBUG');
-                        
-                        if ($item['interface'] === 'FungibleToken') {
-                            $formatted_data['tokens'][] = [
-                                'mint' => $item['id'] ?? 'N/A',
-                                'name' => $item['content']['metadata']['name'] ?? $item['content']['metadata']['symbol'] ?? 'Unknown',
-                                'balance' => isset($item['token_info']['balance']) ? $item['token_info']['balance'] / pow(10, $item['token_info']['decimals']) : 0,
-                                'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
-                            ];
-                        } elseif (in_array($item['interface'], ['V1_NFT', 'ProgrammableNFT'])) {
-                            $formatted_data['nfts'][] = [
-                                'mint' => $item['id'] ?? 'N/A',
-                                'name' => $item['content']['metadata']['name'] ?? 'N/A',
-                                'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
-                            ];
-                        }
-                    }
-
-                    $cache_data[$walletAddress] = [
-                        'data' => $formatted_data,
-                        'timestamp' => time()
-                    ];
-                    $fp = fopen($cache_file, 'c');
-                    if (flock($fp, LOCK_EX)) {
-                        if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-                            log_message("wallet_analysis: Failed to write cache to $cache_file", 'wallet_analysis_log.txt', 'ERROR');
-                            flock($fp, LOCK_UN);
-                            fclose($fp);
-                            throw new Exception('Failed to save cache data');
-                        }
-                        flock($fp, LOCK_UN);
-                    } else {
-                        log_message("wallet_analysis: Failed to lock cache file $cache_file", 'wallet_analysis_log.txt', 'ERROR');
-                        fclose($fp);
-                        throw new Exception('Failed to lock cache file');
-                    }
-                    fclose($fp);
-                    log_message("wallet_analysis: Cached Helius data for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
-                } else {
-                    $formatted_data = $cache_data[$walletAddress]['data'];
                 }
 
-                // Gọi Helius Names API cho .sol domains
-                if (!$names_cache_valid) {
-                    $names_params = ['address' => $walletAddress];
-                    $names_data = callAPI('getNamesByAddress', $names_params, 'GET');
-
-                    if (isset($names_data['error']) || empty($names_data['domainNames'])) {
-                        log_message("wallet_analysis: Helius Names API error or no domains found: " . json_encode($names_data), 'wallet_analysis_log.txt', 'ERROR');
-                    } else {
-                        $domains = is_array($names_data['domainNames']) ? $names_data['domainNames'] : [$names_data['domainNames']];
-                        foreach ($domains as $name) {
-                            // Thêm .sol nếu không có
-                            $domain_name = preg_match('/\.sol$/', $name) ? $name : "$name.sol";
-                            $formatted_data['sol_domains'][] = [
-                                'domain' => $domain_name,
-                                'mint' => 'N/A' // Helius không trả mint address
-                            ];
-                        }
-                        log_message("wallet_analysis: Helius names fetched, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'INFO');
-                    }
-
-                    $names_cache_data[$walletAddress] = [
-                        'data' => $formatted_data['sol_domains'],
-                        'timestamp' => time()
-                    ];
-                    $fp = fopen($names_cache_file, 'c');
-                    if (flock($fp, LOCK_EX)) {
-                        if (file_put_contents($names_cache_file, json_encode($names_cache_data, JSON_PRETTY_PRINT)) === false) {
-                            log_message("wallet_analysis: Failed to write names cache to $names_cache_file", 'wallet_analysis_log.txt', 'ERROR');
-                            flock($fp, LOCK_UN);
-                            fclose($fp);
-                            throw new Exception('Failed to save names cache data');
-                        }
-                        flock($fp, LOCK_UN);
-                    } else {
-                        log_message("wallet_analysis: Failed to lock names cache file $names_cache_file", 'wallet_analysis_log.txt', 'ERROR');
-                        fclose($fp);
-                        throw new Exception('Failed to lock names cache file');
-                    }
-                    fclose($fp);
-                    log_message("wallet_analysis: Cached names data for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
-                } else {
-                    $formatted_data['sol_domains'] = $names_cache_data[$walletAddress]['data'] ?? [];
-                    log_message("wallet_analysis: Retrieved names from cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
-                }
-
-                // Cập nhật cache chính với sol_domains
-                $cache_data[$walletAddress]['data'] = $formatted_data;
-                $fp = fopen($cache_file, 'c');
-                if (flock($fp, LOCK_EX)) {
-                    if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-                        log_message("wallet_analysis: Failed to update cache with sol_domains to $cache_file", 'wallet_analysis_log.txt', 'ERROR');
-                        flock($fp, LOCK_UN);
-                        fclose($fp);
-                        throw new Exception('Failed to update cache data');
-                    }
-                    flock($fp, LOCK_UN);
-                } else {
-                    log_message("wallet_analysis: Failed to lock cache file $cache_file for update", 'wallet_analysis_log.txt', 'ERROR');
-                    fclose($fp);
-                    throw new Exception('Failed to lock cache file');
-                }
-                fclose($fp);
-                log_message("wallet_analysis: Updated cache with sol_domains for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
+                $cache_data[$walletAddress] = [
+                    'data' => $formatted_data,
+                    'timestamp' => time()
+                ];
+                file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
             } else {
                 $formatted_data = $cache_data[$walletAddress]['data'];
-                $formatted_data['sol_domains'] = $names_cache_data[$walletAddress]['data'] ?? [];
-                log_message("wallet_analysis: Retrieved all data from cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
             }
-
-            log_message("wallet_analysis: sol_domains before render=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'DEBUG');
 
             ?>
             <div class="tools-result wallet-analysis-result">
@@ -303,7 +197,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                             <i class="fas fa-wallet"></i>
                             <p class="wallet-address">
                                 <span><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['wallet_address']), -4); ?></span>
-                                <i class="fas fa-copy copy-icon" title="Copy full address" data-address="<?php echo htmlspecialchars($formatted_data['wallet_address']); ?>"></i>
+                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['wallet_address']); ?>"></i>
                             </p>
                             <h3>SOL Balance</h3>
                             <h4><?php echo number_format($formatted_data['sol_balance'], 9) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></h4>
@@ -322,7 +216,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                                 <td><?php echo htmlspecialchars($token['name']); ?></td>
                                 <td>
                                     <span><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
-                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-address="<?php echo htmlspecialchars($token['mint']); ?>"></i>
+                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
                                 </td>
                                 <td><?php echo number_format($token['balance'], 2); ?></td>
                                 <td><?php echo number_format($token['price_usd'], 2); ?></td>
@@ -344,32 +238,16 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                                 <td><?php echo htmlspecialchars($nft['name']); ?></td>
                                 <td>
                                     <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
-                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-address="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
+                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                                 </td>
                                 <td>
                                     <?php if ($nft['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $nft['collection'])): ?>
                                         <span><?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?></span>
-                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-address="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
+                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
                                     <?php else: ?>
                                         <span>N/A</span>
                                     <?php endif; ?>
                                 </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </table>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <?php if (!empty($formatted_data['sol_domains'])): ?>
-                <h2>.sol Domains</h2>
-                <div class="wallet-details sol-domains">
-                    <div class="sol-domains-table">
-                        <table>
-                            <tr><th>Domain Name</th></tr>
-                            <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($domain['domain']); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </table>
@@ -383,13 +261,13 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
             </div>
             <?php
         } catch (Exception $e) {
-            echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+            echo "<div class='result-error'><p>Error processing request: " . $e->getMessage() . "</p></div>";
         }
     }
     ?>
 
     <div class="tools-about">
         <h2>About Check Wallet Analysis</h2>
-        <p>The Check Wallet Analysis tool allows you to view the balance and assets of a Solana wallet, including SOL, SPL tokens, NFTs, and .sol domains.</p>
+        <p>The Check Wallet Analysis tool allows you to view the balance and assets of a Solana wallet, including SOL, SPL tokens, and NFTs.</p>
     </div>
 </div>
