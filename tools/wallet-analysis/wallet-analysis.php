@@ -84,7 +84,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
 <style>
 .sol-domains-loading { display: none; text-align: center; padding: 10px; }
 .sol-domains-loading.active { display: block; }
-.tools-form { display: block; }
+.tools-form { display: block; } /* Ensure form is visible */
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -245,25 +245,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     $names_params = ['address' => $walletAddress];
                     $names_data = callAPI('getNamesByAddress', $names_params, 'GET');
 
-                    if (isset($names_data['error'])) {
-                        log_message("wallet_analysis: Helius Names API error: " . json_encode($names_data), 'wallet_api_log.txt', 'ERROR');
+                    if (isset($names_data['error']) || empty($names_data['domainNames'])) {
+                        log_message("wallet_analysis: Helius Names API error or no domains found: " . json_encode($names_data), 'wallet_api_log.txt', 'ERROR');
                         $domains_available = false;
                         if ($walletAddress === 'Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM') {
                             $formatted_data['sol_domains'] = [['domain' => 'vinanetwork.sol']];
                             log_message("wallet_analysis: Applied static fallback for vinanetwork.sol", 'wallet_api_log.txt', 'INFO');
                         }
                     } else {
-                        if (empty($names_data['domainNames'])) {
-                            log_message("wallet_analysis: No .sol domains found for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
-                            $formatted_data['sol_domains'] = [];
-                        } else {
-                            $domains = is_array($names_data['domainNames']) ? $names_data['domainNames'] : [$names_data['domainNames']];
-                            foreach ($domains as $name) {
-                                $domain_name = preg_match('/\.sol$/', $name) ? $name : "$name.sol";
-                                $formatted_data['sol_domains'][] = ['domain' => $domain_name];
-                            }
-                            log_message("wallet_analysis: Helius names fetched, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_api_log.txt', 'INFO');
+                        $domains = is_array($names_data['domainNames']) ? $names_data['domainNames'] : [$names_data['domainNames']];
+                        foreach ($domains as $name) {
+                            $domain_name = preg_match('/\.sol$/', $name) ? $name : "$name.sol";
+                            $formatted_data['sol_domains'][] = ['domain' => $domain_name];
                         }
+                        log_message("wallet_analysis: Helius names fetched, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_api_log.txt', 'INFO');
                     }
 
                     $names_cache_data[$walletAddress] = [
@@ -372,26 +367,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 <?php endif; ?>
 
                 <div class="sol-domains-loading">Loading .sol domains...</div>
+                <?php if (!$domains_available && empty($formatted_data['sol_domains'])): ?>
                 <h2>.sol Domains</h2>
                 <div class="wallet-details sol-domains">
-                    <?php if (!$domains_available): ?>
-                        <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
-                    <?php elseif (empty($formatted_data['sol_domains'])): ?>
-                        <p>No .sol domains found for this wallet.</p>
-                        <?php log_message("wallet_analysis: Rendered no .sol domains message for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO'); ?>
-                    <?php else: ?>
-                        <div class="sol-domains-table">
-                            <table>
-                                <tr><th>Domain Name</th></tr>
-                                <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($domain['domain']); ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </table>
-                        </div>
-                    <?php endif; ?>
+                    <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
                 </div>
+                <?php elseif (!empty($formatted_data['sol_domains'])): ?>
+                <h2>.sol Domains</h2>
+                <div class="wallet-details sol-domains">
+                    <div class="sol-domains-table">
+                        <table>
+                            <tr><th>Domain Name</th></tr>
+                            <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($domain['domain']); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </table>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <?php if ($cache_valid): ?>
                 <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
