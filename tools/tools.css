@@ -143,6 +143,8 @@ h1, h2, h3 {text-align: center;}
     gap: 20px;
     margin-bottom: 20px;
     background: #f2f0f0;
+    padding: 20px;
+    border-radius: 10px;
 }
 .nft-holders-collection-table table {
     flex: 1;
