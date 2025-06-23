@@ -32,6 +32,7 @@ log_message("wallet_analysis: Session started, session_id=" . session_id(), 'wal
 // Cache directory and file
 $cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_analysis_cache.json';
+$api_response_file = $cache_dir . 'api_response.json';
 
 // Create cache directory if it doesn't exist
 if (!is_dir($cache_dir)) {
@@ -138,9 +139,10 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 $params = [
                     'ownerAddress' => $walletAddress,
                     'page' => 1,
-                    'limit' => 1000,
+                    'limit' => 2000,
                     'displayOptions' => [
                         'showFungible' => true,
+                        'showNonFungible' => true,
                         'showNativeBalance' => true,
                         'showInscription' => true,
                         'showCollectionMetadata' => true
@@ -155,8 +157,9 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     throw new Exception('No assets found for the wallet');
                 }
 
-                // Log toàn bộ API response
-                log_message("wallet_analysis: Full API response=" . json_encode($assets['result'], JSON_PRETTY_PRINT), 'wallet_analysis_log.txt', 'DEBUG');
+                // Lưu API response vào file riêng
+                file_put_contents($api_response_file, json_encode($assets['result'], JSON_PRETTY_PRINT));
+                log_message("wallet_analysis: Saved API response to $api_response_file", 'wallet_analysis_log.txt', 'INFO');
 
                 $result = $assets['result'];
                 $formatted_data = [
@@ -171,7 +174,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
                 $sns_program = 'names111111111111111111111111111111111111111111';
                 foreach ($result['items'] as $item) {
-                    log_message("wallet_analysis: Processing item, id=" . ($item['id'] ?? 'N/A') . ", interface=" . ($item['interface'] ?? 'N/A') . ", name=" . ($item['content']['metadata']['name'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []) . ", grouping=" . json_encode($item['grouping'] ?? []) . ", token_standard=" . ($item['token_standard'] ?? 'N/A'), 'wallet_analysis_log.txt', 'DEBUG');
+                    log_message("wallet_analysis: Processing item, id=" . ($item['id'] ?? 'N/A') . ", interface=" . ($item['interface'] ?? 'N/A') . ", name=" . ($item['content']['metadata']['name'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []) . ", grouping=" . json_encode($item['grouping'] ?? []) . ", token_standard=" . ($item['token_standard'] ?? 'N/A') . ", programId=" . ($item['programId'] ?? 'N/A') . ", attributes=" . json_encode($item['content']['metadata']['attributes'] ?? []), 'wallet_analysis_log.txt', 'DEBUG');
                     
                     if ($item['interface'] === 'FungibleToken') {
                         $formatted_data['tokens'][] = [
@@ -204,9 +207,24 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                         if (!$is_sns && isset($item['grouping'][0]['group_value']) && $item['grouping'][0]['group_value'] === $sns_program) {
                             $is_sns = true;
                         }
-                        // Kiểm tra tên miền .sol trong metadata.name (dự phòng)
+                        // Kiểm tra tên miền .sol trong metadata.name
                         if (!$is_sns && isset($item['content']['metadata']['name']) && stripos($item['content']['metadata']['name'], '.sol') !== false) {
                             log_message("wallet_analysis: Potential .sol domain detected via name, name=" . $item['content']['metadata']['name'], 'wallet_analysis_log.txt', 'INFO');
+                            $is_sns = true;
+                        }
+                        // Kiểm tra attributes
+                        if (!$is_sns && isset($item['content']['metadata']['attributes']) && is_array($item['content']['metadata']['attributes'])) {
+                            foreach ($item['content']['metadata']['attributes'] as $attr) {
+                                if (isset($attr['value']) && stripos($attr['value'], '.sol') !== false) {
+                                    log_message("wallet_analysis: Potential .sol domain detected via attributes, value=" . $attr['value'], 'wallet_analysis_log.txt', 'INFO');
+                                    $is_sns = true;
+                                    break;
+                                }
+                            }
+                        }
+                        // Kiểm tra programId
+                        if (!$is_sns && isset($item['programId']) && $item['programId'] === $sns_program) {
+                            log_message("wallet_analysis: Potential .sol domain detected via programId, id=" . ($item['id'] ?? 'N/A'), 'wallet_analysis_log.txt', 'INFO');
                             $is_sns = true;
                         }
 
