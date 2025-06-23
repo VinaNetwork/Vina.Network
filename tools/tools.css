@@ -56,6 +56,7 @@ h1, h2, h3 {text-align: center;}
     border-radius: 10px;
     background: #c3c3c4;
     position: relative;
+    display: block;
 }
 .tools-form form {
     display: flex;
