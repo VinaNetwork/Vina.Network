@@ -247,7 +247,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
             } else {
                 $formatted_data = $cache_data[$walletAddress]['data'];
                 $formatted_data['sol_domains'] = $names_cache_data[$walletAddress]['data'] ?? [];
-                log_message("wallet_analysis: Retrieved all data from cache for walletAddress=$walletAddress", 'wallet_analysis_log');
+                log_message("wallet_analysis: Retrieved all data from cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
             }
 
             log_message("wallet_analysis: sol_domains before render=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'DEBUG');
@@ -259,11 +259,11 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                         <div class="result-item">
                             <i class="fas fa-wallet"></i>
                             <p class="wallet-address">
-                                <span><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($walletAddress), -4); ?></span>
+                                <span><?php echo substr(htmlspecialchars($formatted_data['wallet_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['wallet_address']), -4); ?></span>
                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['wallet_address']); ?>"></i>
                             </p>
                             <h3>SOL Balance</h3>
-                            <h4><?php echo number_format($formatted_data['sol_balance'], 6) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></h4>
+                            <h4><?php echo number_format($formatted_data['sol_balance'], 9) . ' SOL (' . number_format($formatted_data['sol_price_usd'], 2) . ' USD)'; ?></h4>
                         </div>
                     </div>
                 </div>
@@ -273,7 +273,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 <div class="wallet-details token-details">
                     <div class="token-table">
                         <table>
-                            <tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Values (USD)</th></tr>
+                            <tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Value (USD)</th></tr>
                             <?php foreach ($formatted_data['tokens'] as $token): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($token['name']); ?></td>
@@ -326,7 +326,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                             <tr><th>Domain Name</th></tr>
                             <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($domain['data']); ?></td>
+                                <td><?php echo htmlspecialchars($domain['domain']); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </table>
@@ -340,7 +340,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
             </div>
             <?php
         } catch (Exception $e) {
-            echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+            echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
         }
     }
     ?>
