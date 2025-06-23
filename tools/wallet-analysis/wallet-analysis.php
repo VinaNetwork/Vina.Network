@@ -3,7 +3,7 @@
 // File: tools/wallet-analysis/wallet-analysis.php
 // Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
 // Author: Vina Network
-// Version: 23.3 (Remove .sol-domains-loading for consistency with .loader)
+// Version: 23.3 (Remove .sol-domains-loading, inline CSS, and redundant cache checks)
 // ============================================================================
 
 ini_set('display_errors', 0);
@@ -30,35 +30,10 @@ $cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_analysis_cache.json';
 $names_cache_file = $cache_dir . 'names_cache.json';
 
-if (!is_dir($cache_dir)) {
-    if (!mkdir($cache_dir, 0755, true)) {
-        log_message("wallet_analysis: Failed to create cache directory at $cache_dir", 'wallet_api_log.txt', 'ERROR');
-        echo '<div class="result-error"><p>Cannot create cache directory</p></div>';
-        exit;
-    }
-    log_message("wallet_analysis: Created cache directory at $cache_dir", 'wallet_api_log.txt', 'INFO');
-}
-if (!file_exists($cache_file)) {
-    if (file_put_contents($cache_file, json_encode([])) === false) {
-        log_message("wallet_analysis: Failed to create cache file at $cache_file", 'wallet_api_log.txt', 'ERROR');
-        echo '<div class="result-error"><p>Cannot create cache file</p></div>';
-        exit;
-    }
-    chmod($cache_file, 0644);
-    log_message("wallet_analysis: Created cache file at $cache_file", 'wallet_api_log.txt', 'INFO');
-}
-if (!file_exists($names_cache_file)) {
-    if (file_put_contents($names_cache_file, json_encode([])) === false) {
-        log_message("wallet_analysis: Failed to create names cache file at $names_cache_file", 'wallet_api_log.txt', 'ERROR');
-        echo '<div class="result-error"><p>Cannot create names cache file</p></div>';
-        exit;
-    }
-    chmod($names_cache_file, 0644);
-    log_message("wallet_analysis: Created names cache file at $names_cache_file", 'wallet_api_log.txt', 'INFO');
-}
-if (!is_writable($cache_file) || !is_writable($names_cache_file)) {
-    log_message("wallet_analysis: Cache files not writable: $cache_file or $names_cache_file", 'wallet_api_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Cache files are not writable</p></div>';
+// Check and create cache directory and files
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'wallet_api_log.txt') ||
+    !ensure_directory_and_file($cache_dir, $names_cache_file, 'wallet_api_log.txt')) {
+    echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
 
