@@ -144,7 +144,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
             $names_cache_data = json_decode(file_get_contents($names_cache_file), true) ?? [];
             $cache_expiration = 3 * 3600;
             $cache_valid = isset($cache_data[$walletAddress]) && (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration);
-            $names_cache_valid = isset($names_cache_data[$walletAddress]) && (time() - $names_cache_data[$walletAddress]['timestamp'] < $cache_expiration);
+            $names_cache_valid = isset($names_cache_data[$walletAddress]) && (time() - $names_cache_data[$walletAddress]['timestamp'] < $cache_expiration) && !empty($names_cache_data[$walletAddress]['data']);
 
             if (!$cache_valid || !$names_cache_valid) {
                 $formatted_data = [
@@ -211,12 +211,14 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 }
 
                 // Gọi Helius Names API cho .sol domains
+                $domains_available = true;
                 if (!$names_cache_valid) {
                     $names_params = ['address' => $walletAddress];
                     $names_data = callAPI('getNamesByAddress', $names_params, 'GET');
 
                     if (isset($names_data['error']) || empty($names_data['domainNames'])) {
                         log_message("wallet_analysis: Helius Names API error or no domains found: " . json_encode($names_data), 'wallet_analysis_log.txt', 'ERROR');
+                        $domains_available = false;
                     } else {
                         $domains = is_array($names_data['domainNames']) ? $names_data['domainNames'] : [$names_data['domainNames']];
                         foreach ($domains as $name) {
@@ -318,7 +320,12 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                 </div>
                 <?php endif; ?>
 
-                <?php if (!empty($formatted_data['sol_domains'])): ?>
+                <?php if (!$domains_available): ?>
+                <h2>.sol Domains</h2>
+                <div class="wallet-details sol-domains">
+                    <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
+                </div>
+                <?php elseif (!empty($formatted_data['sol_domains'])): ?>
                 <h2>.sol Domains</h2>
                 <div class="wallet-details sol-domains">
                     <div class="sol-domains-table">
