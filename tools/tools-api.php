@@ -19,9 +19,9 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
     // Log PHP and cURL versions for debugging
     log_message("api-helper: PHP version: " . phpversion() . ", cURL version: " . curl_version()['version'], 'tools_api_log.txt');
 
-    $max_retries = 3;
+    $max_retries = $endpoint === 'getNamesByAddress' ? 5 : 3; // More retries for names
     $retry_count = 0;
-    $retry_delays = [2000000, 5000000, 10000000]; // 2s, 5s, 10s
+    $retry_delays = [2000000, 5000000, 10000000, 15000000, 20000000]; // 2s, 5s, 10s, 15s, 20s
 
     do {
         $ch = curl_init();
@@ -40,7 +40,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $endpoint === 'getNamesByAddress' ? 60 : 30); // 60s for names
+        curl_setopt($ch, CURLOPT_TIMEOUT, $endpoint === 'getNamesByAddress' ? 90 : 30); // 90s for names
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_HEADER, true); // Include response headers
 
@@ -68,13 +68,13 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                 log_message("api-helper: Alternative payload - Params: " . substr($postDataArray, 0, 100) . "...", 'tools_api_log.txt');
             }
         } elseif ($method === 'GET') {
-            log_message("api-helper: GET request - URL: $log_url", 'tools_api_log.txt');
+            log_message("api-helper: GET request - URL: $log_url, Retry: $retry_count/$max_retries", 'tools_api_log.txt');
         }
 
         $response = curl_exec($ch);
         if ($response === false) {
             $curlError = curl_error($ch);
-            log_message("api-error: cURL error: $curlError, URL: $log_url", 'tools_api_log.txt', 'ERROR');
+            log_message("api-error: cURL error: $curlError, URL: $log_url, Retry: $retry_count/$max_retries", 'tools_api_log.txt', 'ERROR');
             curl_close($ch);
             return ['error' => 'cURL error: ' . $curlError];
         }
@@ -99,9 +99,9 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         // Retry if rate limited (HTTP 429) or gateway timeout (HTTP 504)
         if (in_array($httpCode, [429, 504])) {
-            log_message("api-helper: HTTP $httpCode, retrying ($retry_count/$max_retries), URL: $log_url", 'tools_api_log.txt', 'WARNING');
+            log_message("api-helper: HTTP $httpCode, retrying ($retry_count/$max_retries), URL: $log_url, Delay: " . ($retry_delays[$retry_count] / 1000000) . "s", 'tools_api_log.txt', 'WARNING');
             if ($retry_count < $max_retries) {
-                usleep($retry_delays[$retry_count]); // Wait 2s, 5s, 10s
+                usleep($retry_delays[$retry_count]); // Wait 2s, 5s, 10s, 15s, 20s
                 $retry_count++;
                 continue;
             }
