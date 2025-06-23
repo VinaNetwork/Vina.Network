@@ -60,7 +60,7 @@ if (!is_writable($cache_file)) {
 // Page configuration
 $root_path = '../../';
 $page_title = 'Check NFT Info - Vina Network';
-$page_description = 'Check detailed information for a single Solana NFT using its Mint Address.';
+$page_description = 'Check detailed information for a single Solana NFT or Collection using its Mint Address or Collection Address.';
 $page_css = ['../../css/vina.css', '../tools.css'];
 
 log_message("nft_info: Including header.php", 'nft_info_log.txt', 'INFO');
@@ -107,10 +107,10 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
         ?>
         <div class="tools-form">
             <h2>Check NFT Info</h2>
-            <p>Enter the <strong>NFT Mint Address</strong> to view detailed information. For example, find this address on MagicEden under "Details" > "Mint Address".</p>
+            <p>Enter the <strong>NFT Mint Address</strong> or <strong>NFT Collection Address</strong> to view detailed information. For example, find these addresses on MagicEden under "Details" > "Mint Address" or "On-chain Collection".</p>
             <form id="nftInfoForm" method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint or Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
                 <button type="submit" class="cta-button">Check Info</button>
             </form>
             <div class="loader"></div>
@@ -132,7 +132,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
             log_message("nft_info: Validating mintAddress=$mintAddress", 'nft_info_log.txt', 'INFO');
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
                 log_message("nft_info: Invalid Mint Address format", 'nft_info_log.txt', 'ERROR');
-                throw new Exception('Invalid Mint Address format');
+                throw new Exception('Invalid Mint or Collection Address format');
             }
 
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
@@ -151,11 +151,14 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                     throw new Exception(is_array($asset['error']) ? ($asset['error']['message'] ?? 'API error') : $asset['error']);
                 }
                 if (empty($asset['result']) || !isset($asset['result']['id'])) {
-                    log_message("nft_info: NFT not found or invalid response for mintAddress=$mintAddress", 'nft_info_log.txt', 'ERROR');
-                    throw new Exception('NFT not found for Mint Address');
+                    log_message("nft_info: Asset not found or invalid response for mintAddress=$mintAddress", 'nft_info_log.txt', 'ERROR');
+                    throw new Exception('Asset not found for Mint or Collection Address');
                 }
 
                 $asset = $asset['result'];
+
+                // Check if the asset is a collection (grouping is empty or interface indicates collection)
+                $is_collection = empty($asset['grouping']) || (isset($asset['interface']) && in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT']) && empty($asset['grouping']));
 
                 $formatted_data = [
                     'mint_address' => $asset['id'] ?? $mintAddress,
@@ -163,7 +166,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                     'image' => $asset['content']['links']['image'] ?? '',
                     'attributes' => isset($asset['content']['metadata']['attributes']) && !empty($asset['content']['metadata']['attributes']) ? json_encode($asset['content']['metadata']['attributes'], JSON_PRETTY_PRINT) : 'N/A',
                     'owner' => $asset['ownership']['owner'] ?? 'N/A',
-                    'collection' => isset($asset['grouping'][0]['group_value']) ? $asset['grouping'][0]['group_value'] : 'N/A',
+                    'collection' => $is_collection ? $mintAddress : (isset($asset['grouping'][0]['group_value']) ? $asset['grouping'][0]['group_value'] : 'N/A'),
                     'is_compressed' => isset($asset['compression']['compressed']) ? $asset['compression']['compressed'] : false,
                     'is_burned' => isset($asset['ownership']['frozen']) ? $asset['ownership']['frozen'] : false,
                     'is_listed' => isset($asset['marketplace_listings']) && !empty($asset['marketplace_listings']) ? true : false,
@@ -199,7 +202,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
             ob_start();
             ?>
             <div class="tools-result nft-info-result">
-                <h2>NFT Details</h2>
+                <h2><?php echo $formatted_data['collection'] === $mintAddress ? 'Collection Details' : 'NFT Details'; ?></h2>
                 <div class="result-summary">
                     <div class="result-card">
                         <div class="nft-image">
@@ -212,7 +215,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                         <div class="nft-info-table">
                             <table>
                                 <tr>
-                                    <th>Mint Address</th>
+                                    <th><?php echo $formatted_data['collection'] === $mintAddress ? 'Collection Address' : 'Mint Address'; ?></th>
                                     <td>
                                         <span><?php echo substr(htmlspecialchars($formatted_data['mint_address']), 0, 4) . '...' . substr(htmlspecialchars($formatted_data['mint_address']), -4); ?></span>
                                         <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($formatted_data['mint_address']); ?>"></i>
@@ -283,6 +286,6 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 
     <div class="tools-about">
         <h2>About Check NFT Info</h2>
-        <p>The Check NFT Info tool allows you to view detailed information for a specific Solana NFT by entering its Mint Address.</p>
+        <p>The Check NFT Info tool allows you to view detailed information for a specific Solana NFT or Collection by entering its Mint Address or Collection Address.</p>
     </div>
 </div>
