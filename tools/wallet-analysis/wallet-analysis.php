@@ -55,9 +55,9 @@ if (!file_exists($names_cache_file)) {
     chmod($names_cache_file, 0644);
     log_message("wallet_analysis: Created names cache file at $names_cache_file", 'wallet_api_log.txt', 'INFO');
 }
-if (!is_writable($cache_file) || !is_writable($names_cache_file)) {
-    log_message("wallet_analysis: Cache files not writable: $cache_file or $names_cache_file", 'wallet_api_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Cache files are not writable</p></div>';
+if (!is_writable($cache_file) || !is_writable($names_cache_file) || !is_readable($names_cache_file)) {
+    log_message("wallet_analysis: Cache files not writable/readable: $cache_file or $names_cache_file", 'wallet_api_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cache files are not writable/readable</p></div>';
     exit;
 }
 
@@ -84,7 +84,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
 <style>
 .sol-domains-loading { display: none; text-align: center; padding: 10px; }
 .sol-domains-loading.active { display: block; }
-.tools-form { display: block; } /* Ensure form is visible */
+.tools-form { display: block; }
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -160,17 +160,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Exception('Invalid Solana wallet address format');
             }
 
-            $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
+            // Read names cache
             $names_cache_content = file_get_contents($names_cache_file);
             $names_cache_data = json_decode($names_cache_content, true);
             if ($names_cache_data === null) {
                 log_message("wallet_analysis: Failed to parse names_cache.json, content=" . substr($names_cache_content, 0, 500), 'wallet_api_log.txt', 'ERROR');
                 $names_cache_data = [];
             }
+
+            $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600; // 3h for assets
-            $names_cache_expiration = 24 * 3600; // 24h for domains
+            $names_cache_expiration = 3 * 3600; // 3h for domains
             $cache_valid = isset($cache_data[$walletAddress]) && (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration);
             $names_cache_valid = isset($names_cache_data[$walletAddress]) && (time() - $names_cache_data[$walletAddress]['timestamp'] < $names_cache_expiration);
+
+            if (!$names_cache_valid) {
+                log_message("wallet_analysis: Names cache invalid for walletAddress=$walletAddress, isset=" . (isset($names_cache_data[$walletAddress]) ? 'true' : 'false') . ", timestamp=" . ($names_cache_data[$walletAddress]['timestamp'] ?? 'N/A') . ", current_time=" . time() . ", expiration=$names_cache_expiration", 'wallet_api_log.txt', 'DEBUG');
+            }
 
             log_message("wallet_analysis: Cache check for walletAddress=$walletAddress, cache_valid=$cache_valid, names_cache_valid=$names_cache_valid, names_cache_content=" . json_encode($names_cache_data[$walletAddress] ?? []), 'wallet_api_log.txt', 'DEBUG');
 
@@ -214,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if ($item['interface'] === 'FungibleToken') {
                             $formatted_data['tokens'][] = [
                                 'mint' => $item['id'] ?? 'N/A',
-                                'name' => $item['content']['metadata']['name'] ?? $item['content']['metadata']['symbol'] ?? 'Unknown',
+                                'name' => $item['content']['metadata']['name'] ? $item['content']['metadata']['name'] : ($item['content']['metadata']['symbol'] ?? 'Unknown'),
                                 'balance' => isset($item['token_info']['balance']) ? $item['token_info']['balance'] / pow(10, $item['token_info']['decimals']) : 0,
                                 'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
                             ];
@@ -245,20 +251,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     $names_params = ['address' => $walletAddress];
                     $names_data = callAPI('getNamesByAddress', $names_params, 'GET');
 
-                    if (isset($names_data['error']) || empty($names_data['domainNames'])) {
-                        log_message("wallet_analysis: Helius Names API error or no domains found: " . json_encode($names_data), 'wallet_api_log.txt', 'ERROR');
+                    if (isset($names_data['error'])) {
+                        log_message("wallet_analysis: Helius Names API error: " . json_encode($names_data), 'wallet_api_log.txt', 'ERROR');
                         $domains_available = false;
                         if ($walletAddress === 'Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM') {
                             $formatted_data['sol_domains'] = [['domain' => 'vinanetwork.sol']];
                             log_message("wallet_analysis: Applied static fallback for vinanetwork.sol", 'wallet_api_log.txt', 'INFO');
                         }
                     } else {
-                        $domains = is_array($names_data['domainNames']) ? $names_data['domainNames'] : [$names_data['domainNames']];
-                        foreach ($domains as $name) {
-                            $domain_name = preg_match('/\.sol$/', $name) ? $name : "$name.sol";
-                            $formatted_data['sol_domains'][] = ['domain' => $domain_name];
+                        if (empty($names_data['domainNames'])) {
+                            log_message("wallet_analysis: No .sol domains found for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
+                            $formatted_data['sol_domains'] = [];
+                        } else {
+                            $domains = is_array($names_data['domainNames']) ? $names_data['domainNames'] : [$names_data['domainNames']];
+                            foreach ($domains as $name) {
+                                $domain_name = preg_match('/\.sol$/', $name) ? $name : "$name.sol";
+                                $formatted_data['sol_domains'][] = ['domain' => $domain_name];
+                            }
+                            log_message("wallet_analysis: Helius names fetched, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_api_log.txt', 'INFO');
                         }
-                        log_message("wallet_analysis: Helius names fetched, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_api_log.txt', 'INFO');
                     }
 
                     $names_cache_data[$walletAddress] = [
@@ -276,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         flock($fp, LOCK_UN);
                         log_message("wallet_analysis: Cached names data for walletAddress=$walletAddress, content=" . json_encode($names_cache_data[$walletAddress]), 'wallet_api_log.txt', 'INFO');
                     } else {
-                        log_message("wallet_analysis: Failed to lock names cache file at $names_cache_file", 'wallet_api_log.txt', 'ERROR');
+                        log_message("wallet_analysis: Failed to lock names_cache.json for writing, path=$names_cache_file", 'wallet_api_log.txt', 'ERROR');
                         fclose($fp);
                         throw new Exception('Failed to lock names cache file');
                     }
@@ -367,26 +378,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 <?php endif; ?>
 
                 <div class="sol-domains-loading">Loading .sol domains...</div>
-                <?php if (!$domains_available && empty($formatted_data['sol_domains'])): ?>
                 <h2>.sol Domains</h2>
                 <div class="wallet-details sol-domains">
-                    <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
+                    <?php if (!$domains_available): ?>
+                        <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
+                    <?php elseif (empty($formatted_data['sol_domains'])): ?>
+                        <p>No .sol domains found for this wallet.</p>
+                        <?php log_message("wallet_analysis: Rendered no .sol domains message for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO'); ?>
+                    <?php else: ?>
+                        <div class="sol-domains-table">
+                            <table>
+                                <tr><th>Domain Name</th></tr>
+                                <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($domain['domain']); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </table>
+                        </div>
+                    <?php endif; ?>
                 </div>
-                <?php elseif (!empty($formatted_data['sol_domains'])): ?>
-                <h2>.sol Domains</h2>
-                <div class="wallet-details sol-domains">
-                    <div class="sol-domains-table">
-                        <table>
-                            <tr><th>Domain Name</th></tr>
-                            <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($domain['domain']); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </table>
-                    </div>
-                </div>
-                <?php endif; ?>
 
                 <?php if ($cache_valid): ?>
                 <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
