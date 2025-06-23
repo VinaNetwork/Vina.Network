@@ -85,24 +85,6 @@ require_once $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
-<style>
-/* Inline CSS for NFT image in collection info table */
-.nft-holders-collection-image img {
-    width: 48px;
-    height: 48px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-.nft-holders-collection-table {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-.nft-holders-collection-table table {
-    flex: 1;
-}
-</style>
 <div class="nft-holders">
     <!-- Render form unless rate limit exceeded -->
     <?php
