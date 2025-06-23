@@ -1,6 +1,6 @@
 <?php
 // File: tools/tools-api.php
-// Description: Universal wrapper to call Helius RPC and API endpoints on Solana.
+// Description: Universal wrapper to call Helius RPC API on Solana.
 // Created by: Vina Network
 // ============================================================================
 
@@ -10,9 +10,7 @@ define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
-    $helius_api_key = HELIUS_API_KEY;
-    $helius_rpc_url = "https://mainnet.helius-rpc.com/?api-key=$helius_api_key";
-    $helius_api_url = "https://api.helius.xyz/v0";
+    $url = "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY;
     // Mask API key for logging
     $log_url = "https://mainnet.helius-rpc.com/?api-key=****";
 
@@ -27,13 +25,6 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         if (!$ch) {
             log_message("api-helper: cURL initialization failed.", 'tools_api_log.txt', 'ERROR');
             return ['error' => 'Failed to initialize cURL.'];
-        }
-
-        $url = $helius_rpc_url;
-        if ($endpoint === 'getNamesByAddress') {
-            $url = "$helius_api_url/addresses/{$params['address']}/names?api-key=$helius_api_key";
-            $log_url = str_replace($helius_api_key, '****', $url);
-            $method = 'GET';
         }
 
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -66,7 +57,13 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                 ]);
                 log_message("api-helper: Alternative payload - Params: " . substr($postDataArray, 0, 100) . "...", 'tools_api_log.txt');
             }
+
         } elseif ($method === 'GET') {
+            if (!empty($params)) {
+                $url .= '&' . http_build_query($params);
+                $log_url .= '&' . http_build_query($params); // Update log_url for GET params
+                curl_setopt($ch, CURLOPT_URL, $url);
+            }
             log_message("api-helper: GET request - URL: $log_url", 'tools_api_log.txt');
         }
 
@@ -141,9 +138,6 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             log_message("api-error: Failed to parse API response as JSON. URL: $log_url, Response: $body", 'tools_api_log.txt', 'ERROR');
             return ['error' => 'Failed to parse API response as JSON.'];
         }
-
-        // Log full response for debugging
-        log_message("api-helper: Full response - Endpoint: $endpoint, URL: $log_url, Response: " . json_encode($data), 'tools_api_log.txt', 'DEBUG');
 
         // Return error if API-level error exists
         if (isset($data['error'])) {
