@@ -142,7 +142,7 @@ h1, h2, h3 {text-align: center;}
 }
 
 /* NFT Holders Result */
-.nft-holders-collection-table {
+.nft-collection-info {
     display: flex;
     align-items: left;
     gap: 20px;
@@ -152,18 +152,18 @@ h1, h2, h3 {text-align: center;}
     border-radius: 10px;
     max-width: 600px;
 }
-.nft-holders-collection-table table {
+.nft-collection-info table {
     text-align: left;
     flex: 1;
 }
-.nft-holders-collection-table table tr {
+.nft-collection-info tr {
     padding: 5px 0;
 }
-.nft-holders-collection-image img {
+.nft-collection-info img {
     width: 48px;
     height: 48px;
     object-fit: cover;
-    border-radius: 24px;
+    border-radius: 50%;
 }
 
 /* Holders Export */
