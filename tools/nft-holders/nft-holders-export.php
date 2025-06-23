@@ -18,35 +18,25 @@ ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Define log path using LOGS_PATH from bootstrap.php
-define('EXPORT_LOG_PATH', LOGS_PATH . 'holders_export_log.txt');
+// Define cache directory and file
+$cache_dir = __DIR__ . '/cache/';
+$cache_file = $cache_dir . 'nft_holders_cache.json';
 
-// Check if LOGS_PATH is writable
-if (!is_writable(LOGS_PATH)) {
-    error_log("export-holders: Logs directory $LOGS_PATH is not writable");
+// Check and create cache directory and file
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'holders_export_log.txt')) {
+    log_message("export-holders: Cache setup failed for $cache_dir or $cache_file", 'holders_export_log.txt', 'ERROR');
     http_response_code(500);
-    echo json_encode(['error' => 'Server error: Logs directory is not writable']);
+    echo json_encode(['error' => 'Cache setup failed']);
     exit;
 }
 
-file_put_contents(EXPORT_LOG_PATH, "export-holders: Script started - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-
-// Define cache file
-$cache_file = __DIR__ . '/cache/nft_holders_cache.json';
-
-// Validate cache file
-if (!file_exists($cache_file)) {
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Cache file $cache_file does not exist - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-    http_response_code(500);
-    echo json_encode(['error' => 'Cache file missing']);
-    exit;
-}
+log_message("export-holders: Script started", 'holders_export_log.txt', 'INFO');
 
 header('Content-Type: application/json; charset=utf-8');
 
 // Validate request method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid request method - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Invalid request method", 'holders_export_log.txt', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid request method']);
     exit;
@@ -57,24 +47,24 @@ $mintAddress = trim($_POST['mintAddress'] ?? '');
 $export_type = $_POST['export_type'] ?? 'all';
 $export_format = $_POST['export_format'] ?? 'csv';
 
-file_put_contents(EXPORT_LOG_PATH, "export-holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+log_message("export-holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format", 'holders_export_log.txt', 'DEBUG');
 
 if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid collection address: $mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Invalid collection address: $mintAddress", 'holders_export_log.txt', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid collection address']);
     exit;
 }
 
 if (!in_array($export_format, ['csv', 'json'])) {
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid export format: $export_format - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Invalid export format: $export_format", 'holders_export_log.txt', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export format']);
     exit;
 }
 
 if ($export_type !== 'all') {
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid export type: $export_type - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Invalid export type: $export_type", 'holders_export_log.txt', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export type']);
     exit;
@@ -90,18 +80,18 @@ function getItems($mintAddress, $page = 1, $size = 100) {
         'page' => $page,
         'limit' => $size
     ];
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetching items - mintAddress=$mintAddress, page=$page, size=$size, params=" . json_encode($params) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Fetching items - mintAddress=$mintAddress, page=$page, size=$size, params=" . json_encode($params), 'holders_export_log.txt', 'DEBUG');
     $data = callAPI('getAssetsByGroup', $params, 'POST');
     if (isset($data['error'])) {
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: API error - " . json_encode($data['error']) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        log_message("export-holders: API error - " . json_encode($data['error']), 'holders_export_log.txt', 'ERROR');
         return ['error' => $data['error']];
     }
     $items = $data['result']['items'] ?? [];
     $total = $data['result']['total'] ?? $data['result']['totalItems'] ?? count($items);
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: API response - total=$total, items_count=" . count($items) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: API response - total=$total, items_count=" . count($items), 'holders_export_log.txt', 'DEBUG');
     $nft_items = array_map(function($item) {
         if (!isset($item['ownership']['owner'])) {
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: Invalid item structure, missing owner: " . json_encode($item) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            log_message("export-holders: Invalid item structure, missing owner: " . json_encode($item), 'holders_export_log.txt', 'WARNING');
             return null;
         }
         return [
@@ -110,7 +100,7 @@ function getItems($mintAddress, $page = 1, $size = 100) {
         ];
     }, $items);
     $nft_items = array_filter($nft_items);
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Fetched " . count($nft_items) . " items for page $page, total=$total - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Fetched " . count($nft_items) . " items for page $page, total=$total", 'holders_export_log.txt', 'INFO');
     return ['items' => $nft_items, 'total' => $total];
 }
 
@@ -123,7 +113,7 @@ try {
     // Load cache from file
     $cache_data = json_decode(file_get_contents($cache_file), true);
     if (!is_array($cache_data)) {
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Failed to parse cache file, initializing empty cache - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        log_message("export-holders: Failed to parse cache file, initializing empty cache", 'holders_export_log.txt', 'ERROR');
         $cache_data = [];
     }
 
@@ -134,9 +124,9 @@ try {
         (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration)) {
         $total_expected = $cache_data[$mintAddress]['total_items'] ?? 0;
         $items = $cache_data[$mintAddress]['items'] ?? [];
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Using file cache for mintAddress=$mintAddress, total_expected=$total_expected - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        log_message("export-holders: Using file cache for mintAddress=$mintAddress, total_expected=$total_expected", 'holders_export_log.txt', 'INFO');
     } else {
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: No valid file cache found for mintAddress=$mintAddress, fetching new data - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        log_message("export-holders: No valid file cache found for mintAddress=$mintAddress, fetching new data", 'holders_export_log.txt', 'INFO');
         ini_set('memory_limit', '512M');
         $result = getItems($mintAddress, 1, 100);
         if (isset($result['error'])) {
@@ -145,7 +135,7 @@ try {
         $total_expected = $result['total'];
 
         if ($total_expected === 0) {
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: No items found for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            log_message("export-holders: No items found for mintAddress=$mintAddress", 'holders_export_log.txt', 'ERROR');
             throw new Exception('No items found');
         }
 
@@ -161,9 +151,9 @@ try {
             $page_items = $result['items'];
             $items = array_merge($items, $page_items);
             $total_fetched += count($page_items);
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: Page $api_page - Fetched $total_fetched/$total_expected items - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            log_message("export-holders: Page $api_page - Fetched $total_fetched/$total_expected items", 'holders_export_log.txt', 'INFO');
             if (count($page_items) == 0) {
-                file_put_contents(EXPORT_LOG_PATH, "export-holders: No more items on page $api_page, stopping - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+                log_message("export-holders: No more items on page $api_page, stopping", 'holders_export_log.txt', 'INFO');
                 break;
             }
             $api_page++;
@@ -177,15 +167,15 @@ try {
             'timestamp' => time()
         ];
         if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: Failed to write cache file for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            log_message("export-holders: Failed to write cache file for mintAddress=$mintAddress", 'holders_export_log.txt', 'ERROR');
             throw new Exception('Failed to save cache data');
         }
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: Cached total_items=$total_fetched for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        log_message("export-holders: Cached total_items=$total_fetched for mintAddress=$mintAddress", 'holders_export_log.txt', 'INFO');
     }
 
     // Validate items
     if (empty($items)) {
-        file_put_contents(EXPORT_LOG_PATH, "export-holders: No items found for mintAddress=$mintAddress - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+        log_message("export-holders: No items found for mintAddress=$mintAddress", 'holders_export_log.txt', 'ERROR');
         throw new Exception('No items found');
     }
 
@@ -194,7 +184,7 @@ try {
     $unique_wallets = [];
     foreach ($items as $item) {
         if (!isset($item['owner'])) {
-            file_put_contents(EXPORT_LOG_PATH, "export-holders: Skipping invalid item during deduplication: " . json_encode($item) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            log_message("export-holders: Skipping invalid item during deduplication: " . json_encode($item), 'holders_export_log.txt', 'WARNING');
             continue;
         }
         $owner = $item['owner'];
@@ -205,7 +195,7 @@ try {
         }
     }
     $wallets = array_values($unique_wallets);
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Total items fetched: $total_items, Total unique wallets: " . count($wallets) . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Total items fetched: $total_items, Total unique wallets: " . count($wallets), 'holders_export_log.txt', 'INFO');
 
     // Output based on requested format
     if ($export_format === 'csv') {
@@ -236,7 +226,7 @@ try {
     }
     exit;
 } catch (Exception $e) {
-    file_put_contents(EXPORT_LOG_PATH, "export-holders: Exception - " . $e->getMessage() . " - " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+    log_message("export-holders: Exception - " . $e->getMessage(), 'holders_export_log.txt', 'ERROR');
     http_response_code(500);
     echo json_encode(['error' => 'Export failed: ' . $e->getMessage()]);
     exit;
