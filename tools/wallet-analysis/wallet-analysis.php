@@ -142,7 +142,8 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                     'displayOptions' => [
                         'showFungible' => true,
                         'showNativeBalance' => true,
-                        'showInscription' => true
+                        'showInscription' => true,
+                        'showCollectionMetadata' => true
                     ]
                 ];
                 $assets = callAPI('getAssetsByOwner', $params, 'POST');
@@ -167,7 +168,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
 
                 $sns_program = 'names111111111111111111111111111111111111111111';
                 foreach ($result['items'] as $item) {
-                    log_message("wallet_analysis: Processing item, interface=" . ($item['interface'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []), 'wallet_analysis_log.txt', 'DEBUG');
+                    log_message("wallet_analysis: Processing item, interface=" . ($item['interface'] ?? 'N/A') . ", creators=" . json_encode($item['creators'] ?? []) . ", authorities=" . json_encode($item['authorities'] ?? []) . ", grouping=" . json_encode($item['grouping'] ?? []), 'wallet_analysis_log.txt', 'DEBUG');
                     if ($item['interface'] === 'FungibleToken') {
                         $formatted_data['tokens'][] = [
                             'mint' => $item['id'] ?? 'N/A',
@@ -176,8 +177,31 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                             'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
                         ];
                     } elseif (in_array($item['interface'], ['V1_NFT', 'ProgrammableNFT'])) {
-                        if ((isset($item['creators'][0]['address']) && $item['creators'][0]['address'] === $sns_program) || 
-                            (isset($item['authorities'][0]['address']) && $item['authorities'][0]['address'] === $sns_program)) {
+                        $is_sns = false;
+                        // Kiểm tra tất cả creators
+                        if (isset($item['creators']) && is_array($item['creators'])) {
+                            foreach ($item['creators'] as $creator) {
+                                if (isset($creator['address']) && $creator['address'] === $sns_program) {
+                                    $is_sns = true;
+                                    break;
+                                }
+                            }
+                        }
+                        // Kiểm tra tất cả authorities
+                        if (!$is_sns && isset($item['authorities']) && is_array($item['authorities'])) {
+                            foreach ($item['authorities'] as $authority) {
+                                if (isset($authority['address']) && $authority['address'] === $sns_program) {
+                                    $is_sns = true;
+                                    break;
+                                }
+                            }
+                        }
+                        // Kiểm tra grouping (collection)
+                        if (!$is_sns && isset($item['grouping'][0]['group_value']) && $item['grouping'][0]['group_value'] === $sns_program) {
+                            $is_sns = true;
+                        }
+
+                        if ($is_sns) {
                             log_message("wallet_analysis: Found .sol domain, name=" . ($item['content']['metadata']['name'] ?? 'N/A'), 'wallet_analysis_log.txt', 'INFO');
                             $formatted_data['sol_domains'][] = [
                                 'domain' => $item['content']['metadata']['name'] ?? 'N/A',
@@ -203,13 +227,13 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 
                         log_message("wallet_analysis: Failed to write cache to $cache_file", 'wallet_analysis_log.txt', 'ERROR');
                         flock($fp, LOCK_UN);
                         fclose($fp);
-                        throw new Exception("Failed to save cache data");
+                        throw new Exception('Failed to save cache data');
                     }
                     flock($fp, LOCK_UN);
                 } else {
                     log_message("wallet_analysis: Failed to lock cache file $cache_file", 'wallet_analysis_log.txt', 'ERROR');
                     fclose($fp);
-                    throw new Exception("Failed to lock cache file");
+                    throw new Exception('Failed to lock cache file');
                 }
                 fclose($fp);
                 log_message("wallet_analysis: Cached data for walletAddress=$walletAddress, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_analysis_log.txt', 'INFO');
