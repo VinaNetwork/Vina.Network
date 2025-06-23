@@ -22,7 +22,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 $bootstrap_path = __DIR__ . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("nft-holders: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'ERROR');
-    exit('Error: Cannot find bootstrap.php');
+    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
+    exit;
 }
 require_once $bootstrap_path;
 
@@ -31,39 +32,15 @@ session_start();
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
-// Check logs directory permissions
-if (!is_writable(LOGS_PATH)) {
-    error_log("nft-holders: Logs directory $LOGS_PATH is not writable");
-    exit('Error: Logs directory is not writable');
-}
-
 // Define cache directory and file
 $cache_dir = NFT_HOLDERS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_holders_cache.json';
 
-// Ensure cache directory exists
-if (!is_dir($cache_dir)) {
-    if (!mkdir($cache_dir, 0755, true)) {
-        log_message("nft-holders: Failed to create cache directory at $cache_dir", 'nft_holders_log.txt', 'ERROR');
-        exit('Error: Unable to create cache directory');
-    }
-    log_message("nft-holders: Created cache directory at $cache_dir", 'nft_holders_log.txt');
-}
-
-// Ensure cache file exists
-if (!file_exists($cache_file)) {
-    if (file_put_contents($cache_file, json_encode([])) === false) {
-        log_message("nft-holders: Failed to create cache file at $cache_file", 'nft_holders_log.txt', 'ERROR');
-        exit('Error: Unable to create cache file');
-    }
-    chmod($cache_file, 0644);
-    log_message("nft-holders: Created cache file at $cache_file", 'nft_holders_log.txt');
-}
-
-// Check cache file permissions
-if (!is_writable($cache_file)) {
-    log_message("nft-holders: Cache file $cache_file is not writable", 'nft_holders_log.txt', 'ERROR');
-    exit('Error: Cache file is not writable');
+// Check and create cache directory and file
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_holders_log.txt')) {
+    log_message("nft-holders: Cache setup failed for $cache_dir or $cache_file", 'nft_holders_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cache setup failed</p></div>';
+    exit;
 }
 
 // Set up page variables and include layout headers
@@ -78,7 +55,8 @@ include $root_path . 'include/navbar.php';
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft-holders: tools-api.php not found at $api_helper_path", 'nft_holders_log.txt', 'ERROR');
-    exit('Internal Server Error: Missing tools-api.php');
+    echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
+    exit;
 }
 log_message("nft-holders: Including tools-api.php from $api_helper_path", 'nft_holders_log.txt');
 require_once $api_helper_path;
