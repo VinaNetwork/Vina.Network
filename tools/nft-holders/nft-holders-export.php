@@ -12,6 +12,12 @@ define('VINANETWORK_ENTRY', true);
 require_once '../bootstrap.php';
 require_once '../tools-api.php';
 
+session_start();
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 // Define cache directory and file
 $cache_dir = __DIR__ . '/cache/';
 $cache_file = $cache_dir . 'nft_holders_cache.json';
