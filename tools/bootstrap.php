@@ -11,6 +11,17 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // ---------------------------------------------------
+// PHP configuration
+// Set error handling and session
+// ---------------------------------------------------
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
+session_start();
+ini_set('log_errors', true);
+ini_set('error_log', ERROR_LOG_PATH);
+
+// ---------------------------------------------------
 // Define core path constants
 // Used across the tools module for easier path management
 // ---------------------------------------------------
@@ -26,11 +37,6 @@ define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
 // Load configuration file
 // ---------------------------------------------------
 require_once ROOT_PATH . 'config/config.php';
-
-// Check session status before starting
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 
 // ---------------------------------------------------
 // Ensure directory and file exist with correct permissions
