@@ -11,17 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // ---------------------------------------------------
-// PHP configuration
-// Set error handling and session
-// ---------------------------------------------------
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-session_start();
-ini_set('log_errors', true);
-ini_set('error_log', ERROR_LOG_PATH);
-
-// ---------------------------------------------------
 // Define core path constants
 // Used across the tools module for easier path management
 // ---------------------------------------------------
@@ -34,9 +23,27 @@ define('LOGS_PATH', TOOLS_PATH . 'logs/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
 
 // ---------------------------------------------------
+// PHP configuration
+// Set error handling and session
+// ---------------------------------------------------
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
+session_start();
+ini_set('log_errors', true);
+ini_set('error_log', ERROR_LOG_PATH);
+
+// ---------------------------------------------------
 // Load configuration file
 // ---------------------------------------------------
-require_once ROOT_PATH . 'config/config.php';
+$config_path = ROOT_PATH . 'config/config.php';
+if (!file_exists($config_path)) {
+    error_log("bootstrap: config.php not found at $config_path");
+    http_response_code(500);
+    echo '<div class="result-error"><p>Error: Configuration file not found</p></div>';
+    exit;
+}
+require_once $config_path;
 
 // ---------------------------------------------------
 // Ensure directory and file exist with correct permissions
@@ -54,8 +61,7 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
                 log_message("Failed to create directory: $dir_path", $log_file, 'ERROR');
                 return false;
             }
-            chown($dir_path, 'www-data');
-            chgrp($dir_path, 'www-data');
+            // Bỏ chown/chgrp để tránh lỗi quyền
             chmod($dir_path, 0764);
             log_message("Created directory: $dir_path", $log_file, 'INFO');
         }
@@ -70,8 +76,6 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
                 log_message("Failed to create file: $file_path", $log_file, 'ERROR');
                 return false;
             }
-            chown($file_path, 'www-data');
-            chgrp($file_path, 'www-data');
             chmod($file_path, 0664);
             log_message("Created file: $file_path", $log_file, 'INFO');
         }
