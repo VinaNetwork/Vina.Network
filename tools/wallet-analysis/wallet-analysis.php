@@ -3,34 +3,33 @@
 // File: tools/wallet-analysis/wallet-analysis.php
 // Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
 // Author: Vina Network
-// Version: 23.5 (Lazy-load NFTs and Domains on tab click)
+// Version: 23.6 (Fix showNonFungible error, lazy-load NFTs and Domains)
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) define('wallet_address', true));
 
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("wallet_analysis: bootstrap.php not found at $bootstrap_path", 'wallet_api_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
-}
-require_once $bootstrap_path;
+endif
 
-$cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
+require_once $cache_dir = WALLET_ANALYSIS_PATH . '/cache/';
 $cache_file = $cache_dir . 'wallet_analysis_cache.json';
-$names_cache_file = $cache_dir . 'names_cache.json';
+$names_cache_file = $cache_dir . '/names_cache.json';
 
 // Check and create cache directory and files
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'wallet_api_log.txt') ||
     !ensure_directory_and_file($cache_dir, $names_cache_file, 'wallet_api_log.txt')) {
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
-}
+endif
 
 $root_path = '../../';
 $page_title = 'Check Wallet Analysis - Vina Network';
-$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs, .sol domains) of a Solana wallet by entering its address.';
+$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs, and .sol domains) of a Solana wallet by entering its address.';
 $page_css = ['../../css/vina.css', '../tools.css'];
 
 log_message("wallet_analysis: Including header.php", 'wallet_api_log.txt', 'INFO');
@@ -43,7 +42,7 @@ if (!file_exists($api_helper_path)) {
     log_message("wallet_analysis: tools-api.php not found at $api_helper_path", 'wallet_api_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
     exit;
-}
+endif
 require_once $api_helper_path;
 log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO');
 ?>
@@ -73,7 +72,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
             $_SESSION[$rate_limit_key]['count'] = $rate_limit_count + 1;
             log_message("wallet_analysis: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_api_log.txt', 'INFO');
         }
-    }
+    endif
 
     if (!$rate_limit_exceeded) {
         log_message("wallet_analysis: Rendering form", 'wallet_api_log.txt', 'INFO');
@@ -88,7 +87,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                 } catch (Exception $e) {
                     log_message("wallet_analysis: Failed to generate CSRF token: " . $e->getMessage(), 'wallet_api_log.txt', 'ERROR');
                     $csrf_token = '';
-                }
+                } endtry
                 ?>
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                 <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
@@ -97,19 +96,19 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
             <div class="loader"></div>
         </div>
         <?php
-    }
+    endif
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !$rate_limit_exceeded) {
         try {
             if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
                 throw new Exception('Invalid CSRF token');
-            }
+            } endif
 
             $walletAddress = trim($_POST['walletAddress']);
             $walletAddress = preg_replace('/\s+/', '', $walletAddress);
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $walletAddress)) {
                 throw new Exception('Invalid Solana wallet address format');
-            }
+            } endif
 
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600;
@@ -123,30 +122,29 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                     'sol_balance' => 0.0,
                     'sol_price_usd' => 0.0,
                     'tokens' => [],
-                    'nfts' => [], // Initialize empty, load on tab click
-                    'sol_domains' => [], // Initialize empty, load on tab click
+                    'nfts' => [],
+                    'sol_domains' => [], // Load on tab click
                     'timestamp' => time()
                 ];
 
-                // Only fetch Tokens and SOL balance
+                // Fetch Tokens, NFTs, and SOL balance
                 $params = [
                     'ownerAddress' => $walletAddress,
                     'page' => 1,
                     'limit' => 1000,
                     'displayOptions' => [
                         'showFungible' => true,
-                        'showNativeBalance' => true,
-                        'showNonFungible' => false // Exclude NFTs initially
+                        'showNativeBalance' => true
                     ]
                 ];
                 $assets = callAPI('getAssetsByOwner', $params, 'POST');
 
                 if (isset($assets['error'])) {
                     throw new Exception(is_array($assets['error']) ? ($assets['error']['message'] ?? 'API error') : $assets['error']);
-                }
+                } endif
                 if (empty($assets['result']) || !isset($assets['result']['items'])) {
                     throw new Exception('No assets found for the wallet');
-                }
+                } endif
 
                 $result = $assets['result'];
                 $formatted_data['sol_balance'] = isset($result['nativeBalance']['lamports']) ? $result['nativeBalance']['lamports'] / 1000000000 : 0.0;
@@ -161,8 +159,14 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                             'balance' => isset($item['token_info']['balance']) ? $item['token_info']['balance'] / pow(10, $item['token_info']['decimals']) : 0,
                             'price_usd' => isset($item['token_info']['price_info']['total_price']) ? $item['token_info']['price_info']['total_price'] : 0.0
                         ];
-                    }
-                }
+                    } elseif (in_array($item['interface'], ['V1_NFT', 'ProgrammableNFT'])) {
+                        $formatted_data['nfts'][] = [
+                            'mint' => $item['id'] ?? 'N/A',
+                            'name' => $item['content']['metadata']['name'] ?? 'N/A',
+                            'collection' => isset($item['grouping'][0]['group_value']) ? $item['grouping'][0]['group_value'] : 'N/A'
+                        ];
+                    } endif
+                } endforeach
 
                 $cache_data[$walletAddress] = [
                     'data' => $formatted_data,
@@ -171,12 +175,12 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                 if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
                     log_message("wallet_analysis: Failed to write cache file at $cache_file", 'wallet_api_log.txt', 'ERROR');
                     throw new Exception('Failed to write cache file');
-                }
-                log_message("wallet_analysis: Cached Tokens and SOL balance for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
+                } endif
+                log_message("wallet_analysis: Cached Tokens, NFTs, and SOL balance for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
             } else {
                 $formatted_data = $cache_data[$walletAddress]['data'];
-                log_message("wallet_analysis: Retrieved Tokens and SOL balance from cache for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
-            }
+                log_message("wallet_analysis: Retrieved Tokens, NFTs, and SOL balance from cache for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
+            } endif
 
             // Store formatted_data in session for tab navigation
             $_SESSION['wallet_analysis_data'] = $formatted_data;
@@ -219,7 +223,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                     if (!in_array($tab, $valid_tabs)) {
                         $tab = 'token';
                         log_message("wallet_analysis: Invalid tab, defaulted to token", 'wallet_api_log.txt', 'ERROR');
-                    }
+                    } endif
 
                     $tab_file = __DIR__ . '/' . $tab . '.php';
                     if (file_exists($tab_file)) {
@@ -228,7 +232,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                     } else {
                         echo "<div class='result-error'><p>Error: Tab file not found at $tab_file.</p></div>";
                         log_message("wallet_analysis: Tab file not found: $tab_file", 'wallet_api_log.txt', 'ERROR');
-                    }
+                    } endif
                     ?>
                 </div>
 
@@ -240,8 +244,8 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
         } catch (Exception $e) {
             echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
             log_message("wallet_analysis: Error processing request: " . $e->getMessage(), 'wallet_api_log.txt', 'ERROR');
-        }
-    }
+        } endtry
+    } endif
     ?>
 
     <div class="tools-about">
