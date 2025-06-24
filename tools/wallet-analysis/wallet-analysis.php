@@ -3,7 +3,7 @@
 // File: tools/wallet-analysis/wallet-analysis.php
 // Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
 // Author: Vina Network
-// Version: 23.3 (Remove .sol-domains-loading, inline CSS, and redundant cache checks)
+// Version: 23.4 (Add tab navigation for Tokens, NFTs, Domains)
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
@@ -51,6 +51,9 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
 <div class="wallet-analysis">
     <?php
     $rate_limit_exceeded = false;
+    $formatted_data = null;
+    $walletAddress = null;
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
         $ip = $_SERVER['REMOTE_ADDR'];
         $rate_limit_key = "rate_limit_wallet_analysis:$ip";
@@ -72,14 +75,12 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
         }
     }
 
-    log_message("wallet_analysis: rate_limit_exceeded=$rate_limit_exceeded", 'wallet_api_log.txt', 'DEBUG');
-
     if (!$rate_limit_exceeded) {
         log_message("wallet_analysis: Rendering form", 'wallet_api_log.txt', 'INFO');
         ?>
         <div class="tools-form">
             <h2>Check Wallet Analysis</h2>
-            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens (e.g., USDT), NFTs, and .sol domains.</p>
+            <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens, NFTs, and .sol domains.</p>
             <form id="walletAnalysisForm" method="POST" action="">
                 <?php
                 try {
@@ -276,8 +277,11 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                 log_message("wallet_analysis: Retrieved all data from cache for walletAddress=$walletAddress, sol_domains=" . json_encode($formatted_data['sol_domains']), 'wallet_api_log.txt', 'INFO');
             }
 
-            log_message("wallet_analysis: sol_domains before render=" . json_encode($formatted_data['sol_domains']), 'wallet_api_log.txt', 'DEBUG');
+            // Store formatted_data in session for tab navigation
+            $_SESSION['wallet_analysis_data'] = $formatted_data;
+            $_SESSION['wallet_analysis_timestamp'] = $cache_data[$walletAddress]['timestamp'] ?? time();
 
+            log_message("wallet_analysis: sol_domains before render=" . json_encode($formatted_data['sol_domains']), 'wallet_api_log.txt', 'DEBUG');
             ?>
             <div class="tools-result wallet-analysis-result">
                 <div class="result-summary">
@@ -294,83 +298,48 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                     </div>
                 </div>
 
-                <?php if (!empty($formatted_data['tokens'])): ?>
-                <h2>Tokens details</h2>
-                <div class="wallet-details token-details">
-                    <div class="token-table">
-                        <table>
-                            <tr><th>Name</th><th>Token Address</th><th>Balance</th><th>Value (USD)</th></tr>
-                            <?php foreach ($formatted_data['tokens'] as $token): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($token['name']); ?></td>
-                                <td>
-                                    <span><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
-                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
-                                </td>
-                                <td><?php echo number_format($token['balance'], 2); ?></td>
-                                <td><?php echo number_format($token['price_usd'], 2); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </table>
-                    </div>
+                <!-- Tab Navigation -->
+                <div class="wallet-tabs">
+                    <a href="?tab=token" class="wallet-tab-link <?php echo (!isset($_GET['tab']) || $_GET['tab'] === 'token') ? 'active' : ''; ?>" data-tab="token">
+                        <i class="fas fa-coins"></i> Tokens
+                    </a>
+                    <a href="?tab=nft" class="wallet-tab-link <?php echo (isset($_GET['tab']) && $_GET['tab'] === 'nft') ? 'active' : ''; ?>" data-tab="nft">
+                        <i class="fas fa-image"></i> NFTs
+                    </a>
+                    <a href="?tab=domain" class="wallet-tab-link <?php echo (isset($_GET['tab']) && $_GET['tab'] === 'domain') ? 'active' : ''; ?>" data-tab="domain">
+                        <i class="fas fa-globe"></i> Domains
+                    </a>
                 </div>
-                <?php endif; ?>
 
-                <?php if (!empty($formatted_data['nfts'])): ?>
-                <h2>NFTs details</h2>
-                <div class="wallet-details nft-details">
-                    <div class="nft-table">
-                        <table>
-                            <tr><th>Name</th><th>Mint Address</th><th>Collection</th></tr>
-                            <?php foreach ($formatted_data['nfts'] as $nft): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($nft['name']); ?></td>
-                                <td>
-                                    <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
-                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
-                                </td>
-                                <td>
-                                    <?php if ($nft['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $nft['collection'])): ?>
-                                        <span><?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?></span>
-                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
-                                    <?php else: ?>
-                                        <span>N/A</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </table>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <!-- Tab Content -->
+                <div class="wallet-tab-content">
+                    <?php
+                    $tab = isset($_GET['tab']) ? $_GET['tab'] : 'token';
+                    $valid_tabs = ['token', 'nft', 'domain'];
+                    if (!in_array($tab, $valid_tabs)) {
+                        $tab = 'token';
+                        log_message("wallet_analysis: Invalid tab, defaulted to token", 'wallet_api_log.txt', 'ERROR');
+                    }
 
-                <h2>.sol Domains</h2>
-                <div class="wallet-details sol-domains">
-                    <?php if (!$domains_available && empty($formatted_data['sol_domains'])): ?>
-                        <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
-                    <?php elseif (empty($formatted_data['sol_domains'])): ?>
-                        <p>No .sol domains found for this wallet.</p>
-                    <?php else: ?>
-                        <div class="sol-domains-table">
-                            <table>
-                                <tr><th>Domain Name</th></tr>
-                                <?php foreach ($formatted_data['sol_domains'] as $domain): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($domain['domain']); ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </table>
-                        </div>
-                    <?php endif; ?>
+                    $tab_file = __DIR__ . '/' . $tab . '.php';
+                    if (file_exists($tab_file)) {
+                        log_message("wallet_analysis: Including tab file: $tab_file", 'wallet_api_log.txt', 'INFO');
+                        include $tab_file;
+                    } else {
+                        echo "<div class='result-error'><p>Error: Tab file not found at $tab_file.</p></div>";
+                        log_message("wallet_analysis: Tab file not found: $tab_file", 'wallet_api_log.txt', 'ERROR');
+                    }
+                    ?>
                 </div>
 
                 <?php if ($cache_valid): ?>
-                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$walletAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
+                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $_SESSION['wallet_analysis_timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
                 <?php endif; ?>
             </div>
             <?php
         } catch (Exception $e) {
             echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+            log_message("wallet_analysis: Error processing request: " . $e->getMessage(), 'wallet_api_log.txt', 'ERROR');
         }
     }
     ?>
