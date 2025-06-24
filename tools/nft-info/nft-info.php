@@ -5,11 +5,6 @@
 // Author: Vina Network
 // ============================================================================
 
-// Disable error display
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-
 // Define constants
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
@@ -22,11 +17,6 @@ if (!file_exists($bootstrap_path)) {
     exit;
 }
 require_once $bootstrap_path;
-
-// Start session and configure error logging
-session_start();
-ini_set('log_errors', true);
-ini_set('error_log', ERROR_LOG_PATH);
 
 // Cache directory and file
 $cache_dir = NFT_INFO_PATH . 'cache/';
