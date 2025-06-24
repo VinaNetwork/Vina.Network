@@ -3,21 +3,37 @@
 // File: tools/wallet-analysis/domain.php
 // Description: Display Domains tab content for Wallet Analysis, fetch data on tab click
 // Author: Vina Network
-// Version: 23.7 (Fix HTTP 500 error, improve error handling)
+// Version: 23.8 (Fix HTTP 500 error, improve session and error handling)
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+
+// Start session
+session_start();
+log_message("domain: Session started, session_id=" . session_id(), 'wallet_api_log.txt', 'INFO');
 
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("domain: bootstrap.php not found at $bootstrap_path", 'wallet_api_log.txt', 'ERROR');
     header('HTTP/1.1 500 Internal Server Error');
-    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
+    echo '<div class="result-error"><p>Server error: Cannot find bootstrap.php</p></div>';
     exit;
 }
 require_once $bootstrap_path;
+log_message("domain: bootstrap.php loaded", 'wallet_api_log.txt', 'INFO');
+
+// Load tools-api
+$api_helper_path = dirname(__DIR__) . '/tools-api.php';
+if (!file_exists($api_helper_path)) {
+    log_message("domain: tools-api.php not found at $api_helper_path", 'wallet_api_log.txt', 'ERROR');
+    header('HTTP/1.1 500 Internal Server Error');
+    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
+    exit;
+}
+require_once $api_helper_path;
+log_message("domain: tools-api.php loaded", 'wallet_api_log.txt', 'INFO');
 
 // Check session data
 $formatted_data = $_SESSION['wallet_analysis_data'] ?? null;
@@ -28,6 +44,7 @@ if (!$formatted_data || !$walletAddress || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{3
     echo '<div class="result-error"><p>Error: No valid wallet data available. Please submit the wallet address again.</p></div>';
     exit;
 }
+log_message("domain: Valid session data, walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
 
 // Initialize cache
 $cache_dir = defined('WALLET_ANALYSIS_PATH') ? WALLET_ANALYSIS_PATH . 'cache/' : dirname(__DIR__) . '/cache/';
@@ -35,19 +52,21 @@ $names_cache_file = $cache_dir . 'names_cache.json';
 if (!ensure_directory_and_file($cache_dir, $names_cache_file, 'wallet_api_log.txt')) {
     log_message("domain: Failed to create cache directory or file at $names_cache_file", 'wallet_api_log.txt', 'ERROR');
     header('HTTP/1.1 500 Internal Server Error');
-    echo '<div class="result-error"><p>Cache setup failed</p></div>';
+    echo '<div class="result-error"><p>Server error: Cache setup failed</p></div>';
     exit;
 }
+log_message("domain: Cache initialized, names_cache_file=$names_cache_file", 'wallet_api_log.txt', 'INFO');
 
 $names_cache_data = json_decode(file_get_contents($names_cache_file), true) ?? [];
 $names_cache_expiration = 20 * 3600; // 20 hours
 $names_cache_valid = isset($names_cache_data[$walletAddress]) && (time() - $names_cache_data[$walletAddress]['timestamp'] < $names_cache_expiration);
-
 log_message("domain: Cache check for walletAddress=$walletAddress, names_cache_valid=$names_cache_valid", 'wallet_api_log.txt', 'DEBUG');
 
+// Fetch domains if cache invalid or sol_domains empty
 $domains_available = true;
 if (!$names_cache_valid || empty($formatted_data['sol_domains'])) {
     try {
+        log_message("domain: Fetching domains for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
         $names_params = ['address' => $walletAddress];
         $names_data = callAPI('getNamesByAddress', $names_params, 'GET');
 
@@ -78,7 +97,8 @@ if (!$names_cache_valid || empty($formatted_data['sol_domains'])) {
         }
 
         // Update session
-        $_SESSION['wallet_analysis_data'] = $formatted_data;
+        $_SESSION['wallet_analysis_data']['sol_domains'] = $formatted_data['sol_domains'];
+        log_message("domain: Updated session with sol_domains, count=" . count($formatted_data['sol_domains']), 'wallet_api_log.txt', 'INFO');
 
         // Update cache with safer file locking
         $fp = @fopen($names_cache_file, 'c+');
@@ -101,6 +121,7 @@ if (!$names_cache_valid || empty($formatted_data['sol_domains'])) {
             log_message("domain: Updated names cache for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
         } else {
             log_message("domain: Failed to lock names cache file at $names_cache_file", 'wallet_api_log.txt', 'ERROR');
+            flock($fp, LOCK_UN);
             fclose($fp);
             throw new Exception('Failed to lock names cache file');
         }
@@ -111,6 +132,8 @@ if (!$names_cache_valid || empty($formatted_data['sol_domains'])) {
         echo '<div class="result-error"><p>Error fetching Domains: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
         exit;
     }
+} else {
+    log_message("domain: Using cached sol_domains for walletAddress=$walletAddress, count=" . count($formatted_data['sol_domains']), 'wallet_api_log.txt', 'INFO');
 }
 ?>
 
@@ -133,3 +156,6 @@ if (!$names_cache_valid || empty($formatted_data['sol_domains'])) {
         </div>
     <?php endif; ?>
 </div>
+<?php
+log_message("domain: Rendered sol_domains for walletAddress=$walletAddress, count=" . count($formatted_data['sol_domains']), 'wallet_api_log.txt', 'DEBUG');
+?>
