@@ -1,53 +1,56 @@
 // ============================================================================
 // File: tools/tools.js
-// Description: Script for the entire tool page, including tab navigation, form submission, export, and copy functionality.
+// Description: Script for the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
 // Author: Vina Network
+// Version: Updated for wallet-analysis tabs (Tokens, NFTs, Domains)
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize tab navigation
+    // Initialize tool tab navigation
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
+    const tab = urlParams.get('tab');
     const tabsContainer = document.querySelector('.tools-nav');
-    let activeTab = document.querySelector('.tools-nav-link.active');
+    let activeToolTab = document.querySelector('.tools-nav-link.active');
 
     console.log('Initial tool from URL:', tool);
-    console.log('Active tab element:', activeTab);
+    console.log('Initial tab from URL:', tab);
+    console.log('Active tool tab element:', activeToolTab);
 
-    // Activate tab based on URL if no active tab
-    if (!activeTab && tool) {
-        activeTab = document.querySelector(`.tools-nav-link[data-tool="${tool}"]`);
-        if (activeTab) {
-            activeTab.classList.add('active');
-            console.log(`Activated tab for tool: ${tool}`);
+    // Activate tool tab based on URL if no active tab
+    if (!activeToolTab && tool) {
+        activeToolTab = document.querySelector(`.tools-nav-link[data-tool="${tool}"]`);
+        if (activeToolTab) {
+            activeToolTab.classList.add('active');
+            console.log(`Activated tool tab for tool: ${tool}`);
         } else {
-            console.error(`No tab found for tool: ${tool}`);
+            console.error(`No tool tab found for tool: ${tool}`);
         }
     }
 
-    // Scroll active tab into view
-    if (tabsContainer && activeTab) {
+    // Scroll tool tab into view
+    if (tabsContainer && activeToolTab) {
         setTimeout(() => {
-            const tabRect = activeTab.getBoundingClientRect();
+            const tabRect = activeToolTab.getBoundingClientRect();
             const containerRect = tabsContainer.getBoundingClientRect();
             tabsContainer.scrollTo({
-                left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                left: activeToolTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
                 behavior: 'smooth'
             });
-            console.log('Scrolled to active tab:', activeTab.getAttribute('data-tool'));
+            console.log('Scrolled to active tool tab:', activeToolTab.getAttribute('data-tool'));
         }, 100);
     }
 
-    // Handle tab click events
+    // Handle tool tab click events
     document.querySelectorAll('.tools-nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
 
-            // Update active tab
+            // Update active tool tab
             document.querySelectorAll('.tools-nav-link').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
-            // Scroll tab into center
+            // Scroll tool tab into center
             if (tabsContainer) {
                 const tabRect = this.getBoundingClientRect();
                 const containerRect = tabsContainer.getBoundingClientRect();
@@ -74,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`);
                 document.querySelector('.tools-content').innerHTML = data;
+                // Initialize wallet tabs if wallet-analysis is loaded
+                if (tool === 'wallet-analysis') {
+                    initializeWalletTabs();
+                }
             })
             .catch(error => {
                 console.error(`Error loading tool ${tool}:`, error);
@@ -81,6 +88,83 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
+    // Initialize wallet analysis tabs
+    function initializeWalletTabs() {
+        const walletTabsContainer = document.querySelector('.wallet-tabs');
+        let activeWalletTab = document.querySelector('.wallet-tab-link.active');
+
+        console.log('Active wallet tab element:', activeWalletTab);
+
+        // Activate wallet tab based on URL if no active tab
+        if (!activeWalletTab && tab) {
+            activeWalletTab = document.querySelector(`.wallet-tab-link[data-tab="${tab}"]`);
+            if (activeWalletTab) {
+                activeWalletTab.classList.add('active');
+                console.log(`Activated wallet tab for tab: ${tab}`);
+            } else {
+                console.error(`No wallet tab found for tab: ${tab}`);
+            }
+        }
+
+        // Scroll wallet tab into view
+        if (walletTabsContainer && activeWalletTab) {
+            setTimeout(() => {
+                const tabRect = activeWalletTab.getBoundingClientRect();
+                const containerRect = walletTabsContainer.getBoundingClientRect();
+                walletTabsContainer.scrollTo({
+                    left: activeWalletTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                    behavior: 'smooth'
+                });
+                console.log('Scrolled to active wallet tab:', activeWalletTab.getAttribute('data-tab'));
+            }, 100);
+        }
+
+        // Handle wallet tab click events
+        document.querySelectorAll('.wallet-tab-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.wallet-tab-link').forEach(tab => tab.classList.remove('active'));
+                this.classList.add('active');
+
+                if (walletTabsContainer) {
+                    const tabRect = this.getBoundingClientRect();
+                    const containerRect = walletTabsContainer.getBoundingClientRect();
+                    walletTabsContainer.scrollTo({
+                        left: this.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                        behavior: 'smooth'
+                    });
+                }
+
+                const tab = this.getAttribute('data-tab');
+                console.log(`Loading wallet tab: ${tab}`);
+                history.pushState({}, '', `?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`);
+
+                fetch(`/tools/tools-load.php?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`, {
+                    method: 'GET',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                })
+                .then(response => {
+                    console.log(`Wallet tab ${tab} fetch status: ${response.status}`);
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    return response.text();
+                })
+                .then(data => {
+                    console.log(`Wallet tab ${tab} loaded successfully, response length: ${data.length}`);
+                    document.querySelector('.wallet-tab-content').innerHTML = data;
+                })
+                .catch(error => {
+                    console.error(`Error loading wallet tab ${tab}:`, error);
+                    document.querySelector('.wallet-tab-content').innerHTML = `<div class="result-error"><p>Error loading tab: ${error.message}</p></div>`;
+                });
+            });
+        });
+    }
+
+    // Call initializeWalletTabs if wallet-analysis is loaded
+    if (tool === 'wallet-analysis') {
+        initializeWalletTabs();
+    }
 
     // Handle form submissions
     document.addEventListener('submit', (e) => {
@@ -250,6 +334,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelector('.tools-content').innerHTML = data;
                 }
                 if (loader) loader.style.display = 'none';
+                // Re-initialize wallet tabs after form submission
+                if (tool === 'wallet-analysis') {
+                    initializeWalletTabs();
+                }
             })
             .catch(error => {
                 console.error(`Error submitting form ${form.id}:`, error);
