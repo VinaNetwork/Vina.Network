@@ -6,10 +6,6 @@
 // Version: 23.3 (Remove .sol-domains-loading, inline CSS, and redundant cache checks)
 // ============================================================================
 
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
@@ -20,11 +16,6 @@ if (!file_exists($bootstrap_path)) {
     exit;
 }
 require_once $bootstrap_path;
-
-session_start();
-ini_set('log_errors', true);
-ini_set('error_log', ERROR_LOG_PATH);
-log_message("wallet_analysis: Session started, session_id=" . session_id(), 'wallet_api_log.txt', 'INFO');
 
 $cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_analysis_cache.json';
