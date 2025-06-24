@@ -2,7 +2,7 @@
 // File: tools/tools.js
 // Description: Script for the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
 // Author: Vina Network
-// Version: Updated for wallet-analysis tabs (Tokens, NFTs, Domains)
+// Version: Updated for wallet-analysis lazy-load tabs
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializeWalletTabs() {
         const walletTabsContainer = document.querySelector('.wallet-tabs');
         let activeWalletTab = document.querySelector('.wallet-tab-link.active');
+        const loader = document.querySelector('.loader');
 
         console.log('Active wallet tab element:', activeWalletTab);
 
@@ -140,6 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`Loading wallet tab: ${tab}`);
                 history.pushState({}, '', `?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`);
 
+                // Show loader
+                if (loader) loader.style.display = 'block';
+
                 fetch(`/tools/tools-load.php?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`, {
                     method: 'GET',
                     headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -152,10 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     console.log(`Wallet tab ${tab} loaded successfully, response length: ${data.length}`);
                     document.querySelector('.wallet-tab-content').innerHTML = data;
+                    if (loader) loader.style.display = 'none';
                 })
                 .catch(error => {
                     console.error(`Error loading wallet tab ${tab}:`, error);
                     document.querySelector('.wallet-tab-content').innerHTML = `<div class="result-error"><p>Error loading tab: ${error.message}</p></div>`;
+                    if (loader) loader.style.display = 'none';
                 });
             });
         });
