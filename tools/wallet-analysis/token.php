@@ -2,7 +2,7 @@
 // ============================================================================
 // File: tools/wallet-analysis/token.php
 // Description: Display Tokens tab content for Wallet Analysis
-// Author: Vina Network
+// Created by: Vina Network
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
