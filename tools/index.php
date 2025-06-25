@@ -1,127 +1,102 @@
 <?php
 // ============================================================================
-// tools/index.php - Main Interface Loader for NFT Holder Tools
-// Description: Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.
+// File: tools/index.php
+// Description: Tools page for Vina Network
 // Created by: Vina Network
 // ============================================================================
 
-// Start output buffering and define constants for context
-ob_start();
-define('VINANETWORK', true);
-define('VINANETWORK_ENTRY', true);
-require_once 'bootstrap.php';
+// Define constants to mark script entry
+if (!defined('VINANETWORK')) {
+    define('VINANETWORK', true);
+}
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
 
-// Set error reporting and logging
-ini_set('log_errors', 1);
-ini_set('error_log', ERROR_LOG_PATH);
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
+// Load bootstrap dependencies
+$bootstrap_path = __DIR__ . '/bootstrap.php';
+if (!file_exists($bootstrap_path)) {
+    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
+    exit;
+}
+require_once $bootstrap_path;
 
-// Set SEO meta variables
+// Set up page variables and include layout headers
 $root_path = '../';
-$page_title = "Vina Network - Solana NFT Tools & Solana Checker";
-$page_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
-$page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT Info, Wallet Analysis, blockchain, NFT";
-$page_og_title = "Vina Network - Solana NFT Tools & Solana Checker";
-$page_og_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
-$page_og_image = "https://vina.network/tools/image/tools-og-image.jpg";
-$page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-info' ? $_GET['tool'] . '/' : '');
+$page_title = 'Tools - Vina Network';
+$page_description = 'Various tools for analyzing Solana blockchain data, including NFT information, holder analysis, and wallet analysis.';
 $page_css = ['../css/vina.css', 'tools.css'];
+include $root_path . 'include/header.php';
+include $root_path . 'include/navbar.php';
 
-// Get the requested tool from query string
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-info';
+// Function to extract title and description from a PHP file
+function getToolInfo($file_path) {
+    if (!file_exists($file_path)) {
+        return ['title' => 'N/A', 'description' => 'File not found'];
+    }
+    $content = file_get_contents($file_path);
+    $title = 'N/A';
+    $description = 'No description available';
 
-// Include header
-$header_path = $root_path . 'include/header.php';
-if (!file_exists($header_path)) {
-    log_message("index: header.php not found at $header_path", 'tools_log.txt', 'ERROR');
-    die('Internal Server Error: Missing header.php');
+    // Extract <h2> from .tools-form
+    if (preg_match('/<div class="tools-form">.*?<h2>(.*?)<\/h2>/is', $content, $title_match)) {
+        $title = strip_tags($title_match[1]);
+    }
+
+    // Extract first <p> from .tools-form
+    if (preg_match('/<div class="tools-form">.*?<p>(.*?)<\/p>/is', $content, $desc_match)) {
+        $description = strip_tags($desc_match[1]);
+    }
+
+    return ['title' => $title, 'description' => $description];
 }
-include $header_path;
+
+// Define tools and their corresponding files
+$tools = [
+    'nft-info' => [
+        'file' => __DIR__ . '/nft-info/nft-info.php',
+        'icon' => 'fas fa-info-circle'
+    ],
+    'nft-holders' => [
+        'file' => __DIR__ . '/nft-holders/nft-holders.php',
+        'icon' => 'fas fa-users'
+    ],
+    'wallet-analysis' => [
+        'file' => __DIR__ . '/wallet-analysis/wallet-analysis.php',
+        'icon' => 'fas fa-wallet'
+    ]
+];
+
+// Get current tool from URL
+$current_tool = isset($_GET['tool']) && array_key_exists($_GET['tool'], $tools) ? $_GET['tool'] : 'nft-info';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<body>
-<?php 
-// Include navigation bar
-$navbar_path = $root_path . 'include/navbar.php';
-if (!file_exists($navbar_path)) {
-    log_message("index: navbar.php not found at $navbar_path", 'tools_log.txt', 'ERROR');
-    die('Internal Server Error: Missing navbar.php');
-}
-include $navbar_path;
-?>
-
-<!-- Tools Content -->
-<section class="tools">
+<div class="tools">
     <div class="tools-container">
-        <h1>Vina Network Tools</h1>
-        <!-- Tool Navigation Menu -->
-        <div class="tools-nav"> 
-            <a href="?tool=nft-info" class="tools-nav-link <?php echo $tool === 'nft-info' ? 'active' : ''; ?>" data-tool="nft-info">
-                <i class="fa-solid fa-circle-info"></i> NFT Info
-            </a>
-            <a href="?tool=nft-holders" class="tools-nav-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
-                <i class="fas fa-user"></i> NFT Holders
-            </a>
-            <a href="?tool=wallet-analysis" class="tools-nav-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
-                <i class="fas fa-wallet"></i>  Wallet Analysis
-            </a>
+        <h1>Tools</h1>
+        <div class="tools-nav">
+            <?php foreach ($tools as $tool_key => $tool_data): ?>
+                <?php
+                $tool_info = getToolInfo($tool_data['file']);
+                $is_active = $tool_key === $current_tool ? 'active' : '';
+                ?>
+                <div class="tools-nav-card <?php echo $is_active; ?>" data-tool="<?php echo htmlspecialchars($tool_key); ?>">
+                    <i class="<?php echo htmlspecialchars($tool_data['icon']); ?>"></i>
+                    <h3><?php echo htmlspecialchars($tool_info['title']); ?></h3>
+                    <p><?php echo htmlspecialchars($tool_info['description']); ?></p>
+                </div>
+            <?php endforeach; ?>
         </div>
-        <!-- General Notice -->
-        <p class="note">Note: Only supports checking on the Solana blockchain.</p>
-
-        <!-- Tool Content Loader -->
         <div class="tools-content">
             <?php
-            log_message("index: tool = $tool", 'tools_log.txt');
-
-            // Validate selected tool, fallback to default
-            if (!in_array($tool, ['nft-info', 'nft-holders', 'wallet-analysis'])) {
-                $tool = 'nft-info';
-                log_message("index: Invalid tool, defaulted to nft-info", 'tools_log.txt', 'ERROR');
-            }
-
-            // Define the file path for the selected tool
-            if ($tool === 'nft-info') {
-                $tool_file = __DIR__ . '/nft-info/nft-info.php';
-            } elseif ($tool === 'nft-holders') {
-                $tool_file = __DIR__ . '/nft-holders/nft-holders.php';
-            } elseif ($tool === 'wallet-analysis') {
-                $tool_file = __DIR__ . '/wallet-analysis/wallet-analysis.php';
-            }
-
-            // Load the corresponding tool file if exists
-            if (isset($tool_file) && file_exists($tool_file)) {
-                log_message("index: Including tool file: $tool_file", 'tools_log.txt');
+            $tool_file = $tools[$current_tool]['file'];
+            if (file_exists($tool_file)) {
                 include $tool_file;
             } else {
-                echo "<p>Error: Tool file not found at $tool_file.</p>";
-                log_message("index: Tool file not found: $tool_file", 'tools_log.txt', 'ERROR');
+                echo '<div class="result-error"><p>Tool not found</p></div>';
             }
             ?>
         </div>
     </div>
-</section>
-
-<?php 
-// Include footer
-$footer_path = __DIR__ . '/../include/footer.php';
-log_message("index: Checking footer_path: $footer_path", 'tools_log.txt', 'DEBUG');
-if (!file_exists($footer_path)) {
-    log_message("index: footer.php not found at $footer_path", 'tools_log.txt', 'ERROR');
-    die('Internal Server Error: Missing footer.php');
-}
-include $footer_path;
-?>
-
-<!-- Load JavaScript files with timestamp and error fallback -->
-<script>console.log('Attempting to load JS files...');</script>
-<script src="../js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
-<script src="../js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/navbar.js')"></script>
-<script src="tools.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load tools/tools.js')"></script>
-</body>
-</html>
-<?php ob_end_flush(); ?>
+</div>
+<?php include $root_path . 'include/footer.php'; ?>
