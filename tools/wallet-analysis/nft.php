@@ -2,7 +2,7 @@
 // ============================================================================
 // File: tools/wallet-analysis/nft.php
 // Description: Display NFTs tab content for Wallet Analysis
-// Author: Vina Network
+// Created by: Vina Network
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
