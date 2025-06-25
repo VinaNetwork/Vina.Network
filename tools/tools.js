@@ -1,43 +1,43 @@
 // ============================================================================
 // File: tools/tools.js
-// Description: Script for the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
+// Description: Script for managing the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
 // Author: Vina Network
-// Version: Updated for wallet-analysis lazy-load tabs
+// Version: Updated for compatibility with wallet-analysis lazy-load and clear input functionality
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize tool tab navigation
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
-    const tab = urlParams.get('tab');
+    const tab = urlParams.get('page');
     const tabsContainer = document.querySelector('.tools-nav');
-    let activeToolTab = document.querySelector('.tools-nav-link.active');
+    let activeTab = document.querySelector('.tools-nav-link.active');
 
-    console.log('Initial tool from URL:', tool);
-    console.log('Initial tab from URL:', tab);
-    console.log('Active tool tab element:', activeToolTab);
+    console.log('Initial tool:', tool);
+    console.log('Initial tab:', tab);
+    console.log('Active tab:', activeTab);
 
-    // Activate tool tab based on URL if no active tab
-    if (!activeToolTab && tool) {
-        activeToolTab = document.querySelector(`.tools-nav-link[data-tool="${tool}"]`);
-        if (activeToolTab) {
-            activeToolTab.classList.add('active');
-            console.log(`Activated tool tab for tool: ${tool}`);
+    // Activate tab based on URL if no active tab is found
+    if (!activeTab && tool) {
+        activeTab = document.querySelector(`.tools-nav-link[data-type="${tool}"]`);
+        if (activeTab ) {
+            activeTab.classList.add('active');
+            console.log(`Activated tab for tool: ${tool}`);
         } else {
-            console.error(`No tool tab found for tool: ${tool}`);
+            console.error(`No tab found for tool: ${tool}`);
         }
     }
 
     // Scroll tool tab into view
-    if (tabsContainer && activeToolTab) {
+    if (tabsContainer && activeTab) {
         setTimeout(() => {
-            const tabRect = activeToolTab.getBoundingClientRect();
+            const tabRect = activeTab.getBoundingClientRect();
             const containerRect = tabsContainer.getBoundingClientRect();
             tabsContainer.scrollTo({
-                left: activeToolTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
                 behavior: 'smooth'
             });
-            console.log('Scrolled to active tool tab:', activeToolTab.getAttribute('data-tool'));
+            console.log('Scrolled to active tab:', activeTab.getAttribute('data-tool'));
         }, 100);
     }
 
@@ -81,6 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tool === 'wallet-analysis') {
                     initializeWalletTabs();
                 }
+                // Re-initialize clear input after AJAX
+                initializeClearInput();
             })
             .catch(error => {
                 console.error(`Error loading tool ${tool}:`, error);
@@ -157,6 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`Wallet tab ${tab} loaded successfully, response length: ${data.length}`);
                     document.querySelector('.wallet-tab-content').innerHTML = data;
                     if (loader) loader.style.display = 'none';
+                    // Re-initialize clear input after AJAX
+                    initializeClearInput();
                 })
                 .catch(error => {
                     console.error(`Error loading wallet tab ${tab}:`, error);
@@ -165,19 +169,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         });
+    }
 
-        // Handle clear input button
-        document.querySelectorAll('.clear-input').forEach(button => {
-          button.addEventListener('click', function() {
-              const input = this.parentNode.querySelector('input');
-              if (input) {
-                input.value = '';
-                input.focus(); // Đưa con trỏ về input sau khi xóa
-                console.log('Cleared input:', input.id);
-              }
-          });
+    // Handle clear input button for all inputs with .clear-input
+    function initializeClearInput() {
+        document.querySelectorAll('.input-wrapper').forEach(wrapper => {
+            const input = wrapper.querySelector('input');
+            const clearButton = wrapper.querySelector('.clear-input');
+            if (input && clearButton) {
+                // Toggle clear button visibility based on input content
+                function toggleClearButton() {
+                    clearButton.classList.toggle('visible', input.value.length > 0);
+                }
+                // Initial check
+                toggleClearButton();
+                // Listen for input changes
+                input.addEventListener('input', toggleClearButton);
+                // Handle clear button click
+                clearButton.addEventListener('click', () => {
+                    input.value = '';
+                    input.focus();
+                    toggleClearButton();
+                    console.log('Cleared input:', input.id);
+                });
+            }
         });
     }
+
+    // Call initializeClearInput initially
+    initializeClearInput();
 
     // Call initializeWalletTabs if wallet-analysis is loaded
     if (tool === 'wallet-analysis') {
@@ -356,6 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tool === 'wallet-analysis') {
                     initializeWalletTabs();
                 }
+                // Re-initialize clear input after AJAX
+                initializeClearInput();
             })
             .catch(error => {
                 console.error(`Error submitting form ${form.id}:`, error);
@@ -390,7 +412,7 @@ document.addEventListener('click', function(e) {
     const fullAddress = icon.getAttribute('data-full');
     if (!fullAddress) {
         console.error('Copy failed: data-full attribute not found or empty');
-        alert('Không thể sao chép địa chỉ: Địa chỉ không hợp lệ');
+        alert('Unable to copy address: Invalid address');
         return;
     }
 
@@ -429,11 +451,11 @@ function fallbackCopy(text, icon) {
             showCopyFeedback(icon);
         } else {
             console.error('Fallback copy failed');
-            alert('Không thể sao chép địa chỉ: Lỗi sao chép');
+            alert('Unable to copy address: Copy error');
         }
     } catch (err) {
         console.error('Fallback copy error:', err);
-        alert('Không thể sao chép địa chỉ: ' + err.message);
+        alert('Unable to copy address: ' + err.message);
     } finally {
         document.body.removeChild(textarea);
     }
