@@ -8,7 +8,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize tool tab navigation
     const urlParams = new URLSearchParams(window.location.search);
-    const tool = urlParams.get('tool') || 'nft-info'; // Default to nft-info if no tool specified
+    const tool = urlParams.get('tool'); // Remove default 'nft-info'
     const tab = urlParams.get('tab');
     const tabsContainer = document.querySelector('.tools-nav');
     let activeTab = document.querySelector('.tools-nav-card.active');
@@ -69,8 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Load initial tool content based on URL
-    loadToolContent(tool); // <--- Thêm dòng này để load nội dung ban đầu
+    // Load initial tool content only if tool is specified in URL
+    if (tool) { // <--- Chỉ load khi có tool trong URL
+        loadToolContent(tool);
+    }
 
     // Handle tool tab click events
     document.querySelectorAll('.tools-nav-card').forEach(link => {
@@ -94,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load tool content
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
-            loadToolContent(tool); // Gọi hàm chung
+            loadToolContent(tool);
         });
     });
 
