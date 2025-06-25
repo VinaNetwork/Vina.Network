@@ -9,45 +9,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize tool tab navigation
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
-    const tab = urlParams.get('page');
+    const tab = urlParams.get('tab');
     const tabsContainer = document.querySelector('.tools-nav');
-    let activeTab = document.querySelector('.tools-nav-link.active');
+    let activeToolTab = document.querySelector('.tools-nav-card.active');
 
-    console.log('Initial tool:', tool);
-    console.log('Initial tab:', tab);
-    console.log('Active tab:', activeTab);
+    console.log('Initial tool from URL:', tool);
+    console.log('Initial tab from URL:', tab);
+    console.log('Active tool tab element:', activeToolTab);
 
-    // Activate tab based on URL if no active tab is found
-    if (!activeTab && tool) {
-        activeTab = document.querySelector(`.tools-nav-link[data-type="${tool}"]`);
-        if (activeTab ) {
-            activeTab.classList.add('active');
-            console.log(`Activated tab for tool: ${tool}`);
+    // Activate tool tab based on URL if no active tab
+    if (!activeToolTab && tool) {
+        activeToolTab = document.querySelector(`.tools-nav-card[data-tool="${tool}"]`);
+        if (activeToolTab) {
+            activeToolTab.classList.add('active');
+            console.log(`Activated tool tab for tool: ${tool}`);
         } else {
-            console.error(`No tab found for tool: ${tool}`);
+            console.error(`No tool tab found for tool: ${tool}`);
         }
     }
 
     // Scroll tool tab into view
-    if (tabsContainer && activeTab) {
+    if (tabsContainer && activeToolTab) {
         setTimeout(() => {
-            const tabRect = activeTab.getBoundingClientRect();
+            const tabRect = activeToolTab.getBoundingClientRect();
             const containerRect = tabsContainer.getBoundingClientRect();
             tabsContainer.scrollTo({
-                left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
+                left: activeToolTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
                 behavior: 'smooth'
             });
-            console.log('Scrolled to active tab:', activeTab.getAttribute('data-tool'));
+            console.log('Scrolled to active tool tab:', activeToolTab.getAttribute('data-tool'));
         }, 100);
     }
 
     // Handle tool tab click events
-    document.querySelectorAll('.tools-nav-link').forEach(link => {
+    document.querySelectorAll('.tools-nav-card').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
 
             // Update active tool tab
-            document.querySelectorAll('.tools-nav-link').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tools-nav-card').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
             // Scroll tool tab into center
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            const tool = document.querySelector('.tools-nav-link.active')?.getAttribute('data-tool') || 'unknown';
+            const tool = document.querySelector('.tools-nav-card.active')?.getAttribute('data-tool') || 'unknown';
 
             console.log('Form submission:', {
                 formId: form.id,
