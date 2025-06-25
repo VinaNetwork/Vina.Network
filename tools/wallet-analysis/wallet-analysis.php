@@ -2,8 +2,7 @@
 // ============================================================================
 // File: tools/wallet-analysis/wallet-analysis.php
 // Description: Check wallet balance and assets (SOL, SPL tokens, NFTs, .sol domains) for a Solana wallet.
-// Author: Vina Network
-// Version: 23.7 (Fix form not displaying, showNonFungible error, lazy-load Domains)
+// Created by: Vina Network
 // ============================================================================
 
 if (!defined('VINANETWORK')) {
