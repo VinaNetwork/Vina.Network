@@ -82,7 +82,10 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
             <p>Enter the <strong>NFT Mint Address</strong> or <strong>NFT Collection Address</strong> to view detailed information. For example, find these addresses on MagicEden under "Details" > "Mint Address" or "On-chain Collection".</p>
             <form id="nftInfoForm" method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint or Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <div class="input-wrapper">
+                    <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint or Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                    <span class="clear-input" title="Clear input">×</span>
+                </div>
                 <button type="submit" class="cta-button">Check Info</button>
             </form>
             <div class="loader"></div>
