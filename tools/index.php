@@ -29,6 +29,45 @@ $page_og_url = "https://vina.network/tools/";
 $page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-info' ? $_GET['tool'] . '/' : '');
 $page_css = ['../css/vina.css', 'tools.css'];
 
+// Function to extract title and description from a PHP file
+function getToolInfo($file_path) {
+    if (!file_exists($file_path)) {
+        log_message("getToolInfo: File not found at $file_path", 'tools_log.txt', 'ERROR');
+        return ['title' => 'N/A', 'description' => 'File not found'];
+    }
+    $content = file_get_contents($file_path);
+    $title = 'N/A';
+    $description = 'No description available';
+
+    // Extract <h2> from .tools-form
+    if (preg_match('/<div class="tools-form">.*?<h2>(.*?)<\/h2>/is', $content, $title_match)) {
+        $title = strip_tags($title_match[1]);
+    }
+
+    // Extract first <p> from .tools-form
+    if (preg_match('/<div class="tools-form">.*?<p>(.*?)<\/p>/is', $content, $desc_match)) {
+        $description = strip_tags($desc_match[1]);
+    }
+
+    return ['title' => $title, 'description' => $description];
+}
+
+// Define tools and their corresponding files
+$tools = [
+    'nft-info' => [
+        'file' => __DIR__ . '/nft-info/nft-info.php',
+        'icon' => 'fa-solid fa-circle-info'
+    ],
+    'nft-holders' => [
+        'file' => __DIR__ . '/nft-holders/nft-holders.php',
+        'icon' => 'fas fa-user'
+    ],
+    'wallet-analysis' => [
+        'file' => __DIR__ . '/wallet-analysis/wallet-analysis.php',
+        'icon' => 'fas fa-wallet'
+    ]
+];
+
 // Get the requested tool from query string
 $tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-info';
 
@@ -60,48 +99,24 @@ include $navbar_path;
         <h1>Vina Network Tools</h1>
         <!-- Tool Navigation Menu -->
         <div class="tools-nav"> 
-            <a href="?tool=nft-info" class="tools-nav-link <?php echo $tool === 'nft-info' ? 'active' : ''; ?>" data-tool="nft-info">
-                <i class="fa-solid fa-circle-info"></i> NFT Info
-            </a>
-            <a href="?tool=nft-holders" class="tools-nav-link <?php echo $tool === 'nft-holders' ? 'active' : ''; ?>" data-tool="nft-holders">
-                <i class="fas fa-user"></i> NFT Holders
-            </a>
-            <a href="?tool=wallet-analysis" class="tools-nav-link <?php echo $tool === 'wallet-analysis' ? 'active' : ''; ?>" data-tool="wallet-analysis">
-                <i class="fas fa-wallet"></i>  Wallet Analysis
-            </a>
+            <?php foreach ($tools as $tool_key => $tool_data): ?>
+                <?php
+                $tool_info = getToolInfo($tool_data['file']);
+                $is_active = $tool_key === $tool ? 'active' : '';
+                ?>
+                <div class="tools-nav-card <?php echo $is_active; ?>" data-tool="<?php echo htmlspecialchars($tool_key); ?>">
+                    <i class="<?php echo htmlspecialchars($tool_data['icon']); ?>"></i>
+                    <h3><?php echo htmlspecialchars($tool_info['title']); ?></h3>
+                    <p><?php echo htmlspecialchars($tool_info['description']); ?></p>
+                </div>
+            <?php endforeach; ?>
         </div>
         <!-- General Notice -->
         <p class="note">Note: Only supports checking on the Solana blockchain.</p>
 
         <!-- Tool Content Loader -->
         <div class="tools-content">
-            <?php
-            log_message("index: tool = $tool", 'tools_log.txt');
-
-            // Validate selected tool, fallback to default
-            if (!in_array($tool, ['nft-info', 'nft-holders', 'wallet-analysis'])) {
-                $tool = 'nft-info';
-                log_message("index: Invalid tool, defaulted to nft-info", 'tools_log.txt', 'ERROR');
-            }
-
-            // Define the file path for the selected tool
-            if ($tool === 'nft-info') {
-                $tool_file = __DIR__ . '/nft-info/nft-info.php';
-            } elseif ($tool === 'nft-holders') {
-                $tool_file = __DIR__ . '/nft-holders/nft-holders.php';
-            } elseif ($tool === 'wallet-analysis') {
-                $tool_file = __DIR__ . '/wallet-analysis/wallet-analysis.php';
-            }
-
-            // Load the corresponding tool file if exists
-            if (isset($tool_file) && file_exists($tool_file)) {
-                log_message("index: Including tool file: $tool_file", 'tools_log.txt');
-                include $tool_file;
-            } else {
-                echo "<p>Error: Tool file not found at $tool_file.</p>";
-                log_message("index: Tool file not found: $tool_file", 'tools_log.txt', 'ERROR');
-            }
-            ?>
+            <!-- Content will be loaded via AJAX by tools.js -->
         </div>
     </div>
 </section>
