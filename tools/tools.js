@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize tool tab navigation
     const urlParams = new URLSearchParams(window.location.search);
     const tool = urlParams.get('tool');
-    const tab = urlParams.get('page');
+    const tab = urlParams.get('tab'); // Fixed: Changed 'page' to 'tab' to match tools-load.php
     const tabsContainer = document.querySelector('.tools-nav');
-    let activeTab = document.querySelector('.tools-nav-link.active');
+    let activeTab = document.querySelector('.tools-nav-card.active');
 
     console.log('Initial tool:', tool);
     console.log('Initial tab:', tab);
@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Activate tab based on URL if no active tab is found
     if (!activeTab && tool) {
-        activeTab = document.querySelector(`.tools-nav-link[data-type="${tool}"]`);
-        if (activeTab ) {
+        activeTab = document.querySelector(`.tools-nav-card[data-tool="${tool}"]`);
+        if (activeTab) {
             activeTab.classList.add('active');
             console.log(`Activated tab for tool: ${tool}`);
         } else {
@@ -42,12 +42,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Handle tool tab click events
-    document.querySelectorAll('.tools-nav-link').forEach(link => {
+    document.querySelectorAll('.tools-nav-card').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
 
             // Update active tool tab
-            document.querySelectorAll('.tools-nav-link').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tools-nav-card').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
             // Scroll tool tab into center
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            const tool = document.querySelector('.tools-nav-link.active')?.getAttribute('data-tool') || 'unknown';
+            const tool = document.querySelector('.tools-nav-card.active')?.getAttribute('data-tool') || 'unknown';
 
             console.log('Form submission:', {
                 formId: form.id,
