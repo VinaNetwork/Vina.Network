@@ -84,7 +84,10 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
             <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
             <form id="nftHoldersForm" method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <div class="input-wrapper">
+                    <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                    <span class="clear-input" title="Clear input">×</span>
+                </div>
                 <button type="submit" class="cta-button">Check Holders</button>
             </form>
             <div class="loader"></div>
