@@ -81,6 +81,7 @@ h1, h2, h3 {text-align: center;}
 
 .clear-input {
     position: absolute;
+    display: none;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
