@@ -86,7 +86,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                     <input type="text" name="mintAddress" id="mintAddressInfo" placeholder="Enter NFT Mint or Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
                     <span class="clear-input" title="Clear input">×</span>
                 </div>
-                <button type="submit" class="cta-button">Check Info</button>
+                <button type="submit" class="cta-button">Check</button>
             </form>
             <div class="loader"></div>
         </div>
