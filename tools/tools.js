@@ -2,15 +2,16 @@
 // File: tools/tools.js
 // Description: Script for managing the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
 // Author: Vina Network
-// Version: Updated for compatibility with wallet-analysis lazy-load and clear input functionality
+// Version: Updated for slide animation and back button functionality
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize tool tab navigation
     const urlParams = new URLSearchParams(window.location.search);
-    const tool = urlParams.get('tool'); // Remove default 'nft-info'
+    const tool = urlParams.get('tool');
     const tab = urlParams.get('tab');
     const tabsContainer = document.querySelector('.tools-nav');
+    const contentContainer = document.querySelector('.tools-content');
     let activeTab = document.querySelector('.tools-nav-card.active');
 
     console.log('Initial tool:', tool);
@@ -29,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Scroll tool tab into view
-    if (tabsContainer && activeTab) {
+    if (tabsContainer && activeTab && !tool) {
         setTimeout(() => {
             const tabRect = activeTab.getBoundingClientRect();
             const containerRect = tabsContainer.getBoundingClientRect();
@@ -41,9 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 
-    // Function to load tool content
+    // Function to load tool content with slide animation
     function loadToolContent(tool) {
-        console.log(`Loading tool: ${tool}`);
+        const loader = document.querySelector('.loader');
+        if (loader) loader.style.display = 'block';
+        contentContainer.classList.remove('slide-in'); // Reset animation
+        contentContainer.style.display = 'block'; // Show content
+        tabsContainer.style.display = 'none'; // Hide nav
+        document.querySelector('.note').style.display = 'none'; // Hide note
+
         fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
             method: 'GET',
             headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -55,7 +62,14 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`);
-            document.querySelector('.tools-content').innerHTML = data;
+            contentContainer.innerHTML = `
+                <div class="tools-back">
+                    <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                </div>
+                ${data}
+            `;
+            contentContainer.classList.add('slide-in'); // Trigger slide animation
+            if (loader) loader.style.display = 'none';
             // Initialize wallet tabs if wallet-analysis is loaded
             if (tool === 'wallet-analysis') {
                 initializeWalletTabs();
@@ -65,12 +79,19 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => {
             console.error(`Error loading tool ${tool}:`, error);
-            document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error loading tool: ${error.message}</p></div>`;
+            contentContainer.innerHTML = `
+                <div class="tools-back">
+                    <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                </div>
+                <div class="result-error"><p>Error loading tool: ${error.message}</p></div>
+            `;
+            contentContainer.classList.add('slide-in');
+            if (loader) loader.style.display = 'none';
         });
     }
 
     // Load initial tool content only if tool is specified in URL
-    if (tool) { // <--- Chỉ load khi có tool trong URL
+    if (tool) {
         loadToolContent(tool);
     }
 
@@ -83,21 +104,31 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tools-nav-card').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
 
-            // Scroll tool tab into center
-            if (tabsContainer) {
-                const tabRect = this.getBoundingClientRect();
-                const containerRect = tabsContainer.getBoundingClientRect();
-                tabsContainer.scrollTo({
-                    left: this.offsetLeft - (containerRect.width - tabRect.width) / 2,
-                    behavior: 'smooth'
-                });
-            }
-
-            // Load tool content
+            // Load tool content with animation
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
             loadToolContent(tool);
         });
+    });
+
+    // Handle back button click
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.back-button')) {
+            e.preventDefault();
+            history.pushState({}, '', '/tools/');
+            tabsContainer.style.display = 'grid'; // Show nav
+            document.querySelector('.note').style.display = 'block'; // Show note
+            contentContainer.style.display = 'none'; // Hide content
+            contentContainer.innerHTML = `
+                <div class="tools-back">
+                    <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                </div>
+            `; // Reset content
+            document.querySelector('.tools-nav-card[data-tool="nft-info"]').classList.add('active'); // Set default active
+            document.querySelectorAll('.tools-nav-card').forEach(tab => {
+                if (tab.getAttribute('data-tool') !== 'nft-info') tab.classList.remove('active');
+            });
+        }
     });
 
     // Initialize wallet analysis tabs
@@ -373,13 +404,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const json = JSON.parse(data);
                     if (json.error) {
-                        document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error: ${json.error}</p></div>`;
+                        contentContainer.innerHTML = `
+                            <div class="tools-back">
+                                <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                            </div>
+                            <div class="result-error"><p>Error: ${json.error}</p></div>
+                        `;
                         return;
                     }
                 } catch (e) {
                     // Not JSON, assume HTML
-                    document.querySelector('.tools-content').innerHTML = data;
+                    contentContainer.innerHTML = `
+                        <div class="tools-back">
+                            <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                        </div>
+                        ${data}
+                    `;
                 }
+                contentContainer.classList.add('slide-in');
                 if (loader) loader.style.display = 'none';
                 // Re-initialize wallet tabs after form submission
                 if (tool === 'wallet-analysis') {
@@ -390,7 +432,13 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error(`Error submitting form ${form.id}:`, error);
-                document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error submitting form: ${error.message}</p></div>`;
+                contentContainer.innerHTML = `
+                    <div class="tools-back">
+                        <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                    </div>
+                    <div class="result-error"><p>Error submitting form: ${error.message}</p></div>
+                `;
+                contentContainer.classList.add('slide-in');
                 if (loader) loader.style.display = 'none';
             });
         } else {
