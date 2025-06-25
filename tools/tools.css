@@ -337,7 +337,6 @@ h1, h2, h3 {text-align: center;}
     margin: 20px 0 10px;
     background: #eeeeee;
     white-space: nowrap;
-    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 .wallet-tabs::-webkit-scrollbar {height: 6px;}
@@ -348,19 +347,18 @@ h1, h2, h3 {text-align: center;}
     align-items: center;
     gap: 10px;
     padding: 10px 20px;
-    border-bottom: 2px solid transparent;
     transition: all 0.3s;
     flex-shrink: 0;
 }
 .wallet-tab-link i {font-size: 1.1em;}
 .wallet-tab-link:hover {
     color: #007bff;
-    border-bottom: 4px solid #007bff;
+    border-bottom: 2px solid #007bff;
 }
 .wallet-tab-link.active {
     font-weight: bold;
     color: #007bff;
-    border-bottom: 4px solid #007bff;
+    border-bottom: 2px solid #007bff;
 }
 
 .wallet-details table {width: 100%;}
