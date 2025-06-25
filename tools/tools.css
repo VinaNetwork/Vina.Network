@@ -79,7 +79,6 @@ h1, h2, h3 {text-align: center;}
 }
 .clear-input {
     position: absolute;
-    display: none;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
@@ -87,12 +86,15 @@ h1, h2, h3 {text-align: center;}
     color: #666;
     cursor: pointer;
     user-select: none;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, opacity 0.2s ease;
     opacity: 0;
-    transition: opacity 0.2s ease, color 0.2s ease;
 }
-.clear-input:hover {color: #c62828;}
-.clear-input.visible {opacity: 1;}
+.clear-input:hover {
+    color: #c62828;
+}
+.clear-input.visible {
+    opacity: 1;
+}
 
 /* Loader for checkboxes */
 .loader {
