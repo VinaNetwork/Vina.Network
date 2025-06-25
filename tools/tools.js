@@ -165,6 +165,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         });
+
+        // Handle clear input button
+        document.querySelectorAll('.clear-input').forEach(button => {
+          button.addEventListener('click', function() {
+              const input = this.parentNode.querySelector('input');
+              if (input) {
+                input.value = '';
+                input.focus(); // Đưa con trỏ về input sau khi xóa
+                console.log('Cleared input:', input.id);
+              }
+          });
+        });
     }
 
     // Call initializeWalletTabs if wallet-analysis is loaded
