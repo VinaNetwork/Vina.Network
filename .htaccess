@@ -8,12 +8,6 @@ RewriteEngine On
     Deny from all
 </Files>
 
-# -------- REDIRECTS --------
-# Redirect /tools/ to /tools/?tool=nft-holders
-RewriteCond %{REQUEST_URI} ^/tools/?$ [NC]
-RewriteCond %{QUERY_STRING} ^$ [NC]
-RewriteRule ^(.*)$ /tools/?tool=nft-holders [R=301,L]
-
 # -------- PROTECT SENSITIVE FILES --------
 <FilesMatch "^(config\.php|database\.php|\.htaccess|php\.ini|\.env)$">
     Require all denied
