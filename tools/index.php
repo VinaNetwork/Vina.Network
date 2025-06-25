@@ -98,7 +98,7 @@ include $navbar_path;
     <div class="tools-container">
         <h1>Vina Network Tools</h1>
         <!-- Tool Navigation Menu -->
-        <div class="tools-nav"> 
+        <div class="tools-nav" style="<?php echo isset($_GET['tool']) ? 'display: none;' : ''; ?>">
             <?php foreach ($tools as $tool_key => $tool_data): ?>
                 <?php
                 $tool_info = getToolInfo($tool_data['file']);
@@ -112,10 +112,13 @@ include $navbar_path;
             <?php endforeach; ?>
         </div>
         <!-- General Notice -->
-        <p class="note">Note: Only supports checking on the Solana blockchain.</p>
+        <p class="note" style="<?php echo isset($_GET['tool']) ? 'display: none;' : ''; ?>">Note: Only supports checking on the Solana blockchain.</p>
 
         <!-- Tool Content Loader -->
-        <div class="tools-content">
+        <div class="tools-content" style="<?php echo !isset($_GET['tool']) ? 'display: none;' : ''; ?>">
+            <div class="tools-back">
+                <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+            </div>
             <!-- Content will be loaded via AJAX by tools.js -->
         </div>
     </div>
