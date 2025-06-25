@@ -17,37 +17,70 @@ h1, h2, h3 {text-align: center;}
     margin: 0 auto;
 }
 
-/* Tab navigation */
+/* Card-based tools navigation */
 .tools-nav {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
-    margin: 20px 0 10px;
-    background: #eeeeee;
-    white-space: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    margin: 20px 0;
+    background: none; /* Remove old background */
 }
-.tools-nav::-webkit-scrollbar {height: 2px;}
-.tools-nav::-webkit-scrollbar-track {background: #333;}
 
-.tools-nav-link {
+.tools-nav-card {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.3s;
-    flex-shrink: 0;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa, #e4e7eb); /* Gradient background */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
 }
-.tools-nav-link i {font-size: 1.1em;}
-.tools-nav-link:hover {
-    color: #007bff;
-    border-bottom: 4px solid #007bff;
+
+.tools-nav-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-.tools-nav-link.active {
-    font-weight: bold;
-    color: #007bff;
-    border-bottom: 4px solid #007bff;
+
+.tools-nav-card.active {
+    background: linear-gradient(135deg, #007bff, #0056b3); /* Active gradient */
+    color: #fff;
+}
+
+.tools-nav-card i {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.tools-nav-card h3 {
+    font-size: 1.2em;
+    margin: 10px 0;
+    font-weight: 600;
+}
+
+.tools-nav-card p {
+    font-size: 0.9em;
+    color: #333; /* Darker text for readability */
+    margin: 0;
+}
+
+.tools-nav-card.active h3,
+.tools-nav-card.active p,
+.tools-nav-card.active i {
+    color: #fff; /* White text/icon for active card */
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .tools-nav {
+        grid-template-columns: 1fr; /* Single column on mobile */
+    }
+    .tools-nav-card {
+        padding: 15px;
+    }
 }
 
 /* Search input form */
