@@ -129,7 +129,6 @@ h1, h2, h3 {text-align: center;}
 }
 .tools-form input {
     width: 700px;
-    width: 100%;
     padding-right: 30px;
     box-sizing: border-box;
 }
