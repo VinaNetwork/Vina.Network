@@ -137,7 +137,7 @@ if (!$names_cache_valid || empty($formatted_data['sol_domains'])) {
 }
 ?>
 
-<h2>.sol Domains</h2>
+<h2>Domains</h2>
 <div class="wallet-details sol-domains">
     <?php if (!$domains_available && empty($formatted_data['sol_domains'])): ?>
         <p>Domains temporarily unavailable due to API issues. Please try again later.</p>
