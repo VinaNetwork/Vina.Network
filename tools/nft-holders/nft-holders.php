@@ -88,7 +88,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
                     <input type="text" name="mintAddress" id="mintAddressHolders" placeholder="Enter NFT Collection Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
                     <span class="clear-input" title="Clear input">×</span>
                 </div>
-                <button type="submit" class="cta-button">Check Holders</button>
+                <button type="submit" class="cta-button">Check</button>
             </form>
             <div class="loader"></div>
         </div>
