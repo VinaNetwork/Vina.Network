@@ -99,7 +99,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                     <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
                     <span class="clear-input" title="Clear input">×</span>
                 </div>
-                <button type="submit" class="cta-button">Check Wallet</button>
+                <button type="submit" class="cta-button">Check</button>
             </form>
             <div class="loader"></div>
         </div>
