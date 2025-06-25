@@ -8,8 +8,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize tool tab navigation
     const urlParams = new URLSearchParams(window.location.search);
-    const tool = urlParams.get('tool');
-    const tab = urlParams.get('tab'); // Fixed: Changed 'page' to 'tab' to match tools-load.php
+    const tool = urlParams.get('tool') || 'nft-info'; // Default to nft-info if no tool specified
+    const tab = urlParams.get('tab');
     const tabsContainer = document.querySelector('.tools-nav');
     let activeTab = document.querySelector('.tools-nav-card.active');
 
@@ -41,6 +41,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 
+    // Function to load tool content
+    function loadToolContent(tool) {
+        console.log(`Loading tool: ${tool}`);
+        fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
+            method: 'GET',
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => {
+            console.log(`Tool ${tool} fetch status: ${response.status}`);
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return response.text();
+        })
+        .then(data => {
+            console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`);
+            document.querySelector('.tools-content').innerHTML = data;
+            // Initialize wallet tabs if wallet-analysis is loaded
+            if (tool === 'wallet-analysis') {
+                initializeWalletTabs();
+            }
+            // Re-initialize clear input after AJAX
+            initializeClearInput();
+        })
+        .catch(error => {
+            console.error(`Error loading tool ${tool}:`, error);
+            document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error loading tool: ${error.message}</p></div>`;
+        });
+    }
+
+    // Load initial tool content based on URL
+    loadToolContent(tool); // <--- Thêm dòng này để load nội dung ban đầu
+
     // Handle tool tab click events
     document.querySelectorAll('.tools-nav-card').forEach(link => {
         link.addEventListener('click', function(e) {
@@ -62,32 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Load tool content
             const tool = this.getAttribute('data-tool');
-            console.log(`Loading tool: ${tool}`);
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
-
-            fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
-                method: 'GET',
-                headers: {'X-Requested-With': 'XMLHttpRequest'}
-            })
-            .then(response => {
-                console.log(`Tool ${tool} fetch status: ${response.status}`);
-                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-                return response.text();
-            })
-            .then(data => {
-                console.log(`Tool ${tool} loaded successfully, response length: ${data.length}`);
-                document.querySelector('.tools-content').innerHTML = data;
-                // Initialize wallet tabs if wallet-analysis is loaded
-                if (tool === 'wallet-analysis') {
-                    initializeWalletTabs();
-                }
-                // Re-initialize clear input after AJAX
-                initializeClearInput();
-            })
-            .catch(error => {
-                console.error(`Error loading tool ${tool}:`, error);
-                document.querySelector('.tools-content').innerHTML = `<div class="result-error"><p>Error loading tool: ${error.message}</p></div>`;
-            });
+            loadToolContent(tool); // Gọi hàm chung
         });
     });
 
