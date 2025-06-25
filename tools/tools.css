@@ -127,17 +127,15 @@ h1, h2, h3 {text-align: center;}
     position: relative;
     margin: 20px 0;
 }
-.tools-form input {width: 700px;}
-/* Input wrapper for clear button */
-.input-wrapper {
-    position: relative;
+.tools-form input {
     width: 700px;
-    max-width: 100%;
-}
-.input-wrapper input {
     width: 100%;
     padding-right: 30px;
     box-sizing: border-box;
+}
+.input-wrapper {
+    position: relative;
+    max-width: 100%;
 }
 .clear-input {
     position: absolute;
