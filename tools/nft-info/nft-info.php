@@ -2,7 +2,7 @@
 // ============================================================================
 // File: tools/nft-info/nft-info.php
 // Description: Check detailed information for a single Solana NFT using its Mint Address.
-// Author: Vina Network
+// Created by: Vina Network
 // ============================================================================
 
 // Define constants
