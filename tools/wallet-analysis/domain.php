@@ -2,7 +2,7 @@
 // ============================================================================
 // File: tools/wallet-analysis/domain.php
 // Description: Display Domains tab content for Wallet Analysis, fetch data on tab click
-// Author: Vina Network
+// Created by: Vina Network
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
