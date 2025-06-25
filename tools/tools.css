@@ -32,7 +32,7 @@ h1, h2, h3 {text-align: center;}
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: linear-gradient(135deg, #f5f7fa, #e4e7eb); /* Gradient background */
+    background: linear-gradient(135deg, #f5f7fa, #e4e7eb);
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     cursor: pointer;
@@ -46,7 +46,7 @@ h1, h2, h3 {text-align: center;}
 }
 
 .tools-nav-card.active {
-    background: linear-gradient(135deg, #007bff, #0056b3); /* Active gradient */
+    background: linear-gradient(135deg, #007bff, #0056b3);
     color: #fff;
 }
 
@@ -63,14 +63,53 @@ h1, h2, h3 {text-align: center;}
 
 .tools-nav-card p {
     font-size: 0.9em;
-    color: #333; /* Darker text for readability */
+    color: #333;
     margin: 0;
 }
 
 .tools-nav-card.active h3,
 .tools-nav-card.active p,
 .tools-nav-card.active i {
-    color: #fff; /* White text/icon for active card */
+    color: #fff;
+}
+
+/* Tools Content */
+.tools-content {
+    position: relative;
+    transform: translateX(100%); /* Start off-screen to the right */
+    transition: transform 0.5s ease-in-out;
+}
+
+.tools-content.slide-in {
+    transform: translateX(0); /* Slide to visible position */
+}
+
+/* Back Button */
+.tools-back {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background 0.2s ease;
+}
+
+.back-button:hover {
+    background: #0056b3;
+}
+
+.back-button i {
+    font-size: 1.2em;
 }
 
 /* Search input form */
@@ -392,7 +431,7 @@ h1, h2, h3 {text-align: center;}
         padding: 20px;
     }
     .tools-nav {
-        grid-template-columns: 1fr; /* Single column on mobile */
+        grid-template-columns: 1fr;
     }
     .tools-nav-card {
         padding: 15px;
