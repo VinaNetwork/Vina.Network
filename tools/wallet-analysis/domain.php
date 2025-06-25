@@ -3,7 +3,6 @@
 // File: tools/wallet-analysis/domain.php
 // Description: Display Domains tab content for Wallet Analysis, fetch data on tab click
 // Author: Vina Network
-// Version: 23.8 (Fix HTTP 500 error, improve session and error handling)
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
