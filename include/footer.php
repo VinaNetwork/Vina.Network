@@ -8,15 +8,12 @@
 
 <!-- Footer Section -->
 <footer>
-<!-- Footer Content Area -->
 <div class="footer-1">
-    <!-- Company Overview -->
     <div class="footer-2">
         <h4>Vina Network</h4>
         <p>A leading Web3 ecosystem focused on cryptocurrencies, stablecoins, and DeFi.</p>
     </div>
 
-    <!-- Quick Navigation Links -->
     <div class="footer-2">
         <h4>Quick Links</h4>
         <ul class="footer-3">
@@ -26,7 +23,6 @@
         </ul>
     </div>
 
-    <!-- Social Media Links -->
     <div class="footer-2">
         <h4>Follow Us</h4>
         <div class="footer-4">
@@ -40,28 +36,28 @@
     </div>
 </div>
 
-<!-- Copyright -->
 <div class="footer-5">
     <p>© 2025 Vina Network. All rights reserved.</p>
+    <p>SOL Address: vinanetwork.sol.</p>
 </div>
 
 <!-- Structured Data (Schema.org JSON-LD for SEO) -->
 <script type="application/ld+json">
 {
-"@context": "https://schema.org",
-"@type": "Organization",
-"name": "Vina Network",
-"url": "https://vina.network",
-"logo": "https://vina.network/img/logo.png",
-"sameAs": [
-    "https://x.com/Vina_Network",
-    "https://t.me/VinaNetworks"
-],
-"contactPoint": {
-    "@type": "ContactPoint",
-    "email": "contact@vina.network",
-    "contactType": "Customer Support"
-}
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Vina Network",
+    "url": "https://vina.network",
+    "logo": "https://vina.network/img/logo.png",
+    "sameAs": [
+        "https://x.com/Vina_Network",
+        "https://t.me/VinaNetworks"
+    ],
+    "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "contact@vina.network",
+        "contactType": "Customer Support"
+    }
 }
 </script>
 </footer>
