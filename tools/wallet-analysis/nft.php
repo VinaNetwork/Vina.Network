@@ -3,7 +3,6 @@
 // File: tools/wallet-analysis/nft.php
 // Description: Display NFTs tab content for Wallet Analysis
 // Author: Vina Network
-// Version: 23.6 (Fix showNonFungible error, use cached NFTs)
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
