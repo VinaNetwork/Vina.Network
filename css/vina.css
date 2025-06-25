@@ -304,43 +304,38 @@ footer {
     color: #fff;
     padding: 1rem 2rem;
 }
-
 .footer-1 {
     display: flex;
     justify-content: space-between;
     margin: 0 auto;
     flex-wrap: wrap;
 }
-
 .footer-2 {
     flex: 1;
     min-width: 200px;
     margin: 1rem;
 }
-
-.footer-2 h4 {
-    color: #00d4ff;
-}
-
+.footer-2 h4 { color: #00d4ff;}
 .footer-2 p a, 
 .footer-3 a, 
 .footer-4 a {
     color: #e0e0e0;
     transition: color 0.3s ease;
 }
-
 .footer-3 li {
     padding: 5px 10px;
 }
-
 .footer-4 {
     display: flex;
     gap: 1.5rem;
 }
-
 .footer-5 {
     text-align: center;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.footer-5 p {
+    margin-bottom: unset;
+    font-size: .8rem;
 }
 
 /*  Back to Top Button */
