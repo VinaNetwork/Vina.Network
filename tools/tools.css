@@ -66,6 +66,34 @@ h1, h2, h3 {text-align: center;}
     margin: 20px 0;
 }
 .tools-form input {width: 700px;}
+/* Input wrapper for clear button */
+.input-wrapper {
+    position: relative;
+    width: 700px;
+    max-width: 100%;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding-right: 30px;
+    box-sizing: border-box;
+}
+
+.clear-input {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: #666;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.clear-input:hover {
+    color: #c62828;
+}
 
 /* Loader for checkboxes */
 .loader {
@@ -345,6 +373,7 @@ h1, h2, h3 {text-align: center;}
         align-items: center;
     }
     .tools-form input {width: 100%;}
+    .input-wrapper {width: 100%;}
     .result-card,
     .nft-collection-info {
 	max-width: 100%
