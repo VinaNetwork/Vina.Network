@@ -27,10 +27,16 @@ h1, h2, h3 {text-align: center;}
     position: relative;
     transform: translateX(0); /* Default position */
     transition: transform 0.5s ease-in-out; /* Animation for nav */
+    will-change: transform; /* Optimize for animation */
 }
 
 .tools-nav.slide-in-nav {
     transform: translateX(0); /* Slide in from left */
+}
+
+/* Ensure nav starts off-screen left when sliding in */
+.tools-nav:not(.slide-in-nav) {
+    transform: translateX(-100%); /* Start off-screen left for slide-in */
 }
 
 .tools-nav-card {
@@ -85,6 +91,7 @@ h1, h2, h3 {text-align: center;}
     position: relative;
     transform: translateX(100%); /* Start off-screen to the right */
     transition: transform 0.5s ease-in-out;
+    will-change: transform; /* Optimize for animation */
 }
 
 .tools-content.slide-in {
@@ -438,9 +445,15 @@ h1, h2, h3 {text-align: center;}
     }
     .tools-nav {
         grid-template-columns: 1fr;
+        transform: translateX(0); /* Ensure transform applies on mobile */
+        transition: transform 0.5s ease-in-out; /* Ensure transition persists */
     }
     .tools-nav-card {
         padding: 15px;
+    }
+    .tools-content {
+        transform: translateX(100%); /* Ensure transform applies on mobile */
+        transition: transform 0.5s ease-in-out; /* Ensure transition persists */
     }
     .tools-content form {
         flex-direction: column;
@@ -450,9 +463,8 @@ h1, h2, h3 {text-align: center;}
     .input-wrapper {width: 100%;}
     .result-card,
     .nft-collection-info {
-        max-width: 100%
+        max-width: 100%;
     }
-    
     /* Wallet Analysis Result */
     .wallet-tabs {gap: 6px;}
     .token-table, .nft-table {
@@ -465,4 +477,4 @@ h1, h2, h3 {text-align: center;}
         gap: 6px;
     } 
     .copy-icon {font-size: 16px;}
-}
+    }
