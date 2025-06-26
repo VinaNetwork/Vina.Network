@@ -1,8 +1,7 @@
 // ============================================================================
 // File: tools/tools.js
 // Description: Script for managing the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
-// Author: Vina Network
-// Version: Updated for slide animation, back button, reverse slide animation, and mobile optimization
+// Created by: Vina Network
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Initial tool:', tool);
     console.log('Initial tab:', tab);
     console.log('Active tab:', activeTab);
-    console.log('Is mobile:', window.innerWidth <= 768);
 
     // Activate tab based on URL if no active tab is found
     if (!activeTab && tool) {
@@ -47,12 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadToolContent(tool) {
         const loader = document.querySelector('.loader');
         if (loader) loader.style.display = 'block';
-        contentContainer.classList.remove('slide-in', 'slide-out'); // Reset animations
-        tabsContainer.classList.remove('slide-in-nav'); // Reset nav animation
+        contentContainer.classList.remove('slide-in'); // Reset animation
         contentContainer.style.display = 'block'; // Show content
         tabsContainer.style.display = 'none'; // Hide nav
         document.querySelector('.note').style.display = 'none'; // Hide note
-        console.log('Loading tool:', tool, 'Content display:', contentContainer.style.display);
 
         fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
             method: 'GET',
@@ -71,8 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 ${data}
             `;
-            contentContainer.classList.add('slide-in'); // Trigger slide-in animation
-            console.log('Slide-in applied to tools-content');
+            contentContainer.classList.add('slide-in'); // Trigger slide animation
             if (loader) loader.style.display = 'none';
             // Initialize wallet tabs if wallet-analysis is loaded
             if (tool === 'wallet-analysis') {
@@ -90,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="result-error"><p>Error loading tool: ${error.message}</p></div>
             `;
             contentContainer.classList.add('slide-in');
-            console.log('Slide-in applied to tools-content (error case)');
             if (loader) loader.style.display = 'none';
         });
     }
@@ -112,37 +106,24 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load tool content with animation
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
-            console.log('Card clicked, loading tool:', tool);
             loadToolContent(tool);
         });
     });
 
-    // Handle back button click with reverse slide animation
+    // Handle back button click
     document.addEventListener('click', (e) => {
         if (e.target.closest('.back-button')) {
             e.preventDefault();
-            contentContainer.classList.remove('slide-in');
-            contentContainer.classList.add('slide-out'); // Trigger slide-out animation
-            tabsContainer.style.display = 'grid'; // Show nav
-            tabsContainer.classList.add('slide-in-nav'); // Trigger nav slide-in
-            document.querySelector('.note').style.display = 'block'; // Show note
-            console.log('Back button clicked, applying slide-out to content, slide-in-nav to nav');
-
-            // After animation completes, hide content
-            setTimeout(() => {
-                contentContainer.style.display = 'none';
-                contentContainer.classList.remove('slide-out');
-                contentContainer.innerHTML = `
-                    <div class="tools-back">
-                        <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-                    </div>
-                `;
-                tabsContainer.classList.remove('slide-in-nav');
-                console.log('Animation complete, content hidden, nav reset');
-            }, 500); // Match CSS transition duration
-
             history.pushState({}, '', '/tools/');
-            document.querySelector('.tools-nav-card[data-tool="nft-info"]').classList.add('active');
+            tabsContainer.style.display = 'grid'; // Show nav
+            document.querySelector('.note').style.display = 'block'; // Show note
+            contentContainer.style.display = 'none'; // Hide content
+            contentContainer.innerHTML = `
+                <div class="tools-back">
+                    <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                </div>
+            `; // Reset content
+            document.querySelector('.tools-nav-card[data-tool="nft-info"]').classList.add('active'); // Set default active
             document.querySelectorAll('.tools-nav-card').forEach(tab => {
                 if (tab.getAttribute('data-tool') !== 'nft-info') tab.classList.remove('active');
             });
@@ -440,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }
                 contentContainer.classList.add('slide-in');
-                console.log('Slide-in applied to tools-content (form submission)');
                 if (loader) loader.style.display = 'none';
                 // Re-initialize wallet tabs after form submission
                 if (tool === 'wallet-analysis') {
@@ -458,7 +438,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="result-error"><p>Error submitting form: ${error.message}</p></div>
                 `;
                 contentContainer.classList.add('slide-in');
-                console.log('Slide-in applied to tools-content (form error)');
                 if (loader) loader.style.display = 'none';
             });
         } else {
