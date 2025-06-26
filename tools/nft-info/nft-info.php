@@ -29,17 +29,6 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_info_log.txt')) {
     exit;
 }
 
-// Page configuration
-$root_path = '../../';
-$page_title = 'Check NFT Info - Vina Network';
-$page_description = 'Check detailed information for a single Solana NFT or Collection using its Mint Address or Collection Address.';
-$page_css = ['../../css/vina.css', '../tools.css'];
-
-log_message("nft_info: Including header.php", 'nft_info_log.txt', 'INFO');
-include_once $root_path . 'include/header.php';
-log_message("nft_info: Including navbar.php", 'nft_info_log.txt', 'INFO');
-include_once $root_path . 'include/navbar.php';
-
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
