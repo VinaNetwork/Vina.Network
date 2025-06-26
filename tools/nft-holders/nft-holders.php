@@ -37,7 +37,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_holders_log.txt')) 
 $root_path = '../../';
 $page_title = 'Check NFT Holders - Vina Network';
 $page_description = 'Check NFT holders for a Solana collection address.';
-$page_css = ['../../css/vina.css', '../tools.css', 'nft-holders.css'];
+$page_css = ['../../css/vina.css', '../tools.css'];
 include $root_path . 'include/header.php';
 include $root_path . 'include/navbar.php';
 
