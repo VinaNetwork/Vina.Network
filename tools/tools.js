@@ -1,7 +1,7 @@
 // ============================================================================
 // File: tools/tools.js
 // Description: Script for managing the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
-// Author: Vina Network
+// Created by: Vina Network
 // Version: Updated for slide animation, back button, and reverse slide animation
 // ============================================================================
 
