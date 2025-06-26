@@ -334,7 +334,7 @@ footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 .footer-5 p {
-    margin-bottom: unset;
+    margin-bottom: unset !important;
     font-size: .8rem;
 }
 
