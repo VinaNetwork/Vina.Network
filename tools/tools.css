@@ -44,6 +44,7 @@ h1, h2, h3 {text-align: center;}
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
     background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #fff;
 }
 
 .tools-nav-card.active {
