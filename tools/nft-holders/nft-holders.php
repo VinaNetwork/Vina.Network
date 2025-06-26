@@ -45,6 +45,8 @@ require_once $api_helper_path;
 
 log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.txt');
 ?>
+
+<link rel="stylesheet" href="/tools/nft-holders/nft-holders.css">
 <div class="nft-holders">
     <!-- Render form unless rate limit exceeded -->
     <?php
