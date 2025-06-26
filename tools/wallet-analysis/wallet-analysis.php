@@ -74,7 +74,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
         <div class="tools-form">
             <h2>Check Wallet Analysis</h2>
             <p>Enter a <strong>Solana Wallet Address</strong> to view its balance and assets, including SOL, SPL tokens, NFTs, and .sol domains.</p>
-            <form id="walletAnalysisForm" method="POST" action="">
+            <form id="walletAnalysisForm" method="POST" action="" data-tool="wallet-analysis">
                 <?php
                 try {
                     $csrf_token = generate_csrf_token();
