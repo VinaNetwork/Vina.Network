@@ -33,14 +33,6 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_holders_log.txt')) 
     exit;
 }
 
-// Set up page variables and include layout headers
-$root_path = '../../';
-$page_title = 'Check NFT Holders - Vina Network';
-$page_description = 'Check NFT holders for a Solana collection address.';
-$page_css = ['../../css/vina.css', '../tools.css'];
-include $root_path . 'include/header.php';
-include $root_path . 'include/navbar.php';
-
 // Include tools API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
@@ -79,7 +71,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
     if (!$rate_limit_exceeded) {
         log_message("nft-holders: Rendering form", 'nft_holders_log.txt');
         ?>
-        <div class="tools-form">
+        <div class="tools-form nft-holders-form">
             <h2>Check NFT Holders</h2>
             <p>Enter the <strong>NFT Collection Address</strong> (Collection ID) to see the total number of holders and NFTs. E.g: Find this address on MagicEden under "Details" > "On-chain Collection".</p>
             <form id="nftHoldersForm" method="POST" action="">
@@ -367,6 +359,7 @@ log_message("nft-holders: Loaded at " . date('Y-m-d H:i:s'), 'nft_holders_log.tx
         }
     }
     ?>
+        
     <div class="tools-about">
         <h2>About NFT Holders Checker</h2>
         <p>The NFT Holders Checker allows you to view the total number of holders and NFTs for a specific Solana NFT collection by entering its On-chain Collection address. This tool is useful for NFT creators, collectors, or investors who want to analyze the distribution and ownership of a collection on the Solana blockchain.</p>
