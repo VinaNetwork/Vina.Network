@@ -26,7 +26,7 @@ $page_og_title = "Vina Network - Solana NFT Tools & Solana Checker";
 $page_og_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
 $page_og_image = "https://vina.network/tools/image/tools-og-image.jpg";
 $page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] !== 'nft-info' ? $_GET['tool'] . '/' : '');
+$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] ? $_GET['tool'] . '/' : '');
 $page_css = ['../css/vina.css', 'tools.css'];
 
 // Function to extract title and description from a PHP file
@@ -69,7 +69,7 @@ $tools = [
 ];
 
 // Get the requested tool from query string
-$tool = isset($_GET['tool']) ? $_GET['tool'] : 'nft-info';
+$tool = isset($_GET['tool']) && array_key_exists($_GET['tool'], $tools) ? $_GET['tool'] : null;
 
 // Include header
 $header_path = $root_path . 'include/header.php';
@@ -98,7 +98,7 @@ include $navbar_path;
     <div class="tools-container">
         <h1>Vina Network Tools</h1>
         <!-- Tool Navigation Menu -->
-        <div class="tools-nav" style="<?php echo isset($_GET['tool']) ? 'display: none;' : ''; ?>">
+        <div class="tools-nav" style="<?php echo $tool ? 'display: none;' : ''; ?>">
             <?php foreach ($tools as $tool_key => $tool_data): ?>
                 <?php
                 $tool_info = getToolInfo($tool_data['file']);
@@ -112,10 +112,10 @@ include $navbar_path;
             <?php endforeach; ?>
         </div>
         <!-- General Notice -->
-        <p class="note" style="<?php echo isset($_GET['tool']) ? 'display: none;' : ''; ?>">Note: Only supports checking on the Solana blockchain.</p>
+        <p class="note" style="<?php echo $tool ? 'display: none;' : ''; ?>">Note: Only supports checking on the Solana blockchain.</p>
 
         <!-- Tool Content Loader -->
-        <div class="tools-content" style="<?php echo !isset($_GET['tool']) ? 'display: none;' : ''; ?>">
+        <div class="tools-content" style="<?php echo !$tool ? 'display: none;' : ''; ?>">
             <div class="tools-back">
                 <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
             </div>
