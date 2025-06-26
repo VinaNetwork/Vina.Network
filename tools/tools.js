@@ -1,7 +1,8 @@
 // ============================================================================
 // File: tools/tools.js
 // Description: Script for managing the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
-// Created by: Vina Network
+// Author: Vina Network
+// Version: Updated for slide animation, back button, and reverse slide animation
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,7 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadToolContent(tool) {
         const loader = document.querySelector('.loader');
         if (loader) loader.style.display = 'block';
-        contentContainer.classList.remove('slide-in'); // Reset animation
+        contentContainer.classList.remove('slide-in', 'slide-out'); // Reset animations
+        tabsContainer.classList.remove('slide-in-nav'); // Reset nav animation
         contentContainer.style.display = 'block'; // Show content
         tabsContainer.style.display = 'none'; // Hide nav
         document.querySelector('.note').style.display = 'none'; // Hide note
@@ -67,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 ${data}
             `;
-            contentContainer.classList.add('slide-in'); // Trigger slide animation
+            contentContainer.classList.add('slide-in'); // Trigger slide-in animation
             if (loader) loader.style.display = 'none';
             // Initialize wallet tabs if wallet-analysis is loaded
             if (tool === 'wallet-analysis') {
@@ -110,20 +112,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Handle back button click
+    // Handle back button click with reverse slide animation
     document.addEventListener('click', (e) => {
         if (e.target.closest('.back-button')) {
             e.preventDefault();
-            history.pushState({}, '', '/tools/');
+            contentContainer.classList.remove('slide-in');
+            contentContainer.classList.add('slide-out'); // Trigger slide-out animation
             tabsContainer.style.display = 'grid'; // Show nav
+            tabsContainer.classList.add('slide-in-nav'); // Trigger nav slide-in
             document.querySelector('.note').style.display = 'block'; // Show note
-            contentContainer.style.display = 'none'; // Hide content
-            contentContainer.innerHTML = `
-                <div class="tools-back">
-                    <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-                </div>
-            `; // Reset content
-            document.querySelector('.tools-nav-card[data-tool="nft-info"]').classList.add('active'); // Set default active
+
+            // After animation completes, hide content
+            setTimeout(() => {
+                contentContainer.style.display = 'none';
+                contentContainer.classList.remove('slide-out');
+                contentContainer.innerHTML = `
+                    <div class="tools-back">
+                        <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                    </div>
+                `;
+                tabsContainer.classList.remove('slide-in-nav');
+            }, 500); // Match CSS transition duration
+
+            history.pushState({}, '', '/tools/');
+            document.querySelector('.tools-nav-card[data-tool="nft-info"]').classList.add('active');
             document.querySelectorAll('.tools-nav-card').forEach(tab => {
                 if (tab.getAttribute('data-tool') !== 'nft-info') tab.classList.remove('active');
             });
