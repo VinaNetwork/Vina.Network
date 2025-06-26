@@ -24,6 +24,13 @@ h1, h2, h3 {text-align: center;}
     gap: 20px;
     margin: 20px 0;
     background: none;
+    position: relative;
+    transform: translateX(0); /* Default position */
+    transition: transform 0.5s ease-in-out; /* Animation for nav */
+}
+
+.tools-nav.slide-in-nav {
+    transform: translateX(0); /* Slide in from left */
 }
 
 .tools-nav-card {
@@ -82,6 +89,10 @@ h1, h2, h3 {text-align: center;}
 
 .tools-content.slide-in {
     transform: translateX(0); /* Slide to visible position */
+}
+
+.tools-content.slide-out {
+    transform: translateX(100%); /* Slide out to right */
 }
 
 /* Back Button */
