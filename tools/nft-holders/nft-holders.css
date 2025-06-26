@@ -1,0 +1,25 @@
+/* NFT Holders Result */
+.nft-collection-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 20px auto;
+    background: #f2f0f0;
+    padding: 10px 20px;
+    border-radius: 10px;
+    max-width: 600px;
+}
+.nft-collection-info table {
+    text-align: left;
+    flex: 1;
+}
+.nft-collection-info tr {
+    padding: 5px 0;
+}
+.nft-collection-info img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 50%;
+}
