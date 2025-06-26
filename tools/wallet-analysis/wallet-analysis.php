@@ -31,16 +31,6 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'wallet_api_log.txt') ||
     exit;
 }
 
-$root_path = '../../';
-$page_title = 'Check Wallet Analysis - Vina Network';
-$page_description = 'Check the balance and assets (SOL, SPL tokens, NFTs, .sol domains) of a Solana wallet by entering its address.';
-$page_css = ['../../css/vina.css', '../tools.css'];
-
-log_message("wallet_analysis: Including header.php", 'wallet_api_log.txt', 'INFO');
-include_once $root_path . 'include/header.php';
-log_message("wallet_analysis: Including navbar.php", 'wallet_api_log.txt', 'INFO');
-include_once $root_path . 'include/navbar.php';
-
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("wallet_analysis: tools-api.php not found at $api_helper_path", 'wallet_api_log.txt', 'ERROR');
