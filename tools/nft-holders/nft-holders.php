@@ -33,14 +33,6 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_holders_log.txt')) 
     exit;
 }
 
-// Set up page variables and include layout headers
-$root_path = '../../';
-$page_title = 'Check NFT Holders - Vina Network';
-$page_description = 'Check NFT holders for a Solana collection address.';
-$page_css = ['../../css/vina.css', '../tools.css', 'nft-holders.css'];
-include $root_path . 'include/header.php';
-include $root_path . 'include/navbar.php';
-
 // Include tools API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
