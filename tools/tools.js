@@ -11,35 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tab = urlParams.get('tab');
     const tabsContainer = document.querySelector('.tools-nav');
     const contentContainer = document.querySelector('.tools-content');
-    let activeTab = document.querySelector('.tools-nav-card.active');
 
     console.log('Initial tool:', tool);
     console.log('Initial tab:', tab);
-    console.log('Active tab:', activeTab);
-
-    // Activate tab based on URL if no active tab is found
-    if (!activeTab && tool) {
-        activeTab = document.querySelector(`.tools-nav-card[data-tool="${tool}"]`);
-        if (activeTab) {
-            activeTab.classList.add('active');
-            console.log(`Activated tab for tool: ${tool}`);
-        } else {
-            console.error(`No tab found for tool: ${tool}`);
-        }
-    }
-
-    // Scroll tool tab into view
-    if (tabsContainer && activeTab && !tool) {
-        setTimeout(() => {
-            const tabRect = activeTab.getBoundingClientRect();
-            const containerRect = tabsContainer.getBoundingClientRect();
-            tabsContainer.scrollTo({
-                left: activeTab.offsetLeft - (containerRect.width - tabRect.width) / 2,
-                behavior: 'smooth'
-            });
-            console.log('Scrolled to active tab:', activeTab.getAttribute('data-tool'));
-        }, 100);
-    }
 
     // Function to load tool content with slide animation
     function loadToolContent(tool) {
@@ -123,10 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
                 </div>
             `; // Reset content
-            document.querySelector('.tools-nav-card[data-tool="nft-info"]').classList.add('active'); // Set default active
-            document.querySelectorAll('.tools-nav-card').forEach(tab => {
-                if (tab.getAttribute('data-tool') !== 'nft-info') tab.classList.remove('active');
-            });
+            document.querySelectorAll('.tools-nav-card').forEach(tab => tab.classList.remove('active')); // Remove all active classes
         }
     });
 
@@ -134,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializeWalletTabs() {
         const walletTabsContainer = document.querySelector('.wallet-tabs');
         let activeWalletTab = document.querySelector('.wallet-tab-link.active');
-        const loader = document.querySelector('.loader');
 
         console.log('Active wallet tab element:', activeWalletTab);
 
@@ -183,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 history.pushState({}, '', `?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`);
 
                 // Show loader
+                const loader = document.querySelector('.loader');
                 if (loader) loader.style.display = 'block';
 
                 fetch(`/tools/tools-load.php?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`, {
@@ -368,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
-            const tool = document.querySelector('.tools-nav-card.active')?.getAttribute('data-tool') || 'unknown';
+            const tool = form.getAttribute('data-tool') || urlParams.get('tool') || 'unknown';
 
             console.log('Form submission:', {
                 formId: form.id,
