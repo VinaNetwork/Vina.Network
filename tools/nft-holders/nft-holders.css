@@ -1,4 +1,9 @@
-/* NFT Holders */
+/* ============================================================================
+ * File: tools/tools.css
+ * Description: Styling for NFT Holder Tools UI
+ * Created by: Vina Network
+ * ========================================================================== */
+
 .nft-collection-info {
     display: flex;
     align-items: center;
