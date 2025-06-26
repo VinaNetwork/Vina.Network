@@ -39,6 +39,21 @@ h1, h2, h3 {text-align: center;}
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     text-align: center;
 }
+.tools-nav-card i {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+.tools-nav-card h3 {
+    font-size: 1.2em;
+    margin: 10px 0;
+    font-weight: 600;
+}
+.tools-nav-card p {
+    font-size: 0.9em;
+    color: #333;
+    margin: 0;
+}
+
 
 .tools-nav-card:hover {
     transform: translateY(-5px);
@@ -46,29 +61,16 @@ h1, h2, h3 {text-align: center;}
     background: linear-gradient(135deg, #007bff, #0056b3);
     color: #fff;
 }
+.tools-nav-card:hover h3,
+.tools-nav-card:hover p,
+.tools-nav-card:hover i {
+    color: #fff;
+}
 
 .tools-nav-card.active {
     background: linear-gradient(135deg, #007bff, #0056b3);
     color: #fff;
 }
-
-.tools-nav-card i {
-    font-size: 2em;
-    margin-bottom: 10px;
-}
-
-.tools-nav-card h3 {
-    font-size: 1.2em;
-    margin: 10px 0;
-    font-weight: 600;
-}
-
-.tools-nav-card p {
-    font-size: 0.9em;
-    color: #333;
-    margin: 0;
-}
-
 .tools-nav-card.active h3,
 .tools-nav-card.active p,
 .tools-nav-card.active i {
