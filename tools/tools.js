@@ -347,6 +347,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData: Object.fromEntries(new FormData(form))
             });
 
+            if (tool === 'unknown') {
+                console.error('Form submission failed: Unknown tool');
+                contentContainer.innerHTML = `
+                    <div class="tools-back">
+                        <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                    </div>
+                    <div class="result-error"><p>Error: Unknown tool</p></div>
+                `;
+                contentContainer.classList.add('slide-in');
+                if (loader) loader.style.display = 'none';
+                return;
+            }
+
             if (loader) loader.style.display = 'block';
 
             const formData = new FormData(form);
