@@ -403,17 +403,13 @@ h1, h2, h3 {text-align: center;}
         max-width: 100%;
         padding: 20px;
     }
-    .tools-nav {
-        grid-template-columns: 1fr;
-    }
-    .tools-nav-card {
-        padding: 15px;
-    }
+    .tools-nav {grid-template-columns: 1fr;}
+    .tools-nav-card {padding: 15px;}
     .tools-content form {
         flex-direction: column;
         align-items: center;
     }
-    .tools-form input {width: 100%;}
+    .tools-form input,
     .input-wrapper {width: 100%;}
     .result-card,
     .nft-collection-info {
@@ -422,7 +418,8 @@ h1, h2, h3 {text-align: center;}
     
     /* Wallet Analysis Result */
     .wallet-tabs {gap: 6px;}
-    .token-table, .nft-table {
+    .token-table,
+    .nft-table {
         display: block;
         overflow-x: auto;
         white-space: nowrap;
