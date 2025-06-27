@@ -23,7 +23,6 @@ h1, h2, h3 {text-align: center;}
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
     margin: 20px 0;
-    background: none;
 }
 
 .tools-nav-card {
@@ -41,13 +40,7 @@ h1, h2, h3 {text-align: center;}
 }
 .tools-nav-card i {
     font-size: 2em;
-    margin-bottom: 10px;
-}
-.tools-nav-card h3 {
-    margin: 10px 0;
-}
-.tools-nav-card p {
-    color: #333;
+    margin-bottom: 20px;
 }
 
 .tools-nav-card.active,
