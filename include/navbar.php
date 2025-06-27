@@ -8,7 +8,6 @@
 
 <!-- Main Navigation Bar -->
 <nav class="navbar" role="navigation" aria-label="Main navigation">
-    <!-- Website Logo -->
     <div class="logo">
         <a href="https://www.vina.network/" aria-label="Vina Network Home">
             <img src="https://www.vina.network/img/logo.png" alt="Vina Network Logo">
@@ -16,14 +15,12 @@
     </div>
 
     <!-- Navigation Links -->
-    <ul class="nav-1">
-        <!-- Home -->
+    <ul class="navbar-content">
         <li class="nav-2">
             <a href="https://www.vina.network/" class="nav-link">
                 <i class="fas fa-home"></i> Home
             </a>
         </li>
-
         <!-- Product Dropdown -->
         <li class="nav-2 dropdown">
             <a href="#" class="nav-link dropdown-toggle">
@@ -38,7 +35,6 @@
                 <li><a href="https://www.vina.network/notification" class="dropdown-link"><i class="fas fa-image"></i> NFT Marketplace</a></li>
             </ul>
         </li>
-
         <!-- Tools Dropdown -->
         <li class="nav-2 dropdown">
             <a href="#" class="nav-link dropdown-toggle">
@@ -50,7 +46,6 @@
                 <li><a href="https://www.vina.network/tools/?tool=wallet-analysis" class="dropdown-link"><i class="fas fa-chart-line"></i> Wallet Analysis</a></li>
             </ul>
         </li>
-
         <!-- Meme Coin Dropdown -->
         <li class="nav-2 dropdown">
             <a href="#" class="nav-link dropdown-toggle">
@@ -60,8 +55,6 @@
                 <li><a href="https://www.vina.network/notification/" class="dropdown-link"><i class="fa-solid fa-crown"></i> Kimo</a></li>
             </ul>
         </li>
-
-        <!-- Contact -->
         <li class="nav-2">
             <a href="https://www.vina.network/contact/" class="nav-link">
                 <i class="fas fa-envelope"></i> Contact
