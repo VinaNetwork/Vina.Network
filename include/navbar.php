@@ -16,13 +16,13 @@
 
     <!-- Navigation Links -->
     <ul class="navbar-content">
-        <li class="nav-2">
+        <li class="navbar-item">
             <a href="https://www.vina.network/" class="nav-link">
                 <i class="fas fa-home"></i> Home
             </a>
         </li>
         <!-- Product Dropdown -->
-        <li class="nav-2 dropdown">
+        <li class="navbar-item dropdown">
             <a href="#" class="nav-link dropdown-toggle">
                 <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
@@ -36,7 +36,7 @@
             </ul>
         </li>
         <!-- Tools Dropdown -->
-        <li class="nav-2 dropdown">
+        <li class="navbar-item dropdown">
             <a href="#" class="nav-link dropdown-toggle">
                 <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
@@ -47,7 +47,7 @@
             </ul>
         </li>
         <!-- Meme Coin Dropdown -->
-        <li class="nav-2 dropdown">
+        <li class="navbar-item dropdown">
             <a href="#" class="nav-link dropdown-toggle">
                 <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
@@ -55,7 +55,7 @@
                 <li><a href="https://www.vina.network/notification/" class="dropdown-link"><i class="fa-solid fa-crown"></i> Kimo</a></li>
             </ul>
         </li>
-        <li class="nav-2">
+        <li class="navbar-item">
             <a href="https://www.vina.network/contact/" class="nav-link">
                 <i class="fas fa-envelope"></i> Contact
             </a>
