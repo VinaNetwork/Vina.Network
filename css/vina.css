@@ -377,12 +377,14 @@ footer {
         transform: translateY(-10px);
         transition: opacity 0.3s ease, transform 0.3s ease;
         z-index: 1001;
+        border: 1px solid red; /* Debug */
     }
 
     .navbar-content.active {
         display: flex;
         opacity: 1;
         transform: translateY(0);
+        border: 1px solid green; /* Debug */
     }
 
     .navbar-content .nav-2 {
