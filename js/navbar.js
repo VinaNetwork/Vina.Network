@@ -40,12 +40,17 @@ function resetNavbarLayout() {
     }
 }
 
-burger.addEventListener('click', () => {
-    burger.classList.toggle('active');
-    navLinks.classList.toggle('active');
-    document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
-    resetNavbarLayout(); // Reset layout khi toggle burger
-});
+if (burger && navLinks) {
+    burger.addEventListener('click', () => {
+        burger.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+        resetNavbarLayout();
+        console.log('Burger clicked, navLinks active:', navLinks.classList.contains('active'), 'Display:', getComputedStyle(navLinks).display);
+    });
+} else {
+    console.error('Burger or navLinks not found:', { burger, navLinks });
+}
 
 // 4. Handle menu link clicks
 const navLinksItems = document.querySelectorAll('.nav-link');
@@ -65,11 +70,11 @@ navLinksItems.forEach(link => {
             });
             return;
         }
-        if (navLinks.classList.contains('active')) {
+        if (navLinks && navLinks.classList.contains('active')) {
             burger.classList.remove('active');
             navLinks.classList.remove('active');
             document.body.style.overflow = '';
-            resetNavbarLayout(); // Reset layout khi đóng menu
+            resetNavbarLayout();
         }
     });
 });
@@ -77,13 +82,13 @@ navLinksItems.forEach(link => {
 // 5. When clicking a dropdown item on mobile, close entire menu
 document.querySelectorAll('.dropdown-link').forEach(item => {
     item.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 768 && navLinks) {
             burger.classList.remove('active');
             navLinks.classList.remove('active');
             document.body.style.overflow = '';
             document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
             document.querySelectorAll('.dropdown-toggle').forEach(toggle => toggle.classList.remove('active'));
-            resetNavbarLayout(); // Reset layout khi chọn dropdown item
+            resetNavbarLayout();
         }
     });
 });
@@ -113,6 +118,7 @@ dropdowns.forEach(dropdown => {
 document.addEventListener('click', (e) => {
     if (
         window.innerWidth <= 768 &&
+        navLinks &&
         navLinks.classList.contains('active') &&
         !navLinks.contains(e.target) &&
         !burger.contains(e.target)
@@ -122,7 +128,7 @@ document.addEventListener('click', (e) => {
         document.body.style.overflow = '';
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
         document.querySelectorAll('.dropdown-toggle').forEach(toggle => toggle.classList.remove('active'));
-        resetNavbarLayout(); // Reset layout khi đóng menu
+        resetNavbarLayout();
     }
     if (window.innerWidth > 768) {
         dropdowns.forEach(dropdown => {
