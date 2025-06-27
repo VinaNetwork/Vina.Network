@@ -138,16 +138,13 @@ input {
     display: flex;
     align-items: center;
 }
-
 .navbar-content li {
     position: relative;
 }
-
-.navbar-content .nav-2 {
+.navbar-item {
     margin-left: 2.5rem;
 }
 
-/* Link styles */
 .nav-link {
     color: #fff;
     padding: 0.5rem 0;
@@ -237,7 +234,7 @@ input {
     color: #00d4ff;
 }
 
-/* Burger icon (mobile menu) */
+/* navbar: mobile menu) */
 .burger {
     display: none;
     cursor: pointer;
@@ -394,7 +391,7 @@ footer {
         transform: translateY(0);
     }
 
-    .navbar-content .nav-2 {
+    .navbar-item {
         margin: unset;
         padding: 5px 10px;
         width: 100%;
