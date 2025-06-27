@@ -91,7 +91,12 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
     "sameAs": [
         "https://x.com/Vina_Network",
         "https://t.me/Vina_Network"
-    ]
+    ],
+    "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "contact@vina.network",
+        "contactType": "Customer Support"
+    }
 }
 </script>
 
