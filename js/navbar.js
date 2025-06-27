@@ -52,7 +52,7 @@ if (burger && navLinks) {
 }
 
 // 4. Handle menu link clicks
-const navLinksItems = document.querySelectorAll('.nav-link');
+const navLinksItems = document.querySelectorAll('.navbar-link');
 navLinksItems.forEach(link => {
     link.addEventListener('click', (e) => {
         if (window.innerWidth <= 768 && link.classList.contains('dropdown-toggle')) {
