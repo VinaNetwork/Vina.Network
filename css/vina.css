@@ -133,16 +133,16 @@ input {
 }
 
 /* Navbar menu structure */
-.nav-1 {
+.navbar-content {
     display: flex;
     align-items: center;
 }
 
-.nav-1 li {
+.navbar-content li {
     position: relative;
 }
 
-.nav-1 .nav-2 {
+.navbar-content .nav-2 {
     margin-left: 2.5rem;
 }
 
@@ -372,7 +372,7 @@ footer {
     p, a { font-size: 1.05em; }
     p:not(:last-child):has(+ p) {margin-bottom: 20px;}
 
-    .nav-1 {
+    .navbar-content {
         display: none;
         width: 70%;
         position: absolute;
@@ -387,13 +387,13 @@ footer {
         transition: opacity 1s ease, transform 0.3s ease;
     }
 
-    .nav-1.active {
+    .navbar-content.active {
         display: flex;
         opacity: 1;
         transform: translateY(0);
     }
 
-    .nav-1 .nav-2 {
+    .navbar-content .nav-2 {
         margin: unset;
         padding: 5px 10px;
         width: 100%;
