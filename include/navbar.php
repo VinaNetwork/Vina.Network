@@ -17,13 +17,13 @@
     <!-- Navigation Links -->
     <ul class="navbar-content">
         <li class="navbar-item">
-            <a href="https://www.vina.network/" class="nav-link">
+            <a href="https://www.vina.network/" class="navbar-link">
                 <i class="fas fa-home"></i> Home
             </a>
         </li>
         <!-- Product Dropdown -->
         <li class="navbar-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle">
+            <a href="#" class="navbar-link dropdown-toggle">
                 <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
@@ -37,7 +37,7 @@
         </li>
         <!-- Tools Dropdown -->
         <li class="navbar-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle">
+            <a href="#" class="navbar-link dropdown-toggle">
                 <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
@@ -48,7 +48,7 @@
         </li>
         <!-- Meme Coin Dropdown -->
         <li class="navbar-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle">
+            <a href="#" class="navbar-link dropdown-toggle">
                 <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
@@ -56,7 +56,7 @@
             </ul>
         </li>
         <li class="navbar-item">
-            <a href="https://www.vina.network/contact/" class="nav-link">
+            <a href="https://www.vina.network/contact/" class="navbar-link">
                 <i class="fas fa-envelope"></i> Contact
             </a>
         </li>
