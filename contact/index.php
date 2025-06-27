@@ -9,7 +9,7 @@
 
 // Head Section (Meta, Styles, Title) is included via header.php
 $root_path = '../';
-$page_title = "Vina Network - Contact Us";
+$page_title = "Contact Us - Vina Network";
 $page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
 $page_keywords = "Vina Network, contact, X, Telegram, Email, support, Web3, cryptocurrency";
 $page_og_title = "Vina Network - Contact Us";
