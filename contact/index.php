@@ -42,7 +42,7 @@ include '../include/header.php';
 			</div>
 
 			<!-- Telegram Contact Option -->
-			<div class="contact-item fade-in" data-delay="400">
+			<div class="contact-item fade-in" data-delay="300">
 				<i class="fab fa-telegram-plane"></i>
 				<h2>Telegram</h2>
 				<p>Join our community on Telegram!</p>
@@ -50,7 +50,7 @@ include '../include/header.php';
 			</div>
 
 			<!-- Email Contact Option -->
-			<div class="contact-item fade-in" data-delay="600">
+			<div class="contact-item fade-in" data-delay="400">
 				<i class="fas fa-envelope"></i>
 				<h2>Email</h2>
 				<p>Send us an email for inquiries.</p>
