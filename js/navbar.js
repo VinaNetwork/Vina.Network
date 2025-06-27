@@ -25,27 +25,42 @@ document.addEventListener('scroll', debounce(() => {
 // 3. Toggle burger menu (mobile view)
 const burger = document.querySelector('.burger');
 const navLinks = document.querySelector('.navbar-content');
+const navbar = document.querySelector('.navbar');
 
-burger.addEventListener('click', () => {
-    burger.classList.toggle('active');
-    navLinks.classList.toggle('active');
-    // Disable body scroll when mobile menu is open
-    document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
-});
+function resetNavbarLayout() {
+    if (navbar) {
+        navbar.style.width = '100%';
+        navbar.style.maxWidth = '100vw';
+        console.log('Reset .navbar layout', {
+            width: navbar.offsetWidth,
+            viewportWidth: window.innerWidth
+        });
+    } else {
+        console.error('Navbar not found');
+    }
+}
+
+if (burger && navLinks) {
+    burger.addEventListener('click', () => {
+        burger.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+        resetNavbarLayout();
+    });
+} else {
+    console.error('Burger or navLinks not found:', { burger, navLinks });
+}
 
 // 4. Handle menu link clicks
 const navLinksItems = document.querySelectorAll('.nav-link');
 navLinksItems.forEach(link => {
     link.addEventListener('click', (e) => {
-        // Handle dropdown toggle on mobile
         if (window.innerWidth <= 768 && link.classList.contains('dropdown-toggle')) {
             e.preventDefault();
             const parentDropdown = link.closest('.dropdown');
             const dropdownMenu = parentDropdown.querySelector('.dropdown-menu');
             dropdownMenu.classList.toggle('active');
             link.classList.toggle('active');
-
-            // Close other open dropdowns
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 if (menu !== dropdownMenu) menu.classList.remove('active');
             });
@@ -54,12 +69,11 @@ navLinksItems.forEach(link => {
             });
             return;
         }
-
-        // For regular links: close burger menu if open
-        if (navLinks.classList.contains('active')) {
+        if (navLinks && navLinks.classList.contains('active')) {
             burger.classList.remove('active');
             navLinks.classList.remove('active');
             document.body.style.overflow = '';
+            resetNavbarLayout();
         }
     });
 });
@@ -67,12 +81,13 @@ navLinksItems.forEach(link => {
 // 5. When clicking a dropdown item on mobile, close entire menu
 document.querySelectorAll('.dropdown-link').forEach(item => {
     item.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 768 && navLinks) {
             burger.classList.remove('active');
             navLinks.classList.remove('active');
             document.body.style.overflow = '';
             document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
             document.querySelectorAll('.dropdown-toggle').forEach(toggle => toggle.classList.remove('active'));
+            resetNavbarLayout();
         }
     });
 });
@@ -88,8 +103,6 @@ dropdowns.forEach(dropdown => {
             e.preventDefault();
             content.classList.toggle('active');
             toggle.classList.toggle('active');
-
-            // Close other dropdowns
             dropdowns.forEach(d => {
                 if (d !== dropdown) {
                     d.querySelector('.dropdown-menu').classList.remove('active');
@@ -102,9 +115,9 @@ dropdowns.forEach(dropdown => {
 
 // 7. Close dropdowns or mobile menu when clicking outside
 document.addEventListener('click', (e) => {
-    // Close mobile menu if user clicks outside
     if (
         window.innerWidth <= 768 &&
+        navLinks &&
         navLinks.classList.contains('active') &&
         !navLinks.contains(e.target) &&
         !burger.contains(e.target)
@@ -114,9 +127,8 @@ document.addEventListener('click', (e) => {
         document.body.style.overflow = '';
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('active'));
         document.querySelectorAll('.dropdown-toggle').forEach(toggle => toggle.classList.remove('active'));
+        resetNavbarLayout();
     }
-
-    // Close desktop dropdowns if user clicks outside
     if (window.innerWidth > 768) {
         dropdowns.forEach(dropdown => {
             if (!dropdown.contains(e.target)) {
@@ -124,5 +136,13 @@ document.addEventListener('click', (e) => {
                 dropdown.querySelector('.dropdown-toggle').classList.remove('active');
             }
         });
+    }
+});
+
+// 8. Listen for tools-content animation end to reset navbar
+document.addEventListener('animationend', (e) => {
+    if (e.target.classList.contains('tools-content') && e.animationName === 'slideIn') {
+        resetNavbarLayout();
+        console.log('Tools-content slideIn completed, navbar reset');
     }
 });
