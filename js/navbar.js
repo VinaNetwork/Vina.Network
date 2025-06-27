@@ -24,7 +24,7 @@ document.addEventListener('scroll', debounce(() => {
 
 // 3. Toggle burger menu (mobile view)
 const burger = document.querySelector('.burger');
-const navLinks = document.querySelector('.nav-1');
+const navLinks = document.querySelector('.navbar-content');
 
 burger.addEventListener('click', () => {
     burger.classList.toggle('active');
