@@ -106,7 +106,7 @@ include $navbar_path;
                 ?>
                 <div class="tools-nav-card <?php echo $is_active; ?>" data-tool="<?php echo htmlspecialchars($tool_key); ?>">
                     <i class="<?php echo htmlspecialchars($tool_data['icon']); ?>"></i>
-                    <h3><?php echo htmlspecialchars($tool_info['title']); ?></h3>
+                    <h2><?php echo htmlspecialchars($tool_info['title']); ?></h2>
                     <p><?php echo htmlspecialchars($tool_info['description']); ?></p>
                 </div>
             <?php endforeach; ?>
