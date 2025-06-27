@@ -46,7 +46,6 @@ if (burger && navLinks) {
         navLinks.classList.toggle('active');
         document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
         resetNavbarLayout();
-        console.log('Burger clicked, navLinks active:', navLinks.classList.contains('active'), 'Display:', getComputedStyle(navLinks).display);
     });
 } else {
     console.error('Burger or navLinks not found:', { burger, navLinks });
