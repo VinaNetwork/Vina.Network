@@ -75,10 +75,6 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo isset($_POST['creatorAddress']) ? htmlspecialchars($_POST['creatorAddress']) : ''; ?>">
                     <span class="clear-input" title="Clear input">×</span>
                 </div>
-                <div class="input-wrapper">
-                    <input type="text" name="collectionKey" id="collectionKey" placeholder="Enter Collection Key (Optional)">
-                    <span class="clear-input" title="Clear input">×</span>
-                </div>
                 <button type="submit" class="cta-button">Check</button>
             </form>
             <div class="loader"></div>
@@ -103,20 +99,14 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 throw new Exception('Invalid Creator Address format');
             }
 
-            $collectionKey = isset($_POST['collectionKey']) ? trim($_POST['collectionKey']) : null;
-            if ($collectionKey && !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $collectionKey)) {
-                log_message("nft_creator: Invalid Collection Key format: $collectionKey", 'nft_creator_log.txt', 'ERROR');
-                throw new Exception('Invalid Collection Key format');
-            }
-
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600;
-            $cache_key = $creatorAddress . ($collectionKey ? ':' . $collectionKey : '');
+            $cache_key = $creatorAddress;
             $cache_valid = isset($cache_data[$cache_key]) && (time() - $cache_data[$cache_key]['timestamp'] < $cache_expiration);
             log_message("nft_creator: Cache valid=$cache_valid for cache_key=$cache_key", 'nft_creator_log.txt', 'INFO');
 
             if (!$cache_valid) {
-                log_message("nft_creator: Calling getAssetsByCreator API for creatorAddress=$creatorAddress" . ($collectionKey ? ", collectionKey=$collectionKey" : ""), 'nft_creator_log.txt', 'INFO');
+                log_message("nft_creator: Calling getAssetsByCreator API for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
                 $params = [
                     'creatorAddress' => $creatorAddress,
                     'onlyVerified' => false,
@@ -124,9 +114,6 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     'limit' => 1000,
                     'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
                 ];
-                if ($collectionKey) {
-                    $params['groupValue'] = $collectionKey;
-                }
                 $response = callAPI('getAssetsByCreator', $params, 'POST');
 
                 log_message("nft_creator: Full API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
@@ -146,7 +133,7 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
-                // Filter NFTs
+                // Filter NFTs by interface
                 $assets = array_filter($items, function($asset) {
                     return in_array($asset['interface'] ?? '', ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']);
                 });
