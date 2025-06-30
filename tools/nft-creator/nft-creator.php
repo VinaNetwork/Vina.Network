@@ -116,7 +116,7 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 ];
                 $response = callAPI('getAssetsByCreator', $params, 'POST');
 
-                log_message("nft_creator: Full API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
+                log_message("nft_creator: Raw API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
                 if (isset($response['error'])) {
                     log_message("nft_creator: API error: " . json_encode($response['error']), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
@@ -133,19 +133,22 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
-                // Filter NFTs by interface
-                $assets = array_filter($items, function($asset) {
-                    return in_array($asset['interface'] ?? '', ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']);
-                });
+                // Log all assets before filtering
+                foreach ($items as $asset) {
+                    log_message("nft_creator: Asset ID={$asset['id']}, Interface={$asset['interface'] ?? 'N/A'}, Name={$asset['content']['metadata']['name'] ?? 'N/A'}", 'nft_creator_log.txt', 'DEBUG');
+                }
+
+                // Accept all assets (remove strict interface filter)
+                $assets = $items;
 
                 if (empty($assets)) {
-                    log_message("nft_creator: No NFTs found after filtering for creatorAddress=$creatorAddress, items_count=" . count($items), 'nft_creator_log.txt', 'ERROR');
+                    log_message("nft_creator: No assets found for creatorAddress=$creatorAddress, items_count=" . count($items), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
                 $formatted_data = [];
                 foreach ($assets as $asset) {
-                    $is_collection = empty($asset['grouping']) || (isset($asset['interface']) && in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset', 'MplCoreCollection']) && empty($asset['grouping']));
+                    $is_collection = empty($asset['grouping']) || (isset($asset['interface']) && in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']) && empty($asset['grouping']));
                     $formatted_data[] = [
                         'asset_id' => $asset['id'] ?? 'N/A',
                         'name' => $asset['content']['metadata']['name'] ?? 'Unnamed NFT',
