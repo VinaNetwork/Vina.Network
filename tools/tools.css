@@ -308,6 +308,14 @@ h1, h2, h3 {text-align: center;}
     border: 1px solid #ddd;
 }
 
+/* NFT Creator Result */
+.nft-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
 /* Wallet Analysis Result */
 .wallet-tabs {
     display: flex;
@@ -414,6 +422,11 @@ h1, h2, h3 {text-align: center;}
     .result-card,
     .nft-collection-info {
         max-width: 100%
+    }
+
+    /* Wallet Creator Result */
+    .nft-grid {
+        grid-template-columns: 1fr;
     }
     
     /* Wallet Analysis Result */
