@@ -19,7 +19,7 @@ if (!file_exists($bootstrap_path)) {
 require_once $bootstrap_path;
 
 // Cache directory and file
-$cache_dir = TOOLS_PATH . 'nft-creator/cache/';
+$cache_dir = NFT_CREATOR_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_creator_cache.json';
 
 // Check and create cache directory and file
