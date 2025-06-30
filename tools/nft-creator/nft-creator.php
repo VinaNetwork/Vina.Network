@@ -75,6 +75,10 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo isset($_POST['creatorAddress']) ? htmlspecialchars($_POST['creatorAddress']) : ''; ?>">
                     <span class="clear-input" title="Clear input">×</span>
                 </div>
+                <div class="input-wrapper">
+                    <input type="text" name="collectionKey" id="collectionKey" placeholder="Enter Collection Key (Optional)">
+                    <span class="clear-input" title="Clear input">×</span>
+                </div>
                 <button type="submit" class="cta-button">Check</button>
             </form>
             <div class="loader"></div>
@@ -99,20 +103,30 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 throw new Exception('Invalid Creator Address format');
             }
 
+            $collectionKey = isset($_POST['collectionKey']) ? trim($_POST['collectionKey']) : null;
+            if ($collectionKey && !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $collectionKey)) {
+                log_message("nft_creator: Invalid Collection Key format: $collectionKey", 'nft_creator_log.txt', 'ERROR');
+                throw new Exception('Invalid Collection Key format');
+            }
+
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600;
-            $cache_valid = isset($cache_data[$creatorAddress]) && (time() - $cache_data[$creatorAddress]['timestamp'] < $cache_expiration);
-            log_message("nft_creator: Cache valid=$cache_valid for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
+            $cache_key = $creatorAddress . ($collectionKey ? ':' . $collectionKey : '');
+            $cache_valid = isset($cache_data[$cache_key]) && (time() - $cache_data[$cache_key]['timestamp'] < $cache_expiration);
+            log_message("nft_creator: Cache valid=$cache_valid for cache_key=$cache_key", 'nft_creator_log.txt', 'INFO');
 
             if (!$cache_valid) {
-                log_message("nft_creator: Calling getAssetsByCreator API for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
+                log_message("nft_creator: Calling getAssetsByCreator API for creatorAddress=$creatorAddress" . ($collectionKey ? ", collectionKey=$collectionKey" : ""), 'nft_creator_log.txt', 'INFO');
                 $params = [
                     'creatorAddress' => $creatorAddress,
-                    'onlyVerified' => false, // Bỏ lọc verified để lấy tất cả assets
+                    'onlyVerified' => false,
                     'page' => 1,
                     'limit' => 1000,
                     'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
                 ];
+                if ($collectionKey) {
+                    $params['groupValue'] = $collectionKey;
+                }
                 $response = callAPI('getAssetsByCreator', $params, 'POST');
 
                 log_message("nft_creator: Full API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
@@ -120,18 +134,25 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     log_message("nft_creator: API error: " . json_encode($response['error']), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
                 }
-                if (empty($response['items']) || !isset($response['items'])) {
-                    log_message("nft_creator: No assets found for creatorAddress=$creatorAddress, response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'ERROR');
+
+                if (isset($response['result'])) {
+                    $items = $response['result'];
+                } else {
+                    log_message("nft_creator: No result found for creatorAddress=$creatorAddress, response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'ERROR');
+                    throw new Exception('No NFTs or Collections found for this creator');
+                }
+                if (empty($items)) {
+                    log_message("nft_creator: Empty result for creatorAddress=$creatorAddress, response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
                 // Filter NFTs
-                $assets = array_filter($response['items'], function($asset) {
-                    return in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']);
+                $assets = array_filter($items, function($asset) {
+                    return in_array($asset['interface'] ?? '', ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']);
                 });
 
                 if (empty($assets)) {
-                    log_message("nft_creator: No NFTs found after filtering for creatorAddress=$creatorAddress, items_count=" . count($response['items']), 'nft_creator_log.txt', 'ERROR');
+                    log_message("nft_creator: No NFTs found after filtering for creatorAddress=$creatorAddress, items_count=" . count($items), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
@@ -149,7 +170,7 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 }
                 log_message("nft_creator: Formatted data count=" . count($formatted_data), 'nft_creator_log.txt', 'DEBUG');
 
-                $cache_data[$creatorAddress] = [
+                $cache_data[$cache_key] = [
                     'data' => $formatted_data,
                     'timestamp' => time()
                 ];
@@ -168,10 +189,10 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     throw new Exception('Failed to lock cache file');
                 }
                 fclose($fp);
-                log_message("nft_creator: Cache updated for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
+                log_message("nft_creator: Cache updated for cache_key=$cache_key", 'nft_creator_log.txt', 'INFO');
             } else {
-                $formatted_data = $cache_data[$creatorAddress]['data'];
-                log_message("nft_creator: Retrieved from cache for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
+                $formatted_data = $cache_data[$cache_key]['data'];
+                log_message("nft_creator: Retrieved from cache for cache_key=$cache_key", 'nft_creator_log.txt', 'INFO');
             }
 
             ob_start();
@@ -228,7 +249,7 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     </div>
                 </div>
                 <?php if ($cache_valid): ?>
-                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$creatorAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
+                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$cache_key]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
                 <?php endif; ?>
             </div>
             <?php
