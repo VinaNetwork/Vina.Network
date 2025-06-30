@@ -108,12 +108,13 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 log_message("nft_creator: Calling getAssetsByCreator API for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
                 $params = [
                     'creatorAddress' => $creatorAddress,
-                    'onlyVerified' => false,
+                    'onlyVerified' => false, // Bỏ lọc verified để lấy tất cả assets
                     'page' => 1,
                     'limit' => 1000,
                     'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
                 ];
                 $response = callAPI('getAssetsByCreator', $params, 'POST');
+
                 log_message("nft_creator: Full API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
                 if (isset($response['error'])) {
                     log_message("nft_creator: API error: " . json_encode($response['error']), 'nft_creator_log.txt', 'ERROR');
@@ -130,13 +131,13 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 });
 
                 if (empty($assets)) {
-                    log_message("nft_creator: No NFTs found after filtering for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'ERROR');
+                    log_message("nft_creator: No NFTs found after filtering for creatorAddress=$creatorAddress, items_count=" . count($response['items']), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
                 $formatted_data = [];
                 foreach ($assets as $asset) {
-                    $is_collection = empty($asset['grouping']) || (isset($asset['interface']) && in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT']) && empty($asset['grouping']));
+                    $is_collection = empty($asset['grouping']) || (isset($asset['interface']) && in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset', 'MplCoreCollection']) && empty($asset['grouping']));
                     $formatted_data[] = [
                         'asset_id' => $asset['id'] ?? 'N/A',
                         'name' => $asset['content']['metadata']['name'] ?? 'Unnamed NFT',
