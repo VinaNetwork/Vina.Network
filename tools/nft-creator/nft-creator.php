@@ -5,16 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Log start of script for debugging
-if (!function_exists('log_message')) {
-    function log_message($message, $file = 'nft_creator_log.txt', $level = 'INFO') {
-        $log_path = dirname(__DIR__) . '/logs/' . $file;
-        $log_message = '[' . date('Y-m-d H:i:s') . '] [' . $level . '] ' . $message . PHP_EOL;
-        file_put_contents($log_path, $log_message, FILE_APPEND);
-    }
-}
-log_message("nft_creator: Script started", 'nft_creator_log.txt', 'DEBUG');
-
 // Define constants
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
@@ -23,31 +13,26 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("nft_creator: bootstrap.php not found at $bootstrap_path", 'nft_creator_log.txt', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
 require_once $bootstrap_path;
-log_message("nft_creator: bootstrap.php loaded", 'nft_creator_log.txt', 'INFO');
 
 // Cache directory and file
 $cache_dir = NFT_CREATOR_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_creator_cache.json';
 
 // Check and create cache directory and file
-if (!function_exists('ensure_directory_and_file') || !ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
     log_message("nft_creator: Cache setup failed for $cache_dir or $cache_file", 'nft_creator_log.txt', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
-log_message("nft_creator: Cache setup completed", 'nft_creator_log.txt', 'INFO');
 
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft_creator: tools-api.php not found at $api_helper_path", 'nft_creator_log.txt', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
@@ -131,7 +116,7 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 ];
                 $response = callAPI('getAssetsByCreator', $params, 'POST');
 
-                log_message("nft_creator: Raw API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
+                log_message("nft_creator: Full API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
                 if (isset($response['error'])) {
                     log_message("nft_creator: API error: " . json_encode($response['error']), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
@@ -148,22 +133,19 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
-                // Log all assets before processing
-                foreach ($items as $asset) {
-                    log_message("nft_creator: Asset ID={$asset['id'] ?? 'N/A'}, Interface={$asset['interface'] ?? 'N/A'}, Name={$asset['content']['metadata']['name'] ?? 'N/A'}", 'nft_creator_log.txt', 'DEBUG');
-                }
-
-                // Accept all assets
-                $assets = $items;
+                // Filter NFTs by interface
+                $assets = array_filter($items, function($asset) {
+                    return in_array($asset['interface'] ?? '', ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']);
+                });
 
                 if (empty($assets)) {
-                    log_message("nft_creator: No assets found for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'ERROR');
+                    log_message("nft_creator: No NFTs found after filtering for creatorAddress=$creatorAddress, items_count=" . count($items), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
                 $formatted_data = [];
                 foreach ($assets as $asset) {
-                    $is_collection = empty($asset['grouping']) || (isset($asset['interface']) && in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']) && empty($asset['grouping']));
+                    $is_collection = empty($asset['grouping']) || (isset($asset['interface']) && in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'MplCoreAsset', 'MplCoreCollection']) && empty($asset['grouping']));
                     $formatted_data[] = [
                         'asset_id' => $asset['id'] ?? 'N/A',
                         'name' => $asset['content']['metadata']['name'] ?? 'Unnamed NFT',
@@ -261,10 +243,9 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
             $output = ob_get_clean();
             log_message("nft_creator: Output length: " . strlen($output), 'nft_creator_log.txt', 'INFO');
             echo $output;
-        } catch (Throwable $e) {
-            $error_msg = "Error processing request: " . htmlspecialchars($e->getMessage());
-            log_message("nft_creator: Exception - Message: $error_msg, File: " . htmlspecialchars($e->getFile()) . ", Line: " . $e->getLine(), 'nft_creator_log.txt', 'ERROR');
-            header('HTTP/1.1 500 Internal Server Error');
+        } catch (Exception $e) {
+            $error_msg = "Error processing request: " . $e->getMessage();
+            log_message("nft_creator: Exception - Message: $error_msg, File: " . $e->getFile() . ", Line: " . $e->getLine(), 'nft_creator_log.txt', 'ERROR');
             echo "<div class='result-error'><p>$error_msg</p></div>";
         }
     }
