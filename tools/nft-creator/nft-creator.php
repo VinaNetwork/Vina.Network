@@ -69,7 +69,7 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
         <div class="tools-form">
             <h2>Check NFT Creator</h2>
             <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Collections created by this address. For example, find the creator address on MagicEden or other Solana marketplaces.</p>
-            <form id="nftCreatorForm" method="POST" action="" data-tool="check-nft-creator">
+            <form id="nftCreatorForm" method="POST" action="" data-tool="nft-creator">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <div class="input-wrapper">
                     <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo isset($_POST['creatorAddress']) ? htmlspecialchars($_POST['creatorAddress']) : ''; ?>">
