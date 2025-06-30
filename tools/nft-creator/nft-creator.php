@@ -108,26 +108,25 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
                 log_message("nft_creator: Calling getAssetsByCreator API for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
                 $params = [
                     'creatorAddress' => $creatorAddress,
-                    'onlyVerified' => true,
+                    'onlyVerified' => false,
                     'page' => 1,
                     'limit' => 1000,
                     'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
                 ];
                 $response = callAPI('getAssetsByCreator', $params, 'POST');
-
-                log_message("nft_creator: API raw response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
+                log_message("nft_creator: Full API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
                 if (isset($response['error'])) {
                     log_message("nft_creator: API error: " . json_encode($response['error']), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
                 }
                 if (empty($response['items']) || !isset($response['items'])) {
-                    log_message("nft_creator: No assets found for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'ERROR');
+                    log_message("nft_creator: No assets found for creatorAddress=$creatorAddress, response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('No NFTs or Collections found for this creator');
                 }
 
                 // Filter NFTs
                 $assets = array_filter($response['items'], function($asset) {
-                    return in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'Custom']);
+                    return in_array($asset['interface'], ['V1_NFT', 'ProgrammableNFT', 'Custom', 'MplCoreAsset', 'MplCoreCollection']);
                 });
 
                 if (empty($assets)) {
