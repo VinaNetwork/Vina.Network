@@ -18,6 +18,7 @@ define('ROOT_PATH', dirname(__DIR__) . '/');
 define('TOOLS_PATH', ROOT_PATH . 'tools/');
 define('NFT_INFO_PATH', TOOLS_PATH . 'nft-info/');
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
+define('NFT_CREATOR_PATH', TOOLS_PATH . 'nft-creator/');
 define('WALLET_ANALYSIS_PATH', TOOLS_PATH . 'wallet-analysis/');
 define('LOGS_PATH', TOOLS_PATH . 'logs/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
