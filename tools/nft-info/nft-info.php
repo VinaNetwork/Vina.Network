@@ -189,10 +189,7 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                                     <th>Name</th>
                                     <td><?php echo htmlspecialchars($formatted_data['name']); ?></td>
                                 </tr>
-                                <tr>
-                                    <th>Attributes</th>
-                                    <td><pre><?php echo htmlspecialchars($formatted_data['attributes']); ?></pre></td>
-                                </tr>
+                                
                                 <tr>
                                     <th>Owner</th>
                                     <td>
@@ -226,6 +223,10 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                                 <tr>
                                     <th>Listed</th>
                                     <td><?php echo $formatted_data['is_listed'] ? 'Yes' : 'No'; ?></td>
+                                </tr>
+                                <tr>
+                                    <th>Attributes</th>
+                                    <td><pre><?php echo htmlspecialchars($formatted_data['attributes']); ?></pre></td>
                                 </tr>
                             </table>
                         </div>
