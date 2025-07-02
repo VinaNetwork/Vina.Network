@@ -128,12 +128,12 @@ log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
                     'mint_address' => $asset['id'] ?? $mintAddress,
                     'name' => $asset['content']['metadata']['name'] ?? 'N/A',
                     'image' => $asset['content']['links']['image'] ?? '',
-                    'attributes' => isset($asset['content']['metadata']['attributes']) && !empty($asset['content']['metadata']['attributes']) ? json_encode($asset['content']['metadata']['attributes'], JSON_PRETTY_PRINT) : 'N/A',
                     'owner' => $asset['ownership']['owner'] ?? 'N/A',
                     'collection' => $is_collection ? $mintAddress : (isset($asset['grouping'][0]['group_value']) ? $asset['grouping'][0]['group_value'] : 'N/A'),
                     'is_compressed' => isset($asset['compression']['compressed']) ? $asset['compression']['compressed'] : false,
                     'is_burned' => isset($asset['ownership']['frozen']) ? $asset['ownership']['frozen'] : false,
                     'is_listed' => isset($asset['marketplace_listings']) && !empty($asset['marketplace_listings']) ? true : false,
+                    'attributes' => isset($asset['content']['metadata']['attributes']) && !empty($asset['content']['metadata']['attributes']) ? json_encode($asset['content']['metadata']['attributes'], JSON_PRETTY_PRINT) : 'N/A',
                     'timestamp' => time()
                 ];
                 log_message("nft_info: Formatted data=" . json_encode($formatted_data, JSON_PRETTY_PRINT), 'nft_info_log.txt', 'DEBUG');
