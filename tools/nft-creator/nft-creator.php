@@ -12,12 +12,10 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft_creator: bootstrap.php not found at $bootstrap_path", 'nft_creator_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
 require_once $bootstrap_path;
-log_message("nft_creator: bootstrap.php loaded", 'nft_creator_log.txt', 'DEBUG');
 
 // Cache directory and file
 $cache_dir = NFT_CREATOR_PATH . 'cache/';
@@ -25,21 +23,17 @@ $cache_file = $cache_dir . 'nft_creator_cache.json';
 
 // Check and create cache directory and file
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
-    log_message("nft_creator: Cache setup failed for $cache_dir or $cache_file", 'nft_creator_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
-log_message("nft_creator: Cache setup completed", 'nft_creator_log.txt', 'DEBUG');
 
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft_creator: tools-api.php not found at $api_helper_path", 'nft_creator_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
-log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG');
 ?>
 
 <div class="nft-creator">
@@ -54,19 +48,15 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG')
         $rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
         if (time() - $rate_limit_time > 60) {
             $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-            log_message("nft_creator: Reset rate limit for IP=$ip, count=1", 'nft_creator_log.txt', 'INFO');
         } elseif ($rate_limit_count >= 5) {
-            log_message("nft_creator: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_creator_log.txt', 'ERROR');
             $rate_limit_exceeded = true;
             echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
         } else {
             $_SESSION[$rate_limit_key]['count']++;
-            log_message("nft_creator: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_creator_log.txt', 'INFO');
         }
     }
 
     if (!$rate_limit_exceeded) {
-        log_message("nft_creator: Rendering form", 'nft_creator_log.txt', 'INFO');
         ?>
         <div class="tools-form">
             <h2>Check NFT Creator</h2>
@@ -85,19 +75,15 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG')
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && !$rate_limit_exceeded) {
-        log_message("nft_creator: POST request received, creatorAddress=" . ($_POST['creatorAddress'] ?? 'N/A'), 'nft_creator_log.txt', 'INFO');
         try {
-            // Skip CSRF validation if function is missing to avoid errors on GET
+            // Skip CSRF validation if function is missing
             if (isset($_POST['csrf_token']) && function_exists('validate_csrf_token') && !validate_csrf_token($_POST['csrf_token'])) {
-                log_message("nft_creator: Invalid CSRF token", 'nft_creator_log.txt', 'ERROR');
                 throw new Exception('Invalid CSRF token');
             }
 
             $creatorAddress = trim($_POST['creatorAddress']);
             $creatorAddress = preg_replace('/\s+/', '', $creatorAddress);
-            log_message("nft_creator: Validating creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $creatorAddress)) {
-                log_message("nft_creator: Invalid Creator Address format", 'nft_creator_log.txt', 'ERROR');
                 throw new Exception('Invalid Creator Address format');
             }
 
@@ -105,10 +91,8 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG')
             $cache_expiration = 3 * 3600;
             $cache_key = $creatorAddress;
             $cache_valid = isset($cache_data[$cache_key]) && (time() - $cache_data[$cache_key]['timestamp'] < $cache_expiration);
-            log_message("nft_creator: Cache valid=$cache_valid for cache_key=$cache_key", 'nft_creator_log.txt', 'INFO');
 
             if (!$cache_valid) {
-                log_message("nft_creator: Calling getAssetsByCreator API for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'INFO');
                 $params = [
                     'creatorAddress' => $creatorAddress,
                     'onlyVerified' => false,
@@ -118,21 +102,13 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG')
                 ];
                 $response = callAPI('getAssetsByCreator', $params, 'POST');
 
-                log_message("nft_creator: Full API response=" . json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), 'nft_creator_log.txt', 'DEBUG');
                 if (isset($response['error'])) {
-                    log_message("nft_creator: API error: " . json_encode($response['error']), 'nft_creator_log.txt', 'ERROR');
                     throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
                 }
 
                 $items = $response['result'] ?? [];
                 if (empty($items)) {
-                    log_message("nft_creator: Empty result for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('No NFTs or Collections found for this creator');
-                }
-
-                // Log all assets before processing
-                foreach ($items as $index => $asset) {
-                    log_message("nft_creator: Asset $index: ID={$asset['id'] ?? 'N/A'}, Interface={$asset['interface'] ?? 'N/A'}, Name={$asset['content']['metadata']['name'] ?? 'N/A'}", 'nft_creator_log.txt', 'DEBUG');
                 }
 
                 // Accept all assets (no interface filter)
@@ -150,7 +126,6 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG')
                         'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
                     ];
                 }
-                log_message("nft_creator: Formatted data count=" . count($formatted_data), 'nft_creator_log.txt', 'DEBUG');
 
                 $cache_data[$cache_key] = [
                     'data' => $formatted_data,
@@ -159,19 +134,15 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG')
                 $fp = @fopen($cache_file, 'c');
                 if ($fp && flock($fp, LOCK_EX)) {
                     if (!@file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
-                        log_message("nft_creator: Failed to write to cache file", 'nft_creator_log.txt', 'ERROR');
                         throw new Exception('Failed to write to cache file');
                     }
                     flock($fp, LOCK_UN);
                     fclose($fp);
                 } else {
-                    log_message("nft_creator: Failed to lock or open cache file", 'nft_creator_log.txt', 'ERROR');
                     throw new Exception('Failed to lock cache file');
                 }
-                log_message("nft_creator: Cache updated for cache_key=$cache_key", 'nft_creator_log.txt', 'INFO');
             } else {
                 $formatted_data = $cache_data[$cache_key]['data'];
-                log_message("nft_creator: Retrieved from cache for cache_key=$cache_key", 'nft_creator_log.txt', 'INFO');
             }
 
             ob_start();
@@ -233,15 +204,12 @@ log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG')
             </div>
             <?php
             $output = ob_get_clean();
-            log_message("nft_creator: Output length: " . strlen($output), 'nft_creator_log.txt', 'INFO');
             echo $output;
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . htmlspecialchars($e->getMessage());
-            log_message("nft_creator: Exception - Message: $error_msg, File: " . htmlspecialchars($e->getFile()) . ", Line: " . $e->getLine(), 'nft_creator_log.txt', 'ERROR');
             echo "<div class='result-error'><p>$error_msg</p></div>";
         }
     }
-    log_message("nft_creator: Script ended", 'nft_creator_log.txt', 'INFO');
     ?>
 
     <div class="tools-about">
