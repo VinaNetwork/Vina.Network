@@ -17,6 +17,7 @@ if (!file_exists($bootstrap_path)) {
     exit;
 }
 require_once $bootstrap_path;
+log_message("nft_creator: bootstrap.php loaded", 'nft_creator_log.txt', 'DEBUG');
 
 // Cache directory and file
 $cache_dir = NFT_CREATOR_PATH . 'cache/';
@@ -28,6 +29,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) 
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
+log_message("nft_creator: Cache setup completed", 'nft_creator_log.txt', 'DEBUG');
 
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
@@ -37,12 +39,16 @@ if (!file_exists($api_helper_path)) {
     exit;
 }
 require_once $api_helper_path;
-log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
+log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG');
 
 // Start session for rate limiting
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+log_message("nft_creator: Session started, session_id=" . session_id(), 'nft_creator_log.txt', 'DEBUG');
+
+// Check PHP version and extensions
+log_message("nft_creator: PHP version=" . phpversion() . ", Extensions=" . implode(', ', get_loaded_extensions()), 'nft_creator_log.txt', 'DEBUG');
 ?>
 
 <div class="nft-creator">
@@ -137,17 +143,12 @@ if (session_status() === PHP_SESSION_NONE) {
                 }
 
                 // Log all assets before processing
-                foreach ($items as $asset) {
-                    log_message("nft_creator: Asset ID={$asset['id'] ?? 'N/A'}, Interface={$asset['interface'] ?? 'N/A'}, Name={$asset['content']['metadata']['name'] ?? 'N/A'}", 'nft_creator_log.txt', 'DEBUG');
+                foreach ($items as $index => $asset) {
+                    log_message("nft_creator: Asset $index: ID={$asset['id'] ?? 'N/A'}, Interface={$asset['interface'] ?? 'N/A'}, Name={$asset['content']['metadata']['name'] ?? 'N/A'}", 'nft_creator_log.txt', 'DEBUG');
                 }
 
                 // Accept all assets (no interface filter)
                 $assets = $items;
-
-                if (empty($assets)) {
-                    log_message("nft_creator: No assets found for creatorAddress=$creatorAddress", 'nft_creator_log.txt', 'ERROR');
-                    throw new Exception('No NFTs or Collections found for this creator');
-                }
 
                 $formatted_data = [];
                 foreach ($assets as $asset) {
