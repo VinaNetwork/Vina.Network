@@ -87,62 +87,64 @@ require_once $api_helper_path;
                 throw new Exception('Invalid Creator Address format');
             }
 
+            // Clear cache for this address to avoid stale data
             $cache_data = @json_decode(@file_get_contents($cache_file), true) ?? [];
-            $cache_expiration = 3 * 3600;
             $cache_key = $creatorAddress;
-            $cache_valid = isset($cache_data[$cache_key]) && (time() - $cache_data[$cache_key]['timestamp'] < $cache_expiration);
+            unset($cache_data[$cache_key]);
+            @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
 
-            if (!$cache_valid) {
-                $params = [
-                    'creatorAddress' => $creatorAddress,
-                    'onlyVerified' => false,
-                    'page' => 1,
-                    'limit' => 1000,
-                    'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
+            $params = [
+                'creatorAddress' => $creatorAddress,
+                'onlyVerified' => false,
+                'page' => 1,
+                'limit' => 1000,
+                'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
+            ];
+            $response = callAPI('getAssetsByCreator', $params, 'POST');
+
+            // Debug: Save raw API response to temporary file
+            @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
+
+            if (isset($response['error'])) {
+                throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
+            }
+
+            $items = $response['items'] ?? ($response['result'] ?? []);
+            if (empty($items)) {
+                throw new Exception('No NFTs or Collections found for this creator');
+            }
+
+            // Debug: Log structure of first item
+            @file_put_contents($cache_dir . 'api_item_debug.json', json_encode($items[0] ?? [], JSON_PRETTY_PRINT));
+
+            $assets = $items;
+            $formatted_data = [];
+            foreach ($assets as $asset) {
+                $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
+                $formatted_data[] = [
+                    'asset_id' => $asset['id'] ?? 'N/A',
+                    'name' => $asset['content']['metadata']['name'] ?? ($asset['name'] ?? 'Unnamed NFT'),
+                    'image' => $asset['content']['links']['image'] ?? ($asset['image'] ?? ''),
+                    'collection' => $is_collection ? ($asset['id'] ?? 'N/A') : ($asset['grouping'][0]['group_value'] ?? 'N/A'),
+                    'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : ($asset['royalty'] ?? 'N/A'),
+                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
                 ];
-                $response = callAPI('getAssetsByCreator', $params, 'POST');
+            }
 
-                if (isset($response['error'])) {
-                    throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
+            // Save to cache
+            $cache_data[$cache_key] = [
+                'data' => $formatted_data,
+                'timestamp' => time()
+            ];
+            $fp = @fopen($cache_file, 'c');
+            if ($fp && flock($fp, LOCK_EX)) {
+                if (!@file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
+                    throw new Exception('Failed to write to cache file');
                 }
-
-                $items = $response['result'] ?? [];
-                if (empty($items)) {
-                    throw new Exception('No NFTs or Collections found for this creator');
-                }
-
-                // Accept all assets (no interface filter)
-                $assets = $items;
-
-                $formatted_data = [];
-                foreach ($assets as $asset) {
-                    $is_collection = empty($asset['grouping']);
-                    $formatted_data[] = [
-                        'asset_id' => $asset['id'] ?? 'N/A',
-                        'name' => $asset['content']['metadata']['name'] ?? 'Unnamed NFT',
-                        'image' => $asset['content']['links']['image'] ?? '',
-                        'collection' => $is_collection ? $asset['id'] : ($asset['grouping'][0]['group_value'] ?? 'N/A'),
-                        'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : 'N/A',
-                        'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
-                    ];
-                }
-
-                $cache_data[$cache_key] = [
-                    'data' => $formatted_data,
-                    'timestamp' => time()
-                ];
-                $fp = @fopen($cache_file, 'c');
-                if ($fp && flock($fp, LOCK_EX)) {
-                    if (!@file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
-                        throw new Exception('Failed to write to cache file');
-                    }
-                    flock($fp, LOCK_UN);
-                    fclose($fp);
-                } else {
-                    throw new Exception('Failed to lock cache file');
-                }
+                flock($fp, LOCK_UN);
+                fclose($fp);
             } else {
-                $formatted_data = $cache_data[$cache_key]['data'];
+                throw new Exception('Failed to lock cache file');
             }
 
             ob_start();
@@ -198,9 +200,7 @@ require_once $api_helper_path;
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <?php if ($cache_valid): ?>
-                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$cache_key]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
-                <?php endif; ?>
+                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', time()) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
             </div>
             <?php
             $output = ob_get_clean();
@@ -214,6 +214,6 @@ require_once $api_helper_path;
 
     <div class="tools-about">
         <h2>About Check NFT Creator</h2>
-        <p>The Check NFT Creator tool allows you to view all NFTs and Collections created by a specific Solana wallet address. Enter the creator's wallet address to see their creations.</p>
+        <p>The Check NFT Creator tool allows you to view all NFTs and Collections created by a specific Solana wallet address. For example, find the creator address on MagicEden or other Solana marketplaces.</p>
     </div>
 </div>
