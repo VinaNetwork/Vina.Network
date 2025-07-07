@@ -48,11 +48,13 @@ require_once $api_helper_path;
         $rate_limit_time = isset($_SESSION[$rate_limit_key]) ? $_SESSION[$rate_limit_key]['time'] : 0;
         if (time() - $rate_limit_time > 60) {
             $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
+            @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [INFO] Reset rate limit for IP=$ip, count=1\n", FILE_APPEND);
         } elseif ($rate_limit_count >= 5) {
             $rate_limit_exceeded = true;
             echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
         } else {
             $_SESSION[$rate_limit_key]['count']++;
+            @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [INFO] Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'] . "\n", FILE_APPEND);
         }
     }
 
@@ -87,11 +89,12 @@ require_once $api_helper_path;
                 throw new Exception('Invalid Creator Address format');
             }
 
-            // Clear cache for this address to avoid stale data
+            // Clear cache for this address
             $cache_data = @json_decode(@file_get_contents($cache_file), true) ?? [];
             $cache_key = $creatorAddress;
             unset($cache_data[$cache_key]);
             @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+            @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [INFO] Cache cleared for creatorAddress=$creatorAddress\n", FILE_APPEND);
 
             $params = [
                 'creatorAddress' => $creatorAddress,
@@ -102,22 +105,26 @@ require_once $api_helper_path;
             ];
             $response = callAPI('getAssetsByCreator', $params, 'POST');
 
-            // Debug: Save raw API response to temporary file
+            // Debug: Save raw API response
             @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
 
             if (isset($response['error'])) {
+                @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] API error: " . json_encode($response['error']) . "\n", FILE_APPEND);
                 throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
             }
 
             $items = $response['items'] ?? ($response['result'] ?? []);
             if (empty($items)) {
+                @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Empty result for creatorAddress=$creatorAddress\n", FILE_APPEND);
                 throw new Exception('No NFTs or Collections found for this creator');
             }
 
             // Debug: Log structure of first item
             @file_put_contents($cache_dir . 'api_item_debug.json', json_encode($items[0] ?? [], JSON_PRETTY_PRINT));
 
+            // Accept all assets (no interface filter)
             $assets = $items;
+
             $formatted_data = [];
             foreach ($assets as $asset) {
                 $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
@@ -139,11 +146,13 @@ require_once $api_helper_path;
             $fp = @fopen($cache_file, 'c');
             if ($fp && flock($fp, LOCK_EX)) {
                 if (!@file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
+                    @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to write to cache file\n", FILE_APPEND);
                     throw new Exception('Failed to write to cache file');
                 }
                 flock($fp, LOCK_UN);
                 fclose($fp);
             } else {
+                @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Failed to lock cache file\n", FILE_APPEND);
                 throw new Exception('Failed to lock cache file');
             }
 
@@ -207,6 +216,7 @@ require_once $api_helper_path;
             echo $output;
         } catch (Exception $e) {
             $error_msg = "Error processing request: " . htmlspecialchars($e->getMessage());
+            @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Exception: $error_msg\n", FILE_APPEND);
             echo "<div class='result-error'><p>$error_msg</p></div>";
         }
     }
