@@ -40,22 +40,12 @@ if (!file_exists($api_helper_path)) {
 }
 require_once $api_helper_path;
 log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'DEBUG');
-
-// Start session for rate limiting
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-log_message("nft_creator: Session started, session_id=" . session_id(), 'nft_creator_log.txt', 'DEBUG');
-
-// Check PHP version and extensions
-log_message("nft_creator: PHP version=" . phpversion() . ", Extensions=" . implode(', ', get_loaded_extensions()), 'nft_creator_log.txt', 'DEBUG');
 ?>
 
 <div class="nft-creator">
     <!-- Render form unless rate limit exceeded -->
     <?php
     $rate_limit_exceeded = false;
-    $error_message = null;
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress'])) {
         // Rate limiting: 5 requests per minute per IP
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -68,40 +58,38 @@ log_message("nft_creator: PHP version=" . phpversion() . ", Extensions=" . implo
         } elseif ($rate_limit_count >= 5) {
             log_message("nft_creator: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_creator_log.txt', 'ERROR');
             $rate_limit_exceeded = true;
-            $error_message = "Rate limit exceeded. Please try again in a minute.";
+            echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
         } else {
             $_SESSION[$rate_limit_key]['count']++;
             log_message("nft_creator: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'nft_creator_log.txt', 'INFO');
         }
     }
 
-    // Always render form
-    log_message("nft_creator: Rendering form", 'nft_creator_log.txt', 'INFO');
-    ?>
-    <div class="tools-form">
-        <h2>Check NFT Creator</h2>
-        <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Collections created by this address. For example, find the creator address on MagicEden or other Solana marketplaces.</p>
-        <form id="nftCreatorForm" method="POST" action="" data-tool="nft-creator">
-            <input type="hidden" name="csrf_token" value="<?php echo function_exists('generate_csrf_token') ? generate_csrf_token() : ''; ?>">
-            <div class="input-wrapper">
-                <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo isset($_POST['creatorAddress']) ? htmlspecialchars($_POST['creatorAddress']) : ''; ?>">
-                <span class="clear-input" title="Clear input">×</span>
-            </div>
-            <button type="submit" class="cta-button">Check</button>
-        </form>
-        <div class="loader"></div>
-    </div>
-    <?php
-    if ($rate_limit_exceeded) {
-        echo "<div class='result-error'><p>$error_message</p></div>";
+    if (!$rate_limit_exceeded) {
+        log_message("nft_creator: Rendering form", 'nft_creator_log.txt', 'INFO');
+        ?>
+        <div class="tools-form">
+            <h2>Check NFT Creator</h2>
+            <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Collections created by this address. For example, find the creator address on MagicEden or other Solana marketplaces.</p>
+            <form id="nftCreatorForm" method="POST" action="" data-tool="nft-creator">
+                <input type="hidden" name="csrf_token" value="<?php echo function_exists('generate_csrf_token') ? generate_csrf_token() : ''; ?>">
+                <div class="input-wrapper">
+                    <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo isset($_POST['creatorAddress']) ? htmlspecialchars($_POST['creatorAddress']) : ''; ?>">
+                    <span class="clear-input" title="Clear input">×</span>
+                </div>
+                <button type="submit" class="cta-button">Check</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && !$rate_limit_exceeded) {
         log_message("nft_creator: POST request received, creatorAddress=" . ($_POST['creatorAddress'] ?? 'N/A'), 'nft_creator_log.txt', 'INFO');
         try {
-            log_message("nft_creator: Validating CSRF token", 'nft_creator_log.txt', 'INFO');
-            if (!isset($_POST['csrf_token']) || !function_exists('validate_csrf_token') || !validate_csrf_token($_POST['csrf_token'])) {
-                log_message("nft_creator: Invalid CSRF token or function missing", 'nft_creator_log.txt', 'ERROR');
+            // Skip CSRF validation if function is missing to avoid errors on GET
+            if (isset($_POST['csrf_token']) && function_exists('validate_csrf_token') && !validate_csrf_token($_POST['csrf_token'])) {
+                log_message("nft_creator: Invalid CSRF token", 'nft_creator_log.txt', 'ERROR');
                 throw new Exception('Invalid CSRF token');
             }
 
@@ -172,8 +160,6 @@ log_message("nft_creator: PHP version=" . phpversion() . ", Extensions=" . implo
                 if ($fp && flock($fp, LOCK_EX)) {
                     if (!@file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
                         log_message("nft_creator: Failed to write to cache file", 'nft_creator_log.txt', 'ERROR');
-                        flock($fp, LOCK_UN);
-                        fclose($fp);
                         throw new Exception('Failed to write to cache file');
                     }
                     flock($fp, LOCK_UN);
@@ -249,10 +235,10 @@ log_message("nft_creator: PHP version=" . phpversion() . ", Extensions=" . implo
             $output = ob_get_clean();
             log_message("nft_creator: Output length: " . strlen($output), 'nft_creator_log.txt', 'INFO');
             echo $output;
-        } catch (Throwable $e) {
-            $error_message = "Error processing request: " . htmlspecialchars($e->getMessage());
-            log_message("nft_creator: Exception - Message: $error_message, File: " . htmlspecialchars($e->getFile()) . ", Line: " . $e->getLine(), 'nft_creator_log.txt', 'ERROR');
-            echo "<div class='result-error'><p>$error_message</p></div>";
+        } catch (Exception $e) {
+            $error_msg = "Error processing request: " . htmlspecialchars($e->getMessage());
+            log_message("nft_creator: Exception - Message: $error_msg, File: " . htmlspecialchars($e->getFile()) . ", Line: " . $e->getLine(), 'nft_creator_log.txt', 'ERROR');
+            echo "<div class='result-error'><p>$error_msg</p></div>";
         }
     }
     log_message("nft_creator: Script ended", 'nft_creator_log.txt', 'INFO');
