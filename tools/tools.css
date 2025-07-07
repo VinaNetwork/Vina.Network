@@ -317,6 +317,17 @@ h1, h2, h3 {text-align: center;}
 }
 
 /* Wallet Analysis Result */
+.wallet-address {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    margin: 0 auto;
+    max-width: 100%;
+    position: relative;
+}
+
 .wallet-tabs {
     display: flex;
     gap: 20px;
@@ -384,18 +395,7 @@ h1, h2, h3 {text-align: center;}
 .nft-table tr:hover {
     background: #f9fbfd;
 }
-.wallet-address {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    font-size: 20px;
-    color: #555;
-    font-weight: 500;
-    margin: 0 auto;
-    max-width: 100%;
-    position: relative;
-}
+
 .copy-icon {
     cursor: pointer;
     font-size: 20px;
