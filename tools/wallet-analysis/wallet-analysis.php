@@ -14,7 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("wallet_analysis: bootstrap.php not found at $bootstrap_path", 'wallet_api_log.txt', 'ERROR');
+    log_message("wallet_analysis: bootstrap.php not found at $bootstrap_path", 'wallet_analysis_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
@@ -25,20 +25,20 @@ $cache_file = $cache_dir . 'wallet_analysis_cache.json';
 $names_cache_file = $cache_dir . 'names_cache.json';
 
 // Check and create cache directory and files
-if (!ensure_directory_and_file($cache_dir, $cache_file, 'wallet_api_log.txt') ||
-    !ensure_directory_and_file($cache_dir, $names_cache_file, 'wallet_api_log.txt')) {
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'wallet_analysis_log.txt') ||
+    !ensure_directory_and_file($cache_dir, $names_cache_file, 'wallet_analysis_log.txt')) {
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
 
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("wallet_analysis: tools-api.php not found at $api_helper_path", 'wallet_api_log.txt', 'ERROR');
+    log_message("wallet_analysis: tools-api.php not found at $api_helper_path", 'wallet_analysis_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
-log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO');
+log_message("wallet_analysis: tools-api.php loaded", 'wallet_analysis_log.txt', 'INFO');
 ?>
 
 <div class="wallet-analysis">
@@ -52,24 +52,24 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
         $rate_limit_count = isset($_SESSION[$rate_limit_key]) ? (int)$_SESSION[$rate_limit_key]['count'] : 0;
         $rate_limit_time = isset($_SESSION[$rate_limit_key]) ? (int)$_SESSION[$rate_limit_key]['time'] : 0;
 
-        log_message("wallet_analysis: Rate limit check for IP=$ip, count=$rate_limit_count, time=$rate_limit_time", 'wallet_api_log.txt', 'DEBUG');
+        log_message("wallet_analysis: Rate limit check for IP=$ip, count=$rate_limit_count, time=$rate_limit_time", 'wallet_analysis_log.txt', 'DEBUG');
 
         if (time() - $rate_limit_time > 60) {
             $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-            log_message("wallet_analysis: Reset rate limit for IP=$ip, count=1", 'wallet_api_log.txt', 'INFO');
+            log_message("wallet_analysis: Reset rate limit for IP=$ip, count=1", 'wallet_analysis_log.txt', 'INFO');
         } elseif ($rate_limit_count >= 5) {
             $rate_limit_exceeded = true;
-            log_message("wallet_analysis: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_api_log.txt', 'ERROR');
+            log_message("wallet_analysis: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_analysis_log.txt', 'ERROR');
             echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
         } else {
             $_SESSION[$rate_limit_key]['count'] = $rate_limit_count + 1;
-            log_message("wallet_analysis: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_api_log.txt', 'INFO');
+            log_message("wallet_analysis: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_analysis_log.txt', 'INFO');
         }
     }
 
     // Always render form unless rate limit is exceeded
     if (!$rate_limit_exceeded) {
-        log_message("wallet_analysis: Rendering form", 'wallet_api_log.txt', 'INFO');
+        log_message("wallet_analysis: Rendering form", 'wallet_analysis_log.txt', 'INFO');
         ?>
         <div class="tools-form">
             <h2>Check Wallet Analysis</h2>
@@ -79,7 +79,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                 try {
                     $csrf_token = generate_csrf_token();
                 } catch (Exception $e) {
-                    log_message("wallet_analysis: Failed to generate CSRF token: " . $e->getMessage(), 'wallet_api_log.txt', 'ERROR');
+                    log_message("wallet_analysis: Failed to generate CSRF token: " . $e->getMessage(), 'wallet_analysis_log.txt', 'ERROR');
                     $csrf_token = '';
                 }
                 ?>
@@ -112,7 +112,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
             $cache_expiration = 3 * 3600;
             $cache_valid = isset($cache_data[$walletAddress]) && (time() - $cache_data[$walletAddress]['timestamp'] < $cache_expiration);
 
-            log_message("wallet_analysis: Cache check for walletAddress=$walletAddress, cache_valid=$cache_valid", 'wallet_api_log.txt', 'DEBUG');
+            log_message("wallet_analysis: Cache check for walletAddress=$walletAddress, cache_valid=$cache_valid", 'wallet_analysis_log.txt', 'DEBUG');
 
             if (!$cache_valid) {
                 $formatted_data = [
@@ -149,7 +149,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                 $formatted_data['sol_price_usd'] = isset($result['nativeBalance']['total_price']) ? $result['nativeBalance']['total_price'] : 0.0;
 
                 foreach ($result['items'] as $item) {
-                    log_message("wallet_analysis: Processing item, id=" . ($item['id'] ?? 'N/A') . ", interface=" . ($item['interface'] ?? 'N/A'), 'wallet_api_log.txt', 'DEBUG');
+                    log_message("wallet_analysis: Processing item, id=" . ($item['id'] ?? 'N/A') . ", interface=" . ($item['interface'] ?? 'N/A'), 'wallet_analysis_log.txt', 'DEBUG');
                     if ($item['interface'] === 'FungibleToken') {
                         $formatted_data['tokens'][] = [
                             'mint' => $item['id'] ?? 'N/A',
@@ -171,13 +171,13 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                     'timestamp' => time()
                 ];
                 if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-                    log_message("wallet_analysis: Failed to write cache file at $cache_file", 'wallet_api_log.txt', 'ERROR');
+                    log_message("wallet_analysis: Failed to write cache file at $cache_file", 'wallet_analysis_log.txt', 'ERROR');
                     throw new Exception('Failed to write cache file');
                 }
-                log_message("wallet_analysis: Cached Tokens, NFTs, and SOL balance for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
+                log_message("wallet_analysis: Cached Tokens, NFTs, and SOL balance for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
             } else {
                 $formatted_data = $cache_data[$walletAddress]['data'];
-                log_message("wallet_analysis: Retrieved Tokens, NFTs, and SOL balance from cache for walletAddress=$walletAddress", 'wallet_api_log.txt', 'INFO');
+                log_message("wallet_analysis: Retrieved Tokens, NFTs, and SOL balance from cache for walletAddress=$walletAddress", 'wallet_analysis_log.txt', 'INFO');
             }
 
             // Store formatted_data in session for tab navigation
@@ -220,16 +220,16 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
                     $valid_tabs = ['token', 'nft', 'domain'];
                     if (!in_array($tab, $valid_tabs)) {
                         $tab = 'token';
-                        log_message("wallet_analysis: Invalid tab, defaulted to token", 'wallet_api_log.txt', 'ERROR');
+                        log_message("wallet_analysis: Invalid tab, defaulted to token", 'wallet_analysis_log.txt', 'ERROR');
                     }
 
                     $tab_file = __DIR__ . '/' . $tab . '.php';
                     if (file_exists($tab_file)) {
-                        log_message("wallet_analysis: Including tab file: $tab_file", 'wallet_api_log.txt', 'INFO');
+                        log_message("wallet_analysis: Including tab file: $tab_file", 'wallet_analysis_log.txt', 'INFO');
                         include $tab_file;
                     } else {
                         echo "<div class='result-error'><p>Error: Tab file not found at $tab_file.</p></div>";
-                        log_message("wallet_analysis: Tab file not found: $tab_file", 'wallet_api_log.txt', 'ERROR');
+                        log_message("wallet_analysis: Tab file not found: $tab_file", 'wallet_analysis_log.txt', 'ERROR');
                     }
                     ?>
                 </div>
@@ -241,7 +241,7 @@ log_message("wallet_analysis: tools-api.php loaded", 'wallet_api_log.txt', 'INFO
             <?php
         } catch (Exception $e) {
             echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
-            log_message("wallet_analysis: Error processing request: " . $e->getMessage(), 'wallet_api_log.txt', 'ERROR');
+            log_message("wallet_analysis: Error processing request: " . $e->getMessage(), 'wallet_analysis_log.txt', 'ERROR');
         }
     }
     ?>
