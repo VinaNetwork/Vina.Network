@@ -81,6 +81,9 @@ git pull origin main
   Allow log/cache directory to write files and inherit group: find /var/www/vinanetwork/public_html/tools/ -type d \( -path '*/cache' -o -path '*/logs' \) -exec chmod 775 {} \;
 find /var/www/vinanetwork/public_html/tools/ -type d \( -path '*/cache' -o -path '*/logs' \) -exec chmod g+s {} \;
 
+  Permissions for file log/cache: find /var/www/vinanetwork/public_html/tools/ -path '*/cache/*' -type f -exec chmod 664 {} \;
+find /var/www/vinanetwork/public_html/tools/logs/ -type f -exec chmod 664 {} \;
+
 ├── .git/
 - Permissions: drwxr-xr-x (755)
 - Owner/Group: vina:vinanetwork
