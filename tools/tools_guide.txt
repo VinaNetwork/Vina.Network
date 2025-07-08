@@ -72,7 +72,7 @@ git pull origin main
 /var/www/vinanetwork/public_html/
 - Permissions: drwxr-xr-x (755)
 - Owner/Group: www-data:vinanetwork
-- Description: Root web directory, contains Tools and .git/.
+- Description: Root web directory
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html
   sudo chmod 755 /var/www/vinanetwork/public_html
@@ -88,7 +88,7 @@ git pull origin main
 ├── tools/
 - Permissions: drwxr-xr-x (755)
 - Owner/Group: vina:vinanetwork
-- Description: Root directory for Tools page, contains PHP, CSS, JS, and subdirs.
+- Description: Root directory for Tools page.
 - Commands:
   sudo chown vina:vinanetwork /var/www/vinanetwork/public_html/tools
   sudo chmod 755 /var/www/vinanetwork/public_html/tools
@@ -96,7 +96,7 @@ git pull origin main
 │   ├── index.php
 - Permissions: -rw-r--r-- (644)
 - Owner/Group vina:vinanetwork
-- Description: Main entry point for Tools page, read/executed by Apache.
+- Description: Main entry point for Tools page.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/index.php
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/index.php
@@ -104,7 +104,7 @@ git pull origin main
 │   ├── tools-load.php
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:vinanetwork
-- Description: PHP script for loading Tools functionality, read/executed by Apache.
+- Description: PHP script for loading Tools functionality.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/tools-load.php
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/tools-load.php
@@ -112,7 +112,7 @@ git pull origin main
 │   ├── tools-api.php
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:vinanetwork
-- Description: API handler for Tools, read/executed by Apache.
+- Description: API handler for Tools.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/tools-api.php
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/tools-api.php
@@ -120,7 +120,7 @@ git pull origin main
 │   ├── bootstrap.php
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:vinanetwork
-- Description: Bootstrap script for Tools, read/executed by Apache.
+- Description: Bootstrap script for Tools.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/bootstrap.php
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/bootstrap.php
@@ -128,7 +128,7 @@ git pull origin main
 │   ├── tools.css
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:vinanetwork
-- Description: CSS stylesheet for Tools, served by Apache.
+- Description: CSS stylesheet for Tools page.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/tools.css
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/tools.css
@@ -136,7 +136,7 @@ git pull origin main
 │   ├── tools.js
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:vinanetwork
-- Description: JavaScript for Tools, served by Apache.
+- Description: JavaScript for Tools page.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/tools.js
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/tools.js
@@ -144,7 +144,7 @@ git pull origin main
 │   ├── nft-holders/
 - Permissions: drwxr-xr-x (755)
 - Owner/Group: www-data:vinanetwork
-- Description: Directory for NFT Holders functionality, contains PHP scripts and cache.
+- Description: Directory for NFT Holders functionality.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-holders
   sudo chmod 755 /var/www/vinanetwork/public_html/tools/nft-holders
@@ -160,7 +160,7 @@ git pull origin main
 │   │   ├── nft-holders-export.php
 - Permissions: -rw-r--r-- (644)
 - Owner/Group: www-data:vinanetwork
-- Description: Script for exporting NFT Holders data, read/executed by Apache.
+- Description: Script for exporting NFT Holders data.
 - Commands:
   sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-holders/nft-holders-export.php
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/nft-holders/nft-holders-export.php
