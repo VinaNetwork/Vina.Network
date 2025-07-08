@@ -75,7 +75,11 @@ git pull origin main
 - Description: Root web directory
 - Commands:
   Permissions for the entire directory: find /var/www/vinanetwork/public_html/ -type d -exec chmod 755 {} \;
-  File permissions: find /var/www/vinanetwork/public_html/ -type f -exec chmod 644 {} \;
+
+  Permissions for common files (php, html, css, js, txt, md): find /var/www/vinanetwork/public_html/ -type f -exec chmod 644 {} \;
+
+  Allow log/cache directory to write files and inherit group: find /var/www/vinanetwork/public_html/tools/ -type d \( -path '*/cache' -o -path '*/logs' \) -exec chmod 775 {} \;
+find /var/www/vinanetwork/public_html/tools/ -type d \( -path '*/cache' -o -path '*/logs' \) -exec chmod g+s {} \;
 
 ├── .git/
 - Permissions: drwxr-xr-x (755)
