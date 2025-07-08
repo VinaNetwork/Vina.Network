@@ -173,13 +173,14 @@ find /var/www/vinanetwork/public_html/tools/logs/ -type f -exec chmod 664 {} \;
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/nft-holders/nft-holders-export.php
 
 │   │   ├── cache/
-- Permissions: 664
+- Permissions: 775
 - Owner/Group: www-data:vinanetwork
 - Description: Directory for NFT Holders cache files, writable by www-data for PHP caching.
 - Commands:
   mkdir /var/www/vinanetwork/public_html/tools/nft-holders/cache
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-holders/cache
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-holders/cache*
+  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-holders/cache/
+  sudo chmod 775 /var/www/vinanetwork/public_html/tools/nft-holders/cache/
+  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-holders/cache/*
 
 │   │   │   └── nft_holders_cache.json
 
@@ -200,13 +201,14 @@ find /var/www/vinanetwork/public_html/tools/logs/ -type f -exec chmod 664 {} \;
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/nft-info/nft-info.php
 
 │   │   ├── cache/
-- Permissions: 664
+- Permissions: 775
 - Owner/Group: www-data:vinanetwork
 - Description: Directory for NFT info cache files, writable by www-data for PHP caching.
 - Commands:
   mkdir /var/www/vinanetwork/public_html/tools/nft-info/cache
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-info/cache*
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-info/cache
+  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/nft-info/cache/
+  sudo chmod 775 /var/www/vinanetwork/public_html/tools/nft-info/cache/
+  sudo chmod 664 /var/www/vinanetwork/public_html/tools/nft-info/cache/*
 
 │   │   │   └── nft_info_cache.json
   
@@ -227,23 +229,25 @@ find /var/www/vinanetwork/public_html/tools/logs/ -type f -exec chmod 664 {} \;
   sudo chmod 644 /var/www/vinanetwork/public_html/tools/wallet-analysis/wallet-analysis.php
 
 │   │   ├── cache/
-- Permissions: 664
+- Permissions: 775
 - Owner/Group: www-data:vinanetwork
 - Description: Directory for NFT info cache files, writable by www-data for PHP caching.
 - Commands:
   mkdir /var/www/vinanetwork/public_html/tools/wallet-analysis/cache
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/wallet-analysis/cache
-  sudo chmod 664 /var/www/vinanetwork/public_html/tools/wallet-analysis/cache*
+  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/wallet-analysis/cache/
+  sudo chmod 775 /var/www/vinanetwork/public_html/tools/wallet-analysis/cache/
+  sudo chmod 664 /var/www/vinanetwork/public_html/tools/wallet-analysis/cache/*
 
 │   │   │   └── nft_info_cache.json
 
 │   ├── logs/
-- Permissions: 664
+- Permissions: 775
 - Owner/Group: www-data:vinanetwork
 - Description: Directory for log files, writable by www-data for PHP logging.
 - Commands:
   sudo mkdir /var/www/vinanetwork/public_html/tools/logs/
-  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/logs
+  sudo chown www-data:vinanetwork /var/www/vinanetwork/public_html/tools/logs/
+  sudo chmod 775 /var/www/vinanetwork/public_html/tools/logs/
   sudo chmod 664 /var/www/vinanetwork/public_html/tools/logs/*
 
 │   │   ├── api_log.txt
