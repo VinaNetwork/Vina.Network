@@ -13,7 +13,7 @@ try {
     // Load bootstrap
     $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
     if (!file_exists($bootstrap_path)) {
-        log_message("nft_creator: Cannot find bootstrap.php at $bootstrap_path", 'nft_creator_log.txt', 'ERROR');
+        @file_put_contents('/tmp/nft_creator_debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Cannot find bootstrap.php at $bootstrap_path\n", FILE_APPEND);
         echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
         exit;
     }
@@ -25,17 +25,25 @@ try {
     $cache_file = $cache_dir . 'nft_creator_cache.json';
 
     // Check and create cache directory and file
-    if (!file_exists($cache_dir)) {
-        @mkdir($cache_dir, 0775, true);
-    }
-    if (!file_exists($cache_file)) {
-        @file_put_contents($cache_file, '{}');
-    }
-    if (!file_exists($cache_dir) || !file_exists($cache_file)) {
-        log_message("nft_creator: Cache setup failed for $cache_dir or $cache_file", 'nft_creator_log.txt', 'ERROR');
-        @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Cache setup failed for $cache_dir or $cache_file\n", FILE_APPEND);
-        echo '<div class="result-error"><p>Cache setup failed</p></div>';
-        exit;
+    if (!function_exists('ensure_directory_and_file')) {
+        if (!file_exists($cache_dir)) {
+            @mkdir($cache_dir, 0775, true);
+        }
+        if (!file_exists($cache_file)) {
+            @file_put_contents($cache_file, '{}');
+        }
+        if (!file_exists($cache_dir) || !file_exists($cache_file)) {
+            log_message("nft_creator: Cache setup failed for $cache_dir or $cache_file", 'nft_creator_log.txt', 'ERROR');
+            @file_put_contents('/tmp/nft_creator_debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Cache setup failed for $cache_dir or $cache_file\n", FILE_APPEND);
+            echo '<div class="result-error"><p>Cache setup failed</p></div>';
+            exit;
+        }
+    } else {
+        if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
+            @file_put_contents('/tmp/nft_creator_debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Cache setup failed for $cache_dir or $cache_file\n", FILE_APPEND);
+            echo '<div class="result-error"><p>Cache setup failed</p></div>';
+            exit;
+        }
     }
     log_message("nft_creator: Cache setup completed", 'nft_creator_log.txt', 'DEBUG');
 
@@ -43,7 +51,7 @@ try {
     $api_helper_path = dirname(__DIR__) . '/tools-api.php';
     if (!file_exists($api_helper_path)) {
         log_message("nft_creator: tools-api.php not found at $api_helper_path", 'nft_creator_log.txt', 'ERROR');
-        @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] tools-api.php not found at $api_helper_path\n", FILE_APPEND);
+        @file_put_contents('/tmp/nft_creator_debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] tools-api.php not found at $api_helper_path\n", FILE_APPEND);
         echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
         exit;
     }
