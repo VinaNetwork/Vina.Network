@@ -18,24 +18,31 @@ try {
     log_message("nft_creator: bootstrap.php loaded", 'nft_creator_log.txt', 'INFO');
 } catch (Throwable $e) {
     error_log("[" . date('Y-m-d H:i:s') . "] [CRITICAL] nft_creator: bootstrap.php error: " . $e->getMessage() . ", File: " . $e->getFile() . ", Line: " . $e->getLine(), 3, '/var/www/vinanetwork/public_html/tools/logs/nft_creator_log.txt');
+    http_response_code(500);
     echo '<div class="result-error"><p>Error loading bootstrap: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
     exit;
 }
 
-// Cache directory and file (dùng đường dẫn tuyệt đối để tránh lỗi NFT_CREATOR_PATH)
-$cache_dir = '/var/www/vinanetwork/public_html/tools/nft-creator/cache/';
-$cache_file = $cache_dir . 'nft_creator_cache.json';
-
-// Check and create cache directory and file
+// Cache directory and file
 try {
+    if (!defined('NFT_CREATOR_PATH')) {
+        error_log("[" . date('Y-m-d H:i:s') . "] [CRITICAL] nft_creator: NFT_CREATOR_PATH not defined", 3, '/var/www/vinanetwork/public_html/tools/logs/nft_creator_log.txt');
+        http_response_code(500);
+        echo '<div class="result-error"><p>NFT_CREATOR_PATH not defined</p></div>';
+        exit;
+    }
+    $cache_dir = NFT_CREATOR_PATH . 'cache/';
+    $cache_file = $cache_dir . 'nft_creator_cache.json';
     if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
         log_message("nft_creator: Cache setup failed for $cache_dir or $cache_file", 'nft_creator_log.txt', 'ERROR');
+        http_response_code(500);
         echo '<div class="result-error"><p>Cache setup failed</p></div>';
         exit;
     }
-    log_message("nft_creator: Cache setup completed", 'nft_creator_log.txt', 'INFO');
+    log_message("nft_creator: Cache setup completed, cache_dir=$cache_dir", 'nft_creator_log.txt', 'INFO');
 } catch (Throwable $e) {
     error_log("[" . date('Y-m-d H:i:s') . "] [CRITICAL] nft_creator: Cache setup error: " . $e->getMessage() . ", File: " . $e->getFile() . ", Line: " . $e->getLine(), 3, '/var/www/vinanetwork/public_html/tools/logs/nft_creator_log.txt');
+    http_response_code(500);
     echo '<div class="result-error"><p>Cache setup error: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
     exit;
 }
@@ -46,6 +53,7 @@ try {
     log_message("nft_creator: tools-api.php loaded", 'nft_creator_log.txt', 'INFO');
 } catch (Throwable $e) {
     error_log("[" . date('Y-m-d H:i:s') . "] [CRITICAL] nft_creator: tools-api.php error: " . $e->getMessage() . ", File: " . $e->getFile() . ", Line: " . $e->getLine(), 3, '/var/www/vinanetwork/public_html/tools/logs/nft_creator_log.txt');
+    http_response_code(500);
     echo '<div class="result-error"><p>Error loading tools-api: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
     exit;
 }
@@ -252,6 +260,7 @@ try {
     } catch (Throwable $e) {
         $error_msg = "Error processing request: " . $e->getMessage() . ", File: " . $e->getFile() . ", Line: " . $e->getLine();
         log_message("nft_creator: Exception: $error_msg", 'nft_creator_log.txt', 'ERROR');
+        http_response_code(500);
         echo "<div class='result-error'><p>$error_msg</p></div>";
     }
     log_message("nft_creator: Script ended", 'nft_creator_log.txt', 'INFO');
