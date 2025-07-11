@@ -13,7 +13,6 @@ try {
     // Load bootstrap
     $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
     if (!file_exists($bootstrap_path)) {
-        @file_put_contents(NFT_CREATOR_PATH . 'cache/debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] Cannot find bootstrap.php at $bootstrap_path\n", FILE_APPEND);
         echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
         exit;
     }
@@ -25,10 +24,12 @@ try {
 
     // Check and create cache directory and file
     if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
-        @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] Cache setup failed for $cache_dir or $cache_file\n", FILE_APPEND);
         echo '<div class="result-error"><p>Cache setup failed</p></div>';
         exit;
     }
+
+    // Log after cache setup
+    @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [DEBUG] Cache setup completed\n", FILE_APPEND);
 
     // Load API helper
     $api_helper_path = dirname(__DIR__) . '/tools-api.php';
@@ -40,7 +41,6 @@ try {
     require_once $api_helper_path;
 
     // Log after setup
-    @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [DEBUG] Cache setup completed\n", FILE_APPEND);
     @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [DEBUG] tools-api.php loaded\n", FILE_APPEND);
 ?>
 
@@ -261,7 +261,7 @@ try {
 <?php
 } catch (Throwable $e) {
     $error_msg = "Error processing request: " . htmlspecialchars($e->getMessage()) . ", File: " . htmlspecialchars($e->getFile()) . ", Line: " . $e->getLine();
-    @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] $error_msg\n", FILE_APPEND);
+    @file_put_contents(LOGS_PATH . 'php_errors.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] $error_msg\n", FILE_APPEND);
     echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
 }
 ?>
