@@ -5,9 +5,11 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Define constants
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
+// Load bootstrap
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
@@ -15,14 +17,17 @@ if (!file_exists($bootstrap_path)) {
 }
 require_once $bootstrap_path;
 
+// Cache directory and file
 $cache_dir = NFT_CREATOR_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_creator_cache.json';
 
+// Check and create cache directory and file
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
 
+// Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
@@ -39,7 +44,6 @@ require_once $api_helper_path;
         $rate_limit_key = "rate_limit_nft_creator:$ip";
         $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
         $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
-
         if (time() - $rate_limit_time > 60) {
             $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
         } elseif ($rate_limit_count >= 5) {
@@ -50,21 +54,23 @@ require_once $api_helper_path;
         }
     }
 
-    if (!$rate_limit_exceeded): ?>
+    if (!$rate_limit_exceeded) {
+        ?>
         <div class="tools-form">
             <h2>Check NFT Creator</h2>
-            <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Collections created by this address.</p>
+            <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Collections created by this address. For example, find the creator address on MagicEden or other Solana marketplaces.</p>
             <form id="nftCreatorForm" method="POST" action="" data-tool="nft-creator">
                 <input type="hidden" name="csrf_token" value="<?php echo function_exists('generate_csrf_token') ? generate_csrf_token() : ''; ?>">
                 <div class="input-wrapper">
-                    <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo htmlspecialchars($_POST['creatorAddress'] ?? '') ?>">
+                    <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo isset($_POST['creatorAddress']) ? htmlspecialchars($_POST['creatorAddress']) : ''; ?>">
                     <span class="clear-input" title="Clear input">×</span>
                 </div>
                 <button type="submit" class="cta-button">Check</button>
             </form>
             <div class="loader"></div>
         </div>
-    <?php endif;
+        <?php
+    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && !$rate_limit_exceeded) {
         try {
@@ -72,14 +78,15 @@ require_once $api_helper_path;
                 throw new Exception('Invalid CSRF token');
             }
 
-            $creatorAddress = preg_replace('/\s+/', '', trim($_POST['creatorAddress']));
+            $creatorAddress = trim(preg_replace('/\s+/', '', $_POST['creatorAddress']));
             if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $creatorAddress)) {
                 throw new Exception('Invalid Creator Address format');
             }
 
-            $cache_data = json_decode(@file_get_contents($cache_file), true) ?? [];
-            unset($cache_data[$creatorAddress]);
-            @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+            // Clear cache
+            $cache_data = @json_decode(@file_get_contents($cache_file), true) ?? [];
+            $cache_key = $creatorAddress;
+            unset($cache_data[$cache_key]);
 
             $params = [
                 'creatorAddress' => $creatorAddress,
@@ -89,7 +96,6 @@ require_once $api_helper_path;
                 'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
             ];
             $response = callAPI('getAssetsByCreator', $params, 'POST');
-
             @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
 
             if (isset($response['error'])) {
@@ -101,38 +107,52 @@ require_once $api_helper_path;
                 throw new Exception('No NFTs or Collections found for this creator');
             }
 
-            @file_put_contents($cache_dir . 'api_item_debug.json', json_encode($items[0] ?? [], JSON_PRETTY_PRINT));
-
             $formatted_data = [];
             foreach ($items as $asset) {
-                $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
+                $image = $asset['content']['links']['image'] ??
+                         ($asset['content']['files'][0]['uri'] ?? 
+                         ($asset['image'] ?? ''));
 
-                // ✅ Thêm fallback cho hình ảnh
-                $image = $asset['content']['links']['image']
-                    ?? ($asset['content']['files'][0]['uri'] ?? '')
-                    ?? ($asset['image'] ?? '');
+                $name = $asset['content']['metadata']['name'] ??
+                        ($asset['name'] ?? 'Unnamed NFT');
+
+                $collection = 'N/A';
+                if (!empty($asset['grouping'][0]['group_value'])) {
+                    $collection = $asset['grouping'][0]['group_value'];
+                }
+
+                $royalty = 'N/A';
+                if (isset($asset['royalty']['percent'])) {
+                    $royalty = number_format($asset['royalty']['percent'] * 100, 2) . '%';
+                } elseif (is_string($asset['royalty'] ?? null)) {
+                    $royalty = $asset['royalty'];
+                }
+
+                $verified = (isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified']) ? 'Yes' : 'No';
 
                 $formatted_data[] = [
-                    'asset_id' => $asset['id'] ?? 'N/A',
-                    'name' => $asset['content']['metadata']['name'] ?? ($asset['name'] ?? 'Unnamed NFT'),
-                    'image' => $image,
-                    'collection' => $is_collection ? ($asset['id'] ?? 'N/A') : ($asset['grouping'][0]['group_value'] ?? 'N/A'),
-                    'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : ($asset['royalty'] ?? 'N/A'),
-                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
+                    'asset_id'   => $asset['id'] ?? 'N/A',
+                    'name'       => $name,
+                    'image'      => $image,
+                    'collection' => $collection,
+                    'royalty'    => $royalty,
+                    'verified'   => $verified
                 ];
             }
 
-            $cache_data[$creatorAddress] = ['data' => $formatted_data, 'timestamp' => time()];
+            // Save to cache
+            $cache_data[$cache_key] = [
+                'data' => $formatted_data,
+                'timestamp' => time()
+            ];
             $fp = @fopen($cache_file, 'c');
             if ($fp && flock($fp, LOCK_EX)) {
                 @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
                 flock($fp, LOCK_UN);
                 fclose($fp);
-            } else {
-                throw new Exception('Failed to write to cache file');
             }
 
-            ob_start(); ?>
+            ?>
             <div class="tools-result nft-creator-result">
                 <h2>NFTs and Collections by Creator</h2>
                 <div class="result-summary">
@@ -148,30 +168,45 @@ require_once $api_helper_path;
                                 </div>
                                 <div class="nft-info-table">
                                     <table>
-                                        <tr><th>Asset ID</th><td>
-                                            <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
-                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['asset_id']); ?>"></i>
-                                        </td></tr>
-                                        <tr><th>Name</th><td><?php echo htmlspecialchars($asset['name']); ?></td></tr>
-                                        <tr><th>Collection</th><td>
-                                            <?php if (preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $asset['collection'])): ?>
-                                                <span><?php echo substr($asset['collection'], 0, 4) . '...' . substr($asset['collection'], -4); ?></span>
-                                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['collection']); ?>"></i>
-                                            <?php else: ?>
-                                                <span>N/A</span>
-                                            <?php endif; ?>
-                                        </td></tr>
-                                        <tr><th>Royalty</th><td><?php echo htmlspecialchars($asset['royalty']); ?></td></tr>
-                                        <tr><th>Verified</th><td><?php echo htmlspecialchars($asset['verified']); ?></td></tr>
+                                        <tr>
+                                            <th>Asset ID</th>
+                                            <td>
+                                                <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
+                                                <i class="fas fa-copy copy-icon" data-full="<?php echo $asset['asset_id']; ?>" title="Copy full address"></i>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Name</th>
+                                            <td><?php echo htmlspecialchars($asset['name']); ?></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Collection</th>
+                                            <td>
+                                                <?php if ($asset['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $asset['collection'])): ?>
+                                                    <span><?php echo substr($asset['collection'], 0, 4) . '...' . substr($asset['collection'], -4); ?></span>
+                                                    <i class="fas fa-copy copy-icon" data-full="<?php echo $asset['collection']; ?>" title="Copy full address"></i>
+                                                <?php else: ?>
+                                                    <span>N/A</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Royalty</th>
+                                            <td><?php echo htmlspecialchars($asset['royalty']); ?></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Verified</th>
+                                            <td><?php echo htmlspecialchars($asset['verified']); ?></td>
+                                        </tr>
                                     </table>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
-                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', time()); ?> UTC+0. Data will be updated every 3 hours.</p>
+                <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', time()) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
             </div>
-            <?php echo ob_get_clean();
+            <?php
 
         } catch (Exception $e) {
             echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
@@ -181,6 +216,6 @@ require_once $api_helper_path;
 
     <div class="tools-about">
         <h2>About Check NFT Creator</h2>
-        <p>This tool lets you view all NFTs and Collections created by a Solana wallet address. Enter a creator address found on marketplaces like Magic Eden.</p>
+        <p>The Check NFT Creator tool allows you to view all NFTs and Collections created by a specific Solana wallet address.</p>
     </div>
 </div>
