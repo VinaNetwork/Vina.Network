@@ -66,3 +66,10 @@
     background: #28a745;
     transition: width 0.3s ease;
 }
+
+/* Responsive adjustments for small screens */
+@media screen and (max-width: 768px) {
+    .nft-collection-info {
+        max-width: 100%
+    }
+}
