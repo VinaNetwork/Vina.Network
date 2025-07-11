@@ -1,0 +1,114 @@
+/* ============================================================================
+ * File: tools/wallet-analysis/wallet-analysis.css
+ * Description: Styling for Wallet Analysis
+ * Created by: Vina Network
+ * ========================================================================== */
+
+/* Wallet Analysis Result */
+.wallet-address {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 20px;
+    margin: 0 auto;
+    max-width: 100%;
+    position: relative;
+}
+
+.wallet-tabs {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0 10px;
+    background: #eeeeee;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+.wallet-tabs::-webkit-scrollbar {height: 6px;}
+.wallet-tabs::-webkit-scrollbar-track {background: #333;}
+.wallet-tabs::-webkit-scrollbar-thumb {background: #007bff;}
+.wallet-tab-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+.wallet-tab-link i {font-size: 1.1em;}
+.wallet-tab-link:hover {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
+.wallet-tab-link.active {
+    font-weight: bold;
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
+
+.wallet-details table {width: 100%;}
+.token-table, .nft-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+.token-table th, .nft-table th {
+    background: #f0f4f8;
+    color: #333;
+    font-weight: 600;
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 2px solid #e0e0e0;
+}
+.token-table td, .nft-table td {
+    padding: 4px 10px;
+    border-bottom: 1px solid #eee;
+    color: #555;
+    font-size: 14px;
+    word-break: break-all;
+}
+.token-table td:nth-child(3), 
+.token-table td:nth-child(4) {
+    text-align: right;
+}
+.token-table td:last-child, 
+.nft-table td:last-child {
+    border-bottom: unset;
+}
+.token-table tr:hover, 
+.nft-table tr:hover {
+    background: #f9fbfd;
+}
+
+.copy-icon {
+    cursor: pointer;
+    font-size: 20px;
+    color: #007bff;
+    transition: color 0.3s ease;
+    pointer-events: auto;
+    user-select: none;
+    display: inline-block;
+}
+.copy-icon:hover {color: #0056b3;}
+.copy-icon.copied {color: #28a745;}
+
+/* Responsive adjustments for small screens */
+@media screen and (max-width: 768px) {
+    /* Wallet Analysis Result */
+    .wallet-tabs {gap: 6px;}
+    .token-table,
+    .nft-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .wallet-address {
+        font-size: 16px;
+        gap: 6px;
+    } 
+    .copy-icon {font-size: 16px;}
+}
