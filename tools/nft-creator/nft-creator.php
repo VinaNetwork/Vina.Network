@@ -13,6 +13,7 @@ try {
     // Load bootstrap
     $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
     if (!file_exists($bootstrap_path)) {
+        @file_put_contents(NFT_CREATOR_PATH . 'cache/debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] Cannot find bootstrap.php at $bootstrap_path\n", FILE_APPEND);
         echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
         exit;
     }
@@ -24,7 +25,7 @@ try {
 
     // Check and create cache directory and file
     if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
-        @file_put_contents('/tmp/nft_creator_debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] Cache setup failed for $cache_dir or $cache_file\n", FILE_APPEND);
+        @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] Cache setup failed for $cache_dir or $cache_file\n", FILE_APPEND);
         echo '<div class="result-error"><p>Cache setup failed</p></div>';
         exit;
     }
@@ -32,7 +33,7 @@ try {
     // Load API helper
     $api_helper_path = dirname(__DIR__) . '/tools-api.php';
     if (!file_exists($api_helper_path)) {
-        @file_put_contents('/tmp/nft_creator_debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] tools-api.php not found at $api_helper_path\n", FILE_APPEND);
+        @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] tools-api.php not found at $api_helper_path\n", FILE_APPEND);
         echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
         exit;
     }
@@ -120,6 +121,7 @@ try {
 
             // Debug: Save raw API response
             @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
+            @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [DEBUG] Raw API response: " . json_encode($response, JSON_PRETTY_PRINT) . "\n", FILE_APPEND);
 
             // Log API response structure
             $response_keys = array_keys($response);
@@ -259,7 +261,7 @@ try {
 <?php
 } catch (Throwable $e) {
     $error_msg = "Error processing request: " . htmlspecialchars($e->getMessage()) . ", File: " . htmlspecialchars($e->getFile()) . ", Line: " . $e->getLine();
-    @file_put_contents('/tmp/nft_creator_debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [ERROR] $error_msg\n", FILE_APPEND);
+    @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] $error_msg\n", FILE_APPEND);
     echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
 }
 ?>
