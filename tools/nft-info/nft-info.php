@@ -40,6 +40,7 @@ require_once $api_helper_path;
 log_message("nft_info: tools-api.php loaded", 'nft_info_log.txt', 'INFO');
 ?>
 
+<link rel="stylesheet" href="/tools/nft-info/nft-info.css">
 <div class="nft-info">
     <!-- Render form unless rate limit exceeded -->
     <?php
