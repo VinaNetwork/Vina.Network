@@ -5,18 +5,27 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Minimal debug log to /tmp for early errors
+$early_log = '/tmp/nft_creator_early_debug.log';
+@touch($early_log);
+@chmod($early_log, 0666);
+@file_put_contents($early_log, "[" . date('Y-m-d H:i:s') . "] [DEBUG] Starting nft-creator.php\n", FILE_APPEND);
+
 try {
     // Define constants
     if (!defined('VINANETWORK')) define('VINANETWORK', true);
     if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+    @file_put_contents($early_log, "[" . date('Y-m-d H:i:s') . "] [DEBUG] Constants defined\n", FILE_APPEND);
 
     // Load bootstrap
     $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
     if (!file_exists($bootstrap_path)) {
+        @file_put_contents($early_log, "[" . date('Y-m-d H:i:s') . "] [CRITICAL] Cannot find bootstrap.php at $bootstrap_path\n", FILE_APPEND);
         echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
         exit;
     }
     require_once $bootstrap_path;
+    @file_put_contents($early_log, "[" . date('Y-m-d H:i:s') . "] [DEBUG] bootstrap.php loaded\n", FILE_APPEND);
 
     // Cache directory and file
     $cache_dir = NFT_CREATOR_PATH . 'cache/';
@@ -24,6 +33,7 @@ try {
 
     // Check and create cache directory and file
     if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
+        @file_put_contents($early_log, "[" . date('Y-m-d H:i:s') . "] [CRITICAL] Cache setup failed for $cache_dir or $cache_file\n", FILE_APPEND);
         echo '<div class="result-error"><p>Cache setup failed</p></div>';
         exit;
     }
@@ -39,8 +49,6 @@ try {
         exit;
     }
     require_once $api_helper_path;
-
-    // Log after setup
     @file_put_contents($cache_dir . 'debug_log.txt', "[" . date('Y-m-d H:i:s') . "] [DEBUG] tools-api.php loaded\n", FILE_APPEND);
 ?>
 
@@ -261,7 +269,7 @@ try {
 <?php
 } catch (Throwable $e) {
     $error_msg = "Error processing request: " . htmlspecialchars($e->getMessage()) . ", File: " . htmlspecialchars($e->getFile()) . ", Line: " . $e->getLine();
-    @file_put_contents(LOGS_PATH . 'php_errors.txt', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] $error_msg\n", FILE_APPEND);
+    @file_put_contents('/tmp/nft_creator_early_debug.log', "[" . date('Y-m-d H:i:s') . "] [CRITICAL] $error_msg\n", FILE_APPEND);
     echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
 }
 ?>
