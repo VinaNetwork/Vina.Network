@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
-// tools/index.php - Main Interface Loader for NFT Holder Tools
-// Description: Discover Solana NFT tools on Vina Network: Check Holders, Valuation, Transactions & Wallet Analysis.
+// File: tools/index.php - Main Interface Loader for NFT Holder Tools
+// Description: Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders, Check Wallet Creators, Check Wallet Analysis.
 // Created by: Vina Network
 // ============================================================================
 
