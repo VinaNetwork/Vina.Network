@@ -21,15 +21,13 @@
     width: 100%;
     border-collapse: collapse;
 }
-.nft-info-table th, 
-.nft-info-table td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
+.nft-info-table td,
 .nft-info-table th {
-    background: #eee;
-    font-weight: bold;
+    text-align: left;
+    color: #666;
+    width: 30%;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #ddd;
 }
 .nft-info-table pre {
     white-space: pre-wrap;
