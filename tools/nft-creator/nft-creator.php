@@ -74,56 +74,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
         }
 
         $cache_data = @json_decode(@file_get_contents($cache_file), true) ?? [];
-        unset($cache_data[$creatorAddress]);
-        @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+        $cache_expiration = 3 * 3600; // 3 hours
+        $cache_valid = isset($cache_data[$creatorAddress]) && (time() - $cache_data[$creatorAddress]['timestamp'] < $cache_expiration);
 
-        $params = [
-            'creatorAddress' => $creatorAddress,
-            'onlyVerified' => false,
-            'page' => 1,
-            'limit' => 1000,
-            'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
-        ];
-        $response = callAPI('getAssetsByCreator', $params, 'POST');
-        @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
+        if ($cache_valid) {
+            $formatted_data = $cache_data[$creatorAddress]['data'];
+            log_message("nft_creator: Loaded from cache for creator=$creatorAddress", 'nft_creator_log.txt', 'INFO');
+        } else {
+            $params = [
+                'creatorAddress' => $creatorAddress,
+                'onlyVerified' => false,
+                'page' => 1,
+                'limit' => 1000,
+                'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
+            ];
+            $response = callAPI('getAssetsByCreator', $params, 'POST');
+            @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
 
-        if (isset($response['error'])) {
-            throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
-        }
-
-        $items = $response['items'] ?? ($response['result']['items'] ?? []);
-        if (empty($items)) {
-            throw new Exception('No NFTs or Collections found for this creator');
-        }
-
-        @file_put_contents($cache_dir . 'api_item_debug.json', json_encode($items[0] ?? [], JSON_PRETTY_PRINT));
-
-        $formatted_data = [];
-        foreach ($items as $asset) {
-            $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
-            $collection_value = 'N/A';
-            if (!$is_collection && isset($asset['grouping'][0]['group_value'])) {
-                $collection_value = $asset['grouping'][0]['group_value'];
-            } elseif ($is_collection) {
-                $collection_value = 'Self (Collection)';
+            if (isset($response['error'])) {
+                throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
             }
 
-            $formatted_data[] = [
-                'asset_id' => $asset['id'] ?? 'N/A',
-                'name' => $asset['content']['metadata']['name'] ?? ($asset['name'] ?? 'Unnamed NFT'),
-                'image' => $asset['content']['links']['image'] ?? ($asset['image'] ?? ''),
-                'collection' => $collection_value,
-                'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : ($asset['royalty']['basis_points'] ?? 'N/A'),
-                'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
-            ];
-        }
+            $items = $response['items'] ?? ($response['result']['items'] ?? []);
+            if (empty($items)) {
+                throw new Exception('No NFTs or Collections found for this creator');
+            }
 
-        $cache_data[$creatorAddress] = ['data' => $formatted_data, 'timestamp' => time()];
-        $fp = @fopen($cache_file, 'c');
-        if ($fp && flock($fp, LOCK_EX)) {
-            @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
-            flock($fp, LOCK_UN);
-            fclose($fp);
+            $formatted_data = [];
+            foreach ($items as $asset) {
+                $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
+                $collection_value = 'N/A';
+                if (!$is_collection && isset($asset['grouping'][0]['group_value'])) {
+                    $collection_value = $asset['grouping'][0]['group_value'];
+                } elseif ($is_collection) {
+                    $collection_value = 'Self (Collection)';
+                }
+
+                $formatted_data[] = [
+                    'asset_id' => $asset['id'] ?? 'N/A',
+                    'name' => $asset['content']['metadata']['name'] ?? ($asset['name'] ?? 'Unnamed NFT'),
+                    'image' => $asset['content']['links']['image'] ?? ($asset['image'] ?? ''),
+                    'collection' => $collection_value,
+                    'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : ($asset['royalty']['basis_points'] ?? 'N/A'),
+                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
+                ];
+            }
+
+            $cache_data[$creatorAddress] = ['data' => $formatted_data, 'timestamp' => time()];
+            $fp = @fopen($cache_file, 'c');
+            if ($fp && flock($fp, LOCK_EX)) {
+                @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+                flock($fp, LOCK_UN);
+                fclose($fp);
+            }
+            log_message("nft_creator: Cache updated for creator=$creatorAddress", 'nft_creator_log.txt', 'INFO');
         }
 
         ob_start();
@@ -176,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                     <?php endforeach; ?>
                 </div>
             </div>
-            <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', time()) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
+            <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$creatorAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
         </div>
         <?php
         echo ob_get_clean();
