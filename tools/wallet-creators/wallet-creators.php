@@ -28,20 +28,20 @@ $rate_limit_exceeded = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress'])) {
     $ip = $_SERVER['REMOTE_ADDR'];
-    $rate_limit_key = "rate_limit_nft_creator:$ip";
+    $rate_limit_key = "rate_limit_wallet_creators:$ip";
     $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
     $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
 
     if (time() - $rate_limit_time > 60) {
         $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-        log_message("nft_creator: Reset rate limit for IP=$ip, count=1", 'wallet_creators_log.txt', 'INFO');
+        log_message("wallet_creators: Reset rate limit for IP=$ip, count=1", 'wallet_creators_log.txt', 'INFO');
     } elseif ($rate_limit_count >= 5) {
         $rate_limit_exceeded = true;
-        log_message("nft_creator: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_creators_log.txt', 'ERROR');
+        log_message("wallet_creators: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_creators_log.txt', 'ERROR');
         echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
     } else {
         $_SESSION[$rate_limit_key]['count']++;
-        log_message("nft_creator: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_creators_log.txt', 'INFO');
+        log_message("wallet_creators: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_creators_log.txt', 'INFO');
     }
 }
 
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
 
         if ($cache_valid) {
             $formatted_data = $cache_data[$creatorAddress]['data'];
-            log_message("nft_creator: Loaded from cache for creator=$creatorAddress", 'wallet_creators_log.txt', 'INFO');
+            log_message("wallet_creators: Loaded from cache for creator=$creatorAddress", 'wallet_creators_log.txt', 'INFO');
         } else {
             $params = [
                 'creatorAddress' => $creatorAddress,
@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                 flock($fp, LOCK_UN);
                 fclose($fp);
             }
-            log_message("nft_creator: Cache updated for creator=$creatorAddress", 'wallet_creators_log.txt', 'INFO');
+            log_message("wallet_creators: Cache updated for creator=$creatorAddress", 'wallet_creators_log.txt', 'INFO');
         }
 
         ob_start();
