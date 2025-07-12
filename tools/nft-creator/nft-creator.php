@@ -34,7 +34,10 @@ if (!file_exists($api_helper_path)) {
     exit;
 }
 require_once $api_helper_path;
-?><div class="nft-creator">
+?>
+
+<link rel="stylesheet" href="/tools/nft-creator/nft-creator.css">
+<div class="nft-creator">
 <?php
 $rate_limit_exceeded = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress'])) {
