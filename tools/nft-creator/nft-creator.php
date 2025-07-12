@@ -91,8 +91,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
 
             $items = $response['items'] ?? ($response['result']['items'] ?? []);
             if (empty($items)) {
-                throw new Exception('No NFTs or Collections found for this creator');
+                echo "<div class='result-empty'><p>This wallet has not created any NFTs or Tokens yet.</p></div>";
+                log_message("nft_creator: No NFTs or Tokens found for $creatorAddress", 'nft_creator_log.txt', 'INFO');
+                return;
             }
+
 
             $formatted_data = [];
             foreach ($items as $asset) {
