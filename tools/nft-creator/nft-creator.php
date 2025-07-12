@@ -34,10 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress'])) {
 
     if (time() - $rate_limit_time > 60) {
         $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-        log_message("nft_creator: Reset rate limit for IP=$ip, count=1", 'nft_creator_log.txt', 'INFO');
+        log_message("nft_creator: Reset rate limit for IP=$ip", 'nft_creator_log.txt', 'INFO');
     } elseif ($rate_limit_count >= 5) {
         $rate_limit_exceeded = true;
-        log_message("nft_creator: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'nft_creator_log.txt', 'ERROR');
+        log_message("nft_creator: Rate limit exceeded for IP=$ip", 'nft_creator_log.txt', 'ERROR');
         echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
     } else {
         $_SESSION[$rate_limit_key]['count']++;
@@ -116,7 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                     'image' => $asset['content']['links']['image'] ?? ($asset['image'] ?? ''),
                     'collection' => $collection_value,
                     'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : ($asset['royalty']['basis_points'] ?? 'N/A'),
-                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
+                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No',
+                    'token_standard' => $asset['token_standard'] ?? '',
                 ];
             }
 
@@ -137,6 +138,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
             <div class="result-summary">
                 <div class="nft-grid">
                     <?php foreach ($formatted_data as $asset): ?>
+                        <?php
+                            $category = 'NFT';
+                            if (isset($asset['token_standard']) && strtolower($asset['token_standard']) === 'fungible') {
+                                $category = 'Token';
+                            }
+                        ?>
                         <div class="result-card">
                             <div class="nft-image">
                                 <?php if ($asset['image']): ?>
@@ -147,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                             </div>
                             <div class="nft-info-table">
                                 <table>
+                                    <tr><th>Category</th><td><?php echo $category; ?></td></tr>
                                     <tr><th>Asset ID</th>
                                         <td>
                                             <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
