@@ -33,7 +33,7 @@ if (!in_array($tool, $valid_tools)) {
 $tool_files = [
     'nft-info' => 'nft-info/nft-info.php',
     'nft-holders' => 'nft-holders/nft-holders.php',
-    'nft-creator' => 'nft-creator/nft-creator.php',
+    'nft-creator' => 'wallet-creators/wallet-creators.php',
     'wallet-analysis' => 'wallet-analysis/wallet-analysis.php'
 ];
 
