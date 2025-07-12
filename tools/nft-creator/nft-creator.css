@@ -1,3 +1,9 @@
+/* ============================================================================
+ * File: tools/nft-creator/nft-creator.css
+ * Description: Styling for NFT Creator
+ * Created by: Vina Network
+ * ========================================================================== */
+
 /* NFT Creator */
 .nft-creator-result {
     margin-top: 2rem;
@@ -27,29 +33,13 @@
     border-collapse: collapse;
 }
 
-.nft-info-table th {
+.nft-info-table th,
+.nft-info-table td {
     text-align: left;
     color: #666;
     width: 30%;
     padding: 0.3rem 0;
-}
-
-.nft-info-table td {
-    color: #222;
-    padding: 0.3rem 0;
-    word-break: break-word;
-}
-
-.copy-icon {
-    margin-left: 0.5rem;
-    cursor: pointer;
-    color: #888;
-    font-size: 0.9rem;
-    transition: color 0.2s;
-}
-
-.copy-icon:hover {
-    color: #333;
+    border-bottom: 1px solid #ddd;
 }
 
 .result-empty {
