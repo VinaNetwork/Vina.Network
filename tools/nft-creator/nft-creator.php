@@ -102,30 +102,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
 
             $formatted_data = [];
             foreach ($items as $asset) {
-                $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
+                // Phân biệt Token vs NFT
+                $has_grouping = !empty($asset['grouping']) && isset($asset['grouping'][0]['group_value']);
+                $has_image = !empty($asset['content']['links']['image']) || !empty($asset['image']);
+                $has_name = !empty($asset['content']['metadata']['name']) || !empty($asset['name']);
+                $is_token = !$has_grouping && !$has_image && !$has_name;
+                $category = $is_token ? 'Token' : 'NFT';
+
                 $collection_value = 'N/A';
-                if (!$is_collection && isset($asset['grouping'][0]['group_value'])) {
+                if (!$is_token && $has_grouping) {
                     $collection_value = $asset['grouping'][0]['group_value'];
-                } elseif ($is_collection) {
+                } elseif (!$is_token) {
                     $collection_value = 'Self (Collection)';
                 }
 
-                $category = 'NFT';
-                if (
-                    (isset($asset['token_standard']) && strtolower($asset['token_standard']) === 'fungible') ||
-                    (isset($asset['interface']) && strtolower($asset['interface']) === 'fungible')
-                ) {
-                    $category = 'Token';
-                }
-
                 $formatted_data[] = [
+                    'category' => $category,
                     'asset_id' => $asset['id'] ?? 'N/A',
                     'name' => $asset['content']['metadata']['name'] ?? ($asset['name'] ?? 'Unnamed NFT'),
                     'image' => $asset['content']['links']['image'] ?? ($asset['image'] ?? ''),
                     'collection' => $collection_value,
                     'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : ($asset['royalty']['basis_points'] ?? 'N/A'),
-                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No',
-                    'category' => $category
+                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
                 ];
             }
 
