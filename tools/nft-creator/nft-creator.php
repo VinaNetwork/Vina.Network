@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress'])) {
 if (!$rate_limit_exceeded): ?>
     <div class="tools-form">
         <h2>Check NFT Creator</h2>
-        <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Collections created by this address.</p>
+        <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Tokens created by this address.</p>
         <form id="nftCreatorForm" method="POST" action="" data-tool="nft-creator">
             <input type="hidden" name="csrf_token" value="<?php echo function_exists('generate_csrf_token') ? generate_csrf_token() : ''; ?>">
             <div class="input-wrapper">
@@ -190,6 +190,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
 
 <div class="tools-about">
     <h2>About Check NFT Creator</h2>
-    <p>The Check NFT Creator tool allows you to view all NFTs and Collections created by a specific Solana wallet address.</p>
+    <p>The Check NFT Creator tool allows you to view all NFTs and Tokens created by a specific Solana wallet address, including both collections and fungible tokens.</p>
 </div>
 </div>
