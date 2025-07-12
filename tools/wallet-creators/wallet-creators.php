@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                                     <p>No image available</p>
                                 <?php endif; ?>
                             </div>
-                            <div class="wallet-info-table">
+                            <div class="result-table">
                                 <table>
                                     <tr><th>Category</th>
                                         <td><?php echo htmlspecialchars($asset['category']); ?></td></tr>
