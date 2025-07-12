@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: tools/nft-creator/nft-creator.php
+// File: tools/wallet-creators/wallet-creators.php
 // Description: Check NFTs and Tokens created by a Solana wallet address.
 // Created by: Vina Network
 // ============================================================================
@@ -21,7 +21,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) 
 require_once dirname(__DIR__) . '/tools-api.php';
 ?>
 
-<link rel="stylesheet" href="/tools/nft-creator/nft-creator.css">
+<link rel="stylesheet" href="/tools/wallet-creators/wallet-creators.css">
 <div class="nft-creator">
 <?php
 $rate_limit_exceeded = false;
