@@ -63,7 +63,7 @@ $tools = [
         'icon' => 'fas fa-user'
     ],
     'nft-creator' => [
-        'file' => __DIR__ . '/nft-creator/nft-creator.php',
+        'file' => __DIR__ . '/wallet-creators/wallet-creators.php',
         'icon' => 'fa-solid fa-paint-brush'
     ],
     'wallet-analysis' => [
