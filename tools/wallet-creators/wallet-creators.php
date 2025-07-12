@@ -22,7 +22,7 @@ require_once dirname(__DIR__) . '/tools-api.php';
 ?>
 
 <link rel="stylesheet" href="/tools/wallet-creators/wallet-creators.css">
-<div class="nft-creator">
+<div class="wallet-creators">
 <?php
 $rate_limit_exceeded = false;
 
@@ -137,20 +137,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
 
         ob_start();
         ?>
-        <div class="tools-result nft-creator-result">
+        <div class="tools-result wallet-creators-result">
             <h2>NFTs and Tokens by Creator</h2>
             <div class="result-summary">
-                <div class="nft-grid">
+                <div class="result-grid">
                     <?php foreach ($formatted_data as $asset): ?>
                         <div class="result-card">
-                            <div class="nft-image">
+                            <div class="result-image">
                                 <?php if ($asset['image']): ?>
                                     <img src="<?php echo htmlspecialchars($asset['image']); ?>" alt="NFT Image">
                                 <?php else: ?>
                                     <p>No image available</p>
                                 <?php endif; ?>
                             </div>
-                            <div class="nft-info-table">
+                            <div class="wallet-info-table">
                                 <table>
                                     <tr><th>Category</th>
                                         <td><?php echo htmlspecialchars($asset['category']); ?></td></tr>
