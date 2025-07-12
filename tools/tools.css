@@ -208,6 +208,19 @@ h1, h2, h3 {text-align: center;}
     border: 1px solid #ef9a9a;
 }
 
+/* Copy icon */
+.copy-icon {
+    margin-left: 0.5rem;
+    cursor: pointer;
+    color: #888;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.copy-icon:hover {
+    color: #333;
+}
+
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
     .tools {margin-top: 64px;}
