@@ -1,0 +1,65 @@
+/* NFT Creator */
+.tools-result.nft-creator-result {
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 1rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.nft-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.nft-image {
+    width: 100%;
+    height: 250px;
+    background-color: #eaeaea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.nft-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nft-info-table {
+    padding: 1rem;
+}
+
+.nft-info-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.nft-info-table th {
+    text-align: left;
+    color: #666;
+    width: 30%;
+    padding: 0.3rem 0;
+}
+
+.nft-info-table td {
+    color: #222;
+    padding: 0.3rem 0;
+    word-break: break-word;
+}
+
+.copy-icon {
+    margin-left: 0.5rem;
+    cursor: pointer;
+    color: #888;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.copy-icon:hover {
+    color: #333;
+}
