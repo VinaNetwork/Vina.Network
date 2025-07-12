@@ -61,7 +61,7 @@ if (!$rate_limit_exceeded): ?>
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && !$rate_limit_exceeded) {
     try {
-        if (!isset($_POST['csrf_token']) || !function_exists('validate_csrf_token') || !validate_csrf_token($_POST['csrf_token'])) {
+        if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
             throw new Exception('Invalid CSRF token');
         }
 
@@ -85,8 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                 'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
             ];
             $response = callAPI('getAssetsByCreator', $params, 'POST');
-            @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
-
             if (isset($response['error'])) {
                 throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
             }
@@ -99,39 +97,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
             $formatted_data = [];
             foreach ($items as $asset) {
                 $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
-                $collection_value = 'N/A';
-                if (!$is_collection && isset($asset['grouping'][0]['group_value'])) {
-                    $collection_value = $asset['grouping'][0]['group_value'];
-                } elseif ($is_collection) {
-                    $collection_value = 'Self (Collection)';
+                $collection_value = $is_collection ? 'Self (Collection)' : ($asset['grouping'][0]['group_value'] ?? 'N/A');
+
+                // Detect token: nếu không có collection, không có grouping, không verified, và creator là chính nó
+                $category = 'NFT';
+                $creators = $asset['creators'] ?? [];
+                $main_creator = $creators[0]['address'] ?? '';
+                $is_token_like = $is_collection && !$creators[0]['verified'] && $main_creator === $creatorAddress;
+                if ($is_token_like) {
+                    $category = 'Token';
                 }
 
-                $asset_id = $asset['id'] ?? '';
-                $royalty_percent = $asset['royalty']['percent'] ?? 0;
-                $royalty_basis = $asset['royalty']['basis_points'] ?? 0;
-                $is_verified = $asset['creators'][0]['verified'] ?? false;
-
-                // =========================
-                // Category Logic
-                // =========================
-                $category = (
-                    ($collection_value === $asset_id || $collection_value === 'Self (Collection')) &&
-                    !$is_verified &&
-                    (
-                        (isset($asset['royalty']['percent']) && floatval($royalty_percent) == 0) ||
-                        (isset($asset['royalty']['basis_points']) && intval($royalty_basis) == 0) ||
-                        (!isset($asset['royalty']))
-                    )
-                ) ? 'Token' : 'NFT';
+                $royalty_percent = isset($asset['royalty']['percent']) ? $asset['royalty']['percent'] : 0;
+                $royalty_basis = isset($asset['royalty']['basis_points']) ? $asset['royalty']['basis_points'] : 0;
 
                 $formatted_data[] = [
                     'category' => $category,
-                    'asset_id' => $asset_id,
+                    'asset_id' => $asset['id'] ?? 'N/A',
                     'name' => $asset['content']['metadata']['name'] ?? ($asset['name'] ?? 'Unnamed NFT'),
                     'image' => $asset['content']['links']['image'] ?? ($asset['image'] ?? ''),
                     'collection' => $collection_value,
-                    'royalty' => isset($asset['royalty']['percent']) ? number_format($royalty_percent * 100, 2) . '%' : ($royalty_basis ?? 'N/A'),
-                    'verified' => $is_verified ? 'Yes' : 'No'
+                    'royalty' => $royalty_percent ? number_format(floatval($royalty_percent) * 100, 2) . '%' : ($royalty_basis ? $royalty_basis : '0.00%'),
+                    'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
                 ];
             }
 
@@ -161,18 +148,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                             </div>
                             <div class="nft-info-table">
                                 <table>
-                                    <tr><th>Category</th>
-                                        <td><?php echo htmlspecialchars($asset['category']); ?></td>
-                                    </tr>
+                                    <tr><th>Category</th><td><?php echo htmlspecialchars($asset['category']); ?></td></tr>
                                     <tr><th>Asset ID</th>
                                         <td>
                                             <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
                                             <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['asset_id']); ?>"></i>
                                         </td>
                                     </tr>
-                                    <tr><th>Name</th>
-                                        <td><?php echo htmlspecialchars($asset['name']); ?></td>
-                                    </tr>
+                                    <tr><th>Name</th><td><?php echo htmlspecialchars($asset['name']); ?></td></tr>
                                     <tr><th>Collection</th>
                                         <td>
                                             <?php if ($asset['collection'] === 'Self (Collection)'): ?>
@@ -185,19 +168,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                                             <?php endif; ?>
                                         </td>
                                     </tr>
-                                    <tr><th>Royalty</th>
-                                        <td><?php echo htmlspecialchars($asset['royalty']); ?></td>
-                                    </tr>
-                                    <tr><th>Verified</th>
-                                        <td><?php echo htmlspecialchars($asset['verified']); ?></td>
-                                    </tr>
+                                    <tr><th>Royalty</th><td><?php echo htmlspecialchars($asset['royalty']); ?></td></tr>
+                                    <tr><th>Verified</th><td><?php echo htmlspecialchars($asset['verified']); ?></td></tr>
                                 </table>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
-            <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$creatorAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
+            <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$creatorAddress]['timestamp']); ?> UTC+0. Data will be updated every 3 hours.</p>
         </div>
         <?php
         echo ob_get_clean();
