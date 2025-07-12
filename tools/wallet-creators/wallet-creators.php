@@ -49,7 +49,7 @@ if (!$rate_limit_exceeded): ?>
     <div class="tools-form">
         <h2>Check Wallet Creators</h2>
         <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Tokens created by this address.</p>
-        <form id="nftCreatorForm" method="POST" action="" data-tool="nft-creator">
+        <form id="nftCreatorForm" method="POST" action="" data-tool="wallet-creators">
             <input type="hidden" name="csrf_token" value="<?php echo function_exists('generate_csrf_token') ? generate_csrf_token() : ''; ?>">
             <div class="input-wrapper">
                 <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo htmlspecialchars($_POST['creatorAddress'] ?? ''); ?>">
