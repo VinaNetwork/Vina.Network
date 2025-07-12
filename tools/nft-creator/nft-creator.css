@@ -63,3 +63,12 @@
 .copy-icon:hover {
     color: #333;
 }
+
+.result-empty {
+  background: #f0f0f0;
+  border-left: 4px solid #666;
+  padding: 1em;
+  margin-top: 1.5em;
+  color: #333;
+  font-style: italic;
+}
