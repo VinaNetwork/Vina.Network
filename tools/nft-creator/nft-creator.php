@@ -1,55 +1,59 @@
 <?php
 // ============================================================================
 // File: tools/nft-creator/nft-creator.php
-// Description: Check NFTs and Collections created by a Solana wallet address.
+// Description: Check all NFTs or Collections created by a Solana wallet address
 // Created by: Vina Network
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
-require_once dirname(__DIR__) . '/bootstrap.php';
-
-$cache_dir = NFT_CREATOR_PATH . 'cache/';
-$cache_file = $cache_dir . 'nft_creator_cache.json';
-
-if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt')) {
-    echo '<div class="result-error"><p>Cache setup failed</p></div>';
+// Load bootstrap
+$bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
+if (!file_exists($bootstrap_path)) {
+    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
+require_once $bootstrap_path;
 
+// Load API helper
 require_once dirname(__DIR__) . '/tools-api.php';
+
+$cache_dir = __DIR__ . '/cache/';
+$cache_file = $cache_dir . 'nft_creator_cache.json';
+ensure_directory_and_file($cache_dir, $cache_file, 'nft_creator_log.txt');
+
 ?>
 
-<link rel="stylesheet" href="/tools/nft-creator/nft-creator.css">
-<div class="nft-creator">
+<link rel="stylesheet" href="/tools/nft-info/nft-info.css">
+<div class="nft-info">
+
 <?php
 $rate_limit_exceeded = false;
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress'])) {
     $ip = $_SERVER['REMOTE_ADDR'];
-    $rate_limit_key = "rate_limit_nft_creator:$ip";
-    $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
-    $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
+    $key = "rate_limit_creator:$ip";
+    $rate_count = $_SESSION[$key]['count'] ?? 0;
+    $rate_time = $_SESSION[$key]['time'] ?? 0;
 
-    if (time() - $rate_limit_time > 60) {
-        $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-    } elseif ($rate_limit_count >= 5) {
+    if (time() - $rate_time > 60) {
+        $_SESSION[$key] = ['count' => 1, 'time' => time()];
+    } elseif ($rate_count >= 5) {
         $rate_limit_exceeded = true;
-        echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+        echo "<div class='result-error'><p>Rate limit exceeded. Try again in a minute.</p></div>";
     } else {
-        $_SESSION[$rate_limit_key]['count']++;
+        $_SESSION[$key]['count']++;
     }
 }
 
 if (!$rate_limit_exceeded): ?>
     <div class="tools-form">
-        <h2>Check NFT Creator</h2>
-        <p>Enter the <strong>Solana Wallet Address</strong> to view all NFTs and Collections created by this address.</p>
-        <form id="nftCreatorForm" method="POST" action="" data-tool="nft-creator">
-            <input type="hidden" name="csrf_token" value="<?php echo function_exists('generate_csrf_token') ? generate_csrf_token() : ''; ?>">
+        <h2>Check NFTs Created by Wallet</h2>
+        <p>Enter a <strong>Solana wallet address</strong> to view NFTs or collections created by that wallet (uses Helius API).</p>
+        <form method="POST" action="" data-tool="nft-creator">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="input-wrapper">
-                <input type="text" name="creatorAddress" id="creatorAddress" placeholder="Enter Solana Creator Address" required value="<?php echo htmlspecialchars($_POST['creatorAddress'] ?? ''); ?>">
+                <input type="text" name="creatorAddress" placeholder="Enter Creator Wallet Address" required value="<?php echo isset($_POST['creatorAddress']) ? htmlspecialchars($_POST['creatorAddress']) : ''; ?>">
                 <span class="clear-input" title="Clear input">×</span>
             </div>
             <button type="submit" class="cta-button">Check</button>
@@ -61,131 +65,91 @@ if (!$rate_limit_exceeded): ?>
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && !$rate_limit_exceeded) {
     try {
-        if (isset($_POST['csrf_token']) && function_exists('validate_csrf_token') && !validate_csrf_token($_POST['csrf_token'])) {
+        if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
             throw new Exception('Invalid CSRF token');
         }
 
         $creatorAddress = preg_replace('/\s+/', '', trim($_POST['creatorAddress']));
         if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $creatorAddress)) {
-            throw new Exception('Invalid Creator Address format');
+            throw new Exception('Invalid Solana wallet address');
         }
 
-        $cache_data = @json_decode(@file_get_contents($cache_file), true) ?? [];
-        unset($cache_data[$creatorAddress]);
-        @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+        $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
+        $cache_expiration = 3 * 3600;
+        $cache_valid = isset($cache_data[$creatorAddress]) && (time() - $cache_data[$creatorAddress]['timestamp'] < $cache_expiration);
 
-        $params = [
-            'creatorAddress' => $creatorAddress,
-            'onlyVerified' => false,
-            'page' => 1,
-            'limit' => 1000,
-            'sortBy' => ['sortBy' => 'created', 'sortDirection' => 'asc']
-        ];
-        $response = callAPI('getAssetsByCreator', $params, 'POST');
-        @file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT));
+        if (!$cache_valid) {
+            $params = [
+                "creatorAddress" => $creatorAddress,
+                "onlyVerified" => true,
+                "page" => 1,
+                "limit" => 1000
+            ];
+            $response = callAPI('getAssetsByCreator', $params, 'POST');
 
-        if (isset($response['error'])) {
-            throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
-        }
+            // Save raw response for debugging
+            file_put_contents($cache_dir . 'api_response_debug.json', json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
-        $items = $response['items'] ?? ($response['result']['items'] ?? []);
-        if (empty($items)) {
-            throw new Exception('No NFTs or Collections found for this creator');
-        }
-
-        @file_put_contents($cache_dir . 'api_item_debug.json', json_encode($items[0] ?? [], JSON_PRETTY_PRINT));
-
-        $formatted_data = [];
-        foreach ($items as $asset) {
-            $is_collection = empty($asset['grouping']) || !isset($asset['grouping'][0]['group_value']);
-            $collection_value = 'N/A';
-            if (!$is_collection && isset($asset['grouping'][0]['group_value'])) {
-                $collection_value = $asset['grouping'][0]['group_value'];
-            } elseif ($is_collection) {
-                $collection_value = 'Self (Collection)';
+            $items = $response['result']['items'] ?? [];
+            if (empty($items)) {
+                throw new Exception('No NFTs or Collections found for this creator');
             }
 
-            $formatted_data[] = [
-                'asset_id' => $asset['id'] ?? 'N/A',
-                'name' => $asset['content']['metadata']['name'] ?? ($asset['name'] ?? 'Unnamed NFT'),
-                'image' => $asset['content']['links']['image'] ?? ($asset['image'] ?? ''),
-                'collection' => $collection_value,
-                'royalty' => isset($asset['royalty']['percent']) ? number_format($asset['royalty']['percent'] * 100, 2) . '%' : ($asset['royalty']['basis_points'] ?? 'N/A'),
-                'verified' => isset($asset['creators'][0]['verified']) && $asset['creators'][0]['verified'] ? 'Yes' : 'No'
+            $formatted = [];
+            foreach ($items as $item) {
+                $formatted[] = [
+                    'id' => $item['id'] ?? 'N/A',
+                    'name' => $item['content']['metadata']['name'] ?? 'Unnamed NFT',
+                    'image' => $item['content']['links']['image'] ?? '',
+                    'collection' => $item['grouping'][0]['group_value'] ?? 'N/A',
+                    'royalty' => isset($item['royalty']['basis_points']) ? round($item['royalty']['basis_points'] / 100, 2) . '%' : 'N/A',
+                    'verified' => !empty($item['creators'][0]['verified']) ? 'Yes' : 'No'
+                ];
+            }
+
+            $cache_data[$creatorAddress] = [
+                'data' => $formatted,
+                'timestamp' => time()
             ];
+            file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+        } else {
+            $formatted = $cache_data[$creatorAddress]['data'];
         }
 
-        $cache_data[$creatorAddress] = ['data' => $formatted_data, 'timestamp' => time()];
-        $fp = @fopen($cache_file, 'c');
-        if ($fp && flock($fp, LOCK_EX)) {
-            @file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
-            flock($fp, LOCK_UN);
-            fclose($fp);
+        if (empty($formatted)) {
+            echo "<div class='result-error'><p>No data found for this wallet.</p></div>";
+        } else {
+            echo "<div class='tools-result'>";
+            echo "<h2>Assets Created by Wallet</h2>";
+            foreach ($formatted as $item) {
+                echo "<div class='result-card'>";
+                echo "<div class='nft-image'>";
+                if (!empty($item['image'])) {
+                    echo "<img src='" . htmlspecialchars($item['image']) . "' alt='NFT Image'>";
+                } else {
+                    echo "<p>No image available</p>";
+                }
+                echo "</div>";
+                echo "<div class='nft-info-table'><table>";
+                echo "<tr><th>Asset ID:</th><td>" . substr($item['id'], 0, 4) . "..." . substr($item['id'], -4) . "</td></tr>";
+                echo "<tr><th>Name:</th><td>" . htmlspecialchars($item['name']) . "</td></tr>";
+                echo "<tr><th>Collection:</th><td>" . htmlspecialchars($item['collection']) . "</td></tr>";
+                echo "<tr><th>Royalty:</th><td>" . $item['royalty'] . "</td></tr>";
+                echo "<tr><th>Verified:</th><td>" . $item['verified'] . "</td></tr>";
+                echo "</table></div></div>";
+            }
+
+            echo "<p class='cache-timestamp'>Last updated: " . date('d M Y, H:i', $cache_data[$creatorAddress]['timestamp']) . " UTC+0. Data refreshes every 3 hours.</p>";
+            echo "</div>";
         }
-
-        ob_start();
-        ?>
-        <div class="tools-result nft-creator-result">
-            <h2>NFTs and Collections by Creator</h2>
-            <div class="result-summary">
-                <div class="nft-grid">
-                    <?php foreach ($formatted_data as $asset): ?>
-                        <div class="result-card">
-                            <div class="nft-image">
-                                <?php if ($asset['image']): ?>
-                                    <img src="<?php echo htmlspecialchars($asset['image']); ?>" alt="NFT Image">
-                                <?php else: ?>
-                                    <p>No image available</p>
-                                <?php endif; ?>
-                            </div>
-                            <div class="nft-info-table">
-                                <table>
-                                    <tr><th>Asset ID</th>
-                                        <td>
-                                            <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
-                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['asset_id']); ?>"></i>
-                                        </td>
-                                    </tr>
-                                    <tr><th>Name</th>
-                                        <td><?php echo htmlspecialchars($asset['name']); ?></td>
-                                    </tr>
-                                    <tr><th>Collection</th>
-                                        <td>
-                                            <?php if ($asset['collection'] === 'Self (Collection)'): ?>
-                                                <span>Self (Collection)</span>
-                                            <?php elseif (preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $asset['collection'])): ?>
-                                                <span><?php echo substr($asset['collection'], 0, 4) . '...' . substr($asset['collection'], -4); ?></span>
-                                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['collection']); ?>"></i>
-                                            <?php else: ?>
-                                                <span>N/A</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                    <tr><th>Royalty</th>
-                                        <td><?php echo htmlspecialchars($asset['royalty']); ?></td>
-                                    </tr>
-                                    <tr><th>Verified</th>
-                                        <td><?php echo htmlspecialchars($asset['verified']); ?></td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', time()) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
-        </div>
-        <?php
-        echo ob_get_clean();
-
     } catch (Exception $e) {
         echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
     }
 }
 ?>
 
-<div class="tools-about">
-    <h2>About Check NFT Creator</h2>
-    <p>The Check NFT Creator tool allows you to view all NFTs and Collections created by a specific Solana wallet address.</p>
-</div>
+    <div class="tools-about">
+        <h2>About NFT Creator Lookup</h2>
+        <p>This tool shows all NFTs and collections created by a Solana wallet. Useful for creators, collectors, or on-chain analysts.</p>
+    </div>
 </div>
