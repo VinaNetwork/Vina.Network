@@ -139,45 +139,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
         <div class="tools-result nft-creator-result">
             <h2>NFTs and Collections by Creator</h2>
             <div class="result-summary">
-                <div class="nft-grid">
-                    <?php foreach ($formatted_data as $asset): ?>
-                        <div class="result-card">
-                            <div class="nft-image">
-                                <?php if ($asset['image']): ?>
-                                    <img src="<?php echo htmlspecialchars($asset['image']); ?>" alt="NFT Image">
-                                <?php else: ?>
-                                    <p>No image available</p>
-                                <?php endif; ?>
-                            </div>
-                            <div class="nft-info-table">
-                                <table>
-                                    <tr><th>Category</th><td><?php echo htmlspecialchars($asset['category']); ?></td></tr>
-                                    <tr><th>Asset ID</th>
-                                        <td>
-                                            <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
-                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['asset_id']); ?>"></i>
-                                        </td>
-                                    </tr>
-                                    <tr><th>Name</th><td><?php echo htmlspecialchars($asset['name']); ?></td></tr>
-                                    <tr><th>Collection</th>
-                                        <td>
-                                            <?php if ($asset['collection'] === 'Self (Collection)'): ?>
-                                                <span>Self (Collection)</span>
-                                            <?php elseif (preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $asset['collection'])): ?>
-                                                <span><?php echo substr($asset['collection'], 0, 4) . '...' . substr($asset['collection'], -4); ?></span>
-                                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['collection']); ?>"></i>
-                                            <?php else: ?>
-                                                <span>N/A</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                    <tr><th>Royalty</th><td><?php echo htmlspecialchars($asset['royalty']); ?></td></tr>
-                                    <tr><th>Verified</th><td><?php echo htmlspecialchars($asset['verified']); ?></td></tr>
-                                </table>
-                            </div>
+                <?php foreach ($formatted_data as $asset): ?>
+                    <div class="result-card">
+                        <div class="nft-image">
+                            <?php if ($asset['image']): ?>
+                                <img src="<?php echo htmlspecialchars($asset['image']); ?>" alt="NFT Image">
+                            <?php else: ?>
+                                <p>No image available</p>
+                            <?php endif; ?>
                         </div>
-                    <?php endforeach; ?>
-                </div>
+                        <div class="nft-info-table">
+                            <table>
+                                <tr><th>Category</th><td><?php echo htmlspecialchars($asset['category']); ?></td></tr>
+                                <tr><th>Asset ID</th>
+                                    <td>
+                                        <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
+                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['asset_id']); ?>"></i>
+                                    </td>
+                                </tr>
+                                <tr><th>Name</th><td><?php echo htmlspecialchars($asset['name']); ?></td></tr>
+                                <tr><th>Collection</th>
+                                    <td>
+                                        <?php if ($asset['collection'] === 'Self (Collection)'): ?>
+                                            <span>Self (Collection)</span>
+                                        <?php elseif (preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $asset['collection'])): ?>
+                                            <span><?php echo substr($asset['collection'], 0, 4) . '...' . substr($asset['collection'], -4); ?></span>
+                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['collection']); ?>"></i>
+                                        <?php else: ?>
+                                            <span>N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <tr><th>Royalty</th><td><?php echo htmlspecialchars($asset['royalty']); ?></td></tr>
+                                <tr><th>Verified</th><td><?php echo htmlspecialchars($asset['verified']); ?></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
             <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$creatorAddress]['timestamp']); ?> UTC+0. Data will be updated every 3 hours.</p>
         </div>
