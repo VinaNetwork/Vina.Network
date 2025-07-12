@@ -64,7 +64,7 @@ if (!$rate_limit_exceeded): ?>
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && !$rate_limit_exceeded) {
     try {
-        if (isset($_POST['csrf_token']) && function_exists('validate_csrf_token') && !validate_csrf_token($_POST['csrf_token'])) {
+        if (!isset($_POST['csrf_token']) || !function_exists('validate_csrf_token') || !validate_csrf_token($_POST['csrf_token'])) {
             throw new Exception('Invalid CSRF token');
         }
 
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
         }
 
         $cache_data = @json_decode(@file_get_contents($cache_file), true) ?? [];
-        $cache_expiration = 3 * 3600; // 3 hours
+        $cache_expiration = 3 * 3600;
         $cache_valid = isset($cache_data[$creatorAddress]) && (time() - $cache_data[$creatorAddress]['timestamp'] < $cache_expiration);
 
         if ($cache_valid) {
