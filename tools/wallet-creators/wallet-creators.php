@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
-$cache_dir = NFT_CREATOR_PATH . 'cache/';
+$cache_dir = WALLET_CREATORS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_creators_cache.json';
 
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'wallet_creators_log.txt')) {
