@@ -84,18 +84,6 @@
     background: #f9fbfd;
 }
 
-.copy-icon {
-    cursor: pointer;
-    font-size: 20px;
-    color: #007bff;
-    transition: color 0.3s ease;
-    pointer-events: auto;
-    user-select: none;
-    display: inline-block;
-}
-.copy-icon:hover {color: #0056b3;}
-.copy-icon.copied {color: #28a745;}
-
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
     /* Wallet Analysis Result */
@@ -110,5 +98,4 @@
         font-size: 16px;
         gap: 6px;
     } 
-    .copy-icon {font-size: 16px;}
 }
