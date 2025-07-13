@@ -210,16 +210,16 @@ h1, h2, h3 {text-align: center;}
 
 /* Copy icon */
 .copy-icon {
-    margin-left: 0.5rem;
     cursor: pointer;
-    color: #888;
-    font-size: 0.9rem;
-    transition: color 0.2s;
+    font-size: 20px;
+    color: #007bff;
+    transition: color 0.3s ease;
+    pointer-events: auto;
+    user-select: none;
+    display: inline-block;
 }
-
-.copy-icon:hover {
-    color: #1890ff;
-}
+.copy-icon:hover {color: #0056b3;}
+.copy-icon.copied {color: #28a745;}
 
 /* Responsive adjustments for small screens */
 @media screen and (max-width: 768px) {
@@ -239,4 +239,5 @@ h1, h2, h3 {text-align: center;}
     .result-card {
         max-width: 100%
     }
+    .copy-icon {font-size: 16px;}
 }
