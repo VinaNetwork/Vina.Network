@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Handle form submissions (walletAnalysisForm, nftHoldersForm, nftInfoForm, walletCreatorForm)
-        if (e.target.matches('#nftHoldersForm, #nftInfoForm, #nftTransactionForm, #walletCreatorForm, #walletAnalysisForm')) {
+        if (e.target.matches('#walletAnalysisForm, #nftHoldersForm, #nftInfoForm, #walletCreatorForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
