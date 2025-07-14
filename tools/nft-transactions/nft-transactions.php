@@ -1,38 +1,30 @@
 <?php
 // ============================================================================
 // File: tools/nft-transactions/nft-transactions.php
-// Description: Check NFT transaction history by Mint Address using Helius API (getSignaturesForAsset).
+// Description: Check NFT transaction history by Mint Address using Helius API.
 // Created by: Vina Network
 // ============================================================================
 
-// Define constants
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
-// Load bootstrap
-$bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
-if (!file_exists($bootstrap_path)) {
-    log_message("nft_transactions: bootstrap.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
-    exit;
-}
-require_once $bootstrap_path;
+require_once dirname(__DIR__) . '/bootstrap.php';
 
 // Path constants
 define('NFT_TRANSACTIONS_PATH', TOOLS_PATH . 'nft-transactions/');
 $cache_dir = NFT_TRANSACTIONS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_transactions_cache.json';
 
-// Check cache directory
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_transactions_log.txt')) {
     log_message("nft_transactions: Cache setup failed", 'nft_transactions_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
 
+require_once dirname(__DIR__) . '/tools-api.php';
 ?>
-<link rel="stylesheet" href="/tools/nft-transactions/nft-transactions.css">
 
+<link rel="stylesheet" href="/tools/nft-transactions/nft-transactions.css">
 <div class="nft-transactions">
 <?php
 $rate_limit_exceeded = false;
@@ -89,47 +81,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
         $cache_valid = isset($cache_data[$mintAddress]) && (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
 
         if (!$cache_valid) {
-            $rpc_body = json_encode([
-                'jsonrpc' => '2.0',
-                'id' => 1,
-                'method' => 'getSignaturesForAsset',
-                'params' => [ 'id' => $mintAddress ]
-            ]);
-
             log_message("nft_transactions: Sending request to getSignaturesForAsset with mint: $mintAddress", 'nft_transactions_log.txt');
+            $response = callAPI('getSignaturesForAsset', ['id' => $mintAddress], 'POST');
 
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL => 'https://mainnet.helius-rpc.com/',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $rpc_body,
-                CURLOPT_HTTPHEADER => ['Content-Type: application/json']
-            ]);
-
-            $api_result = curl_exec($curl);
-            $curl_err = curl_error($curl);
-            curl_close($curl);
-
-            if ($curl_err) {
-                throw new Exception("cURL Error: $curl_err");
-            }
-
-            $json = json_decode($api_result, true);
-            if (!isset($json['result']['items'])) {
+            if (!isset($response['result']['items']) || !is_array($response['result']['items'])) {
                 throw new Exception('Invalid API response');
             }
 
+            $items = $response['result']['items'];
             $formatted = [
                 'mint' => $mintAddress,
                 'transactions' => [],
                 'timestamp' => time()
             ];
 
-            foreach ($json['result']['items'] as $item) {
+            foreach ($items as $item) {
                 $formatted['transactions'][] = [
-                    'tx_signature' => $item[0],
-                    'tx_type' => $item[1] ?? 'Unknown'
+                    'tx_signature' => $item[0] ?? '',
+                    'operation' => $item[1] ?? '',
+                    'from' => '-',
+                    'to' => '-',
+                    'timestamp' => null
                 ];
             }
 
@@ -154,12 +126,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                     <tr>
                         <th>#</th>
                         <th>Signature</th>
-                        <th>Type</th>
+                        <th>Operation</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Time</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php
-                $i = 1;
+                <?php $i = 1;
                 foreach ($formatted['transactions'] as $tx): ?>
                     <tr>
                         <td><?php echo $i++; ?></td>
@@ -168,7 +142,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                                 <?php echo substr($tx['tx_signature'], 0, 6) . '...' . substr($tx['tx_signature'], -6); ?>
                             </a>
                         </td>
-                        <td><?php echo htmlspecialchars($tx['tx_type']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['operation']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['from']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['to']); ?></td>
+                        <td><?php echo $tx['timestamp'] ? date('d M Y, H:i', $tx['timestamp']) : 'N/A'; ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -186,6 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
 ?>
 <div class="tools-about">
     <h2>About NFT Transactions</h2>
-    <p>This tool allows you to check the latest transaction signatures and types for a specific Solana NFT using its Mint Address via Helius API.</p>
+    <p>This tool allows you to check the latest transfers (ownership history) of a specific Solana NFT using its Mint Address.</p>
 </div>
 </div>
