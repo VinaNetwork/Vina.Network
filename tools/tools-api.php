@@ -20,6 +20,15 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
     $retry_count = 0;
     $retry_delays = [2000000, 5000000, 10000000, 15000000, 20000000];
 
+    // Danh sách các endpoint yêu cầu params là object (không phải array)
+    $objectParamEndpoints = [
+        'getSignaturesForAsset',
+        'getAsset',
+        'getAssetProof',
+        'getAssetsByGroup',
+        'getAssetsByCreator'
+    ];
+
     do {
         $ch = curl_init();
         if (!$ch) {
@@ -44,12 +53,8 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);
 
-            // Format params depending on the endpoint
-            if ($endpoint === 'getSignaturesForAsset') {
-                $formattedParams = $params; // object
-            } else {
-                $formattedParams = [$params]; // array
-            }
+            // Xác định dạng params
+            $formattedParams = in_array($endpoint, $objectParamEndpoints) ? $params : [$params];
 
             $postData = json_encode([
                 'jsonrpc' => '2.0',
@@ -76,14 +81,6 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $headers = substr($response, 0, $header_size);
         $body = substr($response, $header_size);
-
-        if (preg_match('/X-Rate-Limit-Remaining: (\d+)/i', $headers, $matches)) {
-            $remaining = (int)$matches[1];
-            if ($remaining < 10) {
-                log_message("api-helper: Low rate limit remaining ($remaining), pausing..., URL: $log_url", 'tools_api_log.txt', 'WARNING');
-                usleep(1000000);
-            }
-        }
 
         curl_close($ch);
 
