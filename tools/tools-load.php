@@ -22,7 +22,7 @@ $tab = isset($_GET['tab']) ? trim($_GET['tab']) : '';
 
 log_message("load-tool: Request received - tool=$tool, tab=$tab, method={$_SERVER['REQUEST_METHOD']}", 'tools_load_log.txt', 'INFO');
 
-$valid_tools = ['nft-info', 'nft-holders', 'wallet-creators', 'wallet-analysis'];
+$valid_tools = ['nft-info', 'nft-holders', 'nft-transactions', 'wallet-creators', 'wallet-analysis'];
 if (!in_array($tool, $valid_tools)) {
     log_message("load-tool: Invalid tool parameter - tool=$tool", 'tools_load_log.txt', 'ERROR');
     http_response_code(400);
@@ -33,6 +33,7 @@ if (!in_array($tool, $valid_tools)) {
 $tool_files = [
     'nft-info' => 'nft-info/nft-info.php',
     'nft-holders' => 'nft-holders/nft-holders.php',
+    'nft-transactions' => 'nft-transactions/nft-transactions.php',
     'wallet-creators' => 'wallet-creators/wallet-creators.php',
     'wallet-analysis' => 'wallet-analysis/wallet-analysis.php'
 ];
