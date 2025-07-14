@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/nft-transactions/nft-transactions.php
-// Description: Check NFT transaction history by Mint Address using Helius API (getSignaturesForAsset).
+// Description: Check NFT transaction history by Mint Address using Helius API.
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,18 +12,11 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
+    log_message("nft_transactions: bootstrap.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
 require_once $bootstrap_path;
-
-// Load API helper
-$api_helper_path = dirname(__DIR__) . '/tools-api.php';
-if (!file_exists($api_helper_path)) {
-    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
-    exit;
-}
-require_once $api_helper_path;
 
 // Path constants
 define('NFT_TRANSACTIONS_PATH', TOOLS_PATH . 'nft-transactions/');
@@ -31,14 +24,69 @@ $cache_dir = NFT_TRANSACTIONS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_transactions_cache.json';
 
 // Check cache directory
-ensure_directory_and_file($cache_dir, $cache_file);
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_transactions_log.txt')) {
+    log_message("nft_transactions: Cache setup failed", 'nft_transactions_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cache setup failed</p></div>';
+    exit;
+}
 
+// Load API helper
+$api_helper_path = dirname(__DIR__) . '/tools-api.php';
+if (!file_exists($api_helper_path)) {
+    log_message("nft_transactions: tools-api.php not found", 'nft_transactions_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
+    exit;
+}
+require_once $api_helper_path;
 ?>
+
 <link rel="stylesheet" href="/tools/nft-transactions/nft-transactions.css">
+
 <div class="nft-transactions">
     <?php
+    $rate_limit_exceeded = false;
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
+        // Rate limiting
+        $ip = $_SERVER['REMOTE_ADDR'];
+        $rate_limit_key = "rate_limit_nft_tx:$ip";
+        $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
+        $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
+
+        if (time() - $rate_limit_time > 60) {
+            $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
+        } elseif ($rate_limit_count >= 5) {
+            $rate_limit_exceeded = true;
+            echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+        } else {
+            $_SESSION[$rate_limit_key]['count']++;
+        }
+    }
+
+    if (!$rate_limit_exceeded) {
+        ?>
+        <div class="tools-form">
+            <h2>Check NFT Transactions</h2>
+            <p>Enter the <strong>NFT Mint Address</strong> to view recent transaction history on Solana.</p>
+            <form id="nftTransactionForm" method="POST" action="" data-tool="nft-transactions">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <div class="input-wrapper">
+                    <input type="text" name="mintAddress" id="mintAddressTx" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                    <span class="clear-input" title="Clear input">×</span>
+                </div>
+                <button type="submit" class="cta-button">Check</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$rate_limit_exceeded) {
         try {
+            if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+                throw new Exception('Invalid CSRF token');
+            }
+
             $mintAddress = trim($_POST['mintAddress']);
             $mintAddress = preg_replace('/\s+/', '', $mintAddress);
 
@@ -48,50 +96,94 @@ ensure_directory_and_file($cache_dir, $cache_file);
 
             log_message("nft_transactions: Submitting mint address: $mintAddress", 'nft_transactions_log.txt');
 
-            $params = [
-                'id' => $mintAddress
-            ];
+            $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
+            $cache_expiration = 3 * 3600;
+            $cache_valid = isset($cache_data[$mintAddress]) && (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
 
-            log_message("nft_transactions: Calling getSignaturesForAsset", 'nft_transactions_log.txt');
-            $response = callAPI('getSignaturesForAsset', $params, 'POST');
+            if (!$cache_valid) {
+                $params = [
+                    'query' => [
+                        'mint' => $mintAddress
+                    ],
+                    'options' => [
+                        'limit' => 10,
+                        'sort' => 'desc'
+                    ]
+                ];
 
-            if (isset($response['error'])) {
-                throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
+                log_message("nft_transactions: Calling API with parameters: " . json_encode($params), 'nft_transactions_log.txt');
+
+                $response = callAPI('searchAssetsTransfers', $params, 'POST');
+
+                log_message("nft_transactions: API response: " . json_encode($response), 'nft_transactions_log.txt');
+
+                if (isset($response['error'])) {
+                    throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
+                }
+                $txs = $response['result'] ?? [];
+
+                $formatted = [
+                    'mint' => $mintAddress,
+                    'transactions' => [],
+                    'timestamp' => time()
+                ];
+
+                foreach ($txs as $tx) {
+                    $formatted['transactions'][] = [
+                        'tx_signature' => $tx['signature'] ?? '',
+                        'from' => $tx['sources'][0] ?? 'N/A',
+                        'to' => $tx['targets'][0] ?? 'N/A',
+                        'timestamp' => $tx['timestamp'] ?? null
+                    ];
+                }
+
+                $cache_data[$mintAddress] = $formatted;
+                $fp = fopen($cache_file, 'c');
+                if (flock($fp, LOCK_EX)) {
+                    file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+                    flock($fp, LOCK_UN);
+                }
+                fclose($fp);
+            } else {
+                $formatted = $cache_data[$mintAddress];
+                log_message("nft_transactions: Loaded from cache.", 'nft_transactions_log.txt');
             }
-
-            $items = $response['result']['items'] ?? [];
 
             ?>
             <div class="tools-result nft-tx-result">
                 <h2>NFT Transaction History</h2>
-                <p>Mint Address: <code><?php echo htmlspecialchars($mintAddress); ?></code></p>
-                <?php if (count($items) === 0): ?>
-                    <p>No transactions found for this NFT.</p>
-                <?php else: ?>
+                <p>Mint Address: <code><?php echo htmlspecialchars($formatted['mint']); ?></code></p>
                 <table>
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Signature</th>
-                            <th>Type</th>
-                            <th>Explorer</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Time</th>
                         </tr>
                     </thead>
                     <tbody>
-                    <?php $i = 1; foreach ($items as $item): ?>
+                    <?php
+                    $i = 1;
+                    foreach ($formatted['transactions'] as $tx):
+                        ?>
                         <tr>
                             <td><?php echo $i++; ?></td>
-                            <td><code><?php echo substr($item[0], 0, 6) . '...' . substr($item[0], -6); ?></code></td>
-                            <td><?php echo htmlspecialchars($item[1]); ?></td>
                             <td>
-                                <a href="https://solscan.io/tx/<?php echo $item[0]; ?>" target="_blank">
-                                    View
+                                <a href="https://solscan.io/tx/<?php echo $tx['tx_signature']; ?>" target="_blank">
+                                    <?php echo substr($tx['tx_signature'], 0, 6) . '...' . substr($tx['tx_signature'], -6); ?>
                                 </a>
                             </td>
+                            <td><?php echo htmlspecialchars($tx['from']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['to']); ?></td>
+                            <td><?php echo $tx['timestamp'] ? date('d M Y, H:i', $tx['timestamp']) : 'N/A'; ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+                <?php if ($cache_valid): ?>
+                    <p class="cache-timestamp">Data from cache. Last updated: <?php echo date('d M Y, H:i', $formatted['timestamp']); ?> UTC+0</p>
                 <?php endif; ?>
             </div>
             <?php
@@ -101,19 +193,8 @@ ensure_directory_and_file($cache_dir, $cache_file);
         }
     }
     ?>
-    <div class="tools-form">
-        <h2>Check NFT Transactions</h2>
-        <p>Enter the <strong>NFT Mint Address</strong> to view recent transaction history on Solana.</p>
-        <form method="POST" action="">
-            <div class="input-wrapper">
-                <input type="text" name="mintAddress" id="mintAddressTx" placeholder="Enter NFT Mint Address" required>
-                <span class="clear-input" title="Clear input">&times;</span>
-            </div>
-            <button type="submit" class="cta-button">Check</button>
-        </form>
-    </div>
     <div class="tools-about">
         <h2>About NFT Transactions</h2>
-        <p>This tool shows the transaction history of a Solana NFT using Helius API.</p>
+        <p>This tool allows you to check the latest transfers (ownership history) of a specific Solana NFT using its Mint Address.</p>
     </div>
 </div>
