@@ -69,7 +69,7 @@ require_once $api_helper_path;
         <div class="tools-form">
             <h2>Check NFT Transactions</h2>
             <p>Enter the <strong>NFT Mint Address</strong> to view recent transaction history on Solana.</p>
-            <form method="POST" action="" data-tool="nft-transactions">
+            <form id="nftTransactionForm" method="POST" action="" data-tool="nft-transactions">
                 <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <div class="input-wrapper">
                     <input type="text" name="mintAddress" id="mintAddressTx" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
