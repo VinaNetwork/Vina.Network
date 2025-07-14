@@ -121,6 +121,12 @@ input {
 }
 
 /* Logo styling */
+.logo a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
 .logo img {
     height: 56px;
     object-fit: contain;
@@ -131,7 +137,12 @@ input {
 .logo img:hover {
     transform: scale(1.05);
 }
-.logo .titleSite {color: #fff;}
+.logo .titleSite {
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1;
+}
 
 /* Navbar menu structure */
 .navbar-content {
