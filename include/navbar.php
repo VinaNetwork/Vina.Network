@@ -11,7 +11,7 @@
     <div class="logo">
         <a href="/" aria-label="Vina Network Home">
             <img src="/img/logo.png" alt="Vina Network Logo">
-            <span>Vina Network</span>
+            <span class="site-title">Vina Network</span>
         </a>
     </div>
 
