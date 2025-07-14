@@ -12,6 +12,7 @@
         <a href="/" aria-label="Vina Network Home">
             <img src="/img/logo.png" alt="Vina Network Logo">
         </a>
+        <span>Vina Network</span>
     </div>
 
     <!-- Navigation Links -->
