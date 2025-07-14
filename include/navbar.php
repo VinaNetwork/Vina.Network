@@ -56,12 +56,12 @@
                 <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/notification/" class="dropdown-link"><i class="fa-solid fa-crown"></i> Kimo</a></li>
+                <li><a href="/notification" class="dropdown-link"><i class="fa-solid fa-crown"></i> Kimo</a></li>
             </ul>
         </li>
 
         <li class="navbar-item">
-            <a href="/contact/" class="navbar-link">
+            <a href="/contact" class="navbar-link">
                 <i class="fas fa-envelope"></i> Contact
             </a>
         </li>
