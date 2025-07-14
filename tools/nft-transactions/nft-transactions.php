@@ -38,7 +38,6 @@ if (!file_exists($api_helper_path)) {
     exit;
 }
 require_once $api_helper_path;
-
 ?>
 
 <link rel="stylesheet" href="/tools/nft-transactions/nft-transactions.css">
@@ -95,6 +94,8 @@ require_once $api_helper_path;
                 throw new Exception('Invalid Mint Address format');
             }
 
+            log_message("nft_transactions: Submitting mint address: $mintAddress", 'nft_transactions_log.txt');
+
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_expiration = 3 * 3600;
             $cache_valid = isset($cache_data[$mintAddress]) && (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
@@ -109,7 +110,12 @@ require_once $api_helper_path;
                         'sort' => 'desc'
                     ]
                 ];
+
+                log_message("nft_transactions: Calling API with parameters: " . json_encode($params), 'nft_transactions_log.txt');
+
                 $response = callAPI('searchAssetsTransfers', $params, 'POST');
+
+                log_message("nft_transactions: API response: " . json_encode($response), 'nft_transactions_log.txt');
 
                 if (isset($response['error'])) {
                     throw new Exception(is_array($response['error']) ? ($response['error']['message'] ?? 'API error') : $response['error']);
@@ -140,6 +146,7 @@ require_once $api_helper_path;
                 fclose($fp);
             } else {
                 $formatted = $cache_data[$mintAddress];
+                log_message("nft_transactions: Loaded from cache.", 'nft_transactions_log.txt');
             }
 
             ?>
