@@ -63,23 +63,23 @@ require_once $api_helper_path;
         }
     }
 
-    if (!$rate_limit_exceeded) {
-        ?>
-        <div class="tools-form">
-            <h2>Check NFT Transactions</h2>
-            <p>Enter the <strong>NFT Mint Address</strong> to view recent transaction history on Solana.</p>
-            <form id="nftTransactionForm" method="POST" action="" data-tool="nft-transactions">
-                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-                <div class="input-wrapper">
-                    <input type="text" name="mintAddress" id="mintAddressTx" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-                    <span class="clear-input" title="Clear input">×</span>
-                </div>
-                <button type="submit" class="cta-button">Check</button>
-            </form>
-            <div class="loader"></div>
-        </div>
-        <?php
-    }
+    if (!$rate_limit_exceeded):
+    ?>
+    <div class="tools-form">
+        <h2>Check NFT Transactions</h2>
+        <p>Enter the <strong>NFT Mint Address</strong> to view recent transaction history on Solana.</p>
+        <form id="nftTransactionForm" method="POST" action="" data-tool="nft-transactions">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+            <div class="input-wrapper">
+                <input type="text" name="mintAddress" id="mintAddressTx" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                <span class="clear-input" title="Clear input">×</span>
+            </div>
+            <button type="submit" class="cta-button">Check</button>
+        </form>
+        <div class="loader"></div>
+    </div>
+    <?php
+    endif;
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$rate_limit_exceeded) {
         try {
@@ -100,11 +100,18 @@ require_once $api_helper_path;
             $params = ['id' => $mintAddress];
             $response = callAPI('getSignaturesForAsset', $params, 'POST');
 
-            // ✅ Ghi log toàn bộ JSON trả về
+            // Log raw response
             log_message("nft_transactions: Raw API response: " . json_encode($response), 'nft_transactions_log.txt');
 
+            if (isset($response['error'])) {
+                $msg = is_string($response['error']) ? $response['error'] : json_encode($response['error']);
+                log_message("nft_transactions: API returned error - $msg", 'nft_transactions_log.txt', 'ERROR');
+                throw new Exception("Helius API error: " . $msg);
+            }
+
             if (!isset($response['result']['items']) || !is_array($response['result']['items'])) {
-                throw new Exception('Invalid API response');
+                log_message("nft_transactions: Unexpected API structure - " . json_encode($response), 'nft_transactions_log.txt', 'ERROR');
+                throw new Exception('No transaction data found or invalid NFT');
             }
 
             $formatted = [
