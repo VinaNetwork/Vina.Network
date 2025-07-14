@@ -23,7 +23,6 @@ if (!file_exists($bootstrap_path)) {
 require_once $bootstrap_path;
 
 // Define cache directory and file
-define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
 $cache_dir = NFT_HOLDERS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_holders_cache.json';
 
