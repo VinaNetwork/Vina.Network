@@ -20,6 +20,8 @@ if (!file_exists($bootstrap_path)) {
 }
 require_once $bootstrap_path;
 
+// Define cache directory and file
+define('WALLET_ANALYSIS_PATH', TOOLS_PATH . 'wallet-analysis/');
 $cache_dir = WALLET_ANALYSIS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_analysis_cache.json';
 $names_cache_file = $cache_dir . 'names_cache.json';
