@@ -13,6 +13,12 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+.nft-tx-result code {
+    word-break: break-all;
+    white-space: normal;
+    display: inline-block;
+}
+
 .nft-tx-result table {
     width: 100%;
     border-collapse: collapse;
