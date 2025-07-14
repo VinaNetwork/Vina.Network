@@ -5,39 +5,21 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Define constants
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+require_once dirname(__DIR__) . '/bootstrap.php';
 
-// Load bootstrap
-$bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
-if (!file_exists($bootstrap_path)) {
-    log_message("nft_transactions: bootstrap.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
-    exit;
-}
-require_once $bootstrap_path;
-
-// Path constants
 define('NFT_TRANSACTIONS_PATH', TOOLS_PATH . 'nft-transactions/');
 $cache_dir = NFT_TRANSACTIONS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_transactions_cache.json';
 
-// Check cache directory
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_transactions_log.txt')) {
     log_message("nft_transactions: Cache setup failed", 'nft_transactions_log.txt', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
 
-// Load API helper
-$api_helper_path = dirname(__DIR__) . '/tools-api.php';
-if (!file_exists($api_helper_path)) {
-    log_message("nft_transactions: tools-api.php not found", 'nft_transactions_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
-    exit;
-}
-require_once $api_helper_path;
+require_once dirname(__DIR__) . '/tools-api.php';
 ?>
 
 <link rel="stylesheet" href="/tools/nft-transactions/nft-transactions.css">
@@ -47,7 +29,6 @@ require_once $api_helper_path;
     $rate_limit_exceeded = false;
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
-        // Rate limiting
         $ip = $_SERVER['REMOTE_ADDR'];
         $rate_limit_key = "rate_limit_nft_tx:$ip";
         $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
@@ -63,23 +44,23 @@ require_once $api_helper_path;
         }
     }
 
-    if (!$rate_limit_exceeded):
-    ?>
-    <div class="tools-form">
-        <h2>Check NFT Transactions</h2>
-        <p>Enter the <strong>NFT Mint Address</strong> to view recent transaction history on Solana.</p>
-        <form id="nftTransactionForm" method="POST" action="" data-tool="nft-transactions">
-            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
-            <div class="input-wrapper">
-                <input type="text" name="mintAddress" id="mintAddressTx" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
-                <span class="clear-input" title="Clear input">×</span>
-            </div>
-            <button type="submit" class="cta-button">Check</button>
-        </form>
-        <div class="loader"></div>
-    </div>
-    <?php
-    endif;
+    if (!$rate_limit_exceeded) {
+        ?>
+        <div class="tools-form">
+            <h2>Check NFT Transactions</h2>
+            <p>Enter the <strong>NFT Mint Address</strong> to view recent transaction history on Solana.</p>
+            <form id="nftTransactionForm" method="POST" action="" data-tool="nft-transactions">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
+                <div class="input-wrapper">
+                    <input type="text" name="mintAddress" id="mintAddressTx" placeholder="Enter NFT Mint Address" required value="<?php echo isset($_POST['mintAddress']) ? htmlspecialchars($_POST['mintAddress']) : ''; ?>">
+                    <span class="clear-input" title="Clear input">×</span>
+                </div>
+                <button type="submit" class="cta-button">Check</button>
+            </form>
+            <div class="loader"></div>
+        </div>
+        <?php
+    }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$rate_limit_exceeded) {
         try {
@@ -100,18 +81,21 @@ require_once $api_helper_path;
             $params = ['id' => $mintAddress];
             $response = callAPI('getSignaturesForAsset', $params, 'POST');
 
-            // Log raw response
             log_message("nft_transactions: Raw API response: " . json_encode($response), 'nft_transactions_log.txt');
 
             if (isset($response['error'])) {
-                $msg = is_string($response['error']) ? $response['error'] : json_encode($response['error']);
+                $msg = $response['error'];
                 log_message("nft_transactions: API returned error - $msg", 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception("Helius API error: " . $msg);
+
+                if (strpos($msg, 'Tree not found') !== false) {
+                    throw new Exception("NFT này không thuộc hệ thống Merkle Tree hoặc chưa được hỗ trợ để truy xuất giao dịch.");
+                } else {
+                    throw new Exception("Helius API error: " . $msg);
+                }
             }
 
             if (!isset($response['result']['items']) || !is_array($response['result']['items'])) {
-                log_message("nft_transactions: Unexpected API structure - " . json_encode($response), 'nft_transactions_log.txt', 'ERROR');
-                throw new Exception('No transaction data found or invalid NFT');
+                throw new Exception('Invalid API response');
             }
 
             $formatted = [
@@ -128,7 +112,6 @@ require_once $api_helper_path;
                 ];
             }
 
-            // Save to cache
             $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
             $cache_data[$mintAddress] = $formatted;
             $fp = fopen($cache_file, 'c');
@@ -137,7 +120,6 @@ require_once $api_helper_path;
                 flock($fp, LOCK_UN);
             }
             fclose($fp);
-
             ?>
             <div class="tools-result nft-tx-result">
                 <h2>NFT Transaction History</h2>
