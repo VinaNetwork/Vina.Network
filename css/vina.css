@@ -131,7 +131,7 @@ input {
 .logo img:hover {
     transform: scale(1.05);
 }
-.logo.site-title {color: #fff;}
+.logo .site-title {color: #fff;}
 
 /* Navbar menu structure */
 .navbar-content {
