@@ -98,7 +98,7 @@ input {
     box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
 }
 
-/*  Navbar (Desktop & Sticky) */
+/*  Navbar */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -128,10 +128,10 @@ input {
     vertical-align: middle;
     transition: transform 0.3s ease;
 }
-
 .logo img:hover {
     transform: scale(1.05);
 }
+.logo.site-title {color: #fff;}
 
 /* Navbar menu structure */
 .navbar-content {
