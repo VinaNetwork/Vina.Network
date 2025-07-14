@@ -97,11 +97,11 @@ require_once $api_helper_path;
             log_message("nft_transactions: Submitting mint address: $mintAddress", 'nft_transactions_log.txt');
             log_message("nft_transactions: Sending request to getSignaturesForAsset with mint: $mintAddress", 'nft_transactions_log.txt');
 
-            $params = [
-                'id' => $mintAddress
-            ];
-
+            $params = ['id' => $mintAddress];
             $response = callAPI('getSignaturesForAsset', $params, 'POST');
+
+            // ✅ Ghi log toàn bộ JSON trả về
+            log_message("nft_transactions: Raw API response: " . json_encode($response), 'nft_transactions_log.txt');
 
             if (!isset($response['result']['items']) || !is_array($response['result']['items'])) {
                 throw new Exception('Invalid API response');
