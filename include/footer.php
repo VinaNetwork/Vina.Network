@@ -17,9 +17,9 @@
     <div class="footer-2">
         <h4>Quick Links</h4>
         <ul class="footer-3">
-            <li><a href="https://www.vina.network/"><i class="fas fa-home"></i> Home</a></li>
-            <li><a href="https://kimo.vina.network/token/"><i class="fas fa-coins"></i> Kimo</a></li>
-            <li><a href="https://www.vina.network/contact/"><i class="fas fa-envelope"></i> Contact</a></li>
+            <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="/notification"><i class="fas fa-coins"></i> Kimo</a></li>
+            <li><a href="/contact"><i class="fas fa-envelope"></i> Contact</a></li>
         </ul>
     </div>
 
