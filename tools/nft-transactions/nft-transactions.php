@@ -38,7 +38,7 @@ require_once dirname(__DIR__) . '/tools-api.php';
             $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
         } elseif ($rate_limit_count >= 5) {
             $rate_limit_exceeded = true;
-            echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+            echo "<div class='result-error'><p>You’ve submitted too many requests. Please try again in 1 minute.</p></div>";
         } else {
             $_SESSION[$rate_limit_key]['count']++;
         }
@@ -88,7 +88,7 @@ require_once dirname(__DIR__) . '/tools-api.php';
                 log_message("nft_transactions: API returned error - $msg", 'nft_transactions_log.txt', 'ERROR');
 
                 if (strpos($msg, 'Tree not found') !== false) {
-                    throw new Exception("NFT này không thuộc hệ thống Merkle Tree hoặc chưa được hỗ trợ để truy xuất giao dịch.");
+                    throw new Exception("This NFT is not part of a Merkle Tree or is not yet supported for transaction lookup.");
                 } else {
                     throw new Exception("Helius API error: " . $msg);
                 }
