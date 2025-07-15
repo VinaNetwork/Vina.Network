@@ -156,8 +156,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                                         <td><?php echo htmlspecialchars($asset['category']); ?></td></tr>
                                     <tr><th>Asset ID</th>
                                         <td>
-                                            <span><?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?></span>
-                                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['asset_id']); ?>"></i>
+                                            <?php if (preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $asset['asset_id'])): ?>
+                                                <a href="https://solscan.io/token/<?php echo htmlspecialchars($asset['asset_id']); ?>" target="_blank">
+                                                    <?php echo substr($asset['asset_id'], 0, 4) . '...' . substr($asset['asset_id'], -4); ?>
+                                                </a>
+                                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['asset_id']); ?>"></i>
+                                            <?php else: ?>
+                                                <span><?php echo htmlspecialchars($asset['asset_id']); ?></span>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                     <tr><th>Name</th>
@@ -168,10 +174,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                                             <?php if ($asset['collection'] === 'Self (Collection)'): ?>
                                                 <span>Self (Collection)</span>
                                             <?php elseif (preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $asset['collection'])): ?>
-                                                <span><?php echo substr($asset['collection'], 0, 4) . '...' . substr($asset['collection'], -4); ?></span>
+                                                <a href="https://solscan.io/token/<?php echo htmlspecialchars($asset['collection']); ?>" target="_blank">
+                                                    <?php echo substr($asset['collection'], 0, 4) . '...' . substr($asset['collection'], -4); ?>
+                                                </a>
                                                 <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($asset['collection']); ?>"></i>
                                             <?php else: ?>
-                                                <span>N/A</span>
+                                                <span><?php echo htmlspecialchars($asset['collection']); ?></span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
