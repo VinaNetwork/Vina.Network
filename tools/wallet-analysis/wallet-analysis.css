@@ -56,7 +56,7 @@
     margin-bottom: 20px;
     overflow-x: auto;
 }
-.token-table tr, .nft-table tr {
+.token-table th, .nft-table th {
     background: #f0f4f8;
     color: #333;
     font-weight: 600;
@@ -64,6 +64,11 @@
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
 }
+.token-table tr:hover, 
+.nft-table tr:hover {
+    background: #f9fbfd;
+}
+
 .token-table td, .nft-table td {
     padding: 4px 10px;
     border-bottom: 1px solid #eee;
@@ -74,10 +79,6 @@
 .token-table td:nth-child(3), 
 .token-table td:nth-child(4) {
     text-align: right;
-}
-.token-table tr:hover, 
-.nft-table tr:hover {
-    background: #f9fbfd;
 }
 
 /* Responsive adjustments for small screens */
