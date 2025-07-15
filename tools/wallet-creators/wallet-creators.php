@@ -169,6 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                                     <tr><th>Name</th>
                                         <td><?php echo htmlspecialchars($asset['name']); ?></td>
                                     </tr>
+
+                                    <?php if ($asset['category'] === 'NFT'): ?>
                                     <tr><th>Collection</th>
                                         <td>
                                             <?php if ($asset['collection'] === 'Self (Collection)'): ?>
@@ -183,6 +185,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
                                             <?php endif; ?>
                                         </td>
                                     </tr>
+                                    <?php endif; ?>
+
                                     <tr><th>Royalty</th>
                                         <td><?php echo htmlspecialchars($asset['royalty']); ?></td>
                                     </tr>
