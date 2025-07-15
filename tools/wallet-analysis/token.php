@@ -26,7 +26,9 @@ if (!$formatted_data) {
             <tr>
                 <td><?php echo htmlspecialchars($token['name']); ?></td>
                 <td>
-                    <span><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
+                    <a href="https://solscan.io/token/<?php echo urlencode($token['mint']); ?>" target="_blank" rel="noopener noreferrer">
+                        <?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?>
+                    </a>
                     <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
                 </td>
                 <td><?php echo number_format($token['balance'], 2); ?></td>
