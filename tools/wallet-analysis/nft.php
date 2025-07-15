@@ -27,12 +27,16 @@ if (!$formatted_data || !$walletAddress) {
             <tr>
                 <td><?php echo htmlspecialchars($nft['name']); ?></td>
                 <td>
-                    <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
+                    <a href="https://solscan.io/token/<?php echo urlencode($nft['mint']); ?>" target="_blank" rel="noopener noreferrer">
+                        <?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?>
+                    </a>
                     <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                 </td>
                 <td>
                     <?php if ($nft['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $nft['collection'])): ?>
-                        <span><?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?></span>
+                        <a href="https://solscan.io/token/<?php echo urlencode($nft['collection']); ?>" target="_blank" rel="noopener noreferrer">
+                            <?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?>
+                        </a>
                         <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
                     <?php else: ?>
                         <span>N/A</span>
