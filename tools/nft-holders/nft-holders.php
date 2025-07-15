@@ -114,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                     if (isset($item['ownership']['owner'])) {
                         $owner = $item['ownership']['owner'];
                         $wallets[$owner] = ($wallets[$owner] ?? 0) + 1;
+                        $items[] = ['owner' => $owner, 'amount' => 1];
                     }
                 }
 
@@ -127,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             $cache_data[$mintAddress] = [
                 'total_items' => $total_items,
                 'total_wallets' => count($wallets),
-                'items' => $wallet_list, // ✅ Đã cập nhật: dùng wallet_list thay vì mảng rỗng
+                'items' => $items,
                 'wallets' => $wallet_list,
                 'collection_data' => $collection_data,
                 'timestamp' => time()
@@ -135,6 +136,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
         } else {
             extract($cache_data[$mintAddress]);
+            // Ensure wallets is available
+            if (!isset($wallets) || !is_array($wallets)) {
+                $wallets = [];
+                foreach ($items ?? [] as $w) {
+                    if (isset($w['owner'], $w['amount'])) {
+                        $wallets[$w['owner']] = $w['amount'];
+                    }
+                }
+            }
         }
 
         ?>
