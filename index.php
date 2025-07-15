@@ -28,7 +28,7 @@ include __DIR__ . '/include/header.php';
     </section>
 
     <!-- About Section -->
-    <section class="home-content home-1">       
+    <section id="about" class="home-content home-1">       
 	<h2 class="fade-in" data-delay="0">About Vina Network</h2>
 	<div class="home-table">
 		<div class="home-item fade-in" data-delay="400">
