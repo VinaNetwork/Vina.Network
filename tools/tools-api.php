@@ -33,14 +33,6 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             $url = "$helius_api_url/addresses/{$params['address']}/names?api-key=$helius_api_key";
             $log_url = str_replace($helius_api_key, '****', $url);
             $method = 'GET';
-        } elseif ($endpoint === 'getEnhancedTxByAddress') {
-            if (!isset($params['address'])) {
-                log_message("api-error: Missing 'address' for getEnhancedTxByAddress", 'tools_api_log.txt', 'ERROR');
-                return ['error' => "Missing 'address' for getEnhancedTxByAddress"];
-            }
-            $url = "$helius_api_url/addresses/{$params['address']}/transactions?api-key=$helius_api_key";
-            $log_url = str_replace($helius_api_key, '****', $url);
-            $method = 'GET';
         }
 
         curl_setopt($ch, CURLOPT_URL, $url);
