@@ -19,7 +19,7 @@
 .wallet-tabs {
     display: flex;
     gap: 20px;
-    margin: 20px 0 10px;
+    margin-top: 20px;
     background: #eeeeee;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
