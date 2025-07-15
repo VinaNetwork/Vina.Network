@@ -86,6 +86,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
         }
 
         log_message("nft_transactions: Submitting mint address: $mintAddress", 'nft_transactions_log.txt');
+
+        // Step 1: Check asset type
+        $asset = callAPI('getAsset', ['id' => $mintAddress], 'POST');
+        if (isset($asset['error'])) {
+            throw new Exception("Helius API error: " . (is_array($asset['error']) ? json_encode($asset['error']) : $asset['error']));
+        }
+
+        $asset_result = $asset['result'] ?? null;
+        if (!$asset_result || !isset($asset_result['compression']['compressed'])) {
+            throw new Exception("Invalid asset data or not found.");
+        }
+
+        if (!$asset_result['compression']['compressed']) {
+            throw new Exception("This is a standard NFT or Inscription Mint Address, which is not supported.");
+        }
+
+        // Step 2: Use cache if available
         $cache_data = json_decode(file_get_contents($cache_file), true) ?? [];
         $cache_expiration = 3 * 3600;
 
