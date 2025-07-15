@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
     <div class="tools-form">
         <h2>Token Overview</h2>
         <p>Check key metrics of a Solana token using its Mint Address.</p>
-        <form method="POST" action="" data-tool="token-overview">
+        <form id="tokenOverviewForm" method="POST" action="" data-tool="token-overview">
             <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="input-wrapper">
                 <input type="text" name="tokenAddress" placeholder="Enter Token Mint Address" required value="<?php echo isset($_POST['tokenAddress']) ? htmlspecialchars($_POST['tokenAddress']) : ''; ?>">
