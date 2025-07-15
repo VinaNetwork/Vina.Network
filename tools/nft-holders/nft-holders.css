@@ -40,7 +40,8 @@
     align-items: center;
     gap: 20px;
 }
-.export-format {
+.export-format,
+.export-type {
     padding: 9px;
     border: 1px solid #007bff;
     border-radius: 10px;
