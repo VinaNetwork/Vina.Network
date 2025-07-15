@@ -14,7 +14,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
     $helius_api_url = "https://api.helius.xyz/v0";
     $log_url = "https://mainnet.helius-rpc.com/?api-key=****";
 
-    // Handle Solscan public APIs
+    // Handle Solscan public APIs and mapped endpoints
     if ($endpoint === 'getTokenHolders') {
         if (empty($params['mint'])) return ['error' => 'Missing token mint address'];
         $url = "https://public-api.solscan.io/token/holders?tokenAddress={$params['mint']}&limit=1&offset=0";
@@ -24,9 +24,9 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         $url = "https://public-api.solscan.io/token/meta?tokenAddress={$params['mint']}";
         $method = 'GET';
     } elseif ($endpoint === 'getTokenTxCount') {
+        // ✅ Sửa lại: dùng Helius RPC endpoint getSignaturesForAsset
         if (empty($params['mint'])) return ['error' => 'Missing token mint address'];
-        $url = "https://public-api.solscan.io/account/tokens?account={$params['mint']}";
-        $method = 'GET';
+        return callAPI('getSignaturesForAsset', ['id' => $params['mint']], 'POST');
     } elseif ($endpoint === 'getNamesByAddress') {
         $url = "$helius_api_url/addresses/{$params['address']}/names?api-key=$helius_api_key";
         $log_url = str_replace($helius_api_key, '****', $url);
