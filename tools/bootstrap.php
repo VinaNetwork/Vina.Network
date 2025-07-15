@@ -21,6 +21,7 @@ define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
 define('NFT_TRANSACTIONS_PATH', TOOLS_PATH . 'nft-transactions/');
 define('WALLET_CREATORS_PATH', TOOLS_PATH . 'wallet-creators/');
 define('WALLET_ANALYSIS_PATH', TOOLS_PATH . 'wallet-analysis/');
+define('TOKEN_OVERVIEW_PATH', TOOLS_PATH . 'token-overview/');
 define('LOGS_PATH', TOOLS_PATH . 'logs/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
 
@@ -63,7 +64,7 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
                 log_message("Failed to create directory: $dir_path", $log_file, 'ERROR');
                 return false;
             }
-            // Bỏ chown/chgrp để tránh lỗi quyền
+            // Skip chown/chgrp to avoid permission issues on shared hosting
             chmod($dir_path, 0764);
             log_message("Created directory: $dir_path", $log_file, 'INFO');
         }
@@ -106,7 +107,7 @@ function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') 
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
     try {
-        // Use ensure_directory_and_file for log directory and file
+        // Ensure the log directory and file are set up correctly
         if (!ensure_directory_and_file(LOGS_PATH, $log_path, $log_file)) {
             error_log("Log setup failed for $log_path: $message");
             return;
