@@ -36,13 +36,6 @@ require_once $api_helper_path;
 ?>
 
 <link rel="stylesheet" href="/tools/nft-transactions/nft-transactions.css">
-<style>
-    .nft-tx-result code {
-        word-break: break-all;
-        white-space: normal;
-    }
-</style>
-
 <div class="nft-transactions">
 <?php
 $rate_limit_exceeded = false;
