@@ -54,7 +54,7 @@ if (!in_array($export_format, ['csv', 'json'])) {
     exit;
 }
 
-if ($export_type !== 'all') {
+if (!in_array($export_type, ['all', 'address-only'])) {
     log_message("export-holders: Invalid export type: $export_type", 'holders_export_log.txt', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export type']);
@@ -63,9 +63,7 @@ if ($export_type !== 'all') {
 
 try {
     $items = [];
-    $filename = $export_format === 'csv'
-        ? "holders_all_{$mintAddress}.csv"
-        : "holders_all_{$mintAddress}.json";
+    $filename = ($export_type === 'address-only' ? "wallets_only_" : "holders_all_") . "{$mintAddress}." . ($export_format === 'csv' ? 'csv' : 'json');
 
     // Load cache
     $cache_data = file_exists($cache_file) ? json_decode(file_get_contents($cache_file), true) ?? [] : [];
@@ -108,20 +106,33 @@ try {
         if ($output === false) {
             throw new Exception('Failed to open output stream');
         }
-        fputcsv($output, ['Wallet Address', 'NFT Count']);
-        foreach ($wallets as $wallet) {
-            fputcsv($output, [$wallet['owner'] ?? 'N/A', $wallet['amount'] ?? 0]);
+
+        if ($export_type === 'address-only') {
+            fputcsv($output, ['Wallet Address']);
+            foreach ($wallets as $wallet) {
+                fputcsv($output, [$wallet['owner'] ?? 'N/A']);
+            }
+        } else {
+            fputcsv($output, ['Wallet Address', 'NFT Count']);
+            foreach ($wallets as $wallet) {
+                fputcsv($output, [$wallet['owner'] ?? 'N/A', $wallet['amount'] ?? 0]);
+            }
         }
         fclose($output);
     } else {
         header('Content-Type: application/json; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        $json_data = array_map(function($wallet) {
+
+        $json_data = array_map(function($wallet) use ($export_type) {
+            if ($export_type === 'address-only') {
+                return $wallet['owner'] ?? 'N/A';
+            }
             return [
                 'address' => $wallet['owner'] ?? 'N/A',
                 'amount' => $wallet['amount'] ?? 0
             ];
         }, $wallets);
+
         echo json_encode($json_data, JSON_PRETTY_PRINT);
     }
     exit;
