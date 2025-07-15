@@ -23,9 +23,8 @@ if (!file_exists($api_helper_path)) {
 require_once $api_helper_path;
 
 // Cache setup
-$cache_dir = __DIR__ . '/cache/';
+$cache_dir = TOKEN_OVERVIEW_PATH . 'cache/';
 $cache_file = $cache_dir . 'token_overview_cache.json';
-
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'token_overview_log.txt')) {
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
