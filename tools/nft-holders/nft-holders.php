@@ -172,19 +172,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                 <?php endif; ?>
                 <div class="export-section">
                     <form method="POST" action="/tools/nft-holders/nft-holders-export.php" class="export-form">
-    <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
-    <div class="export-controls">
-        <label for="export_format">Format:</label>
-        <select name="export_format" class="export-format" id="export_format">
-            <option value="csv">CSV</option>
-            <option value="json">JSON</option>
-        </select>
-        <select name="export_type" class="export-type" id="export_type">
-            <option value="all">Wallets + NFT Count</option>
-            <option value="address-only">Wallets Only</option>
-        </select>
-        <button type="submit" class="cta-button export-btn">Export</button>
-    </div>
+                        <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
+                        <div class="export-controls">
+                            <select name="export_format" class="export-format" id="export_format">
+                                <option value="csv">CSV</option>
+                                <option value="json">JSON</option>
+                            </select>
+                            <select name="export_type" class="export-type" id="export_type">
+                                <option value="all">Wallets + NFT Count</option>
+                                <option value="address-only">Wallets Only</option>
+                            </select>
+                            <button type="submit" class="cta-button export-btn">Export</button>
+                        </div>
                     </form>
                     <div class="progress-container" style="display: none;">
                         <p>Exporting... Please wait.</p>
