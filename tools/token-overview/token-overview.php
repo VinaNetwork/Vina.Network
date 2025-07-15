@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: tools/token-overview/token-overview.php
-// Description: Display Token Overview by Mint Address (Solana) using Solscan APIs.
+// Description: Display Token Overview by Mint Address (Solana) using APIs.
 // Created by: Vina Network
 // ============================================================================
 
@@ -93,17 +93,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
             $holders = callAPI('getTokenHolders', ['mint' => $mint], 'GET');
             $tx = callAPI('getTokenTxCount', ['mint' => $mint], 'GET');
 
-            // Log individual API errors for debugging
+            if (isset($info['error'])) {
+                log_message("token_overview: getTokenInfo error - " . json_encode($info), 'token_overview_log.txt', 'ERROR');
+            }
+            if (isset($holders['error'])) {
+                log_message("token_overview: getTokenHolders error - " . json_encode($holders), 'token_overview_log.txt', 'ERROR');
+            }
+            if (isset($tx['error'])) {
+                log_message("token_overview: getTokenTxCount error - " . json_encode($tx), 'token_overview_log.txt', 'ERROR');
+            }
+
             if (isset($info['error']) || isset($holders['error']) || isset($tx['error'])) {
-                if (isset($info['error'])) {
-                    log_message("token_overview: getTokenInfo error - " . json_encode($info), 'token_overview_log.txt', 'ERROR');
-                }
-                if (isset($holders['error'])) {
-                    log_message("token_overview: getTokenHolders error - " . json_encode($holders), 'token_overview_log.txt', 'ERROR');
-                }
-                if (isset($tx['error'])) {
-                    log_message("token_overview: getTokenTxCount error - " . json_encode($tx), 'token_overview_log.txt', 'ERROR');
-                }
                 throw new Exception('Failed to fetch data from APIs');
             }
 
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
                 'price' => $info['priceUsdt'] ?? 0,
                 'marketcap' => $info['marketCap'] ?? 0,
                 'holders' => $holders['total'] ?? 0,
-                'tx_count' => $tx[0]['txCount'] ?? 'N/A',
+                'tx_count' => is_array($tx) ? count($tx) : 'N/A',
                 'timestamp' => time()
             ];
 
