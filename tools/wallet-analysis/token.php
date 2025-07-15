@@ -17,7 +17,6 @@ if (!$formatted_data) {
 ?>
 
 <?php if (!empty($formatted_data['tokens'])): ?>
-<h2>Tokens Details</h2>
 <div class="wallet-details token-details">
     <div class="token-table">
         <table>
