@@ -26,11 +26,11 @@ if (!$formatted_data || !$walletAddress) {
             <?php foreach ($formatted_data['nfts'] as $nft): ?>
             <tr>
                 <td><?php echo htmlspecialchars($nft['name']); ?></td>
-                <td>
+                <td class="mint-address" data-value="<?php echo htmlspecialchars($nft['mint']); ?>">
                     <span><?php echo substr(htmlspecialchars($nft['mint']), 0, 4) . '...' . substr(htmlspecialchars($nft['mint']), -4); ?></span>
                     <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['mint']); ?>"></i>
                 </td>
-                <td>
+                <td class="collection-address" data-value="<?php echo htmlspecialchars($nft['collection']); ?>">
                     <?php if ($nft['collection'] !== 'N/A' && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $nft['collection'])): ?>
                         <span><?php echo substr(htmlspecialchars($nft['collection']), 0, 4) . '...' . substr(htmlspecialchars($nft['collection']), -4); ?></span>
                         <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($nft['collection']); ?>"></i>
