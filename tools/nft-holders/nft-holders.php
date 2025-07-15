@@ -99,7 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                 'owner' => $asset['ownership']['owner'] ?? 'N/A'
             ];
 
-            $items = [];
             $wallets = [];
             $page = 1;
             $limit = 1000;
@@ -114,7 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                     if (isset($item['ownership']['owner'])) {
                         $owner = $item['ownership']['owner'];
                         $wallets[$owner] = ($wallets[$owner] ?? 0) + 1;
-                        $items[] = ['owner' => $owner, 'amount' => 1];
                     }
                 }
 
@@ -123,12 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             }
 
             $total_items = array_sum($wallets);
+            $total_wallets = count($wallets); // Gán để dùng hiển thị ngay lần đầu
             $wallet_list = array_map(fn($owner, $amount) => ['owner' => $owner, 'amount' => $amount], array_keys($wallets), $wallets);
 
             $cache_data[$mintAddress] = [
                 'total_items' => $total_items,
-                'total_wallets' => count($wallets),
-                'items' => $items,
+                'total_wallets' => $total_wallets,
+                'items' => $wallet_list,
                 'wallets' => $wallet_list,
                 'collection_data' => $collection_data,
                 'timestamp' => time()
@@ -136,15 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
         } else {
             extract($cache_data[$mintAddress]);
-            // Ensure wallets is available
-            if (!isset($wallets) || !is_array($wallets)) {
-                $wallets = [];
-                foreach ($items ?? [] as $w) {
-                    if (isset($w['owner'], $w['amount'])) {
-                        $wallets[$w['owner']] = $w['amount'];
-                    }
-                }
-            }
+            $total_wallets = $total_wallets ?? count($wallets ?? []);
         }
 
         ?>
@@ -152,7 +143,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             <?php if (($total_wallets ?? 0) === 0): ?>
                 <p class="result-error">No holders found for this collection.</p>
             <?php else: ?>
-                <!-- Collection Info Table -->
                 <div class="nft-collection-info">
                     <?php if (!empty($collection_data['image'])): ?>
                         <img src="<?php echo htmlspecialchars($collection_data['image']); ?>" alt="Collection Image">
