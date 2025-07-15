@@ -56,13 +56,13 @@
     margin-bottom: 20px;
     overflow-x: auto;
 }
-.token-table th, .nft-table th {
+.token-table tr, .nft-table tr {
     background: #f0f4f8;
     color: #333;
     font-weight: 600;
     padding: 6px 10px;
     text-align: left;
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
 }
 .token-table td, .nft-table td {
     padding: 4px 10px;
