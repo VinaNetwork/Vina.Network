@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 action: form.action
             });
 
-            if (exportType !== 'all') {
+            if (!['all', 'address-only'].includes(exportType)) {
                 console.warn('Invalid export type:', exportType);
                 alert('Invalid export type');
                 return;
