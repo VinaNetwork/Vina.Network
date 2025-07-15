@@ -34,6 +34,9 @@ if (!file_exists($api_helper_path)) {
     exit;
 }
 require_once $api_helper_path;
+
+// Load NFT holders helper
+require_once __DIR__ . '/nft-holders-helper.php';
 ?>
 
 <link rel="stylesheet" href="/tools/nft-holders/nft-holders.css">
@@ -99,30 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                 'owner' => $asset['ownership']['owner'] ?? 'N/A'
             ];
 
-            $wallets = [];
-            $page = 1;
-            $limit = 1000;
-            $max_pages = 500;
-
-            while ($page <= $max_pages) {
-                $params = ['groupKey' => 'collection', 'groupValue' => $mintAddress, 'page' => $page, 'limit' => $limit];
-                $response = callAPI('getAssetsByGroup', $params, 'POST');
-                if (!isset($response['result']['items'])) break;
-
-                foreach ($response['result']['items'] as $item) {
-                    if (isset($item['ownership']['owner'])) {
-                        $owner = $item['ownership']['owner'];
-                        $wallets[$owner] = ($wallets[$owner] ?? 0) + 1;
-                    }
-                }
-
-                if (count($response['result']['items']) < $limit) break;
-                $page++;
-            }
-
-            $total_items = array_sum($wallets);
-            $total_wallets = count($wallets); // Gán để dùng hiển thị ngay lần đầu
-            $wallet_list = array_map(fn($owner, $amount) => ['owner' => $owner, 'amount' => $amount], array_keys($wallets), $wallets);
+            $holderData = fetchNFTCollectionHolders($mintAddress);
+            $total_items = $holderData['total_items'];
+            $total_wallets = $holderData['total_wallets'];
+            $wallet_list = $holderData['wallets'];
 
             $cache_data[$mintAddress] = [
                 'total_items' => $total_items,
