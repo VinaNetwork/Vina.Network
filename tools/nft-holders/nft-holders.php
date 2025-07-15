@@ -196,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                                 <option value="json">JSON</option>
                             </select>
                             <button type="submit" name="export_type" value="all" class="cta-button export-btn">Export All Wallets</button>
+                            <button type="submit" name="export_type" value="wallets_only" class="cta-button export-btn">Export Wallets Only</button>
                         </div>
                     </form>
                     <div class="progress-container" style="display: none;">
