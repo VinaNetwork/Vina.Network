@@ -167,12 +167,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                         </div>
                     </div>
                 </div>
+
+                <?php if ($cache_valid): ?>
+                    <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
+                <?php endif; ?>
                 
                 <div class="export-section">
-                    <p>Export wallet list:</p>
-                    <?php if ($cache_valid): ?>
-                        <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $cache_data[$mintAddress]['timestamp']) . ' UTC+0'; ?>. Data will be updated every 3 hours.</p>
-                    <?php endif; ?>
+                    <h3>Export wallet list:</h3>
                     <form method="POST" action="/tools/nft-holders/nft-holders-export.php" class="export-form">
                         <input type="hidden" name="mintAddress" value="<?php echo htmlspecialchars($mintAddress); ?>">
                         <div class="export-controls">
