@@ -93,7 +93,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
             $holders = callAPI('getTokenHolders', ['mint' => $mint], 'GET');
             $tx = callAPI('getTokenTxCount', ['mint' => $mint], 'GET');
 
+            // Log individual API errors for debugging
             if (isset($info['error']) || isset($holders['error']) || isset($tx['error'])) {
+                if (isset($info['error'])) {
+                    log_message("token_overview: getTokenInfo error - " . json_encode($info), 'token_overview_log.txt', 'ERROR');
+                }
+                if (isset($holders['error'])) {
+                    log_message("token_overview: getTokenHolders error - " . json_encode($holders), 'token_overview_log.txt', 'ERROR');
+                }
+                if (isset($tx['error'])) {
+                    log_message("token_overview: getTokenTxCount error - " . json_encode($tx), 'token_overview_log.txt', 'ERROR');
+                }
                 throw new Exception('Failed to fetch data from APIs');
             }
 
