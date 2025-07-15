@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
             $info = callAPI('getTokenInfo', ['mint' => $mint], 'GET');
             $holders = callAPI('getTokenHolders', ['mint' => $mint], 'GET');
             $tx = callAPI('getTokenTxCount', ['mint' => $mint], 'GET');
+            $burnTxs = callAPI('getEnhancedTxByAddress', ['address' => '11111111111111111111111111111111'], 'GET');
 
             if (isset($info['error'])) {
                 log_message("token_overview: getTokenInfo error - " . json_encode($info), 'token_overview_log.txt', 'ERROR');
@@ -102,9 +103,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
             if (isset($tx['error'])) {
                 log_message("token_overview: getTokenTxCount error - " . json_encode($tx), 'token_overview_log.txt', 'ERROR');
             }
+            if (isset($burnTxs['error'])) {
+                log_message("token_overview: getEnhancedTxByAddress error - " . json_encode($burnTxs), 'token_overview_log.txt', 'ERROR');
+            }
 
-            if (isset($info['error']) || isset($holders['error']) || isset($tx['error'])) {
+            if (isset($info['error']) || isset($holders['error']) || isset($tx['error']) || isset($burnTxs['error'])) {
                 throw new Exception('Failed to fetch data from APIs');
+            }
+
+            $burnCount = 0;
+            $burnAmount = 0;
+            foreach ($burnTxs as $txItem) {
+                if (!empty($txItem['tokenTransfers'])) {
+                    foreach ($txItem['tokenTransfers'] as $transfer) {
+                        if ($transfer['mint'] === $mint) {
+                            $burnCount++;
+                            $burnAmount += $transfer['tokenAmount'];
+                        }
+                    }
+                }
             }
 
             $result = [
@@ -116,6 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
                 'marketcap' => $info['marketCap'] ?? 0,
                 'holders' => $holders['total'] ?? 0,
                 'tx_count' => is_array($tx) ? count($tx) : 'N/A',
+                'burn_count' => $burnCount,
+                'burn_amount' => $burnAmount,
                 'timestamp' => time()
             ];
 
@@ -133,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
             <tr><th>Price (USD)</th><td>$<?php echo number_format($result['price'], 6); ?></td></tr>
             <tr><th>Market Cap</th><td>$<?php echo number_format($result['marketcap'], 2); ?></td></tr>
             <tr><th>Total Transactions</th><td><?php echo number_format($result['tx_count']); ?></td></tr>
+            <tr><th>Total Burned</th><td><?php echo number_format($result['burn_amount']) . ' (' . $result['burn_count'] . ' tx)'; ?></td></tr>
         </table>
         <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $result['timestamp']); ?> UTC+0</p>
     </div>
@@ -146,6 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress']) && !$
 
     <div class="tools-about">
         <h2>About Token Overview</h2>
-        <p>This tool helps you get quick insights about any SPL token on Solana including holders, price, market cap, and transaction count.</p>
+        <p>This tool helps you get quick insights about any SPL token on Solana including holders, price, market cap, transaction count, and burned token stats.</p>
     </div>
 </div>
