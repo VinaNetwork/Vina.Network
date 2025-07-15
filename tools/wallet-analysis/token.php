@@ -25,7 +25,7 @@ if (!$formatted_data) {
             <?php foreach ($formatted_data['tokens'] as $token): ?>
             <tr>
                 <td><?php echo htmlspecialchars($token['name']); ?></td>
-                <td>
+                <td class="token-address" data-value="<?php echo htmlspecialchars($token['mint']); ?>">
                     <span><?php echo substr(htmlspecialchars($token['mint']), 0, 4) . '...' . substr(htmlspecialchars($token['mint']), -4); ?></span>
                     <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($token['mint']); ?>"></i>
                 </td>
