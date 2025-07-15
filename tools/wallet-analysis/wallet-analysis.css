@@ -75,10 +75,6 @@
 .token-table td:nth-child(4) {
     text-align: right;
 }
-.token-table td:last-child, 
-.nft-table td:last-child {
-    border-bottom: unset;
-}
 .token-table tr:hover, 
 .nft-table tr:hover {
     background: #f9fbfd;
