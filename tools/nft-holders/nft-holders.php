@@ -179,13 +179,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             <option value="csv">CSV</option>
             <option value="json">JSON</option>
         </select>
-
-        <label for="export_type">Export:</label>
         <select name="export_type" class="export-type" id="export_type">
             <option value="all">Wallets + NFT Count</option>
             <option value="address-only">Wallets Only</option>
         </select>
-
         <button type="submit" class="cta-button export-btn">Export</button>
     </div>
                     </form>
