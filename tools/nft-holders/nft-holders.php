@@ -133,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                 'timestamp' => time()
             ];
             file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+            extract($cache_data[$mintAddress]); // 👈 Fix: đảm bảo biến hiển thị được gán ngay sau khi lưu cache
         } else {
             extract($cache_data[$mintAddress]);
         }
