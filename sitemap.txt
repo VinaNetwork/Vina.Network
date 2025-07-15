@@ -11,6 +11,7 @@ Sitemap: Vina Network
 │   ├── all.css
 │   ├── poppins.css
 │   ├── home.css
+│   ├── navbar.css
 │   └── vina.css
 │
 ├── js/
@@ -18,13 +19,8 @@ Sitemap: Vina Network
 │   └── vina.js
 │
 ├── fonts/
-│   ├── ...
-│
 ├── webfonts/
-│   ├── ...
-│
 ├── img/
-│   ├── ...
 │
 ├── include/
 │   ├── header.php
@@ -59,6 +55,10 @@ Sitemap: Vina Network
 │   │   ├── nft-info.php
 │   │   └── cache/
 │   │       └── nft_info_cache.json
+│   ├── nft-transactions/
+│   │   ├── nft-transactions.php
+│   │   └── cache/
+│   │       └── nft_transactions_cache.json
 │   ├── nft-creator/
 │   │   ├── nft-creator.php
 │   │   └── cache/
@@ -67,8 +67,6 @@ Sitemap: Vina Network
 │   │   ├── wallet-analysis.php
 │   │   └── cache/
 │   │       └── wallet_analysis_cache.json
-│   ├── image/
-│   │   ├── ...
-│   ├── logs/
-│   └──   ├── ...
+│   ├── image/   
+│   └── logs/   
 └──
