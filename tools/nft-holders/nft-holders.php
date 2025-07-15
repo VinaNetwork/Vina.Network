@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             $cache_data[$mintAddress] = [
                 'total_items' => $total_items,
                 'total_wallets' => count($wallets),
-                'items' => [],
+                'items' => $wallet_list, // ✅ Đã cập nhật: dùng wallet_list thay vì mảng rỗng
                 'wallets' => $wallet_list,
                 'collection_data' => $collection_data,
                 'timestamp' => time()
