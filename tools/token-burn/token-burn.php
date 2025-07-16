@@ -27,39 +27,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
         $afterCursor = null;
 
         do {
-            $url = "https://api.helius.xyz/v0/addresses/{$tokenAddress}/transactions?limit=100";
+            $url = "addresses/{$tokenAddress}/transactions?limit=100";
             if ($afterCursor) $url .= "&before=" . urlencode($afterCursor);
             $url .= "&api-key=" . HELIUS_API_KEY;
 
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL => $url,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 20,
-                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            ]);
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            $response = callAPI($url, [], 'GET');
 
-            if ($httpCode !== 200 || !$response) {
-                $error = 'Failed to fetch transactions from Helius';
-                break;
-            }
-
-            $batch = json_decode($response, true);
-            if (!is_array($batch)) {
+            if (!is_array($response)) {
                 $error = 'Invalid API response format';
                 break;
             }
+            if (isset($response['error'])) {
+                $error = 'API error: ' . $response['error'];
+                break;
+            }
 
+            $batch = $response;
             $transactions = array_merge($transactions, $batch);
-            $afterCursor = end($batch)['signature'] ?? null;
-        } while (count($batch) === 100 && count($transactions) < 1000); // limit scan to 1000 txs for performance
 
-        // Tính tổng số token đã đốt
+            $lastTx = end($batch);
+            $afterCursor = is_array($lastTx) && isset($lastTx['signature']) ? $lastTx['signature'] : null;
+
+        } while (count($batch) === 100 && count($transactions) < 1000); // Limit to 1000 txs
+
+        // Tính tổng token đã đốt
         foreach ($transactions as $tx) {
-            // 1. Check tokenTransfers (gửi vào ví 111...)
+            // 1. Gửi vào ví 111...
             if (!empty($tx['tokenTransfers'])) {
                 foreach ($tx['tokenTransfers'] as $transfer) {
                     if (
@@ -72,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
                 }
             }
 
-            // 2. Check tokenBalanceChanges để tìm các burn không có người nhận
+            // 2. Các burn không có người nhận
             if (!empty($tx['accountData'])) {
                 foreach ($tx['accountData'] as $account) {
                     if (!empty($account['tokenBalanceChanges'])) {
@@ -110,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
     <div class="tools-form">
         <h2>Check Token Burn</h2>
         <p>Enter the <strong>Token Mint Address</strong> to see how many tokens were burned (sent to <code>111...</code> or burned directly).</p>
-        <form method="POST" action="" data-tool="token-burn">
+        <form id="tokenBurnForm" method="POST" action="" data-tool="token-burn">
             <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="input-wrapper">
                 <input type="text" name="tokenAddress" placeholder="Enter Token Mint Address" required value="<?php echo isset($_POST['tokenAddress']) ? htmlspecialchars($_POST['tokenAddress']) : ''; ?>">
