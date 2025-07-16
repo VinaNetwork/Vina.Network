@@ -4,7 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Define project constants for secured includes
 define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
@@ -24,50 +23,66 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
     do {
         $ch = curl_init();
         if (!$ch) {
-            log_message("api-helper: cURL initialization failed.", 'tools_api_log.txt', 'ERROR');
+            log_message("api-helper: Failed to initialize cURL.", 'tools_api_log.txt', 'ERROR');
             return ['error' => 'Failed to initialize cURL.'];
         }
 
-        $url = $helius_rpc_url;
-        if ($endpoint === 'getNamesByAddress') {
-            $url = "$helius_api_url/addresses/{$params['address']}/names?api-key=$helius_api_key";
-            $log_url = str_replace($helius_api_key, '****', $url);
-            $method = 'GET';
-        }
+        // GET_DYNAMIC: used for direct REST API calls like /v0/addresses/{address}/transactions
+        if ($method === 'GET_DYNAMIC') {
+            $url = "$helius_api_url/$endpoint";
+            $log_url = "$helius_api_url/$endpoint";
 
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $endpoint === 'getNamesByAddress' ? 90 : 30);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', "Authorization: Bearer $helius_api_key"]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_HEADER, true);
 
-        if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POST, 1);
-
-            if (!empty($params)) {
-                $actualParams = $params;
-
-                // Use object for 'getSignaturesForAsset', array for others
-                if ($endpoint === 'getSignaturesForAsset') {
-                    if (!isset($params['id'])) {
-                        log_message("api-error: Missing 'id' for getSignaturesForAsset", 'tools_api_log.txt', 'ERROR');
-                        return ['error' => "Missing 'id' for getSignaturesForAsset"];
-                    }
-                    $actualParams = (object)['id' => $params['id']];
-                }
-
-                $postData = json_encode([
-                    'jsonrpc' => '2.0',
-                    'id' => '1',
-                    'method' => $endpoint,
-                    'params' => $actualParams
-                ]);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-                log_message("api-helper: API request - URL: $log_url, Endpoint: $endpoint, Params: " . substr($postData, 0, 200) . "...", 'tools_api_log.txt');
+            log_message("api-helper: GET_DYNAMIC request - URL: $log_url", 'tools_api_log.txt');
+        } else {
+            // Standard RPC or known GET endpoints
+            $url = $helius_rpc_url;
+            if ($endpoint === 'getNamesByAddress') {
+                $url = "$helius_api_url/addresses/{$params['address']}/names?api-key=$helius_api_key";
+                $log_url = str_replace($helius_api_key, '****', $url);
+                $method = 'GET';
             }
-        } elseif ($method === 'GET') {
-            log_message("api-helper: GET request - URL: $log_url, Retry: $retry_count/$max_retries", 'tools_api_log.txt');
+
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $endpoint === 'getNamesByAddress' ? 90 : 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_HEADER, true);
+
+            if ($method === 'POST') {
+                curl_setopt($ch, CURLOPT_POST, 1);
+
+                if (!empty($params)) {
+                    $actualParams = $params;
+
+                    // getSignaturesForAsset requires object format
+                    if ($endpoint === 'getSignaturesForAsset') {
+                        if (!isset($params['id'])) {
+                            log_message("api-error: Missing 'id' for getSignaturesForAsset", 'tools_api_log.txt', 'ERROR');
+                            return ['error' => "Missing 'id' for getSignaturesForAsset"];
+                        }
+                        $actualParams = (object)['id' => $params['id']];
+                    }
+
+                    $postData = json_encode([
+                        'jsonrpc' => '2.0',
+                        'id' => '1',
+                        'method' => $endpoint,
+                        'params' => $actualParams
+                    ]);
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+                    log_message("api-helper: API request - URL: $log_url, Endpoint: $endpoint, Params: " . substr($postData, 0, 200) . "...", 'tools_api_log.txt');
+                }
+            } elseif ($method === 'GET') {
+                log_message("api-helper: GET request - URL: $log_url, Retry: $retry_count/$max_retries", 'tools_api_log.txt');
+            }
         }
 
         $response = curl_exec($ch);
