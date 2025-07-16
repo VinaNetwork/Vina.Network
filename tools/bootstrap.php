@@ -21,7 +21,7 @@ define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
 define('NFT_TRANSACTIONS_PATH', TOOLS_PATH . 'nft-transactions/');
 define('WALLET_CREATORS_PATH', TOOLS_PATH . 'wallet-creators/');
 define('WALLET_ANALYSIS_PATH', TOOLS_PATH . 'wallet-analysis/');
-define('TOKEN_OVERVIEW_PATH', TOOLS_PATH . 'token-overview/');
+define('TOKEN_BURN_PATH', TOOLS_PATH . 'token-burn/');
 define('LOGS_PATH', TOOLS_PATH . 'logs/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
 
