@@ -9,30 +9,34 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 // Load bootstrap
-$bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
+$bootstrap_path = dirname(__DIR__) . '/../bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    echo '<div class="result-error"><p>Error: Cannot find bootstrap.php</p></div>';
+    log_message("token_burn: bootstrap.php not found at $bootstrap_path", 'token_burn_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
 require_once $bootstrap_path;
 
 // Load API helper
-$api_helper_path = dirname(__DIR__) . '/tools-api.php';
+$api_helper_path = dirname(__DIR__) . '/../tools-api.php';
 if (!file_exists($api_helper_path)) {
-    echo '<div class="result-error"><p>Error: Cannot find tools-api.php</p></div>';
+    log_message("token_burn: tools-api.php not found at $api_helper_path", 'token_burn_log.txt', 'ERROR');
+    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
 
-$burnWallet = '11111111111111111111111111111111';
-$totalBurned = 0;
-$error = '';
-$result = null;
 ?>
 
 <link rel="stylesheet" href="/tools/token-burn/token-burn.css">
 <div class="token-burn">
 <?php
+$totalBurned = 0;
+$error = '';
+$result = null;
+$burnWallet = '11111111111111111111111111111111';
+$max_tx = 1000;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
     try {
         if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
@@ -48,22 +52,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
 
         $transactions = [];
         $afterCursor = null;
-        $maxTxs = 1000;
+        $scanCount = 0;
 
         do {
             $endpoint = "addresses/{$tokenAddress}/transactions?limit=100";
-            if ($afterCursor) $endpoint .= "&before=" . urlencode($afterCursor);
+            if ($afterCursor) {
+                $endpoint .= "&before=" . urlencode($afterCursor);
+            }
 
-            $response = callAPI($endpoint, [], 'GET');
-            if (isset($response['error'])) throw new Exception($response['error']);
-            if (!is_array($response)) throw new Exception('Invalid API response');
+            $response = callAPI($endpoint, [], 'GET_DYNAMIC');
+
+            if (isset($response['error'])) {
+                throw new Exception("Failed to fetch data from API. " . $response['error']);
+            }
+
+            if (!is_array($response)) {
+                throw new Exception('Invalid API response format');
+            }
 
             $transactions = array_merge($transactions, $response);
-            $afterCursor = end($response)['signature'] ?? null;
-        } while (count($response) === 100 && count($transactions) < $maxTxs);
+            $scanCount += count($response);
 
+            $afterCursor = end($response)['signature'] ?? null;
+        } while (count($response) === 100 && $scanCount < $max_tx);
+
+        // Tính tổng số token bị đốt
         foreach ($transactions as $tx) {
-            // 1. Burn via transfer to 111...
+            // 1. Gửi vào ví 111...
             if (!empty($tx['tokenTransfers'])) {
                 foreach ($tx['tokenTransfers'] as $transfer) {
                     if (
@@ -76,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
                 }
             }
 
-            // 2. Burn via balance change (no recipient)
+            // 2. Burn không có người nhận
             if (!empty($tx['accountData'])) {
                 foreach ($tx['accountData'] as $account) {
                     if (!empty($account['tokenBalanceChanges'])) {
@@ -87,8 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
                                 isset($change['rawTokenAmount']['decimals']) &&
                                 (float)$change['rawTokenAmount']['tokenAmount'] < 0 &&
                                 (
-                                    !isset($change['toUserAccount']) ||
-                                    empty($change['toUserAccount'])
+                                    !isset($change['toUserAccount']) || 
+                                    $change['toUserAccount'] === null || 
+                                    $change['toUserAccount'] === ''
                                 )
                             ) {
                                 $amount = abs((float)$change['rawTokenAmount']['tokenAmount']) / pow(10, (int)$change['rawTokenAmount']['decimals']);
@@ -104,16 +120,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
             'token' => $tokenAddress,
             'total_burned' => $totalBurned
         ];
+
     } catch (Exception $e) {
         $error = $e->getMessage();
-        log_message("token_burn: Exception - " . $e->getMessage(), 'token_burn_log.txt', 'ERROR');
+        log_message("token_burn: Exception - " . $error, 'token_burn_log.txt', 'ERROR');
     }
 }
 ?>
 
     <div class="tools-form">
         <h2>Check Token Burn</h2>
-        <p>Enter the <strong>Token Mint Address</strong> to see how many tokens were burned (sent to <code>111...</code> or burned directly).</p>
+        <p>Enter the <strong>Token Mint Address</strong> to calculate how many tokens were burned (sent to <code>111...</code> or via burn instructions).</p>
         <form id="tokenBurnForm" method="POST" action="" data-tool="token-burn">
             <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="input-wrapper">
@@ -134,9 +151,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
             <p><strong>Total Burned:</strong> <?php echo number_format($result['total_burned'], 6); ?></p>
         </div>
     <?php endif; ?>
+</div>
 
-    <div class="tools-about">
-        <h2>About Token Burn</h2>
-        <p>This tool scans Solana transactions to calculate total tokens burned by analyzing transfers to <code>11111111111111111111111111111111</code> and direct burn actions.</p>
-    </div>
+<div class="tools-about">
+    <h2>About Token Burn</h2>
+    <p>This tool scans Solana transactions to calculate total tokens burned by analyzing transfers to <code>11111111111111111111111111111111</code> and direct burn actions.</p>
 </div>
