@@ -1,31 +1,119 @@
 <?php
 // ============================================================================
 // File: tools/token-burn/token-burn.php
-// Description: Check how many tokens have been burned for a given token address.
+// Description: Check how many tokens have been burned (sent to 111... or burned)
 // Created by: Vina Network
 // ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
-// Load bootstrap
-$bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
-require_once $bootstrap_path;
+require_once dirname(__DIR__) . '/../bootstrap.php';
+require_once dirname(__DIR__) . '/../tools-api.php';
 
-// Load API helper
-$api_helper_path = dirname(__DIR__) . '/tools-api.php';
-require_once $api_helper_path;
+$burnWallet = '11111111111111111111111111111111';
+$totalBurned = 0;
+$error = '';
+$result = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tokenAddress'])) {
+    $tokenAddress = trim($_POST['tokenAddress']);
+    $tokenAddress = preg_replace('/\s+/', '', $tokenAddress);
+
+    if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $tokenAddress)) {
+        $error = 'Invalid token address';
+    } else {
+        $transactions = [];
+        $afterCursor = null;
+
+        do {
+            $url = "https://api.helius.xyz/v0/addresses/{$tokenAddress}/transactions?limit=100";
+            if ($afterCursor) $url .= "&before=" . urlencode($afterCursor);
+            $url .= "&api-key=" . HELIUS_API_KEY;
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 20,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            ]);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200 || !$response) {
+                $error = 'Failed to fetch transactions from Helius';
+                break;
+            }
+
+            $batch = json_decode($response, true);
+            if (!is_array($batch)) {
+                $error = 'Invalid API response format';
+                break;
+            }
+
+            $transactions = array_merge($transactions, $batch);
+            $afterCursor = end($batch)['signature'] ?? null;
+        } while (count($batch) === 100 && count($transactions) < 1000); // limit scan to 1000 txs for performance
+
+        // Tính tổng số token đã đốt
+        foreach ($transactions as $tx) {
+            // 1. Check tokenTransfers (gửi vào ví 111...)
+            if (!empty($tx['tokenTransfers'])) {
+                foreach ($tx['tokenTransfers'] as $transfer) {
+                    if (
+                        $transfer['mint'] === $tokenAddress &&
+                        isset($transfer['toUserAccount']) &&
+                        $transfer['toUserAccount'] === $burnWallet
+                    ) {
+                        $totalBurned += (float)$transfer['tokenAmount'];
+                    }
+                }
+            }
+
+            // 2. Check tokenBalanceChanges để tìm các burn không có người nhận
+            if (!empty($tx['accountData'])) {
+                foreach ($tx['accountData'] as $account) {
+                    if (!empty($account['tokenBalanceChanges'])) {
+                        foreach ($account['tokenBalanceChanges'] as $change) {
+                            if (
+                                $change['mint'] === $tokenAddress &&
+                                isset($change['rawTokenAmount']['tokenAmount']) &&
+                                isset($change['rawTokenAmount']['decimals']) &&
+                                (float)$change['rawTokenAmount']['tokenAmount'] < 0 &&
+                                (
+                                    !isset($change['toUserAccount']) || 
+                                    $change['toUserAccount'] === null || 
+                                    $change['toUserAccount'] === ''
+                                )
+                            ) {
+                                $amount = abs((float)$change['rawTokenAmount']['tokenAmount']) / pow(10, (int)$change['rawTokenAmount']['decimals']);
+                                $totalBurned += $amount;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $result = [
+            'token' => $tokenAddress,
+            'total_burned' => $totalBurned
+        ];
+    }
+}
 ?>
 
 <link rel="stylesheet" href="/tools/token-burn/token-burn.css">
 <div class="token-burn">
     <div class="tools-form">
-        <h2>Check Token Burned</h2>
-        <p>Enter the <strong>Token Mint Address</strong> to check how many tokens have been burned (sent to <code>11111111111111111111111111111111</code> or burned).</p>
-        <form method="POST" action="" id="tokenBurnForm" data-tool="token-burn">
+        <h2>Check Token Burn</h2>
+        <p>Enter the <strong>Token Mint Address</strong> to see how many tokens were burned (sent to <code>111...</code> or burned directly).</p>
+        <form method="POST" action="" data-tool="token-burn">
             <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="input-wrapper">
-                <input type="text" name="mintAddress" placeholder="Enter Token Mint Address" required>
+                <input type="text" name="tokenAddress" placeholder="Enter Token Mint Address" required value="<?php echo isset($_POST['tokenAddress']) ? htmlspecialchars($_POST['tokenAddress']) : ''; ?>">
                 <span class="clear-input" title="Clear input">×</span>
             </div>
             <button type="submit" class="cta-button">Check</button>
@@ -33,62 +121,18 @@ require_once $api_helper_path;
         <div class="loader"></div>
     </div>
 
-<?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
-    try {
-        if (!validate_csrf_token($_POST['csrf_token'])) throw new Exception('Invalid CSRF token');
+    <?php if ($error): ?>
+        <div class="result-error"><p><?php echo htmlspecialchars($error); ?></p></div>
+    <?php elseif ($result): ?>
+        <div class="tools-result token-burn-result">
+            <h2>Token Burn Result</h2>
+            <p><strong>Token:</strong> <?php echo htmlspecialchars($result['token']); ?></p>
+            <p><strong>Total Burned:</strong> <?php echo number_format($result['total_burned'], 6); ?></p>
+        </div>
+    <?php endif; ?>
+</div>
 
-        $mint = trim($_POST['mintAddress']);
-        if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mint)) throw new Exception('Invalid token mint address');
-
-        $burnAddress = "11111111111111111111111111111111";
-        $totalBurned = 0;
-        $cursor = null;
-        $maxPages = 5;
-
-        for ($page = 0; $page < $maxPages; $page++) {
-            $endpoint = "https://api.helius.xyz/v0/addresses/$burnAddress/transactions?api-key=" . HELIUS_API_KEY;
-            if ($cursor) $endpoint .= "&before=$cursor";
-
-            $response = file_get_contents($endpoint);
-            if (!$response) throw new Exception("API request failed");
-
-            $data = json_decode($response, true);
-            if (!is_array($data)) throw new Exception("Invalid API response");
-
-            foreach ($data as $tx) {
-                if (!empty($tx['tokenTransfers'])) {
-                    foreach ($tx['tokenTransfers'] as $transfer) {
-                        if (
-                            isset($transfer['toUserAccount']) &&
-                            $transfer['toUserAccount'] === $burnAddress &&
-                            isset($transfer['mint']) &&
-                            $transfer['mint'] === $mint &&
-                            isset($transfer['tokenAmount'])
-                        ) {
-                            $totalBurned += $transfer['tokenAmount'];
-                        }
-                    }
-                }
-            }
-
-            if (count($data) < 50 || empty(end($data)['signature'])) break;
-            $cursor = end($data)['signature'];
-        }
-
-        echo '<div class="tools-result token-burn-result">';
-        echo '<h2>Burn Result</h2>';
-        echo '<p><strong>Token:</strong> ' . htmlspecialchars($mint) . '</p>';
-        echo '<p><strong>Total Burned:</strong> ' . number_format($totalBurned, 0) . '</p>';
-        echo '</div>';
-    } catch (Exception $e) {
-        echo '<div class="result-error"><p>Error: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
-        log_message("token_burn: " . $e->getMessage(), 'token_burn_log.txt', 'ERROR');
-    }
-}
-?>
-    <div class="tools-about">
-        <h2>About Token Burn Checker</h2>
-        <p>This tool fetches transactions to the burn address (111...) and calculates how many tokens of the selected mint have been destroyed.</p>
-    </div>
+<div class="tools-about">
+    <h2>About Token Burn</h2>
+    <p>This tool scans Solana transactions to calculate total tokens burned by analyzing transfers to <code>11111111111111111111111111111111</code> and direct burn actions.</p>
 </div>
