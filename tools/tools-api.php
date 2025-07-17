@@ -4,9 +4,8 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Define project constants for secured includes
-define('VINANETWORK', true);
-define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK')) define('VINANETWORK', true);
+if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
@@ -19,7 +18,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
     $max_retries = $endpoint === 'getNamesByAddress' ? 5 : 3;
     $retry_count = 0;
-    $retry_delays = [2000000, 5000000, 10000000, 15000000, 20000000];
+    $retry_delays = $endpoint === 'getNamesByAddress' ? [2000000, 5000000, 10000000, 15000000, 20000000] : [2000000, 5000000, 10000000];
 
     do {
         $ch = curl_init();
@@ -33,6 +32,13 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             $url = "$helius_api_url/addresses/{$params['address']}/names?api-key=$helius_api_key";
             $log_url = str_replace($helius_api_key, '****', $url);
             $method = 'GET';
+        } elseif ($endpoint === 'transactions') {
+            $url = "$helius_api_url/addresses/{$params['address']}/transactions?api-key=$helius_api_key";
+            if (isset($params['before'])) {
+                $url .= "&before={$params['before']}";
+            }
+            $log_url = str_replace($helius_api_key, '****', $url);
+            $method = 'GET';
         }
 
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -44,11 +50,8 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, 1);
-
             if (!empty($params)) {
                 $actualParams = $params;
-
-                // Use object for 'getSignaturesForAsset', array for others
                 if ($endpoint === 'getSignaturesForAsset') {
                     if (!isset($params['id'])) {
                         log_message("api-error: Missing 'id' for getSignaturesForAsset", 'tools_api_log.txt', 'ERROR');
@@ -56,7 +59,6 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                     }
                     $actualParams = (object)['id' => $params['id']];
                 }
-
                 $postData = json_encode([
                     'jsonrpc' => '2.0',
                     'id' => '1',
@@ -67,7 +69,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
                 log_message("api-helper: API request - URL: $log_url, Endpoint: $endpoint, Params: " . substr($postData, 0, 200) . "...", 'tools_api_log.txt');
             }
         } elseif ($method === 'GET') {
-            log_message("api-helper: GET request - URL: $log_url, Retry: $retry_count/$max_retries", 'tools_api_log.txt');
+            log_message("api-helper: GET request - URL: $log_url, Endpoint: $endpoint, Retry: $retry_count/$max_retries", 'tools_api_log.txt');
         }
 
         $response = curl_exec($ch);
