@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 $bootstrap_path = dirname(__DIR__).'/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     error_log("[".date('Y-m-d H:i:s')."] [CRITICAL] token_burn: bootstrap.php not found at $bootstrap_path", 3, '/var/www/vinanetwork/public_html/tools/logs/php_errors.txt');
-    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
+    echo json_encode(['error' => 'Cannot find bootstrap.php']);
     exit;
 }
 require_once $bootstrap_path;
@@ -19,13 +19,17 @@ require_once $bootstrap_path;
 $cache_dir = TOKEN_BURN_PATH.'cache/';
 $cache_file = $cache_dir.'token_burn_cache.json';
 if (!file_exists($cache_file)) {
-    file_put_contents($cache_file, json_encode([]));
+    if (file_put_contents($cache_file, json_encode([])) === false) {
+        error_log("[".date('Y-m-d H:i:s')."] [ERROR] token_burn: Failed to create cache file $cache_file", 3, '/var/www/vinanetwork/public_html/tools/logs/php_errors.txt');
+        echo json_encode(['error' => 'Failed to create cache file']);
+        exit;
+    }
     chmod($cache_file, 0664);
     error_log("[".date('Y-m-d H:i:s')."] [INFO] token_burn: Created cache file $cache_file", 3, '/var/www/vinanetwork/public_html/tools/logs/php_errors.txt');
 }
 if (!ensure_directory_and_file($cache_dir, $cache_file, 'token_burn_log.txt')) {
     error_log("[".date('Y-m-d H:i:s')."] [CRITICAL] token_burn: Cache setup failed for $cache_dir or $cache_file", 3, '/var/www/vinanetwork/public_html/tools/logs/php_errors.txt');
-    echo '<div class="result-error"><p>Cache setup failed</p></div>';
+    echo json_encode(['error' => 'Cache setup failed']);
     exit;
 }
 log_message("token_burn: Cache setup completed, cache_dir=$cache_dir", 'token_burn_log.txt', 'INFO');
@@ -33,12 +37,14 @@ log_message("token_burn: Cache setup completed, cache_dir=$cache_dir", 'token_bu
 $api_helper_path = dirname(__DIR__).'/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("token_burn: tools-api.php not found at $api_helper_path", 'token_burn_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
+    echo json_encode(['error' => 'Server error: Missing tools-api.php']);
     exit;
 }
 require_once $api_helper_path;
 
 $burn_address = '11111111111111111111111111111111';
+header('Content-Type: application/json');
+ob_start();
 ?>
 <link rel="stylesheet" href="/tools/token-burn/token-burn.css">
 <div class="token-burn">
@@ -55,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
     } elseif ($rate_limit_count >= 5) {
         $rate_limit_exceeded = true;
         log_message("token_burn: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'token_burn_log.txt', 'ERROR');
-        echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
+        echo json_encode(['error' => 'Rate limit exceeded. Please try again in a minute.']);
+        exit;
     } else {
         $_SESSION[$rate_limit_key]['count']++;
         log_message("token_burn: Incremented rate limit for IP=$ip, count=".$_SESSION[$rate_limit_key]['count'], 'token_burn_log.txt', 'INFO');
@@ -75,6 +82,10 @@ if (!$rate_limit_exceeded): ?>
         </form>
         <div class="loader"></div>
         <p class="loading-message" style="display: none;">Processing large transaction data, please wait...</p>
+        <div class="progress-container" style="display: none;">
+            <p>Fetching transactions: <span id="progress-percentage">0%</span></p>
+            <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+        </div>
     </div>
 <?php endif;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !$rate_limit_exceeded) {
@@ -91,36 +102,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
         }
         echo "<script>document.querySelector('.loader').style.display = 'block'; document.querySelector('.loading-message').style.display = 'block';</script>";
         $cache_data = file_exists($cache_file) ? json_decode(file_get_contents($cache_file), true) ?? [] : [];
-        $cache_expiration = 6 * 3600; // Tăng lên 6 giờ
+        $cache_expiration = 6 * 3600;
         $cache_key = $walletAddress;
         $cache_valid = isset($cache_data[$cache_key]) && (time() - $cache_data[$cache_key]['timestamp'] < $cache_expiration);
         log_message("token_burn: Cache valid=$cache_valid for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
         $total_burned = 0;
         $burned_by_token = [];
         if (!$cache_valid) {
-            log_message("token_burn: Fetching transactions for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
-            $transactions = [];
-            $before = null;
-            $max_transactions = 5000; // Giới hạn 5000 giao dịch
-            $transaction_count = 0;
-            do {
-                $params = ['address' => $walletAddress];
-                if ($before) $params['before'] = $before;
-                $data = callAPI('transactions', $params, 'GET');
-                if (isset($data['error'])) {
-                    log_message("token_burn: API error: ".json_encode($data['error']), 'token_burn_log.txt', 'ERROR');
-                    throw new Exception($data['error']);
-                }
-                $transactions = array_merge($transactions, $data);
-                $transaction_count += count($data);
-                $before = end($data)['signature'] ?? null;
-                log_message("token_burn: Retrieved ".count($data)." transactions, total: $transaction_count", 'token_burn_log.txt', 'INFO');
-                if ($transaction_count >= $max_transactions) {
-                    log_message("token_burn: Reached max transaction limit ($max_transactions) for walletAddress=$walletAddress", 'token_burn_log.txt', 'WARNING');
-                    break;
-                }
-            } while ($before && count($data) > 0);
-            foreach ($transactions as $tx) {
+            // Dùng session để lưu trạng thái batch
+            $session_key = "token_burn:$walletAddress";
+            $batch_size = 500; // Batch 500 giao dịch
+            $max_transactions = 2000; // Giới hạn tổng
+            $batch_data = $_SESSION[$session_key] ?? [
+                'transactions_processed' => 0,
+                'total_burned' => 0,
+                'burned_by_token' => [],
+                'before' => null,
+                'last_batch_time' => time()
+            ];
+            if (time() - $batch_data['last_batch_time'] > 3600) {
+                // Reset nếu quá 1 giờ
+                $batch_data = [
+                    'transactions_processed' => 0,
+                    'total_burned' => 0,
+                    'burned_by_token' => [],
+                    'before' => null,
+                    'last_batch_time' => time()
+                ];
+            }
+            log_message("token_burn: Fetching transactions for walletAddress=$walletAddress, batch_size=$batch_size, processed={$batch_data['transactions_processed']}", 'token_burn_log.txt', 'INFO');
+            $params = ['address' => $walletAddress];
+            if ($batch_data['before']) $params['before'] = $batch_data['before'];
+            $data = callAPI('transactions', $params, 'GET');
+            if (isset($data['error'])) {
+                log_message("token_burn: API error: ".json_encode($data['error']), 'token_burn_log.txt', 'ERROR');
+                throw new Exception($data['error']);
+            }
+            $batch_transactions = $data;
+            $batch_data['transactions_processed'] += count($batch_transactions);
+            foreach ($batch_transactions as $tx) {
                 if (isset($tx['tokenTransfers'])) {
                     foreach ($tx['tokenTransfers'] as $transfer) {
                         if (($transfer['toUserAccount'] === $burn_address || $transfer['toTokenAccount'] === $burn_address) && $transfer['fromUserAccount'] === $walletAddress) {
@@ -128,8 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
                             $amount = $transfer['tokenAmount'];
                             $decimals = $transfer['rawTokenAmount']['decimals'] ?? 0;
                             $adjusted_amount = $amount / pow(10, $decimals);
-                            $total_burned += $adjusted_amount;
-                            $burned_by_token[$mint] = ($burned_by_token[$mint] ?? 0) + $adjusted_amount;
+                            $batch_data['total_burned'] += $adjusted_amount;
+                            $batch_data['burned_by_token'][$mint] = ($batch_data['burned_by_token'][$mint] ?? 0) + $adjusted_amount;
                             log_message("token_burn: Burn to $burn_address, mint=$mint, amount=$adjusted_amount", 'token_burn_log.txt', 'DEBUG');
                         }
                     }
@@ -145,8 +165,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
                                             $amount = abs($change['rawTokenAmount']['tokenAmount']);
                                             $decimals = $change['rawTokenAmount']['decimals'];
                                             $adjusted_amount = $amount / pow(10, $decimals);
-                                            $total_burned += $adjusted_amount;
-                                            $burned_by_token[$mint] = ($burned_by_token[$mint] ?? 0) + $adjusted_amount;
+                                            $batch_data['total_burned'] += $adjusted_amount;
+                                            $batch_data['burned_by_token'][$mint] = ($batch_data['burned_by_token'][$mint] ?? 0) + $adjusted_amount;
                                             log_message("token_burn: Burn instruction, mint=$mint, amount=$adjusted_amount", 'token_burn_log.txt', 'DEBUG');
                                         }
                                     }
@@ -156,30 +176,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
                     }
                 }
             }
+            $batch_data['before'] = end($batch_transactions)['signature'] ?? null;
+            $batch_data['last_batch_time'] = time();
+            $_SESSION[$session_key] = $batch_data;
+            $total_burned = $batch_data['total_burned'];
+            $burned_by_token = $batch_data['burned_by_token'];
+            $progress = min(100, ($batch_data['transactions_processed'] / $max_transactions) * 100);
+            // Flush partial result
+            if ($batch_data['transactions_processed'] < $max_transactions && $batch_data['before']) {
+                echo json_encode([
+                    'success' => true,
+                    'partial' => true,
+                    'progress' => $progress,
+                    'total_burned' => number_format($total_burned, 6),
+                    'burned_by_token' => $burned_by_token,
+                    'transactions_processed' => $batch_data['transactions_processed'],
+                    'next_before' => $batch_data['before']
+                ]);
+                ob_flush();
+                flush();
+                exit; // Chờ AJAX tiếp theo
+            }
+            // Hoàn tất: Lưu cache
             $cache_data[$cache_key] = [
                 'total_burned' => $total_burned,
                 'burned_by_token' => $burned_by_token,
                 'timestamp' => time()
             ];
             $fp = fopen($cache_file, 'c');
-            if (flock($fp, LOCK_EX)) {
-                if (!file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
-                    log_message("token_burn: Failed to write to cache file", 'token_burn_log.txt', 'ERROR');
-                    throw new Exception('Failed to write to cache file');
-                }
-                flock($fp, LOCK_UN);
-            } else {
-                log_message("token_burn: Failed to lock cache file", 'token_burn_log.txt', 'ERROR');
+            if (!$fp || !flock($fp, LOCK_EX)) {
+                log_message("token_burn: Failed to lock cache file: $cache_file", 'token_burn_log.txt', 'ERROR');
                 throw new Exception('Failed to lock cache file');
             }
+            if (file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
+                log_message("token_burn: Failed to write to cache file: $cache_file", 'token_burn_log.txt', 'ERROR');
+                flock($fp, LOCK_UN);
+                fclose($fp);
+                throw new Exception('Failed to write to cache file');
+            }
+            flock($fp, LOCK_UN);
             fclose($fp);
             log_message("token_burn: Cache updated for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
+            unset($_SESSION[$session_key]); // Xóa session
         } else {
             $total_burned = $cache_data[$cache_key]['total_burned'];
             $burned_by_token = $cache_data[$cache_key]['burned_by_token'];
             log_message("token_burn: Retrieved from cache for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
         }
-        echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none';</script>";
+        echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none'; document.querySelector('.progress-container').style.display = 'none';</script>";
 ?>
         <div class="tools-result token-burn-result">
             <h2>Total Burned Tokens</h2>
@@ -208,17 +252,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
                                             <th>Mint Address</th>
                                             <th>Burned Amount</th>
                                         </tr>
-                                        <?php foreach ($burned_by_token as $mint => $amount): ?>
-                                            <tr>
-                                                <td>
-                                                    <a href="https://solscan.io/address/<?php echo htmlspecialchars($mint); ?>" target="_blank">
-                                                        <?php echo substr(htmlspecialchars($mint), 0, 4).'...'.substr(htmlspecialchars($mint), -4); ?>
-                                                    </a>
-                                                    <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($mint); ?>"></i>
-                                                </td>
-                                                <td><?php echo number_format($amount, 6); ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
+                                        <?php if (empty($burned_by_token)): ?>
+                                            <tr><td colspan="2">No burned tokens found</td></tr>
+                                        <?php else: ?>
+                                            <?php foreach ($burned_by_token as $mint => $amount): ?>
+                                                <tr>
+                                                    <td>
+                                                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($mint); ?>" target="_blank">
+                                                            <?php echo substr(htmlspecialchars($mint), 0, 4).'...'.substr(htmlspecialchars($mint), -4); ?>
+                                                        </a>
+                                                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($mint); ?>"></i>
+                                                    </td>
+                                                    <td><?php echo number_format($amount, 6); ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </table>
                                 </td>
                             </tr>
@@ -234,8 +282,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
     } catch (Exception $e) {
         $error_msg = "Error: ".$e->getMessage();
         log_message("token_burn: Exception - $error_msg", 'token_burn_log.txt', 'ERROR');
-        echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none';</script>";
-        echo "<div class='result-error'><p>$error_msg</p></div>";
+        echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none'; document.querySelector('.progress-container').style.display = 'none';</script>";
+        echo json_encode(['error' => $error_msg]);
+        exit;
     }
 }
 ?>
@@ -244,3 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
         <p>This tool calculates the total tokens burned by a Solana wallet address, including tokens sent to the burn address and tokens burned via burn instructions.</p>
     </div>
 </div>
+<?php
+$output = ob_get_clean();
+echo json_encode(['success' => true, 'html' => $output]);
+?>
