@@ -218,151 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('submit', (e) => {
         console.log('Form submitted:', e.target.id, 'Action:', e.target.action);
 
-        // Handle tokenBurnForm submission with batch processing
-        if (e.target.matches('#tokenBurnForm')) {
-            e.preventDefault();
-            const form = e.target;
-            const loader = document.querySelector('.loader');
-            const progressContainer = document.querySelector('.progress-container');
-            const progressPercentage = document.querySelector('#progress-percentage');
-            const progressBarFill = document.querySelector('.progress-bar-fill');
-            const loadingMessage = document.querySelector('.loading-message');
-            const contentContainer = document.querySelector('.tools-content');
-            const walletAddress = form.querySelector('#walletAddress').value;
-            const csrfToken = form.querySelector('input[name="csrf_token"]').value;
-
-            console.log('Token Burn Form submission:', { walletAddress });
-
-            if (loader) loader.style.display = 'block';
-            if (loadingMessage) loadingMessage.style.display = 'block';
-            if (progressContainer) progressContainer.style.display = 'block';
-
-            let totalBurned = 0;
-            let burnedByToken = {};
-            let transactionsProcessed = 0;
-            let before = null;
-
-            function fetchNextBatch() {
-                const formData = new FormData();
-                formData.append('walletAddress', walletAddress);
-                formData.append('csrf_token', csrfToken);
-                if (before) formData.append('before', before);
-
-                fetch('/tools/token-burn/fetch-transactions.php', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {'X-Requested-With': 'XMLHttpRequest'},
-                    timeout: 30000 // 30s timeout mỗi batch
-                })
-                .then(response => {
-                    console.log(`Token Burn batch fetch status: ${response.status}`);
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            try {
-                                const json = JSON.parse(text);
-                                throw new Error(json.error || `HTTP error! Status: ${response.status}`);
-                            } catch (e) {
-                                throw new Error(`HTTP error! Status: ${response.status}, Response: ${text || 'Empty response'}`);
-                            }
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Token Burn batch response:', data);
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    totalBurned = parseFloat(data.total_burned) || totalBurned;
-                    burnedByToken = { ...burnedByToken, ...data.burned_by_token };
-                    transactionsProcessed = data.transactions_processed || transactionsProcessed;
-                    if (data.partial) {
-                        // Cập nhật progress
-                        if (progressPercentage && progressBarFill) {
-                            progressPercentage.textContent = `${Math.round(data.progress)}%`;
-                            progressBarFill.style.width = `${data.progress}%`;
-                        }
-                        before = data.next_before;
-                        fetchNextBatch(); // Tiếp tục batch tiếp theo
-                    } else {
-                        // Hoàn tất: Gọi tools-load.php để lấy HTML cuối
-                        const finalFormData = new FormData(form);
-                        fetch('/tools/tools-load.php?tool=token-burn', {
-                            method: 'POST',
-                            body: finalFormData,
-                            headers: {'X-Requested-With': 'XMLHttpRequest'}
-                        })
-                        .then(response => {
-                            console.log(`Final Token Burn fetch status: ${response.status}`);
-                            if (!response.ok) {
-                                return response.text().then(text => {
-                                    try {
-                                        const json = JSON.parse(text);
-                                        throw new Error(json.error || `HTTP error! Status: ${response.status}`);
-                                    } catch (e) {
-                                        throw new Error(`HTTP error! Status: ${response.status}, Response: ${text || 'Empty response'}`);
-                                    }
-                                });
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Final Token Burn response:', data);
-                            if (data.error) {
-                                contentContainer.innerHTML = `
-                                    <div class="tools-back">
-                                        <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-                                    </div>
-                                    <div class="result-error"><p>Error: ${data.error}</p></div>
-                                `;
-                            } else {
-                                contentContainer.innerHTML = `
-                                    <div class="tools-back">
-                                        <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-                                    </div>
-                                    ${data.html}
-                                `;
-                            }
-                            contentContainer.classList.add('slide-in');
-                            if (loader) loader.style.display = 'none';
-                            if (loadingMessage) loadingMessage.style.display = 'none';
-                            if (progressContainer) progressContainer.style.display = 'none';
-                            initializeClearInput();
-                        })
-                        .catch(error => {
-                            console.error('Error fetching final Token Burn HTML:', error);
-                            contentContainer.innerHTML = `
-                                <div class="tools-back">
-                                    <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-                                </div>
-                                <div class="result-error"><p>Error submitting form: ${error.message}</p></div>
-                            `;
-                            contentContainer.classList.add('slide-in');
-                            if (loader) loader.style.display = 'none';
-                            if (loadingMessage) loadingMessage.style.display = 'none';
-                            if (progressContainer) progressContainer.style.display = 'none';
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching Token Burn batch:', error);
-                    contentContainer.innerHTML = `
-                        <div class="tools-back">
-                            <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-                        </div>
-                        <div class="result-error"><p>Error fetching transactions: ${error.message}</p></div>
-                    `;
-                    contentContainer.classList.add('slide-in');
-                    if (loader) loader.style.display = 'none';
-                    if (loadingMessage) loadingMessage.style.display = 'none';
-                    if (progressContainer) progressContainer.style.display = 'none';
-                });
-            }
-
-            fetchNextBatch();
-            return;
-        }
-
         // Export form submission (NFT Holders)
         if (e.target.matches('.export-form')) {
             e.preventDefault();
@@ -479,8 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Handle other form submissions (nftInfoForm, nftHoldersForm, nftTransactionForm, walletCreatorForm, walletAnalysisForm)
-        if (e.target.matches('#nftInfoForm, #nftHoldersForm, #nftTransactionForm, #walletCreatorForm, #walletAnalysisForm')) {
+        // Handle form submissions (walletAnalysisForm, nftHoldersForm, nftInfoForm, walletCreatorForm, tokenBurnForm)
+        if (e.target.matches('#nftInfoForm, #nftHoldersForm, #nftTransactionForm, #walletCreatorForm, #walletAnalysisForm, #tokenBurnForm')) {
             e.preventDefault();
             const form = e.target;
             const loader = document.querySelector('.loader');
@@ -525,23 +380,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 }
-                return response.json();
+                return response.text();
             })
             .then(data => {
-                console.log(`Form ${form.id} response:`, data);
-                if (data.error) {
+                console.log(`Form ${form.id} response length: ${data.length}`);
+                try {
+                    const json = JSON.parse(data);
+                    if (json.error) {
+                        contentContainer.innerHTML = `
+                            <div class="tools-back">
+                                <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+                            </div>
+                            <div class="result-error"><p>Error: ${json.error}</p></div>
+                        `;
+                        return;
+                    }
+                } catch (e) {
+                    // Not JSON, assume HTML
                     contentContainer.innerHTML = `
                         <div class="tools-back">
                             <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
                         </div>
-                        <div class="result-error"><p>Error: ${data.error}</p></div>
-                    `;
-                } else {
-                    contentContainer.innerHTML = `
-                        <div class="tools-back">
-                            <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-                        </div>
-                        ${data.html}
+                        ${data}
                     `;
                 }
                 contentContainer.classList.add('slide-in');
