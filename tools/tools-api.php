@@ -9,6 +9,10 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 require_once 'bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
+    if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
+        log_message("api-error: HELIUS_API_KEY not defined or empty", 'tools_api_log.txt', 'ERROR');
+        return ['error' => 'API key not configured'];
+    }
     $helius_api_key = HELIUS_API_KEY;
     $helius_rpc_url = "https://mainnet.helius-rpc.com/?api-key=$helius_api_key";
     $helius_api_url = "https://api.helius.xyz/v0";
@@ -33,6 +37,10 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             $log_url = str_replace($helius_api_key, '****', $url);
             $method = 'GET';
         } elseif ($endpoint === 'transactions') {
+            if (!isset($params['address']) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $params['address'])) {
+                log_message("api-error: Invalid or missing address for transactions endpoint", 'tools_api_log.txt', 'ERROR');
+                return ['error' => 'Invalid or missing address'];
+            }
             $url = "$helius_api_url/addresses/{$params['address']}/transactions?api-key=$helius_api_key";
             if (isset($params['before'])) {
                 $url .= "&before={$params['before']}";
@@ -44,7 +52,7 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, $endpoint === 'getNamesByAddress' ? 90 : 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $endpoint === 'transactions' ? 90 : ($endpoint === 'getNamesByAddress' ? 90 : 30));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
 
@@ -82,11 +90,21 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $headers = substr($response, 0, $header_size);
         $body = substr($response, $header_size);
+        $response_size = strlen($body);
         curl_close($ch);
 
-        log_message("api-helper: Response - HTTP: $httpCode, URL: $log_url, Body: " . substr($body, 0, 500) . "...", 'tools_api_log.txt');
+        log_message("api-helper: Response - HTTP: $httpCode, URL: $log_url, Size: $response_size bytes, Body: " . substr($body, 0, 500) . "...", 'tools_api_log.txt');
+
+        if ($response_size > 5242880) { // 5MB limit
+            log_message("api-error: Response too large: $response_size bytes, URL: $log_url", 'tools_api_log.txt', 'ERROR');
+            return ['error' => 'Response too large, please try again later.'];
+        }
+
+        if ($httpCode === 404) {
+            log_message("api-error: Resource not found - HTTP: 404, URL: $log_url", 'tools_api_log.txt', 'ERROR');
+            return ['error' => 'Resource not found, check API key or wallet address.'];
+        }
 
         if (in_array($httpCode, [429, 504])) {
             log_message("api-helper: HTTP $httpCode, retrying ($retry_count/$max_retries), URL: $log_url, Delay: " . ($retry_delays[$retry_count] / 1000000) . "s", 'tools_api_log.txt', 'WARNING');
