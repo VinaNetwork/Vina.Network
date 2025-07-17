@@ -74,6 +74,7 @@ if (!$rate_limit_exceeded): ?>
             <button type="submit" class="cta-button">Check</button>
         </form>
         <div class="loader"></div>
+        <p class="loading-message" style="display: none;">Processing large transaction data, please wait...</p>
     </div>
 <?php endif;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !$rate_limit_exceeded) {
@@ -88,8 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
             log_message("token_burn: Invalid Wallet Address format", 'token_burn_log.txt', 'ERROR');
             throw new Exception('Invalid Wallet Address format');
         }
+        echo "<script>document.querySelector('.loader').style.display = 'block'; document.querySelector('.loading-message').style.display = 'block';</script>";
         $cache_data = file_exists($cache_file) ? json_decode(file_get_contents($cache_file), true) ?? [] : [];
-        $cache_expiration = 3 * 3600;
+        $cache_expiration = 6 * 3600; // Tăng lên 6 giờ
         $cache_key = $walletAddress;
         $cache_valid = isset($cache_data[$cache_key]) && (time() - $cache_data[$cache_key]['timestamp'] < $cache_expiration);
         log_message("token_burn: Cache valid=$cache_valid for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
@@ -99,6 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
             log_message("token_burn: Fetching transactions for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
             $transactions = [];
             $before = null;
+            $max_transactions = 5000; // Giới hạn 5000 giao dịch
+            $transaction_count = 0;
             do {
                 $params = ['address' => $walletAddress];
                 if ($before) $params['before'] = $before;
@@ -108,8 +112,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
                     throw new Exception($data['error']);
                 }
                 $transactions = array_merge($transactions, $data);
+                $transaction_count += count($data);
                 $before = end($data)['signature'] ?? null;
-                log_message("token_burn: Retrieved ".count($data)." transactions, total: ".count($transactions), 'token_burn_log.txt', 'INFO');
+                log_message("token_burn: Retrieved ".count($data)." transactions, total: $transaction_count", 'token_burn_log.txt', 'INFO');
+                if ($transaction_count >= $max_transactions) {
+                    log_message("token_burn: Reached max transaction limit ($max_transactions) for walletAddress=$walletAddress", 'token_burn_log.txt', 'WARNING');
+                    break;
+                }
             } while ($before && count($data) > 0);
             foreach ($transactions as $tx) {
                 if (isset($tx['tokenTransfers'])) {
@@ -170,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
             $burned_by_token = $cache_data[$cache_key]['burned_by_token'];
             log_message("token_burn: Retrieved from cache for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
         }
+        echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none';</script>";
 ?>
         <div class="tools-result token-burn-result">
             <h2>Total Burned Tokens</h2>
@@ -224,6 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
     } catch (Exception $e) {
         $error_msg = "Error: ".$e->getMessage();
         log_message("token_burn: Exception - $error_msg", 'token_burn_log.txt', 'ERROR');
+        echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none';</script>";
         echo "<div class='result-error'><p>$error_msg</p></div>";
     }
 }
