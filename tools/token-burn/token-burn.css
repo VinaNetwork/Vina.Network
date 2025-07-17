@@ -5,3 +5,9 @@
  * ========================================================================== */
 
 /* Token Overview Result */
+.loading-message {
+    color: #555;
+    font-size: 14px;
+    margin-top: 10px;
+    text-align: center;
+}
