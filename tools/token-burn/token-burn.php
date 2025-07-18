@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
     } elseif ($rate_limit_count >= 5) {
         $rate_limit_exceeded = true;
         log_message("token_burn: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'token_burn_log.txt', 'ERROR');
-        echo "<div class='result-error'><p>Giới hạn yêu cầu vượt quá. Vui lòng thử lại sau một phút.</p></div>";
+        echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
     } else {
         $_SESSION[$rate_limit_key]['count']++;
         log_message("token_burn: Incremented rate limit for IP=$ip, count=".$_SESSION[$rate_limit_key]['count'], 'token_burn_log.txt', 'INFO');
@@ -64,23 +64,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress'])) {
 }
 if (!$rate_limit_exceeded): ?>
     <div class="tools-form">
-        <h2>Kiểm Tra Token Đã Burn</h2>
-        <p>Nhập <strong>Địa Chỉ Ví Solana</strong> để tính tổng số token đã được burn (gửi đến địa chỉ burn hoặc burn qua lệnh burn).</p>
+        <h2>Check Token Burn</h2>
+        <p>Enter the <strong>Solana Wallet Address</strong> to calculate total burned tokens (sent to burn address or burned via burn instruction).</p>
         <form id="tokenBurnForm" method="POST" action="" data-tool="token-burn">
             <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="input-wrapper">
-                <input type="text" name="walletAddress" id="walletAddress" placeholder="Nhập Địa Chỉ Ví Solana" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
-                <span class="clear-input" title="Xóa nội dung">×</span>
+                <input type="text" name="walletAddress" id="walletAddress" placeholder="Enter Solana Wallet Address" required value="<?php echo isset($_POST['walletAddress']) ? htmlspecialchars($_POST['walletAddress']) : ''; ?>">
+                <span class="clear-input" title="Clear input">×</span>
             </div>
-            <button type="submit" class="cta-button">Kiểm Tra</button>
+            <button type="submit" class="cta-button">Check</button>
         </form>
         <div class="loader" style="display: none;"></div>
-        <p class="loading-message" style="display: none;">Đang xử lý dữ liệu giao dịch lớn, vui lòng chờ...</p>
+        <p class="loading-message" style="display: none;">Processing large transaction data, please wait...</p>
         <div class="progress-container" style="display: none;">
             <div class="progress-bar">
                 <div class="progress-bar-fill" style="width: 0%;"></div>
             </div>
-            <span class="progress-text">0% (0/0 giao dịch đã xử lý)</span>
+            <span class="progress-text">0% (0/0 transactions processed)</span>
         </div>
     </div>
 <?php endif;
@@ -88,30 +88,30 @@ if (!$rate_limit_exceeded): ?>
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !$rate_limit_exceeded) {
     try {
         if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
-            log_message("token_burn: Token CSRF không hợp lệ", 'token_burn_log.txt', 'ERROR');
-            throw new Exception('Token CSRF không hợp lệ');
+            log_message("token_burn: Invalid CSRF token", 'token_burn_log.txt', 'ERROR');
+            throw new Exception('Invalid CSRF token');
         }
         $walletAddress = trim($_POST['walletAddress']);
         $walletAddress = preg_replace('/\s+/', '', $walletAddress);
         if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $walletAddress)) {
-            log_message("token_burn: Định dạng Địa Chỉ Ví không hợp lệ", 'token_burn_log.txt', 'ERROR');
-            throw new Exception('Định dạng Địa Chỉ Ví không hợp lệ');
+            log_message("token_burn: Invalid Wallet Address format", 'token_burn_log.txt', 'ERROR');
+            throw new Exception('Invalid Wallet Address format');
         }
 
-        // Khởi tạo file cache tạm thời
+        // Initialize temporary cache file
         $temp_cache_file = $temp_cache_dir . 'temp_' . md5($walletAddress) . '.json';
         $cache_data = file_exists($cache_file) ? json_decode(file_get_contents($cache_file), true) ?? [] : [];
-        $cache_expiration = 6 * 3600; // 6 giờ
+        $cache_expiration = 6 * 3600; // 6 hours
         $cache_key = $walletAddress;
         $cache_valid = isset($cache_data[$cache_key]) && (time() - $cache_data[$cache_key]['timestamp'] < $cache_expiration);
 
         if ($cache_valid) {
             $total_burned = $cache_data[$cache_key]['total_burned'];
             $burned_by_token = $cache_data[$cache_key]['burned_by_token'];
-            log_message("token_burn: Lấy từ cache cho walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
+            log_message("token_burn: Retrieved from cache for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
             output_result($total_burned, $burned_by_token, $walletAddress, $cache_data[$cache_key]['timestamp']);
         } else {
-            // Khởi tạo cache tạm thời
+            // Initialize temporary cache
             $temp_data = [
                 'total_burned' => 0,
                 'burned_by_token' => [],
@@ -123,14 +123,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
             file_put_contents($temp_cache_file, json_encode($temp_data));
             chmod($temp_cache_file, 0664);
 
-            // Bắt đầu đệm đầu ra với flush
+            // Start output buffering with flush
             ob_start();
             echo "<script>document.querySelector('.loader').style.display = 'block'; document.querySelector('.loading-message').style.display = 'block'; document.querySelector('.progress-container').style.display = 'block';</script>";
             ob_flush();
             flush();
 
-            // Lấy giao dịch theo batch
-            $batch_size = 100; // Xử lý 100 giao dịch mỗi batch
+            // Fetch transactions in batches
+            $batch_size = 100; // Process 100 transactions per batch
             $max_transactions = 5000;
             $transaction_count = 0;
             $before = null;
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
                 if ($before) $params['before'] = $before;
                 $data = callAPI('transactions', $params, 'GET');
                 if (isset($data['error'])) {
-                    log_message("token_burn: Lỗi API: ".json_encode($data['error']), 'token_burn_log.txt', 'ERROR');
+                    log_message("token_burn: API error: ".json_encode($data['error']), 'token_burn_log.txt', 'ERROR');
                     throw new Exception($data['error']);
                 }
 
@@ -148,25 +148,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
                 $transaction_count += count($transactions);
                 $temp_data['total_transactions'] = $transaction_count;
 
-                // Xử lý batch
+                // Process batch
                 $temp_data = process_transaction_batch($transactions, $walletAddress, $burn_address, $temp_data, $temp_cache_file);
 
-                // Cập nhật tiến độ
+                // Update progress
                 $progress = ($temp_data['processed_count'] / max($temp_data['total_transactions'], 1)) * 100;
-                echo "<script>document.querySelector('.progress-bar-fill').style.width = '$progress%'; document.querySelector('.progress-text').textContent = '" . number_format($progress, 2) . "% (" . $temp_data['processed_count'] . "/" . $temp_data['total_transactions'] . " giao dịch đã xử lý)';</script>";
+                echo "<script>document.querySelector('.progress-bar-fill').style.width = '$progress%'; document.querySelector('.progress-text').textContent = '" . number_format($progress, 2) . "% (" . $temp_data['processed_count'] . "/" . $temp_data['total_transactions'] . " transactions processed)';</script>";
                 ob_flush();
                 flush();
 
                 $before = !empty($transactions) ? end($transactions)['signature'] : null;
-                log_message("token_burn: Lấy được ".count($transactions)." giao dịch, tổng: $transaction_count", 'token_burn_log.txt', 'INFO');
+                log_message("token_burn: Retrieved ".count($transactions)." transactions, total: $transaction_count", 'token_burn_log.txt', 'INFO');
 
                 if ($transaction_count >= $max_transactions) {
-                    log_message("token_burn: Đạt giới hạn tối đa giao dịch ($max_transactions) cho walletAddress=$walletAddress", 'token_burn_log.txt', 'WARNING');
+                    log_message("token_burn: Reached max transaction limit ($max_transactions) for walletAddress=$walletAddress", 'token_burn_log.txt', 'WARNING');
                     break;
                 }
             } while ($before && count($transactions) > 0);
 
-            // Lưu kết quả cuối cùng vào cache chính
+            // Save final results to main cache
             $cache_data[$cache_key] = [
                 'total_burned' => $temp_data['total_burned'],
                 'burned_by_token' => $temp_data['burned_by_token'],
@@ -175,27 +175,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
             $fp = fopen($cache_file, 'c');
             if (flock($fp, LOCK_EX)) {
                 if (!file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
-                    log_message("token_burn: Không thể ghi vào file cache", 'token_burn_log.txt', 'ERROR');
-                    throw new Exception('Không thể ghi vào file cache');
+                    log_message("token_burn: Failed to write to cache file", 'token_burn_log.txt', 'ERROR');
+                    throw new Exception('Failed to write to cache file');
                 }
                 flock($fp, LOCK_UN);
             } else {
-                log_message("token_burn: Không thể khóa file cache", 'token_burn_log.txt', 'ERROR');
-                throw new Exception('Không thể khóa file cache');
+                log_message("token_burn: Failed to lock cache file", 'token_burn_log.txt', 'ERROR');
+                throw new Exception('Failed to lock cache file');
             }
             fclose($fp);
 
-            // Dọn dẹp cache tạm thời
+            // Clean up temporary cache
             unlink($temp_cache_file);
-            log_message("token_burn: Đã cập nhật cache và dọn cache tạm cho walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
+            log_message("token_burn: Cache updated and temp cache cleaned for walletAddress=$walletAddress", 'token_burn_log.txt', 'INFO');
 
-            // Xuất kết quả cuối cùng
+            // Output final result
             echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none'; document.querySelector('.progress-container').style.display = 'none';</script>";
             output_result($temp_data['total_burned'], $temp_data['burned_by_token'], $walletAddress, time());
         }
     } catch (Exception $e) {
-        $error_msg = "Lỗi: ".$e->getMessage();
-        log_message("token_burn: Ngoại lệ - $error_msg", 'token_burn_log.txt', 'ERROR');
+        $error_msg = "Error: ".$e->getMessage();
+        log_message("token_burn: Exception - $error_msg", 'token_burn_log.txt', 'ERROR');
         echo "<script>document.querySelector('.loader').style.display = 'none'; document.querySelector('.loading-message').style.display = 'none'; document.querySelector('.progress-container').style.display = 'none';</script>";
         echo "<div class='result-error'><p>$error_msg</p></div>";
     }
@@ -217,7 +217,7 @@ function process_transaction_batch($transactions, $walletAddress, $burn_address,
                     $adjusted_amount = $amount / pow(10, $decimals);
                     $temp_data['total_burned'] += $adjusted_amount;
                     $temp_data['burned_by_token'][$mint] = ($temp_data['burned_by_token'][$mint] ?? 0) + $adjusted_amount;
-                    log_message("token_burn: Burn đến $burn_address, mint=$mint, amount=$adjusted_amount", 'token_burn_log.txt', 'DEBUG');
+                    log_message("token_burn: Burn to $burn_address, mint=$mint, amount=$adjusted_amount", 'token_burn_log.txt', 'DEBUG');
                 }
             }
         }
@@ -234,7 +234,7 @@ function process_transaction_batch($transactions, $walletAddress, $burn_address,
                                     $adjusted_amount = $amount / pow(10, $decimals);
                                     $temp_data['total_burned'] += $adjusted_amount;
                                     $temp_data['burned_by_token'][$mint] = ($temp_data['burned_by_token'][$mint] ?? 0) + $adjusted_amount;
-                                    log_message("token_burn: Lệnh burn, mint=$mint, amount=$adjusted_amount", 'token_burn_log.txt', 'DEBUG');
+                                    log_message("token_burn: Burn instruction, mint=$mint, amount=$adjusted_amount", 'token_burn_log.txt', 'DEBUG');
                                 }
                             }
                         }
@@ -246,7 +246,7 @@ function process_transaction_batch($transactions, $walletAddress, $burn_address,
         $temp_data['processed_count']++;
     }
 
-    // Lưu cache tạm thời
+    // Save temporary cache
     file_put_contents($temp_cache_file, json_encode($temp_data));
     return $temp_data;
 }
@@ -254,31 +254,31 @@ function process_transaction_batch($transactions, $walletAddress, $burn_address,
 function output_result($total_burned, $burned_by_token, $walletAddress, $timestamp) {
 ?>
     <div class="tools-result token-burn-result">
-        <h2>Tổng Số Token Đã Burn</h2>
+        <h2>Total Burned Tokens</h2>
         <div class="result-summary">
             <div class="result-card">
                 <div class="token-burn-table">
                     <table>
                         <tr>
-                            <th>Tổng Số Đã Burn</th>
-                            <td><?php echo number_format($total_burned, 6); ?> token</td>
+                            <th>Total Burned</th>
+                            <td><?php echo number_format($total_burned, 6); ?> tokens</td>
                         </tr>
                         <tr>
-                            <th>Địa Chỉ Ví</th>
+                            <th>Wallet Address</th>
                             <td>
                                 <a href="https://solscan.io/address/<?php echo htmlspecialchars($walletAddress); ?>" target="_blank">
                                     <?php echo substr($walletAddress, 0, 4).'...'.substr($walletAddress, -4); ?>
                                 </a>
-                                <i class="fas fa-copy copy-icon" title="Sao chép địa chỉ đầy đủ" data-full="<?php echo htmlspecialchars($walletAddress); ?>"></i>
+                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($walletAddress); ?>"></i>
                             </td>
                         </tr>
                         <tr>
-                            <th>Phân Tích Theo Token</th>
+                            <th>Breakdown by Token</th>
                             <td>
                                 <table class="inner-table">
                                     <tr>
-                                        <th>Địa Chỉ Mint</th>
-                                        <th>Số Lượng Đã Burn</th>
+                                        <th>Mint Address</th>
+                                        <th>Burned Amount</th>
                                     </tr>
                                     <?php foreach ($burned_by_token as $mint => $amount): ?>
                                         <tr>
@@ -286,7 +286,7 @@ function output_result($total_burned, $burned_by_token, $walletAddress, $timesta
                                                 <a href="https://solscan.io/address/<?php echo htmlspecialchars($mint); ?>" target="_blank">
                                                     <?php echo substr(htmlspecialchars($mint), 0, 4).'...'.substr(htmlspecialchars($mint), -4); ?>
                                                 </a>
-                                                <i class="fas fa-copy copy-icon" title="Sao chép địa chỉ đầy đủ" data-full="<?php echo htmlspecialchars($mint); ?>"></i>
+                                                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($mint); ?>"></i>
                                             </td>
                                             <td><?php echo number_format($amount, 6); ?></td>
                                         </tr>
@@ -298,13 +298,13 @@ function output_result($total_burned, $burned_by_token, $walletAddress, $timesta
                 </div>
             </div>
         </div>
-        <p class="cache-timestamp">Cập nhật lần cuối: <?php echo date('d M Y, H:i', $timestamp); ?> UTC+0</p>
+        <p class="cache-timestamp">Last updated: <?php echo date('d M Y, H:i', $timestamp); ?> UTC+0</p>
     </div>
 <?php
 }
 ?>
     <div class="tools-about">
-        <h2>Giới Thiệu Về Kiểm Tra Token Burn</h2>
-        <p>Công cụ này tính toán tổng số token đã được burn bởi một địa chỉ ví Solana, bao gồm token gửi đến địa chỉ burn và token bị burn qua lệnh burn.</p>
+        <h2>About Check Token Burn</h2>
+        <p>This tool calculates the total tokens burned by a Solana wallet address, including tokens sent to the burn address and tokens burned via burn instructions.</p>
     </div>
 </div>
