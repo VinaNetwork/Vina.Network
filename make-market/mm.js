@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const formData = new FormData(loginForm);
     try {
-      const response = await fetch('/api/login.php', {
+      const response = await fetch('/accounts/login.php', {
         method: 'POST',
         body: formData
       });
