@@ -56,7 +56,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
       html += '</ul>';
     } else if (!data.success) {
       if (data.error) {
-        html += `<p>❌ Lỗi: ${data.error}</p>`;
+        // Hiển thị lỗi cụ thể
+        let errorMessage = data.error;
+        if (data.error.includes('Slippage quá cao')) {
+          errorMessage = '⚠️ Giao dịch thất bại do trượt giá vượt quá mức cho phép';
+        } else if (data.error.includes('Không đủ thanh khoản')) {
+          errorMessage = '⚠️ Giao dịch thất bại do pool không đủ thanh khoản';
+        }
+        html += `<p>❌ Lỗi: ${errorMessage}</p>`;
       }
     }
     statusBox.innerHTML = html;
