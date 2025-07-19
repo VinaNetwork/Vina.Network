@@ -16,7 +16,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // JWT Secret for authentication
 if (!defined('JWT_SECRET')) {
-    define('JWT_SECRET', 'your-secret-key'); // Thay bằng chuỗi ngẫu nhiên mạnh
+    define('JWT_SECRET', 'your-secret-key'); // Replace with a random string of at least 32 characters
 }
 
 // Database Configuration
@@ -30,7 +30,7 @@ if (!defined('DB_USER')) {
     define('DB_USER', 'vina_user');
 }
 if (!defined('DB_PASS')) {
-    define('DB_PASS', 'your_password'); // Thay bằng mật khẩu thực tế
+    define('DB_PASS', 'your_password'); // Replace with the actual database password
 }
 
 // Helius API Configuration
