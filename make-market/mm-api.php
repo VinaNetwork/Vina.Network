@@ -1,31 +1,33 @@
 <?php
 // ============================================================================
 // File: make-market/mm-api.php
-// Description: Make Market API with Jupiter Swap V6 integration
+// Description: Make Market API with Jupiter Swap V6 integration and WebSocket status updates
 // Created by: Vina Network
 // ============================================================================
 
-require_once '../vendor/autoload.php';
+require_once 'vendor/autoload.php';
 use phpseclib3\Crypt\AES;
 use Dotenv\Dotenv;
 use Solana\Web3\Connection;
 use Solana\Web3\Keypair;
 use Solana\Web3\VersionedTransaction;
 use GuzzleHttp\Client;
+require_once 'websocket-server.php'; // Include WebSocket server
 
 // Load biến môi trường
 $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 $SECRET_KEY = $_ENV['SECRET_KEY'];
-$RPC_ENDPOINT = $_ENV['RPC_ENDPOINT'] ?? 'https://api.mainnet-beta.solana.com'; // RPC Solana (Helius, QuickNode, v.v.)
+$RPC_ENDPOINT = $_ENV['RPC_ENDPOINT'] ?? 'https://api.mainnet-beta.solana.com';
 
 $encryptedPrivateKey = $_POST['privateKey'] ?? '';
 $iv = $_POST['iv'] ?? '';
 $tokenMint = $_POST['mint'] ?? '';
 $solAmount = floatval($_POST['sol']) ?: 0;
 $rounds = intval($_POST['rounds']) ?: 1;
-$slippage = floatval($_POST['slippage']) ?: 1.0; // Slippage từ form (%)
-$slippageBps = intval($slippage * 100); // Chuyển % thành basis points (1% = 100 bps)
+$slippage = floatval($_POST['slippage']) ?: 1.0;
+$slippageBps = intval($slippage * 100);
+$processId = $_POST['processName'] ?? 'default_process_' . uniqid(); // Lấy processName làm processId
 
 header('Content-Type: application/json');
 
@@ -46,7 +48,7 @@ if (!$walletPrivateKey) {
 }
 
 // Khởi tạo ví và kết nối RPC
-$keypair = Keypair::fromSecretKey(base64_decode($walletPrivateKey)); // Giả định private key là Base58 đã mã hóa
+$keypair = Keypair::fromSecretKey(base64_decode($walletPrivateKey));
 $connection = new Connection($RPC_ENDPOINT);
 $httpClient = new Client();
 
@@ -95,8 +97,9 @@ function getJupiterQuote($httpClient, $inputMint, $outputMint, $amount, $slippag
 }
 
 // Hàm tạo và gửi giao dịch swap qua Jupiter API
-function executeJupiterSwap($httpClient, $connection, $keypair, $quoteResponse) {
+function executeJupiterSwap($httpClient, $connection, $keypair, $quoteResponse, $processId, $action, $round) {
     try {
+        TransactionStatus::sendStatus($processId, "Đang thực hiện $action vòng $round...");
         $response = $httpClient->post('https://quote-api.jup.ag/v6/swap', [
             'json' => [
                 'userPublicKey' => $keypair->publicKey()->toString(),
@@ -112,22 +115,29 @@ function executeJupiterSwap($httpClient, $connection, $keypair, $quoteResponse) 
         
         // Gửi giao dịch
         $txSig = $connection->sendRawTransaction($transaction->serialize());
+        TransactionStatus::sendStatus($processId, "Đang chờ xác nhận $action vòng $round...");
         return ['txSig' => $txSig, 'error' => null];
     } catch (\Exception $e) {
+        TransactionStatus::sendStatus($processId, "Lỗi $action vòng $round: " . $e->getMessage());
         return ['txSig' => null, 'error' => 'Lỗi khi tạo/gửi giao dịch: ' . $e->getMessage()];
     }
 }
 
 $results = [];
+TransactionStatus::sendStatus($processId, "Bắt đầu Make Market với $rounds vòng...");
 
 for ($i = 1; $i <= $rounds; $i++) {
+    TransactionStatus::sendStatus($processId, "Chuẩn bị vòng $i...");
+
     // Kiểm tra số dư SOL
     $balanceLamports = $connection->getBalance($keypair->publicKey());
-    $neededLamports = intval($solAmount * 1e9) + 10000; // SOL + phí
+    $neededLamports = intval($solAmount * 1e9) + 10000;
     if ($balanceLamports < $neededLamports) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: Không đủ SOL để mua (cần ~{$solAmount} SOL + phí)");
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: Không đủ SOL để mua (cần ~{$solAmount} SOL + phí)",
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
@@ -135,9 +145,11 @@ for ($i = 1; $i <= $rounds; $i++) {
     // Gửi lệnh mua (SOL -> Token)
     $quote = getJupiterQuote($httpClient, 'So11111111111111111111111111111111111111112', $tokenMint, intval($solAmount * 1e9), $slippageBps);
     if (isset($quote['error'])) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: " . $quote['error']);
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $quote['error'],
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
@@ -145,18 +157,22 @@ for ($i = 1; $i <= $rounds; $i++) {
     // Kiểm tra price impact (slippage)
     $priceImpact = floatval($quote['priceImpactPc'] ?? 0);
     if ($priceImpact > $slippage) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: Slippage quá cao (price impact: $priceImpact%, tối đa: $slippage%)");
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: Slippage quá cao (price impact: $priceImpact%, tối đa: $slippage%)",
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
 
-    $swapResult = executeJupiterSwap($httpClient, $connection, $keypair, $quote);
+    $swapResult = executeJupiterSwap($httpClient, $connection, $keypair, $quote, $processId, 'mua', $i);
     if ($swapResult['error']) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: " . $swapResult['error']);
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $swapResult['error'],
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
@@ -166,21 +182,24 @@ for ($i = 1; $i <= $rounds; $i++) {
     $buyConfirmation = waitForConfirmation($connection, $buyTxSig);
     if (!$buyConfirmation['confirmed']) {
         if ($buyConfirmation['retry'] ?? false) {
-            // Thử lại giao dịch mua
-            $swapResult = executeJupiterSwap($httpClient, $connection, $keypair, $quote);
+            TransactionStatus::sendStatus($processId, "Thử lại mua vòng $i...");
+            $swapResult = executeJupiterSwap($httpClient, $connection, $keypair, $quote, $processId, 'mua', $i);
             if ($swapResult['txSig']) {
                 $buyTxSig = $swapResult['txSig'];
                 $buyConfirmation = waitForConfirmation($connection, $buyTxSig);
             }
         }
         if (!$buyConfirmation['confirmed']) {
+            TransactionStatus::sendStatus($processId, "Lỗi vòng $i: " . $buyConfirmation['error']);
             echo json_encode([
                 'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $buyConfirmation['error'],
-                'results' => $results
+                'results' => $results,
+                'success' => false
             ]);
             exit;
         }
     }
+    TransactionStatus::sendStatus($processId, "Mua vòng $i hoàn tất!");
 
     // Kiểm tra số dư token để bán
     $tokenAccounts = $connection->getTokenAccountsByOwner($keypair->publicKey(), ['mint' => $tokenMint]);
@@ -191,9 +210,11 @@ for ($i = 1; $i <= $rounds; $i++) {
     }
 
     if ($tokenAmount <= 0) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: Không đủ token để bán sau khi mua");
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: Không đủ token để bán sau khi mua",
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
@@ -201,9 +222,11 @@ for ($i = 1; $i <= $rounds; $i++) {
     // Gửi lệnh bán (Token -> SOL)
     $quoteSell = getJupiterQuote($httpClient, $tokenMint, 'So11111111111111111111111111111111111111112', intval($tokenAmount * 1e9), $slippageBps);
     if (isset($quoteSell['error'])) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: " . $quoteSell['error']);
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $quoteSell['error'],
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
@@ -211,18 +234,22 @@ for ($i = 1; $i <= $rounds; $i++) {
     // Kiểm tra price impact (slippage) cho bán
     $priceImpactSell = floatval($quoteSell['priceImpactPc'] ?? 0);
     if ($priceImpactSell > $slippage) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: Slippage quá cao (price impact: $priceImpactSell%, tối đa: $slippage%)");
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: Slippage quá cao (price impact: $priceImpactSell%, tối đa: $slippage%)",
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
 
-    $swapSellResult = executeJupiterSwap($httpClient, $connection, $keypair, $quoteSell);
+    $swapSellResult = executeJupiterSwap($httpClient, $connection, $keypair, $quoteSell, $processId, 'bán', $i);
     if ($swapSellResult['error']) {
+        TransactionStatus::sendStatus($processId, "Lỗi vòng $i: " . $swapSellResult['error']);
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $swapSellResult['error'],
-            'results' => $results
+            'results' => $results,
+            'success' => false
         ]);
         exit;
     }
@@ -232,21 +259,24 @@ for ($i = 1; $i <= $rounds; $i++) {
     $sellConfirmation = waitForConfirmation($connection, $sellTxSig);
     if (!$sellConfirmation['confirmed']) {
         if ($sellConfirmation['retry'] ?? false) {
-            // Thử lại giao dịch bán
-            $swapSellResult = executeJupiterSwap($httpClient, $connection, $keypair, $quoteSell);
+            TransactionStatus::sendStatus($processId, "Thử lại bán vòng $i...");
+            $swapSellResult = executeJupiterSwap($httpClient, $connection, $keypair, $quoteSell, $processId, 'bán', $i);
             if ($swapSellResult['txSig']) {
                 $sellTxSig = $swapSellResult['txSig'];
                 $sellConfirmation = waitForConfirmation($connection, $sellTxSig);
             }
         }
         if (!$sellConfirmation['confirmed']) {
+            TransactionStatus::sendStatus($processId, "Lỗi vòng $i: " . $sellConfirmation['error']);
             echo json_encode([
                 'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $sellConfirmation['error'],
-                'results' => $results
+                'results' => $results,
+                'success' => false
             ]);
             exit;
         }
     }
+    TransactionStatus::sendStatus($processId, "Bán vòng $i hoàn tất!");
 
     $results[] = [
         'round' => $i,
@@ -255,6 +285,7 @@ for ($i = 1; $i <= $rounds; $i++) {
     ];
 }
 
+TransactionStatus::sendStatus($processId, "✅ Đã hoàn tất $rounds vòng giao dịch");
 echo json_encode([
     'message' => "✅ Đã hoàn tất $rounds vòng giao dịch",
     'results' => $results,
