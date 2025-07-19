@@ -1,42 +1,45 @@
 <?php
-// Xử lý xác thực ví Solana + tạo và kiểm tra JWT
-require_once __DIR__ . '/../vendor/autoload.php'; // Firebase\JWT
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
+// auth.php
+require_once '../vendor/autoload.php'; // Nếu dùng composer cho Firebase JWT
+use \Firebase\JWT\JWT;
 
-define("JWT_SECRET", "RANDOM_SUPER_SECRET_KEY_123"); // Bro nên đổi cái này
-define("JWT_EXP", 86400); // 24h
+class Auth {
+    private $pdo;
+    private $jwt_secret = 'your-secret-key'; // Thay bằng key bí mật của bạn
 
-function getDB() {
-    $host = "localhost";
-    $db = "vina";
-    $user = "root";
-    $pass = "your_password";
-    return new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
-}
+    public function __construct() {
+        // Kết nối database
+        $this->pdo = new PDO('mysql:host=localhost;dbname=your_database', 'username', 'password');
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
 
-// Tạo JWT
-function generate_jwt($wallet) {
-    $payload = [
-        'wallet' => $wallet,
-        'iat' => time(),
-        'exp' => time() + JWT_EXP
-    ];
-    return JWT::encode($payload, JWT_SECRET, 'HS256');
-}
+    // Xác minh chữ ký Solana
+    public function verifySignature($publicKey, $message, $signature) {
+        $publicKey = new \SolanaPhpSdk\PublicKey($publicKey);
+        $messageBytes = (new \SolanaPhpSdk\Util\Buffer($message))->toArray();
+        $signatureBytes = base64_decode($signature);
+        return nacl_sign_detached_verify($messageBytes, $signatureBytes, $publicKey->toBytes());
+    }
 
-// Kiểm tra JWT
-function verify_jwt($jwt) {
-    try {
-        $decoded = JWT::decode($jwt, new Key(JWT_SECRET, 'HS256'));
-        return $decoded->wallet ?? false;
-    } catch (Exception $e) {
-        return false;
+    // Tạo JWT
+    public function createJWT($publicKey) {
+        $payload = [
+            'iss' => 'vina.network',
+            'sub' => $publicKey,
+            'iat' => time(),
+            'exp' => time() + 3600 // Hết hạn sau 1 giờ
+        ];
+        return JWT::encode($payload, $this->jwt_secret, 'HS256');
+    }
+
+    // Kiểm tra JWT
+    public function verifyJWT($token) {
+        try {
+            $decoded = JWT::decode($token, $this->jwt_secret, ['HS256']);
+            return $decoded->sub;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }
-
-// Xác minh chữ ký từ ví Solana (tạm thời mock lại true)
-function verify_signature($wallet, $message, $signature) {
-    // TODO: Bro có thể gọi Helius hoặc endpoint riêng xác minh chữ ký Solana
-    return true; // tạm thời luôn đúng để test
-}
+?>
