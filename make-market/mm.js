@@ -62,7 +62,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
   }
 
   // Kết nối WebSocket
-  const ws = new WebSocket('<?php echo $_ENV['WEBSOCKET_URL'] ?? 'ws://your_server_ip:8080'; ?>');
+  const ws = new WebSocket('<?php echo $_ENV['WEBSOCKET_URL'] ?? 'ws://vina.network:8080'; ?>');
   ws.onopen = () => {
     ws.send(JSON.stringify({ processId }));
     statusBox.innerHTML = '<p>🔗 Đã kết nối WebSocket, đang chờ trạng thái...</p>';
