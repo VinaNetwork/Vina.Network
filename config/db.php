@@ -1,12 +1,10 @@
 <?php
 // config/db.php
+require_once 'config.php'; // Include file config.php
+
 function getDB() {
-    $host = "localhost";
-    $db = "vina";
-    $user = "root";
-    $pass = "your_password"; // Thay bằng mật khẩu thực tế
     try {
-        $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+        $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return $pdo;
     } catch (PDOException $e) {
