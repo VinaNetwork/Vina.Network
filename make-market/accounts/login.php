@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/api/login.php
+// File: make-market/accounts/login.php
 // Description: API to generate JWT for authenticated users
 // Created by: Vina Network
 // ============================================================================
