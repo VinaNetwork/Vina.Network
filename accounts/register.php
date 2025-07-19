@@ -5,10 +5,10 @@
 // Created by: Vina Network
 // ============================================================================
 
+require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../make-market/vendor/autoload.php';
 use Dotenv\Dotenv;
 use Firebase\JWT\JWT;
-use Solana\Keypair; // Giả sử sử dụng thư viện Solana PHP (cài qua composer)
 
 header('Content-Type: application/json');
 
@@ -32,7 +32,7 @@ try {
     exit;
 }
 
-// Nhận dữ liệu từ client
+// Nhận dữ liệu
 $publicKey = $_POST['publicKey'] ?? '';
 $signature = $_POST['signature'] ?? '';
 $message = $_POST['message'] ?? 'Sign to register with Vina Network';
@@ -47,8 +47,11 @@ if (!$publicKey || !$signature || !$message) {
 
 // Xác minh chữ ký Solana
 try {
-    $keypair = new Keypair();
-    $isValid = $keypair->verifySignature($message, $signature, $publicKey);
+    $isValid = sodium_crypto_sign_verify_detached(
+        base64_decode($signature),
+        $message,
+        base64_decode($publicKey)
+    );
     if (!$isValid) {
         http_response_code(401);
         file_put_contents(__DIR__ . '/../make-market/logs/auth_errors.log', date('Y-m-d H:i:s') . ": Chữ ký không hợp lệ\n", FILE_APPEND);
@@ -75,13 +78,14 @@ if ($stmt->fetch()) {
 // Lưu ví vào database
 $stmt = $pdo->prepare('INSERT INTO users (solana_address) VALUES (?)');
 $stmt->execute([$publicKey]);
+$userId = $pdo->lastInsertId();
 
 // Tạo JWT
 $payload = [
     'iat' => time(),
-    'exp' => time() + 3600, // Token hết hạn sau 1 giờ
-    'sub' => $publicKey
+    'exp' => time() + 3600,
+    'sub' => $publicKey,
+    'user_id' => $userId
 ];
 $jwt = JWT::encode($payload, $JWT_SECRET, 'HS256');
-
 echo json_encode(['token' => $jwt]);
