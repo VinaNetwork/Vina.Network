@@ -1,6 +1,6 @@
 // ============================================================================
 // File: make-market/mm.js
-// Description: Client-side script for Make Market with WebSocket status updates
+// Description: Client-side script for Make Market with WebSocket status updates and JWT authentication
 // Created by: Vina Network
 // ============================================================================
 
@@ -15,8 +15,15 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
   const statusBox = document.getElementById('mm-status');
   statusBox.innerHTML = '<p>⏳ Đang kết nối và thực hiện Make Market...</p>';
 
+  // Lấy token từ localStorage
+  const token = localStorage.getItem('jwtToken');
+  if (!token) {
+    statusBox.innerHTML += '<p>❌ Lỗi: Vui lòng đăng nhập để lấy token</p>';
+    return;
+  }
+
   // Kết nối WebSocket
-  const ws = new WebSocket('ws://vina.network:8080'); // Thay bằng IP/domain server
+  const ws = new WebSocket('<?php echo $_ENV['WEBSOCKET_URL'] ?? 'ws://your_server_ip:8080'; ?>');
   ws.onopen = () => {
     ws.send(JSON.stringify({ processId }));
     statusBox.innerHTML = '<p>🔗 Đã kết nối WebSocket, đang chờ trạng thái...</p>';
@@ -25,7 +32,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
     const data = JSON.parse(event.data);
     const status = data.status || 'Không có trạng thái';
     statusBox.innerHTML += `<p>${status}</p>`;
-    statusBox.scrollTop = statusBox.scrollHeight; // Cuộn xuống dòng mới nhất
+    statusBox.scrollTop = statusBox.scrollHeight;
   };
   ws.onerror = (error) => {
     statusBox.innerHTML += `<p>❌ Lỗi WebSocket: ${error.message}</p>`;
@@ -38,14 +45,19 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
     // Lấy SECRET_KEY từ server
     const keyResponse = await fetch('/api/get-encryption-key', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer your-auth-token' } // Thay bằng token thực tế
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
-    const { secretKey } = await keyResponse.json();
-    if (!secretKey) throw new Error('Không lấy được khóa mã hóa');
+    const keyData = await keyResponse.json();
+    if (!keyData.secretKey) {
+      throw new Error(keyData.error || 'Không lấy được khóa mã hóa');
+    }
 
     // Tạo IV ngẫu nhiên
     const iv = CryptoJS.lib.WordArray.random(16);
-    const encryptedPrivateKey = CryptoJS.AES.encrypt(privateKey, secretKey, { iv: iv }).toString();
+    const encryptedPrivateKey = CryptoJS.AES.encrypt(privateKey, keyData.secretKey, { iv: iv }).toString();
 
     // Gửi dữ liệu mã hóa và IV
     formData.set('privateKey', encryptedPrivateKey);
@@ -53,6 +65,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
 
     const response = await fetch('mm-api.php', {
       method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }, // Thêm token
       body: formData
     });
     const data = await response.json();
@@ -80,11 +93,13 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
         errorMessage = '⚠️ Giao dịch thất bại do trượt giá vượt quá mức cho phép';
       } else if (data.error.includes('Không đủ thanh khoản')) {
         errorMessage = '⚠️ Giao dịch thất bại do pool không đủ thanh khoản';
+      } else if (data.error.includes('Token không hợp lệ')) {
+        errorMessage = '⚠️ Phiên đăng nhập hết hạn, vui lòng đăng nhập lại';
       }
       html += `<p>❌ Lỗi: ${errorMessage}</p>`;
     }
     statusBox.innerHTML += html;
-    ws.close(); // Đóng WebSocket sau khi hoàn tất
+    ws.close();
   } catch (err) {
     statusBox.innerHTML += `<p>❌ Lỗi kết nối hoặc hệ thống: ${err.message}</p>`;
     ws.close();
