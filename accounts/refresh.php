@@ -1,26 +1,19 @@
 <?php
-// Làm mới JWT token nếu hợp lệ
+// refresh.php
+header('Content-Type: application/json');
 require_once 'auth.php';
 
-header('Content-Type: application/json');
+$auth = new Auth();
+$token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+$token = str_replace('Bearer ', '', $token);
 
-$headers = getallheaders();
-$auth = $headers['Authorization'] ?? '';
-
-if (!$auth || !str_starts_with($auth, 'Bearer ')) {
-    http_response_code(401);
-    echo json_encode(["error" => "Token không hợp lệ"]);
+$publicKey = $auth->verifyJWT($token);
+if (!$publicKey) {
+    echo json_encode(['message' => 'Invalid token']);
     exit;
 }
 
-$jwt = substr($auth, 7);
-$wallet = verify_jwt($jwt);
-
-if (!$wallet) {
-    http_response_code(403);
-    echo json_encode(["error" => "Token hết hạn hoặc sai"]);
-    exit;
-}
-
-$newToken = generate_jwt($wallet);
-echo json_encode(["token" => $newToken]);
+// Tạo JWT mới
+$newToken = $auth->createJWT($publicKey);
+echo json_encode(['token' => $newToken]);
+?>
