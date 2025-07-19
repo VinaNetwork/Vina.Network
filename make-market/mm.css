@@ -60,6 +60,30 @@ form button:hover {
   font-size: 15px;
 }
 
+.status-box {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 20px;
+  background-color: #f9f9f9;
+}
+
+.status-box p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.status-box p strong {
+  color: #28a745;
+}
+
+.status-box p::before {
+  content: "• ";
+  color: #28a745;
+}
+
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
     .mm-container {margin-top: 64px;}
