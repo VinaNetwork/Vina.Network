@@ -10,6 +10,8 @@ $defaultSlippage = 1.0;
 <head>
   <meta charset="UTF-8">
   <title>Make Market | Vina Network</title>
+  <!-- Thêm thư viện CryptoJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <link rel="stylesheet" href="mm.css">
 </head>
 <body>
