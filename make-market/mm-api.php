@@ -5,14 +5,14 @@
 // Created by: Vina Network
 // ============================================================================
 
-require_once 'vendor/autoload.php';
+require_once './vendor/autoload.php'; // Cập nhật đường dẫn
 use phpseclib3\Crypt\AES;
 use Dotenv\Dotenv;
 use Solana\Web3\Connection;
 use Solana\Web3\Keypair;
 use Solana\Web3\VersionedTransaction;
 use GuzzleHttp\Client;
-require_once 'websocket-server.php'; // Include WebSocket server
+require_once './websocket-server.php'; // Cập nhật đường dẫn
 
 // Load biến môi trường
 $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
@@ -27,7 +27,7 @@ $solAmount = floatval($_POST['sol']) ?: 0;
 $rounds = intval($_POST['rounds']) ?: 1;
 $slippage = floatval($_POST['slippage']) ?: 1.0;
 $slippageBps = intval($slippage * 100);
-$processId = $_POST['processName'] ?? 'default_process_' . uniqid(); // Lấy processName làm processId
+$processId = $_POST['processName'] ?? 'default_process_' . uniqid();
 
 header('Content-Type: application/json');
 
