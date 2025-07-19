@@ -1,22 +1,15 @@
-<?php
-// Make Market Tool – Vina Network
-// Giao diện cho phép mua và bán token Solana tự động
-
-$defaultSlippage = 1.0;
-?>
-
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>Make Market | Vina Network</title>
-  <!-- Thêm thư viện CryptoJS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <link rel="stylesheet" href="mm.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
   <div class="mm-container">
     <h1>🟢 Make Market</h1>
+    <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
     <form id="makeMarketForm">
       <label for="processName">Tên tiến trình:</label>
       <input type="text" name="processName" id="processName" required>
