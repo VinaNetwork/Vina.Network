@@ -3,8 +3,8 @@
  * File: config/config.php
  * Description: Central configuration file for Vina Network.
  *              Defines global constants such as API keys, base paths,
- *              error logging settings, and security access control.
- *              Used throughout the entire project.
+ *              error logging settings, security access control, JWT secret,
+ *              and database credentials.
  * Created by: Vina Network
  * ============================================================================ */
 
@@ -16,12 +16,26 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // JWT Secret for authentication
 if (!defined('JWT_SECRET')) {
-    define('JWT_SECRET', 'v5njta8HCXPdFQLWkbzC+q1x+zht34edaMDNer+WwKM='); // chuỗi ngẫu nhiên mạnh
+    define('JWT_SECRET', 'your-secret-key'); // Thay bằng chuỗi ngẫu nhiên mạnh
+}
+
+// Database Configuration
+if (!defined('DB_HOST')) {
+    define('DB_HOST', 'localhost');
+}
+if (!defined('DB_NAME')) {
+    define('DB_NAME', 'vina');
+}
+if (!defined('DB_USER')) {
+    define('DB_USER', 'root');
+}
+if (!defined('DB_PASS')) {
+    define('DB_PASS', 'your_password'); // Thay bằng mật khẩu thực tế
 }
 
 // Helius API Configuration
 if (!defined('HELIUS_API_KEY')) {
-    define('HELIUS_API_KEY', '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63'); // Helius API Key for Solana blockchain queries
+    define('HELIUS_API_KEY', '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63');
 }
 
 // Logging and Path Configuration
@@ -30,6 +44,6 @@ if (!defined('ERROR_LOG_PATH')) {
 }
 
 if (!defined('BASE_PATH')) {
-    define('BASE_PATH', '/var/www/vinanetwork/public_html/'); // Root base path of the Vina Network project
+    define('BASE_PATH', '/var/www/vinanetwork/public_html/');
 }
 ?>
