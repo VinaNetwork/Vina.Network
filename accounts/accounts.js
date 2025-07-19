@@ -47,10 +47,10 @@ async function register() {
     if (!signature) return;
 
     // Gửi thông tin tới server
-    const response = await fetch('/accounts/register.php', {
+    const response = await fetch('/accounts/include/acc-api.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ publicKey, signature, message })
+        body: JSON.stringify({ action: 'register', publicKey, signature, message })
     });
     const result = await response.json();
     alert(result.message);
@@ -66,10 +66,10 @@ async function login() {
     if (!signature) return;
 
     // Gửi thông tin tới server
-    const response = await fetch('/accounts/login.php', {
+    const response = await fetch('/accounts/include/acc-api.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ publicKey, signature, message })
+        body: JSON.stringify({ action: 'login', publicKey, signature, message })
     });
     const result = await response.json();
     if (result.token) {
