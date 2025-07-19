@@ -1,12 +1,12 @@
 <?php
 // accounts/include/acc-api.php
 header('Content-Type: application/json');
-require_once '../auth.php';
+require_once 'auth.php'; // Cập nhật đường dẫn
 
 $auth = new Auth();
 $data = json_decode(file_get_contents('php://input'), true);
 
-$action = $data['action'] ?? ''; // Xác định hành động: login hoặc register
+$action = $data['action'] ?? '';
 $publicKey = $data['publicKey'] ?? '';
 $message = $data['message'] ?? '';
 $signature = $data['signature'] ?? '';
