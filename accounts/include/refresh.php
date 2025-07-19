@@ -1,7 +1,7 @@
 <?php
-// refresh.php
+// accounts/include/refresh.php
 header('Content-Type: application/json');
-require_once 'auth.php';
+require_once 'auth.php'; // Cập nhật đường dẫn
 
 $auth = new Auth();
 $token = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
