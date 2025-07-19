@@ -1,12 +1,31 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Make Market | Vina Network</title>
-  <link rel="stylesheet" href="mm.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-</head>
+<html lang="en">
+<?php
+// ============================================================================
+// File: make-market/index.php
+// Description:
+// Created by: Vina Network
+// ============================================================================
+
+// Head Section (Meta, Styles, Title) is included via header.php
+$root_path = '../';
+$page_title = "";
+$page_description = "";
+$page_keywords = "";
+$page_og_title = "";
+$page_og_description = "";
+$page_og_url = "https://www.vina.network/make-market/";
+$page_canonical = "https://www.vina.network/make-market/";
+$page_css = ['mm.css'];
+
+include '../include/header.php';
+?>
+
+
 <body>
+  <!-- Navigation Bar -->
+  <?php include '../include/navbar.php'; ?>
+
   <div class="mm-container">
     <h1>🟢 Make Market</h1>
     <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
@@ -38,6 +57,12 @@
     <div id="mm-status"></div>
   </div>
 
+  <!-- Footer Section -->
+  <?php include '../include/footer.php'; ?>
+  <!-- Scripts -->
+  <script src="../js/vina.js"></script>
+  <script src="../js/navbar.js"></script>
   <script src="mm.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </body>
 </html>
