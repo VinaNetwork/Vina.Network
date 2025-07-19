@@ -12,7 +12,7 @@ use Firebase\JWT\JWT;
 header('Content-Type: application/json');
 
 // Load biến môi trường
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../..');
+$dotenv = Dotenv::createImmutable(__DIR__ . '/..'); // Cập nhật từ __DIR__ . '/../..'
 $dotenv->load();
 $JWT_SECRET = $_ENV['JWT_SECRET'] ?? '';
 
