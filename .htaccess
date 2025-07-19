@@ -8,6 +8,11 @@ RewriteEngine On
     Deny from all
 </Files>
 
+<Files ".env">
+    Order allow,deny
+    Deny from all
+</Files>
+
 # -------- PROTECT SENSITIVE FILES --------
 <FilesMatch "^(config\.php|database\.php|\.htaccess|php\.ini|\.env)$">
     Require all denied
