@@ -15,7 +15,7 @@ use phpseclib3\Crypt\AES;
 header('Content-Type: application/json');
 
 // Load biến môi trường
-$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv = Dotenv::createImmutable(__DIR__); // Cập nhật từ __DIR__ . '/..'
 $dotenv->load();
 $SECRET_KEY = $_ENV['SECRET_KEY'];
 $RPC_ENDPOINT = $_ENV['RPC_ENDPOINT'] ?? 'https://api.mainnet-beta.solana.com';
