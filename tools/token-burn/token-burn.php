@@ -1,11 +1,11 @@
 <?php
-// File: tools/token-burn/token-burn.php
-// Description: Calculate total burned tokens for a Solana wallet address in batches.
-// Created by: Vina Network
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+// File: tools/token-burn/token-burn.php
+// Description: Calculate total burned tokens for a Solana wallet address in batches.
+// Created by: Vina Network
 
 session_start();
 ini_set('memory_limit', '512M');
