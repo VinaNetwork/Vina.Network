@@ -14,8 +14,15 @@ document.getElementById('makeMarketForm').addEventListener('submit', function (e
   })
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
-        let html = `<p>✅ Đã xử lý ${data.results.length} vòng Make Market:</p><ul>`;
+      let html = '';
+
+      // ✅ Hiển thị message ở dòng đầu nếu có
+      if (data.message) {
+        html += `<p><strong>${data.message}</strong></p>`;
+      }
+
+      if (data.success && Array.isArray(data.results)) {
+        html += `<p>✅ Đã xử lý ${data.results.length} vòng Make Market:</p><ul>`;
         data.results.forEach(round => {
           html += `<li>🌀 Vòng ${round.round}: `;
           if (round.error) {
@@ -27,10 +34,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', function (e
           html += `</li>`;
         });
         html += '</ul>';
-        statusBox.innerHTML = html;
-      } else {
-        statusBox.innerHTML = `<p>❌ Lỗi: ${data.error}</p>`;
+      } else if (!data.success) {
+        // ✅ Nếu có message thì đã hiện rồi, bổ sung lỗi cụ thể (nếu có)
+        if (data.error) {
+          html += `<p>❌ Lỗi: ${data.error}</p>`;
+        }
       }
+
+      statusBox.innerHTML = html;
     })
     .catch(err => {
       statusBox.innerHTML = `<p>❌ Lỗi kết nối hoặc hệ thống: ${err.message}</p>`;
