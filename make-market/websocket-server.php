@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: websocket-server.php
+// File: make-market/websocket-server.php
 // Description: WebSocket server for real-time transaction status updates
 // Created by: Vina Network
 // ============================================================================
@@ -10,7 +10,7 @@ use Ratchet\ConnectionInterface;
 use Ratchet\Server\IoServer;
 use Ratchet\Http\HttpServer;
 use Ratchet\WebSocket\WsServer;
-require_once 'vendor/autoload.php';
+require_once './vendor/autoload.php'; // Cập nhật đường dẫn
 
 class TransactionStatus implements MessageComponentInterface {
     protected $clients;
@@ -29,7 +29,6 @@ class TransactionStatus implements MessageComponentInterface {
     public function onMessage(ConnectionInterface $from, $msg) {
         $data = json_decode($msg, true);
         if (isset($data['processId'])) {
-            // Lưu processId để gửi trạng thái
             $this->processStatuses[$from->resourceId] = $data['processId'];
             echo "Client {$from->resourceId} subscribed to process {$data['processId']}\n";
         }
@@ -46,7 +45,6 @@ class TransactionStatus implements MessageComponentInterface {
         $conn->close();
     }
 
-    // Hàm gửi trạng thái đến client theo processId
     public static function sendStatus($processId, $status) {
         $server = new self();
         foreach ($server->clients as $client) {
@@ -64,6 +62,6 @@ $server = IoServer::factory(
             new TransactionStatus()
         )
     ),
-    8080 // Cổng WebSocket
+    8080
 );
 $server->run();
