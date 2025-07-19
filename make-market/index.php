@@ -7,7 +7,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Head Section (Meta, Styles, Title) is included via header.php
 $defaultSlippage = 1.0;
 $root_path = '../';
 $page_title = "";
@@ -22,7 +21,6 @@ $page_css = ['mm.css'];
 include '../include/header.php';
 ?>
 
-
 <body>
   <!-- Navigation Bar -->
   <?php include '../include/navbar.php'; ?>
@@ -30,7 +28,21 @@ include '../include/header.php';
   <div class="mm-container">
     <h1>🟢 Make Market</h1>
     <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
-    <form id="makeMarketForm">
+    
+    <!-- Form đăng nhập -->
+    <div id="login-form" style="display: none;">
+      <h2>Đăng nhập</h2>
+      <form id="loginForm">
+        <label for="username">Tên người dùng:</label>
+        <input type="text" name="username" id="username" required>
+        <label for="password">Mật khẩu:</label>
+        <input type="password" name="password" id="password" required>
+        <button type="submit">Đăng nhập</button>
+      </form>
+    </div>
+
+    <!-- Form Make Market -->
+    <form id="makeMarketForm" style="display: none;">
       <label for="processName">Tên tiến trình:</label>
       <input type="text" name="processName" id="processName" required>
       
