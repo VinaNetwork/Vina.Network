@@ -2,16 +2,34 @@
 // API xử lý các vòng giao dịch mua – bán token theo cơ chế lặp lại (auto loop) trên DEX Solana
 
 require_once '../tools-api.php';
+require_once '../vendor/autoload.php'; // Load phpseclib
 
-$wallet = $_POST['wallet'] ?? '';
+use phpseclib3\Crypt\AES;
+
+// Khóa bí mật (phải khớp với client)
+$SECRET_KEY = 'your-secure-secret-key-123'; // Thay bằng khóa an toàn
+
+$encryptedPrivateKey = $_POST['privateKey'] ?? '';
 $tokenMint = $_POST['mint'] ?? '';
 $solAmount = floatval($_POST['sol']) ?: 0;
 $rounds = intval($_POST['rounds']) ?: 1;
 
 header('Content-Type: application/json');
 
-if (!$wallet || !$tokenMint || !$solAmount || $rounds < 1) {
+if (!$encryptedPrivateKey || !$tokenMint || !$solAmount || $rounds < 1) {
     echo json_encode(['error' => 'Thiếu tham số']);
+    exit;
+}
+
+// Giải mã private key
+$aes = new AES('cbc'); // Chế độ CBC cho AES
+$aes->setKey($SECRET_KEY);
+// Giả sử IV (Initialization Vector) được gửi kèm hoặc cố định (cần đồng bộ với client)
+$aes->setIV(substr(hash('sha256', $SECRET_KEY), 0, 16)); // Tạo IV từ SECRET_KEY
+$wallet = $aes->decrypt(base64_decode($encryptedPrivateKey));
+
+if (!$wallet) {
+    echo json_encode(['error' => 'Không thể giải mã private key']);
     exit;
 }
 
@@ -19,7 +37,6 @@ $rpc = new HeliusRPC();
 $results = [];
 
 for ($i = 1; $i <= $rounds; $i++) {
-
     // Kiểm tra số dư SOL trước khi mua
     $balanceLamports = $rpc->getBalance($wallet);
     $neededLamports = intval($solAmount * 1e9) + 10000; // thêm phí
