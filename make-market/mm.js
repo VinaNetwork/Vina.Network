@@ -13,7 +13,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
     // Lấy SECRET_KEY từ server (giả định API bảo mật)
     const keyResponse = await fetch('/api/get-encryption-key', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer your-auth-token' } // Thêm xác thực
+      headers: { 'Authorization': 'Bearer your-auth-token' } // Thay bằng token xác thực thực tế
     });
     const { secretKey } = await keyResponse.json();
     if (!secretKey) throw new Error('Không lấy được khóa mã hóa');
@@ -43,8 +43,8 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
         if (round.error) {
           html += `❌ ${round.error}`;
         } else {
-          html += `🛒 <a href="https://solscan.io/tx/${round.buyTx}" target="_blank">Mua</a> – 
-                   💸 <a href="https://solscan.io/tx/${round.sellTx}" target="_blank">Bán</a>`;
+          html += `🛒 <a href="https://solscan.io/tx/${round.buyTx}" target="_blank">Mua (Đã xác nhận)</a> – 
+                   💸 <a href="https://solscan.io/tx/${round.sellTx}" target="_blank">Bán (Đã xác nhận)</a>`;
         }
         html += `</li>`;
       });
