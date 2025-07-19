@@ -1,4 +1,5 @@
 <?php
+require_once '../tools-api.php';
 require_once '../vendor/autoload.php';
 use phpseclib3\Crypt\AES;
 use Dotenv\Dotenv;
@@ -35,7 +36,26 @@ if (!$wallet) {
 $rpc = new HeliusRPC();
 $results = [];
 
+// Hàm kiểm tra trạng thái giao dịch
+function waitForConfirmation($rpc, $txSig, $maxAttempts = 30, $interval = 1) {
+    for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        $status = $rpc->getSignatureStatuses([$txSig]);
+        $confirmationStatus = $status['value'][0]['confirmationStatus'] ?? null;
+        $err = $status['value'][0]['err'] ?? null;
+
+        if ($err) {
+            return ['confirmed' => false, 'error' => "Giao dịch thất bại: " . json_encode($err)];
+        }
+        if ($confirmationStatus === 'confirmed' || $confirmationStatus === 'finalized') {
+            return ['confirmed' => true, 'error' => null];
+        }
+        sleep($interval); // Chờ trước khi kiểm tra lại
+    }
+    return ['confirmed' => false, 'error' => 'Hết thời gian chờ xác nhận giao dịch'];
+}
+
 for ($i = 1; $i <= $rounds; $i++) {
+    // Kiểm tra số dư SOL
     $balanceLamports = $rpc->getBalance($wallet);
     $neededLamports = intval($solAmount * 1e9) + 10000;
     if ($balanceLamports < $neededLamports) {
@@ -46,6 +66,7 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
+    // Gửi lệnh mua
     $route = $rpc->getSwapRoute($wallet, 'So11111111111111111111111111111111111111112', $tokenMint, $solAmount);
     if (!$route) {
         echo json_encode([
@@ -65,8 +86,17 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
-    sleep(2);
+    // Chờ xác nhận giao dịch mua
+    $buyConfirmation = waitForConfirmation($rpc, $buyTxSig);
+    if (!$buyConfirmation['confirmed']) {
+        echo json_encode([
+            'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $buyConfirmation['error'],
+            'results' => $results
+        ]);
+        exit;
+    }
 
+    // Kiểm tra số dư token để bán
     $tokenAccounts = $rpc->getTokenAccountsByOwner($wallet, $tokenMint);
     $tokenAmount = 0;
     foreach ($tokenAccounts as $acc) {
@@ -82,8 +112,9 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
+    // Gửi lệnh bán
     $routeSell = $rpc->getSwapRoute($wallet, $tokenMint, 'So11111111111111111111111111111111111111112', $tokenAmount);
-    if (!$route83Sell) {
+    if (!$routeSell) {
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: Không lấy được route bán",
             'results' => $results
@@ -101,13 +132,21 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
+    // Chờ xác nhận giao dịch bán
+    $sellConfirmation = waitForConfirmation($rpc, $sellTxSig);
+    if (!$sellConfirmation['confirmed']) {
+        echo json_encode([
+            'message' => "⛔ Dừng vòng lặp tại vòng $i: " . $sellConfirmation['error'],
+            'results' => $results
+        ]);
+        exit;
+    }
+
     $results[] = [
         'round' => $i,
         'buyTx' => $buyTxSig,
         'sellTx' => $sellTxSig
     ];
-
-    sleep(2);
 }
 
 echo json_encode([
