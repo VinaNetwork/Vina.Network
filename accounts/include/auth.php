@@ -1,16 +1,16 @@
 <?php
-// auth.php
-require_once '../vendor/autoload.php'; // composer cho Firebase JWT
+// accounts/include/auth.php
+require_once '../../config/db.php'; // Trỏ đến config/db.php
+require_once '../vendor/autoload.php'; // Nếu dùng composer cho Firebase JWT
 use \Firebase\JWT\JWT;
 
 class Auth {
     private $pdo;
-    private $jwt_secret = 'v5njta8HCXPdFQLWkbzC+q1x+zht34edaMDNer+WwKM='; // key bí mật
+    private $jwt_secret = 'your-secret-key'; // Thay bằng key bí mật của bạn
 
     public function __construct() {
-        // Kết nối database
-        $this->pdo = new PDO('mysql:host=localhost;dbname=your_database', 'username', 'password');
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        // Sử dụng hàm getDB() để kết nối database
+        $this->pdo = getDB();
     }
 
     // Xác minh chữ ký Solana
