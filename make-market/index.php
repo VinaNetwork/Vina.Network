@@ -55,7 +55,7 @@ include '../include/header.php';
       <button type="submit">🚀 Make Market</button>
     </form>
 
-    <div id="mm-status"></div>
+    <div id="mm-status" class="status-box"></div>
   </div>
 
   <!-- Footer Section -->
