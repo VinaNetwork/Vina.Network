@@ -1,6 +1,8 @@
+// ============================================================================
 // File: tools/tools.js
 // Description: Script for managing the entire tool page, including tool tab navigation, wallet analysis tab navigation, form submission, export, and copy functionality.
 // Created by: Vina Network
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize tool tab navigation
@@ -17,10 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadToolContent(tool) {
         const loader = document.querySelector('.loader');
         if (loader) loader.style.display = 'block';
-        contentContainer.classList.remove('slide-in');
-        contentContainer.style.display = 'block';
-        tabsContainer.style.display = 'none';
-        document.querySelector('.note').style.display = 'none';
+        contentContainer.classList.remove('slide-in'); // Reset animation
+        contentContainer.style.display = 'block'; // Show content
+        tabsContainer.style.display = 'none'; // Hide nav
+        document.querySelector('.note').style.display = 'none'; // Hide note
 
         fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
             method: 'GET',
@@ -39,11 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 ${data}
             `;
-            contentContainer.classList.add('slide-in');
+            contentContainer.classList.add('slide-in'); // Trigger slide animation
             if (loader) loader.style.display = 'none';
+            // Initialize wallet tabs if wallet-analysis is loaded
             if (tool === 'wallet-analysis') {
                 initializeWalletTabs();
             }
+            // Re-initialize clear input after AJAX
             initializeClearInput();
         })
         .catch(error => {
@@ -59,43 +63,52 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Load initial tool content only if tool is specified in URL
     if (tool) {
         loadToolContent(tool);
     }
 
+    // Handle tool tab click events
     document.querySelectorAll('.tools-nav-card').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
+
+            // Update active tool tab
             document.querySelectorAll('.tools-nav-card').forEach(tab => tab.classList.remove('active'));
             this.classList.add('active');
+
+            // Load tool content with animation
             const tool = this.getAttribute('data-tool');
             history.pushState({}, '', `?tool=${encodeURIComponent(tool)}`);
             loadToolContent(tool);
         });
     });
 
+    // Handle back button click
     document.addEventListener('click', (e) => {
         if (e.target.closest('.back-button')) {
             e.preventDefault();
             history.pushState({}, '', '/tools/');
-            tabsContainer.style.display = 'grid';
-            document.querySelector('.note').style.display = 'block';
-            contentContainer.style.display = 'none';
+            tabsContainer.style.display = 'grid'; // Show nav
+            document.querySelector('.note').style.display = 'block'; // Show note
+            contentContainer.style.display = 'none'; // Hide content
             contentContainer.innerHTML = `
                 <div class="tools-back">
                     <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
                 </div>
-            `;
-            document.querySelectorAll('.tools-nav-card').forEach(tab => tab.classList.remove('active'));
+            `; // Reset content
+            document.querySelectorAll('.tools-nav-card').forEach(tab => tab.classList.remove('active')); // Remove all active classes
         }
     });
 
+    // Initialize wallet analysis tabs
     function initializeWalletTabs() {
         const walletTabsContainer = document.querySelector('.wallet-tabs');
         let activeWalletTab = document.querySelector('.wallet-tab-link.active');
 
         console.log('Active wallet tab element:', activeWalletTab);
 
+        // Activate wallet tab based on URL if no active tab
         if (!activeWalletTab && tab) {
             activeWalletTab = document.querySelector(`.wallet-tab-link[data-tab="${tab}"]`);
             if (activeWalletTab) {
@@ -106,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Scroll wallet tab into view
         if (walletTabsContainer && activeWalletTab) {
             setTimeout(() => {
                 const tabRect = activeWalletTab.getBoundingClientRect();
@@ -118,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 100);
         }
 
+        // Handle wallet tab click events
         document.querySelectorAll('.wallet-tab-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -137,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`Loading wallet tab: ${tab}`);
                 history.pushState({}, '', `?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`);
 
+                // Show loader
                 const loader = document.querySelector('.loader');
                 if (loader) loader.style.display = 'block';
 
@@ -153,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`Wallet tab ${tab} loaded successfully, response length: ${data.length}`);
                     document.querySelector('.wallet-tab-content').innerHTML = data;
                     if (loader) loader.style.display = 'none';
+                    // Re-initialize clear input after AJAX
                     initializeClearInput();
                 })
                 .catch(error => {
@@ -164,16 +181,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Handle clear input button for all inputs with .clear-input
     function initializeClearInput() {
         document.querySelectorAll('.input-wrapper').forEach(wrapper => {
             const input = wrapper.querySelector('input');
             const clearButton = wrapper.querySelector('.clear-input');
             if (input && clearButton) {
+                // Toggle clear button visibility based on input content
                 function toggleClearButton() {
                     clearButton.classList.toggle('visible', input.value.length > 0);
                 }
+                // Initial check
                 toggleClearButton();
+                // Listen for input changes
                 input.addEventListener('input', toggleClearButton);
+                // Handle clear button click
                 clearButton.addEventListener('click', () => {
                     input.value = '';
                     input.focus();
@@ -184,8 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Call initializeClearInput initially
     initializeClearInput();
 
+    // Call initializeWalletTabs if wallet-analysis is loaded
     if (tool === 'wallet-analysis') {
         initializeWalletTabs();
     }
@@ -194,8 +218,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('submit', (e) => {
         console.log('Form submitted:', e.target.id, 'Action:', e.target.action);
 
+        // Export form submission (NFT Holders)
         if (e.target.matches('.export-form')) {
             e.preventDefault();
+
             const form = e.target;
             const exportType = form.querySelector('[name="export_type"]').value;
             const mintAddress = form.querySelector('[name="mintAddress"]').value;
@@ -308,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Handle form submissions (walletAnalysisForm, nftHoldersForm, nftInfoForm, walletCreatorForm, tokenBurnForm)
         if (e.target.matches('#nftInfoForm, #nftHoldersForm, #nftTransactionForm, #walletCreatorForm, #walletAnalysisForm, #tokenBurnForm')) {
             e.preventDefault();
             const form = e.target;
@@ -369,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                 } catch (e) {
+                    // Not JSON, assume HTML
                     contentContainer.innerHTML = `
                         <div class="tools-back">
                             <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
@@ -378,9 +406,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 contentContainer.classList.add('slide-in');
                 if (loader) loader.style.display = 'none';
+                // Re-initialize wallet tabs after form submission
                 if (tool === 'wallet-analysis') {
                     initializeWalletTabs();
                 }
+                // Re-initialize clear input after AJAX
                 initializeClearInput();
             })
             .catch(error => {
@@ -399,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Debug copy icons after AJAX
     console.log('DOM loaded, initializing copy debug');
     setTimeout(() => {
         console.log('Re-checking copy icons after AJAX');
@@ -417,6 +448,7 @@ document.addEventListener('click', function(e) {
 
     console.log('Copy icon clicked:', icon);
 
+    // Get address from data-full
     const fullAddress = icon.getAttribute('data-full');
     if (!fullAddress) {
         console.error('Copy failed: data-full attribute not found or empty');
@@ -426,6 +458,7 @@ document.addEventListener('click', function(e) {
 
     console.log('Attempting to copy address:', fullAddress);
 
+    // Try Clipboard API
     if (navigator.clipboard && window.isSecureContext) {
         console.log('Using Clipboard API');
         navigator.clipboard.writeText(fullAddress).then(() => {

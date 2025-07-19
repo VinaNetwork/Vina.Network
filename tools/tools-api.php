@@ -2,6 +2,7 @@
 // File: tools/tools-api.php
 // Description: Universal wrapper to call Helius RPC and API endpoints on Solana.
 // Created by: Vina Network
+// ============================================================================
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
@@ -38,7 +39,6 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
             }
             $log_url = str_replace($helius_api_key, '****', $url);
             $method = 'GET';
-            log_message("api-helper: Fetching transactions batch, before=" . ($params['before'] ?? 'none'), 'tools_api_log.txt', 'INFO');
         }
 
         curl_setopt($ch, CURLOPT_URL, $url);
