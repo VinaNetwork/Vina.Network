@@ -27,7 +27,7 @@ if (!defined('DB_NAME')) {
     define('DB_NAME', 'vina');
 }
 if (!defined('DB_USER')) {
-    define('DB_USER', 'root');
+    define('DB_USER', 'vina_user');
 }
 if (!defined('DB_PASS')) {
     define('DB_PASS', 'your_password'); // Thay bằng mật khẩu thực tế
