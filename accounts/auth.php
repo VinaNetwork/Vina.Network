@@ -1,39 +1,42 @@
 <?php
-// ============================================================================
-// File: accounts/auth.php
-// Description: Shared JWT authentication logic
-// Created by: Vina Network
-// ============================================================================
-
-require_once __DIR__ . '/../make-market/vendor/autoload.php';
-use Dotenv\Dotenv;
+// Xử lý xác thực ví Solana + tạo và kiểm tra JWT
+require_once __DIR__ . '/../vendor/autoload.php'; // Firebase\JWT
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-class JwtAuth {
-    private $secret;
+define("JWT_SECRET", "RANDOM_SUPER_SECRET_KEY_123"); // Bro nên đổi cái này
+define("JWT_EXP", 86400); // 24h
 
-    public function __construct($secret) {
-        $this->secret = $secret;
-    }
+function getDB() {
+    $host = "localhost";
+    $db = "vina";
+    $user = "root";
+    $pass = "your_password";
+    return new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
+}
 
-    public function validateToken($authHeader) {
-        if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            return ['valid' => false, 'error' => 'Token không hợp lệ'];
-        }
+// Tạo JWT
+function generate_jwt($wallet) {
+    $payload = [
+        'wallet' => $wallet,
+        'iat' => time(),
+        'exp' => time() + JWT_EXP
+    ];
+    return JWT::encode($payload, JWT_SECRET, 'HS256');
+}
 
-        $jwt = $matches[1];
-        try {
-            $decoded = JWT::decode($jwt, new Key($this->secret, 'HS256'));
-            return ['valid' => true, 'payload' => (array) $decoded];
-        } catch (Exception $e) {
-            file_put_contents(__DIR__ . '/../make-market/logs/auth_errors.log', date('Y-m-d H:i:s') . ": Lỗi xác thực JWT: " . $e->getMessage() . "\n", FILE_APPEND);
-            return ['valid' => false, 'error' => 'Lỗi xác thực JWT: ' . $e->getMessage()];
-        }
+// Kiểm tra JWT
+function verify_jwt($jwt) {
+    try {
+        $decoded = JWT::decode($jwt, new Key(JWT_SECRET, 'HS256'));
+        return $decoded->wallet ?? false;
+    } catch (Exception $e) {
+        return false;
     }
 }
 
-// Load biến môi trường
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../make-market');
-$dotenv->load();
-$JWT_SECRET = $_ENV['JWT_SECRET'] ?? '';
+// Xác minh chữ ký từ ví Solana (tạm thời mock lại true)
+function verify_signature($wallet, $message, $signature) {
+    // TODO: Bro có thể gọi Helius hoặc endpoint riêng xác minh chữ ký Solana
+    return true; // tạm thời luôn đúng để test
+}
