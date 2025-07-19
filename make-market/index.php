@@ -16,6 +16,9 @@ $defaultSlippage = 1.0;
   <div class="mm-container">
     <h1>🟢 Make Market</h1>
     <form id="makeMarketForm">
+      <label for="processName">Tên tiến trình:</label>
+      <input type="text" name="processName" id="processName" required>
+      
       <label>🔑 Private Key (Base58):</label>
       <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
 
