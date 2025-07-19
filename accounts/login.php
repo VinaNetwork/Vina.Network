@@ -1,88 +1,47 @@
 <?php
-// ============================================================================
-// File: accounts/login.php
-// Description: API to generate JWT for authenticated users
-// Created by: Vina Network
-// ============================================================================
-
-require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/../make-market/vendor/autoload.php';
-use Dotenv\Dotenv;
-use Firebase\JWT\JWT;
+// Đăng nhập tài khoản bằng ví Solana (ký message để xác minh)
+require_once __DIR__ . '/../config/db.php';
+require_once 'auth.php';
 
 header('Content-Type: application/json');
 
-// Load biến môi trường
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../make-market');
-$dotenv->load();
-$JWT_SECRET = $_ENV['JWT_SECRET'] ?? '';
-$DB_HOST = $_ENV['DB_HOST'] ?? 'localhost';
-$DB_NAME = $_ENV['DB_NAME'] ?? 'vinanetwork';
-$DB_USER = $_ENV['DB_USER'] ?? '';
-$DB_PASS = $_ENV['DB_PASS'] ?? '';
+$data = json_decode(file_get_contents("php://input"), true);
+$wallet = $data['wallet'] ?? '';
+$signature = $data['signature'] ?? '';
+$message = $data['message'] ?? '';
 
-// Kết nối database
-try {
-    $pdo = new PDO("mysql:host=$DB_HOST;dbname=$DB_NAME", $DB_USER, $DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    http_response_code(500);
-    file_put_contents(__DIR__ . '/../make-market/logs/auth_errors.log', date('Y-m-d H:i:s') . ": Database error: " . $e->getMessage() . "\n", FILE_APPEND);
-    echo json_encode(['error' => 'Lỗi kết nối database']);
-    exit;
-}
-
-// Nhận dữ liệu
-$publicKey = $_POST['publicKey'] ?? '';
-$signature = $_POST['signature'] ?? '';
-$message = $_POST['message'] ?? 'Sign to login with Vina Network';
-
-// Kiểm tra dữ liệu đầu vào
-if (!$publicKey || !$signature || !$message) {
+if (!$wallet || !$signature || !$message) {
     http_response_code(400);
-    file_put_contents(__DIR__ . '/../make-market/logs/auth_errors.log', date('Y-m-d H:i:s') . ": Thiếu tham số\n", FILE_APPEND);
-    echo json_encode(['error' => 'Thiếu tham số']);
+    echo json_encode(["error" => "Thiếu dữ liệu"]);
     exit;
 }
 
-// Xác minh chữ ký Solana
+if (!verify_signature($wallet, $message, $signature)) {
+    http_response_code(403);
+    echo json_encode(["error" => "Chữ ký không hợp lệ"]);
+    exit;
+}
+
 try {
-    $isValid = sodium_crypto_sign_verify_detached(
-        base64_decode($signature),
-        $message,
-        base64_decode($publicKey)
-    );
-    if (!$isValid) {
-        http_response_code(401);
-        file_put_contents(__DIR__ . '/../make-market/logs/auth_errors.log', date('Y-m-d H:i:s') . ": Chữ ký không hợp lệ\n", FILE_APPEND);
-        echo json_encode(['error' => 'Chữ ký không hợp lệ']);
+    $db = getDB();
+
+    $stmt = $db->prepare("SELECT * FROM users WHERE wallet_address = ?");
+    $stmt->execute([$wallet]);
+    $user = $stmt->fetch();
+
+    if (!$user) {
+        http_response_code(404);
+        echo json_encode(["error" => "Tài khoản chưa đăng ký"]);
         exit;
     }
+
+    $update = $db->prepare("UPDATE users SET last_login = NOW() WHERE wallet_address = ?");
+    $update->execute([$wallet]);
+
+    $token = generate_jwt($wallet);
+    echo json_encode(["token" => $token]);
+
 } catch (Exception $e) {
-    http_response_code(401);
-    file_put_contents(__DIR__ . '/../make-market/logs/auth_errors.log', date('Y-m-d H:i:s') . ": Lỗi xác minh chữ ký: " . $e->getMessage() . "\n", FILE_APPEND);
-    echo json_encode(['error' => 'Lỗi xác minh chữ ký']);
-    exit;
+    http_response_code(500);
+    echo json_encode(["error" => "Lỗi hệ thống"]);
 }
-
-// Kiểm tra ví trong database
-$stmt = $pdo->prepare('SELECT id FROM users WHERE solana_address = ?');
-$stmt->execute([$publicKey]);
-$user = $stmt->fetch();
-
-if (!$user) {
-    http_response_code(401);
-    file_put_contents(__DIR__ . '/../make-market/logs/auth_errors.log', date('Y-m-d H:i:s') . ": Ví chưa được đăng ký\n", FILE_APPEND);
-    echo json_encode(['error' => 'Ví chưa được đăng ký']);
-    exit;
-}
-
-// Tạo JWT
-$payload = [
-    'iat' => time(),
-    'exp' => time() + 3600,
-    'sub' => $publicKey,
-    'user_id' => $user['id']
-];
-$jwt = JWT::encode($payload, $JWT_SECRET, 'HS256');
-echo json_encode(['token' => $jwt]);
