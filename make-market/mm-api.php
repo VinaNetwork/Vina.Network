@@ -1,31 +1,30 @@
 <?php
-// API xử lý các vòng giao dịch mua – bán token theo cơ chế lặp lại (auto loop) trên DEX Solana
-
-require_once '../tools-api.php';
-require_once '../vendor/autoload.php'; // Load phpseclib
-
+require_once '../vendor/autoload.php';
 use phpseclib3\Crypt\AES;
+use Dotenv\Dotenv;
 
-// Khóa bí mật (phải khớp với client)
-$SECRET_KEY = 'your-secure-secret-key-123'; // Thay bằng khóa an toàn
+// Load biến môi trường
+$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->load();
+$SECRET_KEY = $_ENV['SECRET_KEY'];
 
 $encryptedPrivateKey = $_POST['privateKey'] ?? '';
+$iv = $_POST['iv'] ?? '';
 $tokenMint = $_POST['mint'] ?? '';
 $solAmount = floatval($_POST['sol']) ?: 0;
 $rounds = intval($_POST['rounds']) ?: 1;
 
 header('Content-Type: application/json');
 
-if (!$encryptedPrivateKey || !$tokenMint || !$solAmount || $rounds < 1) {
+if (!$encryptedPrivateKey || !$iv || !$tokenMint || !$solAmount || $rounds < 1) {
     echo json_encode(['error' => 'Thiếu tham số']);
     exit;
 }
 
 // Giải mã private key
-$aes = new AES('cbc'); // Chế độ CBC cho AES
+$aes = new AES('cbc');
 $aes->setKey($SECRET_KEY);
-// Giả sử IV (Initialization Vector) được gửi kèm hoặc cố định (cần đồng bộ với client)
-$aes->setIV(substr(hash('sha256', $SECRET_KEY), 0, 16)); // Tạo IV từ SECRET_KEY
+$aes->setIV(base64_decode($iv));
 $wallet = $aes->decrypt(base64_decode($encryptedPrivateKey));
 
 if (!$wallet) {
@@ -37,9 +36,8 @@ $rpc = new HeliusRPC();
 $results = [];
 
 for ($i = 1; $i <= $rounds; $i++) {
-    // Kiểm tra số dư SOL trước khi mua
     $balanceLamports = $rpc->getBalance($wallet);
-    $neededLamports = intval($solAmount * 1e9) + 10000; // thêm phí
+    $neededLamports = intval($solAmount * 1e9) + 10000;
     if ($balanceLamports < $neededLamports) {
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: Không đủ SOL để mua (cần ~{$solAmount} SOL + phí)",
@@ -48,7 +46,6 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
-    // Gửi lệnh mua
     $route = $rpc->getSwapRoute($wallet, 'So11111111111111111111111111111111111111112', $tokenMint, $solAmount);
     if (!$route) {
         echo json_encode([
@@ -68,9 +65,8 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
-    sleep(2); // đợi blockchain ghi nhận
+    sleep(2);
 
-    // Kiểm tra số dư token để bán
     $tokenAccounts = $rpc->getTokenAccountsByOwner($wallet, $tokenMint);
     $tokenAmount = 0;
     foreach ($tokenAccounts as $acc) {
@@ -86,9 +82,8 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
-    // Gửi lệnh bán
     $routeSell = $rpc->getSwapRoute($wallet, $tokenMint, 'So11111111111111111111111111111111111111112', $tokenAmount);
-    if (!$routeSell) {
+    if (!$route83Sell) {
         echo json_encode([
             'message' => "⛔ Dừng vòng lặp tại vòng $i: Không lấy được route bán",
             'results' => $results
@@ -112,7 +107,7 @@ for ($i = 1; $i <= $rounds; $i++) {
         'sellTx' => $sellTxSig
     ];
 
-    sleep(2); // đợi trước vòng tiếp theo
+    sleep(2);
 }
 
 echo json_encode([
