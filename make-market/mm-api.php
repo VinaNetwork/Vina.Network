@@ -1,24 +1,47 @@
 <?php
 // ============================================================================
 // File: make-market/mm-api.php
-// Description: Make Market API with Jupiter Swap V6 integration and WebSocket status updates
+// Description: Make Market API with Jupiter Swap V6 integration, WebSocket status updates, and JWT authentication
 // Created by: Vina Network
 // ============================================================================
 
-require_once './vendor/autoload.php'; // Cập nhật đường dẫn
+require_once './vendor/autoload.php';
 use phpseclib3\Crypt\AES;
 use Dotenv\Dotenv;
 use Solana\Web3\Connection;
 use Solana\Web3\Keypair;
 use Solana\Web3\VersionedTransaction;
 use GuzzleHttp\Client;
-require_once './websocket-server.php'; // Cập nhật đường dẫn
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+require_once './websocket-server.php';
 
 // Load biến môi trường
 $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 $SECRET_KEY = $_ENV['SECRET_KEY'];
 $RPC_ENDPOINT = $_ENV['RPC_ENDPOINT'] ?? 'https://api.mainnet-beta.solana.com';
+$JWT_SECRET = $_ENV['JWT_SECRET'] ?? '';
+
+header('Content-Type: application/json');
+
+// Kiểm tra JWT
+$headers = apache_request_headers();
+$authHeader = $headers['Authorization'] ?? '';
+if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Thiếu hoặc sai định dạng token']);
+    exit;
+}
+
+$token = $matches[1];
+try {
+    $decoded = JWT::decode($token, new Key($JWT_SECRET, 'HS256'));
+} catch (Exception $e) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Token không hợp lệ: ' . $e->getMessage()]);
+    exit;
+}
 
 $encryptedPrivateKey = $_POST['privateKey'] ?? '';
 $iv = $_POST['iv'] ?? '';
@@ -28,8 +51,6 @@ $rounds = intval($_POST['rounds']) ?: 1;
 $slippage = floatval($_POST['slippage']) ?: 1.0;
 $slippageBps = intval($slippage * 100);
 $processId = $_POST['processName'] ?? 'default_process_' . uniqid();
-
-header('Content-Type: application/json');
 
 if (!$encryptedPrivateKey || !$iv || !$tokenMint || !$solAmount || $rounds < 1) {
     echo json_encode(['error' => 'Thiếu tham số']);
@@ -166,7 +187,7 @@ for ($i = 1; $i <= $rounds; $i++) {
         exit;
     }
 
-    $swapResult = executeJupiterSwap($httpClient, $connection, $keypair, $quote, $processId, 'mua', $i);
+    $swapResult = executeJupiterSwap($httpClient, $connection, $keypair, $quote Cie, $processId, 'mua', $i);
     if ($swapResult['error']) {
         TransactionStatus::sendStatus($processId, "Lỗi vòng $i: " . $swapResult['error']);
         echo json_encode([
