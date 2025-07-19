@@ -1,12 +1,13 @@
 <?php
 // accounts/include/auth.php
-require_once '../../config/db.php'; // Trỏ đến config/db.php
+require_once '../../config/db.php'; // Kết nối database
+require_once '../../config/config.php'; // Thêm file cấu hình chung
 require_once '../vendor/autoload.php'; // Nếu dùng composer cho Firebase JWT
 use \Firebase\JWT\JWT;
 
 class Auth {
     private $pdo;
-    private $jwt_secret = 'your-secret-key'; // Thay bằng key bí mật của bạn
+    private $jwt_secret = JWT_SECRET; // Sử dụng hằng số từ config.php
 
     public function __construct() {
         // Sử dụng hàm getDB() để kết nối database
