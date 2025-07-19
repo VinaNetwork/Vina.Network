@@ -1,19 +1,37 @@
 <?php
+// ============================================================================
+// File: make-market/api/get-encryption-key.php
+// Description: API to return encryption key with JWT authentication
+// Created by: Vina Network
+// ============================================================================
+
+require_once '../vendor/autoload.php'; // Cập nhật đường dẫn
+use Dotenv\Dotenv;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
 header('Content-Type: application/json');
 
-// Giả định kiểm tra xác thực (ví dụ: JWT)
-$authToken = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if (strpos($authToken, 'Bearer your-auth-token') === false) {
-    echo json_encode(['error' => 'Xác thực thất bại']);
+// Load biến môi trường
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../..'); // Trỏ đến .env ở thư mục gốc
+$dotenv->load();
+$JWT_SECRET = $_ENV['JWT_SECRET'] ?? '';
+
+// Kiểm tra JWT
+$headers = apache_request_headers();
+$authHeader = $headers['Authorization'] ?? '';
+if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Thiếu hoặc sai định dạng token']);
     exit;
 }
 
-require_once '../vendor/autoload.php';
-use Dotenv\Dotenv;
-
-$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
-$dotenv->load();
-
-echo json_encode([
-    'secretKey' => $_ENV['SECRET_KEY']
-]);
+$token = $matches[1];
+try {
+    $decoded = JWT::decode($token, new Key($JWT_SECRET, 'HS256'));
+    echo json_encode(['secretKey' => $_ENV['SECRET_KEY']]);
+} catch (Exception $e) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Token không hợp lệ: ' . $e->getMessage()]);
+    exit;
+}
