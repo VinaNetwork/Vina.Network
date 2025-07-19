@@ -8,6 +8,8 @@
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
+form {padding:20px;}
+
 h1 {
   text-align: center;
   color: #218c74;
@@ -50,4 +52,9 @@ form button:hover {
   background: #f7f7f7;
   border-radius: 8px;
   font-size: 15px;
+}
+
+/*  Responsive Design */
+@media screen and (max-width: 768px) {
+    .mm-container {margin-top: 64px;}
 }
