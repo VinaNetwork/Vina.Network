@@ -1,43 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
 <?php
-// Đăng ký tài khoản bằng ví Solana (ký message để xác minh)
-require_once __DIR__ . '/../config/db.php';
-require_once 'auth.php';
+// ============================================================================
+// File: accounts/register.php
+// Description: Register page for Vina Network.
+// Created by: Vina Network
+// ============================================================================
 
-header('Content-Type: application/json');
+$root_path = '../';
+$page_title = "Register page for Vina Network";
+$page_description = "Register page for Vina Network";
+$page_keywords = "Vina Network, register";
+$page_og_title = "Register page for Vina Network";
+$page_og_description = "Register page for Vina Network";
+$page_og_url = "https://www.vina.network/accounts/register.php/";
+$page_canonical = "https://www.vina.network/accounts/register.php/";
+$page_css = ['accounts.css'];
 
-$data = json_decode(file_get_contents("php://input"), true);
-$wallet = $data['wallet'] ?? '';
-$signature = $data['signature'] ?? '';
-$message = $data['message'] ?? '';
+include '../include/header.php';
+?>
+<body>
+<!-- Navigation Bar -->
+<?php include '../include/navbar.php'; ?>
 
-if (!$wallet || !$signature || !$message) {
-    http_response_code(400);
-    echo json_encode(["error" => "Thiếu dữ liệu"]);
-    exit;
-}
+<div class="container">
+    <h1>Register for Vina Network</h1>
+    <p id="wallet-address">Connect your wallet to register</p>
+    <button id="connect-wallet" class="btn">Connect Wallet</button>
+    <button id="register-btn" class="btn">Register</button>
+</div>
 
-if (!verify_signature($wallet, $message, $signature)) {
-    http_response_code(403);
-    echo json_encode(["error" => "Chữ ký không hợp lệ"]);
-    exit;
-}
-
-try {
-    $db = getDB();
-
-    $stmt = $db->prepare("SELECT * FROM users WHERE wallet_address = ?");
-    $stmt->execute([$wallet]);
-    $user = $stmt->fetch();
-
-    if (!$user) {
-        $insert = $db->prepare("INSERT INTO users (wallet_address) VALUES (?)");
-        $insert->execute([$wallet]);
-    }
-
-    $token = generate_jwt($wallet);
-    echo json_encode(["token" => $token]);
-
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(["error" => "Lỗi hệ thống"]);
-}
+<!-- Footer Section -->
+<?php include '../include/footer.php'; ?>
+<!-- Scripts -->
+<script src="../js/vina.js"></script>
+<script src="../js/navbar.js"></script>
+<script src="accounts.js"></script>
+</body>
+</html>
