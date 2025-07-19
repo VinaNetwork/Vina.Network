@@ -14,6 +14,11 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct script access allowed!');
 }
 
+// JWT Secret for authentication
+if (!defined('JWT_SECRET')) {
+    define('JWT_SECRET', 'v5njta8HCXPdFQLWkbzC+q1x+zht34edaMDNer+WwKM='); // chuỗi ngẫu nhiên mạnh
+}
+
 // Helius API Configuration
 if (!defined('HELIUS_API_KEY')) {
     define('HELIUS_API_KEY', '8eb75cd9-015a-4e24-9de2-5be9ee0f1c63'); // Helius API Key for Solana blockchain queries
