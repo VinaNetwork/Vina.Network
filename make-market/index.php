@@ -31,6 +31,9 @@ $defaultSlippage = 1.0;
       <label>⏱️ Delay giữa mua và bán (giây):</label>
       <input type="number" name="delay" value="0" min="0">
 
+      <label>🔁 Số vòng lặp:</label>
+      <input type="number" name="loopCount" min="1" value="1">
+
       <button type="submit">🚀 Make Market</button>
     </form>
 
