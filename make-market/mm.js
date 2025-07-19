@@ -15,10 +15,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', function (e
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        statusBox.innerHTML = `
-          <p>✅ Mua thành công: <a href="https://solscan.io/tx/${data.buyTx}" target="_blank">${data.buyTx}</a></p>
-          <p>✅ Bán thành công: <a href="https://solscan.io/tx/${data.sellTx}" target="_blank">${data.sellTx}</a></p>
-        `;
+        let html = `<p>✅ Đã hoàn thành ${data.results.length} vòng Make Market:</p><ul>`;
+        data.results.forEach(round => {
+          html += `<li>🌀 Vòng ${round.round}: 
+            🛒 <a href="https://solscan.io/tx/${round.buyTx}" target="_blank">Mua</a> – 
+            💸 <a href="https://solscan.io/tx/${round.sellTx}" target="_blank">Bán</a></li>`;
+        });
+        html += '</ul>';
+        statusBox.innerHTML = html;
       } else {
         statusBox.innerHTML = `<p>❌ Lỗi: ${data.error}</p>`;
       }
