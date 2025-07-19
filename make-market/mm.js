@@ -4,7 +4,46 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Xử lý gửi form và hiển thị tiến trình
+// Kiểm tra token khi tải trang
+document.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('jwtToken');
+  const loginForm = document.getElementById('loginForm');
+  const makeMarketForm = document.getElementById('makeMarketForm');
+  const statusBox = document.getElementById('mm-status');
+
+  if (token) {
+    loginForm.style.display = 'none';
+    makeMarketForm.style.display = 'block';
+  } else {
+    loginForm.style.display = 'block';
+    makeMarketForm.style.display = 'none';
+  }
+
+  // Xử lý đăng nhập
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(loginForm);
+    try {
+      const response = await fetch('/api/login.php', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      if (data.token) {
+        localStorage.setItem('jwtToken', data.token);
+        loginForm.style.display = 'none';
+        makeMarketForm.style.display = 'block';
+        statusBox.innerHTML = '<p>✅ Đăng nhập thành công!</p>';
+      } else {
+        statusBox.innerHTML = `<p>❌ Lỗi đăng nhập: ${data.error}</p>`;
+      }
+    } catch (err) {
+      statusBox.innerHTML = `<p>❌ Lỗi kết nối: ${err.message}</p>`;
+    }
+  });
+});
+
+// Xử lý gửi form Make Market
 document.getElementById('makeMarketForm').addEventListener('submit', async function (e) {
   e.preventDefault();
 
@@ -43,7 +82,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
 
   try {
     // Lấy SECRET_KEY từ server
-    const keyResponse = await fetch('/api/get-encryption-key', {
+    const keyResponse = await fetch('/api/get-encryption-key.php', {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -65,7 +104,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
 
     const response = await fetch('mm-api.php', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }, // Thêm token
+      headers: { 'Authorization': `Bearer ${token}` },
       body: formData
     });
     const data = await response.json();
