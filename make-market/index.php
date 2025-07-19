@@ -8,6 +8,7 @@
 // ============================================================================
 
 // Head Section (Meta, Styles, Title) is included via header.php
+$defaultSlippage = 1.0;
 $root_path = '../';
 $page_title = "";
 $page_description = "";
