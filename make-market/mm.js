@@ -1,5 +1,10 @@
-// Make Market – xử lý gửi form và hiển thị tiến trình
+// ============================================================================
+// File: make-market/mm.js
+// Description:
+// Created by: Vina Network
+// ============================================================================
 
+// Xử lý gửi form và hiển thị tiến trình
 document.getElementById('makeMarketForm').addEventListener('submit', async function (e) {
   e.preventDefault();
 
