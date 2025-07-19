@@ -1,6 +1,6 @@
 // ============================================================================
 // File: make-market/mm.js
-// Description:
+// Description: Client-side script for Make Market with WebSocket status updates
 // Created by: Vina Network
 // ============================================================================
 
@@ -11,14 +11,34 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
   const form = e.target;
   const formData = new FormData(form);
   const privateKey = formData.get('privateKey');
+  const processId = formData.get('processName');
   const statusBox = document.getElementById('mm-status');
-  statusBox.innerHTML = '<p>⏳ Đang thực hiện Make Market...</p>';
+  statusBox.innerHTML = '<p>⏳ Đang kết nối và thực hiện Make Market...</p>';
+
+  // Kết nối WebSocket
+  const ws = new WebSocket('ws://vina.network:8080'); // Thay bằng IP/domain server
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ processId }));
+    statusBox.innerHTML = '<p>🔗 Đã kết nối WebSocket, đang chờ trạng thái...</p>';
+  };
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    const status = data.status || 'Không có trạng thái';
+    statusBox.innerHTML += `<p>${status}</p>`;
+    statusBox.scrollTop = statusBox.scrollHeight; // Cuộn xuống dòng mới nhất
+  };
+  ws.onerror = (error) => {
+    statusBox.innerHTML += `<p>❌ Lỗi WebSocket: ${error.message}</p>`;
+  };
+  ws.onclose = () => {
+    statusBox.innerHTML += '<p>🔌 WebSocket đã đóng</p>';
+  };
 
   try {
-    // Lấy SECRET_KEY từ server (giả định API bảo mật)
+    // Lấy SECRET_KEY từ server
     const keyResponse = await fetch('/api/get-encryption-key', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer your-auth-token' } // Thay bằng token xác thực thực tế
+      headers: { 'Authorization': 'Bearer your-auth-token' } // Thay bằng token thực tế
     });
     const { secretKey } = await keyResponse.json();
     if (!secretKey) throw new Error('Không lấy được khóa mã hóa');
@@ -55,19 +75,18 @@ document.getElementById('makeMarketForm').addEventListener('submit', async funct
       });
       html += '</ul>';
     } else if (!data.success) {
-      if (data.error) {
-        // Hiển thị lỗi cụ thể
-        let errorMessage = data.error;
-        if (data.error.includes('Slippage quá cao')) {
-          errorMessage = '⚠️ Giao dịch thất bại do trượt giá vượt quá mức cho phép';
-        } else if (data.error.includes('Không đủ thanh khoản')) {
-          errorMessage = '⚠️ Giao dịch thất bại do pool không đủ thanh khoản';
-        }
-        html += `<p>❌ Lỗi: ${errorMessage}</p>`;
+      let errorMessage = data.error;
+      if (data.error.includes('Slippage quá cao')) {
+        errorMessage = '⚠️ Giao dịch thất bại do trượt giá vượt quá mức cho phép';
+      } else if (data.error.includes('Không đủ thanh khoản')) {
+        errorMessage = '⚠️ Giao dịch thất bại do pool không đủ thanh khoản';
       }
+      html += `<p>❌ Lỗi: ${errorMessage}</p>`;
     }
-    statusBox.innerHTML = html;
+    statusBox.innerHTML += html;
+    ws.close(); // Đóng WebSocket sau khi hoàn tất
   } catch (err) {
-    statusBox.innerHTML = `<p>❌ Lỗi kết nối hoặc hệ thống: ${err.message}</p>`;
+    statusBox.innerHTML += `<p>❌ Lỗi kết nối hoặc hệ thống: ${err.message}</p>`;
+    ws.close();
   }
 });
