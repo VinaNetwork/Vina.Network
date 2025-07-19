@@ -1,5 +1,5 @@
 <?php
-// Make Market API – Thực hiện mua và bán token Solana bằng Jupiter API (có auto loop + kiểm tra số dư)
+// Make Market API – Dừng toàn bộ nếu một vòng bất kỳ gặp lỗi
 
 header('Content-Type: application/json');
 
@@ -8,7 +8,6 @@ function error($msg) {
     exit;
 }
 
-// Nhận dữ liệu từ form
 $privateKey = $_POST['privateKey'] ?? '';
 $tokenMint = $_POST['tokenMint'] ?? '';
 $solAmount = floatval($_POST['solAmount'] ?? 0);
@@ -51,17 +50,18 @@ function callJupiterAPI($url, $method = 'GET', $data = null) {
 
 $rpc = new Connection('https://api.mainnet-beta.solana.com');
 $results = [];
+$shouldStop = false;
 
 for ($i = 1; $i <= $loopCount; $i++) {
+    if ($shouldStop) break;
+
     // Kiểm tra số dư SOL
     $balanceLamports = $rpc->getBalance($wallet);
     $requiredLamports = intval($solAmount * 1e9) + 10000;
     if ($balanceLamports < $requiredLamports) {
-        $results[] = [
-            'round' => $i,
-            'error' => "Không đủ SOL để thực hiện vòng $i."
-        ];
-        continue;
+        $results[] = ['round' => $i, 'error' => "Không đủ SOL để thực hiện vòng $i."];
+        $shouldStop = true;
+        break;
     }
 
     // MUA
@@ -69,8 +69,10 @@ for ($i = 1; $i <= $loopCount; $i++) {
     $quote = callJupiterAPI($quoteUrl);
     if (!isset($quote['routes'][0])) {
         $results[] = ['round' => $i, 'error' => "Không tìm được route mua ở vòng $i."];
-        continue;
+        $shouldStop = true;
+        break;
     }
+
     $route = $quote['routes'][0];
     $swap = callJupiterAPI("https://quote-api.jup.ag/v6/swap", 'POST', [
         'userPublicKey' => $wallet,
@@ -80,7 +82,8 @@ for ($i = 1; $i <= $loopCount; $i++) {
     ]);
     if (empty($swap['swapTransaction'])) {
         $results[] = ['round' => $i, 'error' => "Không tạo được giao dịch mua ở vòng $i."];
-        continue;
+        $shouldStop = true;
+        break;
     }
 
     $txBuy = base64_decode($swap['swapTransaction']);
@@ -88,12 +91,13 @@ for ($i = 1; $i <= $loopCount; $i++) {
     $buyTxSig = $rpc->sendRawTransaction($signedTx);
     if (!$buyTxSig) {
         $results[] = ['round' => $i, 'error' => "Không gửi được giao dịch mua ở vòng $i."];
-        continue;
+        $shouldStop = true;
+        break;
     }
 
     if ($delay > 0) sleep($delay);
 
-    // Kiểm tra số dư token trước khi bán
+    // Kiểm tra số dư token
     $tokenAccounts = $rpc->getTokenAccountsByOwner($wallet, $tokenMint);
     $tokenAmount = 0;
     foreach ($tokenAccounts as $acc) {
@@ -102,19 +106,17 @@ for ($i = 1; $i <= $loopCount; $i++) {
         }
     }
     if ($tokenAmount < intval($route['outAmount'])) {
-        $results[] = [
-            'round' => $i,
-            'buyTx' => $buyTxSig,
-            'error' => "Không đủ token để bán ở vòng $i."
-        ];
-        continue;
+        $results[] = ['round' => $i, 'buyTx' => $buyTxSig, 'error' => "Không đủ token để bán ở vòng $i."];
+        $shouldStop = true;
+        break;
     }
 
     // BÁN
     $quoteSell = callJupiterAPI("https://quote-api.jup.ag/v6/quote?inputMint=$tokenMint&outputMint=So11111111111111111111111111111111111111112&amount=" . intval($route['outAmount']) . "&slippageBps=" . intval($slippage * 100));
     if (!isset($quoteSell['routes'][0])) {
         $results[] = ['round' => $i, 'buyTx' => $buyTxSig, 'error' => "Không tìm được route bán ở vòng $i."];
-        continue;
+        $shouldStop = true;
+        break;
     }
 
     $routeSell = $quoteSell['routes'][0];
@@ -126,7 +128,8 @@ for ($i = 1; $i <= $loopCount; $i++) {
     ]);
     if (empty($swapSell['swapTransaction'])) {
         $results[] = ['round' => $i, 'buyTx' => $buyTxSig, 'error' => "Không tạo được giao dịch bán ở vòng $i."];
-        continue;
+        $shouldStop = true;
+        break;
     }
 
     $txSell = base64_decode($swapSell['swapTransaction']);
@@ -134,7 +137,8 @@ for ($i = 1; $i <= $loopCount; $i++) {
     $sellTxSig = $rpc->sendRawTransaction($signedSell);
     if (!$sellTxSig) {
         $results[] = ['round' => $i, 'buyTx' => $buyTxSig, 'error' => "Không gửi được giao dịch bán ở vòng $i."];
-        continue;
+        $shouldStop = true;
+        break;
     }
 
     $results[] = [
