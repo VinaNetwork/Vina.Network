@@ -1,5 +1,5 @@
 <?php
-// Make Market API – Thực hiện mua và bán token Solana bằng Jupiter API
+// Make Market API – Thực hiện mua và bán token Solana bằng Jupiter API (có auto loop + kiểm tra số dư)
 
 header('Content-Type: application/json');
 
@@ -8,7 +8,7 @@ function error($msg) {
     exit;
 }
 
-// Lấy dữ liệu từ form
+// Nhận dữ liệu từ form
 $privateKey = $_POST['privateKey'] ?? '';
 $tokenMint = $_POST['tokenMint'] ?? '';
 $solAmount = floatval($_POST['solAmount'] ?? 0);
@@ -24,6 +24,8 @@ require __DIR__ . '/vendor/autoload.php';
 use StephenHill\Base58;
 use Solana\SolanaPhpSdk\Util\Keypair;
 use Solana\SolanaPhpSdk\Connection;
+use Solana\SolanaPhpSdk\Util\Buffer;
+use Solana\SolanaPhpSdk\Util\TxHelper;
 
 $base58 = new Base58();
 try {
@@ -47,54 +49,93 @@ function callJupiterAPI($url, $method = 'GET', $data = null) {
     return json_decode($response, true);
 }
 
-use Solana\SolanaPhpSdk\Util\Buffer;
-use Solana\SolanaPhpSdk\Util\TxHelper;
-
 $rpc = new Connection('https://api.mainnet-beta.solana.com');
-
 $results = [];
 
 for ($i = 1; $i <= $loopCount; $i++) {
-    // --- Giai đoạn 1: MUA token
+    // Kiểm tra số dư SOL
+    $balanceLamports = $rpc->getBalance($wallet);
+    $requiredLamports = intval($solAmount * 1e9) + 10000;
+    if ($balanceLamports < $requiredLamports) {
+        $results[] = [
+            'round' => $i,
+            'error' => "Không đủ SOL để thực hiện vòng $i."
+        ];
+        continue;
+    }
+
+    // MUA
     $quoteUrl = "https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=$tokenMint&amount=" . intval($solAmount * 1e9) . "&slippageBps=" . intval($slippage * 100);
     $quote = callJupiterAPI($quoteUrl);
-
-    if (!isset($quote['routes'][0])) error("Không tìm được route để mua token.");
+    if (!isset($quote['routes'][0])) {
+        $results[] = ['round' => $i, 'error' => "Không tìm được route mua ở vòng $i."];
+        continue;
+    }
     $route = $quote['routes'][0];
-
     $swap = callJupiterAPI("https://quote-api.jup.ag/v6/swap", 'POST', [
         'userPublicKey' => $wallet,
         'wrapUnwrapSOL' => true,
         'feeAccount' => null,
         'route' => $route,
     ]);
+    if (empty($swap['swapTransaction'])) {
+        $results[] = ['round' => $i, 'error' => "Không tạo được giao dịch mua ở vòng $i."];
+        continue;
+    }
 
-    if (empty($swap['swapTransaction'])) error("Không tạo được giao dịch mua.");
     $txBuy = base64_decode($swap['swapTransaction']);
     $signedTx = $keypair->signTransaction($txBuy);
     $buyTxSig = $rpc->sendRawTransaction($signedTx);
-    if (!$buyTxSig) error("Không gửi được giao dịch mua.");
+    if (!$buyTxSig) {
+        $results[] = ['round' => $i, 'error' => "Không gửi được giao dịch mua ở vòng $i."];
+        continue;
+    }
 
-    // --- Giai đoạn 2: Delay nếu có
     if ($delay > 0) sleep($delay);
 
-    // --- Giai đoạn 3: BÁN token lại về SOL
-    $quoteSell = callJupiterAPI("https://quote-api.jup.ag/v6/quote?inputMint=$tokenMint&outputMint=So11111111111111111111111111111111111111112&amount=" . intval($route['outAmount']) . "&slippageBps=" . intval($slippage * 100));
-    if (!isset($quoteSell['routes'][0])) error("Không tìm được route để bán token.");
-    $routeSell = $quoteSell['routes'][0];
+    // Kiểm tra số dư token trước khi bán
+    $tokenAccounts = $rpc->getTokenAccountsByOwner($wallet, $tokenMint);
+    $tokenAmount = 0;
+    foreach ($tokenAccounts as $acc) {
+        if (isset($acc['account']['data']['parsed']['info']['tokenAmount']['amount'])) {
+            $tokenAmount += intval($acc['account']['data']['parsed']['info']['tokenAmount']['amount']);
+        }
+    }
+    if ($tokenAmount < intval($route['outAmount'])) {
+        $results[] = [
+            'round' => $i,
+            'buyTx' => $buyTxSig,
+            'error' => "Không đủ token để bán ở vòng $i."
+        ];
+        continue;
+    }
 
+    // BÁN
+    $quoteSell = callJupiterAPI("https://quote-api.jup.ag/v6/quote?inputMint=$tokenMint&outputMint=So11111111111111111111111111111111111111112&amount=" . intval($route['outAmount']) . "&slippageBps=" . intval($slippage * 100));
+    if (!isset($quoteSell['routes'][0])) {
+        $results[] = ['round' => $i, 'buyTx' => $buyTxSig, 'error' => "Không tìm được route bán ở vòng $i."];
+        continue;
+    }
+
+    $routeSell = $quoteSell['routes'][0];
     $swapSell = callJupiterAPI("https://quote-api.jup.ag/v6/swap", 'POST', [
         'userPublicKey' => $wallet,
         'wrapUnwrapSOL' => true,
         'feeAccount' => null,
         'route' => $routeSell,
     ]);
+    if (empty($swapSell['swapTransaction'])) {
+        $results[] = ['round' => $i, 'buyTx' => $buyTxSig, 'error' => "Không tạo được giao dịch bán ở vòng $i."];
+        continue;
+    }
 
-    if (empty($swapSell['swapTransaction'])) error("Không tạo được giao dịch bán.");
     $txSell = base64_decode($swapSell['swapTransaction']);
     $signedSell = $keypair->signTransaction($txSell);
     $sellTxSig = $rpc->sendRawTransaction($signedSell);
-    if (!$sellTxSig) error("Không gửi được giao dịch bán.");
+    if (!$sellTxSig) {
+        $results[] = ['round' => $i, 'buyTx' => $buyTxSig, 'error' => "Không gửi được giao dịch bán ở vòng $i."];
+        continue;
+    }
 
     $results[] = [
         'round' => $i,
