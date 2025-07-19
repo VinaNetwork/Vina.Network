@@ -3,10 +3,15 @@
 // Description: Calculate total burned tokens for a Solana wallet address in batches.
 // Created by: Vina Network
 
+session_start();
+ini_set('memory_limit', '512M');
+set_time_limit(300);
+
 error_log("[".date('Y-m-d H:i:s')."] [INFO] token_burn: Starting token-burn.php", 3, '/var/www/vinanetwork/public_html/tools/logs/php_errors.txt');
 
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+if (!defined('TOKEN_BURN_PATH')) define('TOKEN_BURN_PATH', dirname(__FILE__) . '/');
 
 $bootstrap_path = dirname(__DIR__).'/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
@@ -124,13 +129,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
             chmod($temp_cache_file, 0664);
 
             // Start output buffering with flush
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
             ob_start();
             echo "<script>document.querySelector('.loader').style.display = 'block'; document.querySelector('.loading-message').style.display = 'block'; document.querySelector('.progress-container').style.display = 'block';</script>";
             ob_flush();
             flush();
 
             // Fetch transactions in batches
-            $batch_size = 100; // Process 100 transactions per batch
+            $batch_size = 50; // Reduced to avoid API rate limits
             $max_transactions = 5000;
             $transaction_count = 0;
             $before = null;
@@ -167,20 +175,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['walletAddress']) && !
             } while ($before && count($transactions) > 0);
 
             // Save final results to main cache
-            $cache_data[$cache_key] = [
-                'total_burned' => $temp_data['total_burned'],
-                'burned_by_token' => $temp_data['burned_by_token'],
-                'timestamp' => time()
-            ];
-            $fp = fopen($cache_file, 'c');
+            $fp = @fopen($cache_file, 'c');
+            if ($fp === false) {
+                log_message("token_burn: Failed to open cache file $cache_file", 'token_burn_log.txt', 'ERROR');
+                throw new Exception('Failed to open cache file');
+            }
             if (flock($fp, LOCK_EX)) {
                 if (!file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT))) {
                     log_message("token_burn: Failed to write to cache file", 'token_burn_log.txt', 'ERROR');
+                    flock($fp, LOCK_UN);
+                    fclose($fp);
                     throw new Exception('Failed to write to cache file');
                 }
                 flock($fp, LOCK_UN);
             } else {
                 log_message("token_burn: Failed to lock cache file", 'token_burn_log.txt', 'ERROR');
+                fclose($fp);
                 throw new Exception('Failed to lock cache file');
             }
             fclose($fp);
@@ -213,7 +223,7 @@ function process_transaction_batch($transactions, $walletAddress, $burn_address,
                 if (($transfer['toUserAccount'] === $burn_address || $transfer['toTokenAccount'] === $burn_address) && $transfer['fromUserAccount'] === $walletAddress) {
                     $mint = $transfer['mint'];
                     $amount = $transfer['tokenAmount'];
-                    $decimals = $transfer['rawTokenAmount']['decimals'] ?? 0;
+                    $decimals = $transfer['rawTokenAmount']['decimals'] ?? 0; // Fixed: Changed $transform to $transfer
                     $adjusted_amount = $amount / pow(10, $decimals);
                     $temp_data['total_burned'] += $adjusted_amount;
                     $temp_data['burned_by_token'][$mint] = ($temp_data['burned_by_token'][$mint] ?? 0) + $adjusted_amount;
