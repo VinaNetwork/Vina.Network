@@ -21,6 +21,7 @@ $jwtAuth = new JwtAuth($JWT_SECRET);
 $authResult = $jwtAuth->validateToken($_SERVER['HTTP_AUTHORIZATION'] ?? '');
 if (!$authResult['valid']) {
     http_response_code(401);
+    file_put_contents(__DIR__ . '/../logs/auth_errors.log', date('Y-m-d H:i:s') . ": " . $authResult['error'] . "\n", FILE_APPEND);
     echo json_encode(['error' => $authResult['error']]);
     exit;
 }
