@@ -16,10 +16,10 @@ $data = json_decode(file_get_contents('php://input'), true);
 $message = $data['message'] ?? '';
 
 if ($message) {
-    log_message("Client: $message", 'acc_auth.txt', 'INFO');
+    log_message("Client: $message", 'acc_auth.txt', 'accounts', 'INFO');
     echo json_encode(['status' => 'success']);
 } else {
-    log_message("Client: Invalid log message received", 'acc_auth.txt', 'ERROR');
+    log_message("Client: Invalid log message received", 'acc_auth.txt', 'accounts', 'ERROR');
     echo json_encode(['status' => 'error', 'message' => 'Invalid log message']);
 }
 ?>
