@@ -2,7 +2,7 @@
 <html lang="en">
 <?php
 // ============================================================================
-// File: accounts/connect-wallet.php
+// File: accounts/index.php
 // Description: Connect wallet page for Vina Network. Handles both registration and login.
 // Created by: Vina Network
 // ============================================================================
