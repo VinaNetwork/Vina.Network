@@ -14,68 +14,77 @@ async function connectAndAuthenticate() {
     const wallet = wallets[0]; // Ví dụ: Phantom
     const loading = document.getElementById('loading');
     try {
-        // Hiển thị trạng thái loading
+        console.log('Client: Starting wallet connection');
         loading.style.display = 'block';
 
         // Kết nối ví
         await wallet.connect();
         const publicKey = wallet.publicKey.toString();
+        console.log(`Client: Wallet connected, publicKey=${publicKey}`);
         document.getElementById('wallet-address').innerText = `Connected: ${publicKey}`;
 
         // Tạo thông điệp để ký
         const message = `Authenticate for Vina Network at ${new Date().toISOString()}`;
+        console.log(`Client: Signing message: ${message}`);
         const encoder = new TextEncoder();
         const messageBytes = encoder.encode(message);
         const signature = await wallet.signMessage(messageBytes);
         const signatureBase64 = Buffer.from(signature).toString('base64');
+        console.log(`Client: Signature created for publicKey=${publicKey}`);
 
         // Kiểm tra xem ví đã đăng ký chưa
+        console.log('Client: Checking if user exists');
         const checkResponse = await fetch('/accounts/include/acc-api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'login', publicKey, signature: signatureBase64, message })
         });
         const checkResult = await checkResponse.json();
+        console.log(`Client: Check result: ${JSON.stringify(checkResult)}`);
 
         if (checkResult.message === 'User not found') {
-            // Nếu chưa đăng ký, gọi API register
+            console.log('Client: User not found, proceeding to register');
             const registerResponse = await fetch('/accounts/include/acc-api.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'register', publicKey, signature: signatureBase64, message })
             });
             const registerResult = await registerResponse.json();
+            console.log(`Client: Register result: ${JSON.stringify(registerResult)}`);
             if (registerResult.message === 'Registration successful') {
-                // Sau khi đăng ký, gọi lại API login để lấy JWT
+                console.log('Client: Registration successful, proceeding to login');
                 const loginResponse = await fetch('/accounts/include/acc-api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'login', publicKey, signature: signatureBase64, message })
                 });
                 const loginResult = await loginResponse.json();
+                console.log(`Client: Login result: ${JSON.stringify(loginResult)}`);
                 if (loginResult.token) {
                     localStorage.setItem('jwt', loginResult.token);
+                    console.log('Client: JWT stored, redirecting to dashboard');
                     window.location.href = '/dashboard.php';
                 } else {
+                    console.error(`Client: Login failed: ${loginResult.message}`);
                     alert(loginResult.message);
                 }
             } else {
+                console.error(`Client: Registration failed: ${registerResult.message}`);
                 alert(registerResult.message);
             }
         } else if (checkResult.message === 'Login successful' && checkResult.token) {
-            // Nếu đã đăng ký, lưu JWT và chuyển hướng
+            console.log('Client: Login successful, redirecting to dashboard');
             localStorage.setItem('jwt', checkResult.token);
             window.location.href = '/dashboard.php';
         } else {
+            console.error(`Client: Check failed: ${checkResult.message}`);
             alert(checkResult.message);
         }
 
-        // Ẩn trạng thái loading sau khi hoàn tất
         loading.style.display = 'none';
     } catch (error) {
-        // Ẩn trạng thái loading nếu có lỗi
         loading.style.display = 'none';
-        console.error('Error:', error);
+        console.error(`Client: Error: ${error.message}`);
         alert('Failed to connect wallet or authenticate');
     }
 }
