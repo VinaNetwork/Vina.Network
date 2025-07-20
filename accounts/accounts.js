@@ -54,13 +54,16 @@ async function connectAndAuthenticate() {
         console.log(`Client: Signature created for publicKey=${publicKey}`);
         await sendClientLog(`Signature created for publicKey=${publicKey}`);
 
+        // Lấy CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
         // Kiểm tra xem ví đã đăng ký chưa
         console.log('Client: Checking if user exists');
         await sendClientLog('Checking if user exists');
         const checkResponse = await fetch('/accounts/include/acc-api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'login', publicKey, signature: signatureBase64, message })
+            body: JSON.stringify({ action: 'login', publicKey, signature: signatureBase64, message, csrf_token: csrfToken })
         });
         const checkResult = await checkResponse.json();
         console.log(`Client: Check result: ${JSON.stringify(checkResult)}`);
@@ -72,7 +75,7 @@ async function connectAndAuthenticate() {
             const registerResponse = await fetch('/accounts/include/acc-api.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'register', publicKey, signature: signatureBase64, message })
+                body: JSON.stringify({ action: 'register', publicKey, signature: signatureBase64, message, csrf_token: csrfToken })
             });
             const registerResult = await registerResponse.json();
             console.log(`Client: Register result: ${JSON.stringify(registerResult)}`);
@@ -83,7 +86,7 @@ async function connectAndAuthenticate() {
                 const loginResponse = await fetch('/accounts/include/acc-api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'login', publicKey, signature: signatureBase64, message })
+                    body: JSON.stringify({ action: 'login', publicKey, signature: signatureBase64, message, csrf_token: csrfToken })
                 });
                 const loginResult = await loginResponse.json();
                 console.log(`Client: Login result: ${JSON.stringify(loginResult)}`);
