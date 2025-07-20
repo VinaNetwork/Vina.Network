@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
-// File: config/bootstrap.php
-// Description: Security check and utility functions for Vina Network
+// File: tools/bootstrap.php
+// Description: Security check and utility functions for tools module
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,9 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // ---------------------------------------------------
 // Define core path constants
-// Used across the application for easier path management
+// Used across the tools module for easier path management
 // ---------------------------------------------------
-// Tools
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('TOOLS_PATH', ROOT_PATH . 'tools/');
 define('NFT_INFO_PATH', TOOLS_PATH . 'nft-info/');
@@ -24,8 +23,6 @@ define('WALLET_CREATORS_PATH', TOOLS_PATH . 'wallet-creators/');
 define('WALLET_ANALYSIS_PATH', TOOLS_PATH . 'wallet-analysis/');
 define('TOKEN_BURN_PATH', TOOLS_PATH . 'token-burn/');
 define('LOGS_PATH', TOOLS_PATH . 'logs/');
-// Accounts
-define('ACCOUNTS_LOGS_PATH', ROOT_PATH . 'accounts/logs/'); // Thêm cho Accounts
 define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
 
 // ---------------------------------------------------
@@ -67,6 +64,7 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
                 log_message("Failed to create directory: $dir_path", $log_file, 'ERROR');
                 return false;
             }
+            // Skip chown/chgrp to avoid permission issues on shared hosting
             chmod($dir_path, 0764);
             log_message("Created directory: $dir_path", $log_file, 'INFO');
         }
@@ -77,7 +75,7 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
         }
         // Create file if it doesn't exist
         if (!file_exists($file_path)) {
-            if (file_put_contents($file_path, '') === false) { // Chỉ tạo file rỗng
+            if (file_put_contents($file_path, json_encode([])) === false) {
                 log_message("Failed to create file: $file_path", $log_file, 'ERROR');
                 return false;
             }
@@ -100,18 +98,17 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
 // Logging utility function
 // Writes timestamped messages to the specified log file
 // @param string $message    - The log content/message
-// @param string $log_file   - Filename within LOGS_PATH or ACCOUNTS_LOGS_PATH
+// @param string $log_file   - Filename within LOGS_PATH to write logs
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
 function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') {
-    $log_path = str_starts_with($log_file, 'auth.log') ? ACCOUNTS_LOGS_PATH . $log_file : LOGS_PATH . $log_file;
+    $log_path = LOGS_PATH . $log_file;
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
     try {
         // Ensure the log directory and file are set up correctly
-        $dir_path = str_starts_with($log_file, 'auth.log') ? ACCOUNTS_LOGS_PATH : LOGS_PATH;
-        if (!ensure_directory_and_file($dir_path, $log_path, $log_file)) {
+        if (!ensure_directory_and_file(LOGS_PATH, $log_path, $log_file)) {
             error_log("Log setup failed for $log_path: $message");
             return;
         }
