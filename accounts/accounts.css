@@ -46,5 +46,6 @@ h1 {
 @media screen and (max-width: 768px) {
     .acc-container {
         margin-top: 64px;
+        min-height: 80vh;
     }
 }
