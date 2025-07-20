@@ -28,6 +28,7 @@ include '../include/header.php';
         <h1>Connect to Vina Network</h1>
         <p id="wallet-address">Kết nối ví để đăng ký hoặc đăng nhập</p>
         <button id="connect-wallet" class="btn">Connect Wallet</button>
+        <p id="loading" style="display: none;">Đang xử lý...</p>
     </div>
 </div>
 
