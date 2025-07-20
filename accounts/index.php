@@ -23,10 +23,12 @@ include '../include/header.php';
 <!-- Navigation Bar -->
 <?php include '../include/navbar.php'; ?>
 
-<div class="container">
-    <h1>Connect to Vina Network</h1>
-    <p id="wallet-address">Kết nối ví để đăng ký hoặc đăng nhập</p>
-    <button id="connect-wallet" class="btn">Connect Wallet</button>
+<div class="acc-container">
+    <div class="acc-content">
+        <h1>Connect to Vina Network</h1>
+        <p id="wallet-address">Kết nối ví để đăng ký hoặc đăng nhập</p>
+        <button id="connect-wallet" class="btn">Connect Wallet</button>
+    </div>
 </div>
 
 <!-- Footer Section -->
