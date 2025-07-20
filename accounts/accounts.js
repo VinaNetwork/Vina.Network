@@ -12,7 +12,11 @@ const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
 // Hàm kết nối ví và xác thực
 async function connectAndAuthenticate() {
     const wallet = wallets[0]; // Ví dụ: Phantom
+    const loading = document.getElementById('loading');
     try {
+        // Hiển thị trạng thái loading
+        loading.style.display = 'block';
+
         // Kết nối ví
         await wallet.connect();
         const publicKey = wallet.publicKey.toString();
@@ -65,7 +69,12 @@ async function connectAndAuthenticate() {
         } else {
             alert(checkResult.message);
         }
+
+        // Ẩn trạng thái loading sau khi hoàn tất
+        loading.style.display = 'none';
     } catch (error) {
+        // Ẩn trạng thái loading nếu có lỗi
+        loading.style.display = 'none';
         console.error('Error:', error);
         alert('Failed to connect wallet or authenticate');
     }
