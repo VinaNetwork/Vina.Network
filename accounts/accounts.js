@@ -12,11 +12,16 @@ const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
 // Hàm gửi log về server
 async function sendClientLog(message) {
     try {
-        await fetch('/accounts/include/log-client.php', {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const response = await fetch('/accounts/include/log-client.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ message, csrf_token: csrfToken })
         });
+        const result = await response.json();
+        if (result.status !== 'success') {
+            console.error(`Client: Failed to send log to server: ${result.message}`);
+        }
     } catch (error) {
         console.error(`Client: Failed to send log to server: ${error.message}`);
     }
