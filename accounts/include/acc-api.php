@@ -1,5 +1,10 @@
 <?php
-// accounts/include/acc-api.php
+// ============================================================================
+// File: accounts/include/acc-api.php
+// Description: API endpoint to handle login and registration for Vina Network Accounts
+// Created by: Vina Network
+// ============================================================================
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: https://www.vina.network');
 header('Access-Control-Allow-Methods: POST');
@@ -14,8 +19,16 @@ $action = $data['action'] ?? '';
 $publicKey = $data['publicKey'] ?? '';
 $message = $data['message'] ?? '';
 $signature = $data['signature'] ?? '';
+$csrf_token = $data['csrf_token'] ?? '';
 
 log_message("API: Received request action=$action, publicKey=$publicKey", 'acc_auth.txt', 'accounts', 'INFO');
+
+if (!validate_csrf_token($csrf_token)) {
+    log_message("API: Invalid CSRF token", 'acc_auth.txt', 'accounts', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['message' => 'Invalid CSRF token']);
+    exit;
+}
 
 if (empty($action) || empty($publicKey) || empty($message) || empty($signature)) {
     log_message("API: Invalid input for action=$action", 'acc_auth.txt', 'accounts', 'ERROR');
