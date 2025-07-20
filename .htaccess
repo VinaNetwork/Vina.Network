@@ -8,11 +8,6 @@ RewriteEngine On
     Deny from all
 </Files>
 
-<Directory /logs>
-    Order deny,allow
-    Deny from all
-</Directory>
-
 <Files ".env">
     Order allow,deny
     Deny from all
