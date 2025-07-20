@@ -3,10 +3,6 @@
 # Enable URL rewrite engine
 RewriteEngine On
 
-<Directory /config>
-    Order deny,allow
-    Deny from all
-</Directory>
 <Files "config.php">
     Order Allow,Deny
     Deny from all
