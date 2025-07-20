@@ -33,6 +33,9 @@ include '../include/header.php';
     </div>
 </div>
 
+<!-- CSRF Token -->
+<meta name="csrf-token" content="<?php echo generate_csrf_token(); ?>">
+
 <!-- Footer Section -->
 <?php include '../include/footer.php'; ?>
 <!-- Scripts -->
