@@ -42,10 +42,20 @@ h1 {
     font-size: 1.1em;
 }
 
+#loading {
+    margin: 10px 0;
+    font-size: 1em;
+    color: #fff;
+}
+
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
     .acc-container {
         margin-top: 64px;
         min-height: 80vh;
+    }
+    .acc-content {
+        padding: 1rem;
+        margin: 1rem;
     }
 }
