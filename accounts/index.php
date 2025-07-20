@@ -17,6 +17,7 @@ $page_og_url = "https://www.vina.network/accounts/";
 $page_canonical = "https://www.vina.network/accounts/";
 $page_css = ['accounts.css'];
 
+require_once '../config/bootstrap.php';
 include '../include/header.php';
 ?>
 <body>
