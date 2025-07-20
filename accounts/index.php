@@ -13,8 +13,8 @@ $page_description = "Connect your Solana wallet to register or login to Vina Net
 $page_keywords = "Vina Network, connect wallet, login, register";
 $page_og_title = "Connect Wallet to Vina Network";
 $page_og_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_og_url = "https://www.vina.network/accounts/connect-wallet.php/";
-$page_canonical = "https://www.vina.network/accounts/connect-wallet.php/";
+$page_og_url = "https://www.vina.network/accounts/";
+$page_canonical = "https://www.vina.network/accounts/";
 $page_css = ['accounts.css'];
 
 include '../include/header.php';
