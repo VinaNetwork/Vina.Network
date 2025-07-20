@@ -1,45 +1,62 @@
-# ===== SECURITY AND PERFORMANCE FOR WEBSITE =====
+# ============================================================================
+# Vina Network - Optimized .htaccess
+# Description: Security, performance, and rewrite rules for Apache server.
+# ============================================================================
 
-# Enable URL rewrite engine
+# Enable Rewrite Engine
 RewriteEngine On
 
-<Files "config.php">
-    Order Allow,Deny
-    Deny from all
-</Files>
+# --------------------------------------------------------------------------
+# SECURITY
+# --------------------------------------------------------------------------
 
-<Files ".env">
-    Order allow,deny
-    Deny from all
-</Files>
-
-# -------- PROTECT SENSITIVE FILES --------
-<FilesMatch "^(config\.php|database\.php|\.htaccess|php\.ini|\.env)$">
+# Deny direct access to sensitive files
+<FilesMatch "^(config\.php|db\.php|bootstrap\.php|\.htaccess|\.env|composer\.json|composer\.lock|php\.ini|LICENSE|README\.md)$">
     Require all denied
 </FilesMatch>
 
-# -------- DISABLE DIRECTORY LISTING --------
+# Block access to /config/, /logs/, /include/ except via PHP includes
+<DirectoryMatch "/(config|logs|include|accounts/include)/">
+    Require all denied
+</DirectoryMatch>
+
+# Prevent access to .git or hidden files
+RedirectMatch 404 /\.(?!well-known)
+
+# Disable directory listing
 Options -Indexes
 
-# -------- ENABLE COMPRESSION --------
+# Block dangerous HTTP methods
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|DELETE|PUT) [NC]
+    RewriteRule .* - [F]
+</IfModule>
+
+# --------------------------------------------------------------------------
+# PERFORMANCE - Compression and Caching
+# --------------------------------------------------------------------------
+
+# Enable Brotli Compression
 <IfModule mod_brotli.c>
     AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css application/json application/javascript font/woff2 application/xml image/x-icon
 </IfModule>
+
+# Enable Deflate Compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/json application/javascript font/woff2 application/xml image/x-icon
 </IfModule>
 
-# -------- CACHE STATIC ASSETS --------
+# Set Expires headers
 <IfModule mod_expires.c>
     ExpiresActive On
-    # Images & favicon
+    # Images
     ExpiresByType image/jpg "access plus 1 month"
     ExpiresByType image/jpeg "access plus 1 month"
     ExpiresByType image/png "access plus 1 month"
     ExpiresByType image/gif "access plus 1 month"
     ExpiresByType image/webp "access plus 1 month"
-    ExpiresByType image/x-icon "access plus 1 month"
-    # CSS & JS
+    ExpiresByType image/x-icon "access plus 1 year"
+    # CSS and JS
     ExpiresByType text/css "access plus 1 week"
     ExpiresByType application/javascript "access plus 1 week"
     ExpiresByType text/javascript "access plus 1 week"
@@ -64,20 +81,27 @@ Options -Indexes
     </FilesMatch>
 </IfModule>
 
-# -------- REDUCE SERVER OVERHEAD --------
+# Disable ETag
 <IfModule mod_headers.c>
     Header unset ETag
 </IfModule>
 FileETag None
 
-# -------- BLOCK DANGEROUS HTTP METHODS --------
-<IfModule mod_rewrite.c>
-    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)
-    RewriteRule .* - [F]
-</IfModule>
+# --------------------------------------------------------------------------
+# HOTLINK PROTECTION
+# --------------------------------------------------------------------------
 
-# -------- PREVENT IMAGE HOTLINKING --------
 RewriteCond %{HTTP_REFERER} !^$
-RewriteCond %{HTTP_REFERER} !^https?://(www\.)?localhost/.*$ [NC]
-RewriteCond %{HTTP_REFERER} !^https?://(www\.)?vina\.network/.*$ [NC]
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?vina\.network/ [NC]
 RewriteRule \.(jpg|jpeg|png|gif|webp)$ - [F,NC]
+
+# --------------------------------------------------------------------------
+# FALLBACK REWRITE TO INDEX.PHP (OPTIONAL)
+# Enable this block if you plan to use path-based routing like /tool/abc
+# --------------------------------------------------------------------------
+
+# Rewrite non-existent files/folders to index.php
+# Uncomment below only if needed
+# RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteCond %{REQUEST_FILENAME} !-d
+# RewriteRule ^ index.php [QSA,L]
