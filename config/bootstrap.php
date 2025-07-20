@@ -15,16 +15,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Used across the application for easier path management
 // ---------------------------------------------------
 define('ROOT_PATH', dirname(__DIR__) . '/');
-define('TOOLS_PATH', ROOT_PATH . 'tools/');
-define('NFT_INFO_PATH', TOOLS_PATH . 'nft-info/');
-define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
-define('NFT_TRANSACTIONS_PATH', TOOLS_PATH . 'nft-transactions/');
-define('WALLET_CREATORS_PATH', TOOLS_PATH . 'wallet-creators/');
-define('WALLET_ANALYSIS_PATH', TOOLS_PATH . 'wallet-analysis/');
-define('TOKEN_BURN_PATH', TOOLS_PATH . 'token-burn/');
-define('LOGS_PATH', TOOLS_PATH . 'logs/');
-define('ACCOUNTS_LOGS_PATH', ROOT_PATH . 'accounts/logs/'); // Thêm cho Accounts
-define('ERROR_LOG_PATH', LOGS_PATH . 'php_errors.txt');
+define('LOGS_PATH', ROOT_PATH . 'logs/');
+define('ACCOUNTS_LOGS_PATH', LOGS_PATH . 'accounts/');
+define('ERROR_LOG_PATH', LOGS_PATH . 'tool_error.txt'); // Giữ tạm thời cho lỗi PHP chung
 
 // ---------------------------------------------------
 // PHP configuration
@@ -54,18 +47,18 @@ require_once $config_path;
 // Creates directory and file if they don't exist, sets permissions
 // @param string $dir_path  - Directory path to check/create
 // @param string $file_path - File path to check/create
-// @param string $log_file  - Log file for errors (default: debug_log.txt)
+// @param string $log_file  - Log file for errors (default: tool_error.txt)
 // @return bool - True if successful, false if failed
 // ---------------------------------------------------
-function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log.txt') {
+function ensure_directory_and_file($dir_path, $file_path, $log_file = 'tool_error.txt') {
     try {
         // Create directory if it doesn't exist
         if (!is_dir($dir_path)) {
-            if (!mkdir($dir_path, 0764, true)) {
+            if (!mkdir($dir_path, 0755, true)) {
                 log_message("Failed to create directory: $dir_path", $log_file, 'ERROR');
                 return false;
             }
-            chmod($dir_path, 0764);
+            chmod($dir_path, 0755);
             log_message("Created directory: $dir_path", $log_file, 'INFO');
         }
         // Check if directory is writable
@@ -75,11 +68,11 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
         }
         // Create file if it doesn't exist
         if (!file_exists($file_path)) {
-            if (file_put_contents($file_path, '') === false) { // Chỉ tạo file rỗng
+            if (file_put_contents($file_path, '') === false) {
                 log_message("Failed to create file: $file_path", $log_file, 'ERROR');
                 return false;
             }
-            chmod($file_path, 0664);
+            chmod($file_path, 0600);
             log_message("Created file: $file_path", $log_file, 'INFO');
         }
         // Check if file is writable
@@ -98,17 +91,17 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
 // Logging utility function
 // Writes timestamped messages to the specified log file
 // @param string $message    - The log content/message
-// @param string $log_file   - Filename within LOGS_PATH or ACCOUNTS_LOGS_PATH
+// @param string $log_file   - Filename within ACCOUNTS_LOGS_PATH or LOGS_PATH
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
-function log_message($message, $log_file = 'debug_log.txt', $log_type = 'INFO') {
-    $log_path = str_starts_with($log_file, 'auth.log') ? ACCOUNTS_LOGS_PATH . $log_file : LOGS_PATH . $log_file;
+function log_message($message, $log_file = 'tool_error.txt', $log_type = 'INFO') {
+    $log_path = str_starts_with($log_file, 'acc_') ? ACCOUNTS_LOGS_PATH . $log_file : LOGS_PATH . $log_file;
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
     try {
         // Ensure the log directory and file are set up correctly
-        $dir_path = str_starts_with($log_file, 'auth.log') ? ACCOUNTS_LOGS_PATH : LOGS_PATH;
+        $dir_path = str_starts_with($log_file, 'acc_') ? ACCOUNTS_LOGS_PATH : LOGS_PATH;
         if (!ensure_directory_and_file($dir_path, $log_path, $log_file)) {
             error_log("Log setup failed for $log_path: $message");
             return;
