@@ -10,7 +10,7 @@ class Auth {
 
     public function __construct() {
         $this->pdo = getDB();
-        log_message("Auth: Initialized Auth class", 'auth.log', 'INFO');
+        log_message("Auth: Initialized Auth class", 'acc_auth.txt', 'INFO');
     }
 
     public function verifySignature($publicKey, $message, $signature) {
@@ -19,10 +19,10 @@ class Auth {
             $messageBytes = (new \SolanaPhpSdk\Util\Buffer($message))->toArray();
             $signatureBytes = base64_decode($signature);
             $result = nacl_sign_detached_verify($messageBytes, $signatureBytes, $publicKeyObj->toBytes());
-            log_message("Auth: Signature verification for publicKey=$publicKey: " . ($result ? 'Success' : 'Failed'), 'auth.log', 'INFO');
+            log_message("Auth: Signature verification for publicKey=$publicKey: " . ($result ? 'Success' : 'Failed'), 'acc_auth.txt', 'INFO');
             return $result;
         } catch (Exception $e) {
-            log_message("Auth: Signature verification failed: " . $e->getMessage(), 'auth.log', 'ERROR');
+            log_message("Auth: Signature verification failed: " . $e->getMessage(), 'acc_auth.txt', 'ERROR');
             return false;
         }
     }
@@ -36,10 +36,10 @@ class Auth {
                 'exp' => time() + 3600
             ];
             $token = JWT::encode($payload, $this->jwt_secret, 'HS256');
-            log_message("Auth: Created JWT for publicKey=$publicKey", 'auth.log', 'INFO');
+            log_message("Auth: Created JWT for publicKey=$publicKey", 'acc_auth.txt', 'INFO');
             return $token;
         } catch (Exception $e) {
-            log_message("Auth: Failed to create JWT: " . $e->getMessage(), 'auth.log', 'ERROR');
+            log_message("Auth: Failed to create JWT: " . $e->getMessage(), 'acc_auth.txt', 'ERROR');
             throw $e;
         }
     }
@@ -47,10 +47,10 @@ class Auth {
     public function verifyJWT($token) {
         try {
             $decoded = JWT::decode($token, $this->jwt_secret, ['HS256']);
-            log_message("Auth: JWT verification successful for publicKey=" . $decoded->sub, 'auth.log', 'INFO');
+            log_message("Auth: JWT verification successful for publicKey=" . $decoded->sub, 'acc_auth.txt', 'INFO');
             return $decoded->sub;
         } catch (Exception $e) {
-            log_message("Auth: JWT verification failed: " . $e->getMessage(), 'auth.log', 'ERROR');
+            log_message("Auth: JWT verification failed: " . $e->getMessage(), 'acc_auth.txt', 'ERROR');
             return false;
         }
     }
