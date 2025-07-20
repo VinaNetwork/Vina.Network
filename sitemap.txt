@@ -40,6 +40,7 @@ Sitemap: Vina Network
 │   ├── bootstrap.php
 │   ├── config.php
 │   └── db.php
+│
 ├── accounts/
 │   ├── index.php
 │   ├── accounts.js
@@ -49,7 +50,7 @@ Sitemap: Vina Network
 │   │   ├── acc-api.php
 │   │   ├── refresh.php
 │   │   ├── auth.php
-│   │   └── log-client.php
+│   └   └── log-client.php
 │
 ├── tools/
 │   ├── index.php
@@ -80,5 +81,6 @@ Sitemap: Vina Network
 │   │   └── cache/
 │   │       └── wallet_analysis_cache.json
 │   ├── image/   
-│   └── logs/   
+│   └── logs/
+│   │   ├── accounts/
 └──
