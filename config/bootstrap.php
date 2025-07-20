@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: config/bootstrap.php
-// Description: Security check and utility functions for Vina Network
+// Description: Security check and utility functions for Vina Network modules
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,12 +12,11 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // ---------------------------------------------------
 // Define core path constants
-// Used across the application for easier path management
+// Used for logging and configuration across modules
 // ---------------------------------------------------
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('LOGS_PATH', ROOT_PATH . 'logs/');
-define('ACCOUNTS_LOGS_PATH', LOGS_PATH . 'accounts/');
-define('ERROR_LOG_PATH', LOGS_PATH . 'tool_error.txt'); // Giữ tạm thời cho lỗi PHP chung
+define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
 // ---------------------------------------------------
 // PHP configuration
@@ -47,42 +46,39 @@ require_once $config_path;
 // Creates directory and file if they don't exist, sets permissions
 // @param string $dir_path  - Directory path to check/create
 // @param string $file_path - File path to check/create
-// @param string $log_file  - Log file for errors (default: tool_error.txt)
 // @return bool - True if successful, false if failed
 // ---------------------------------------------------
-function ensure_directory_and_file($dir_path, $file_path, $log_file = 'tool_error.txt') {
+function ensure_directory_and_file($dir_path, $file_path) {
     try {
         // Create directory if it doesn't exist
         if (!is_dir($dir_path)) {
-            if (!mkdir($dir_path, 0755, true)) {
-                log_message("Failed to create directory: $dir_path", $log_file, 'ERROR');
+            if (!mkdir($dir_path, 0700, true)) {
+                error_log("Failed to create directory: $dir_path");
                 return false;
             }
-            chmod($dir_path, 0755);
-            log_message("Created directory: $dir_path", $log_file, 'INFO');
+            chmod($dir_path, 0700);
         }
         // Check if directory is writable
         if (!is_writable($dir_path)) {
-            log_message("Directory not writable: $dir_path", $log_file, 'ERROR');
+            error_log("Directory not writable: $dir_path");
             return false;
         }
         // Create file if it doesn't exist
         if (!file_exists($file_path)) {
             if (file_put_contents($file_path, '') === false) {
-                log_message("Failed to create file: $file_path", $log_file, 'ERROR');
+                error_log("Failed to create file: $file_path");
                 return false;
             }
             chmod($file_path, 0600);
-            log_message("Created file: $file_path", $log_file, 'INFO');
         }
         // Check if file is writable
         if (!is_writable($file_path)) {
-            log_message("File not writable: $file_path", $log_file, 'ERROR');
+            error_log("File not writable: $file_path");
             return false;
         }
         return true;
     } catch (Exception $e) {
-        log_message("Error in ensure_directory_and_file: " . $e->getMessage(), $log_file, 'ERROR');
+        error_log("Error in ensure_directory_and_file: " . $e->getMessage());
         return false;
     }
 }
@@ -91,18 +87,19 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'tool_erro
 // Logging utility function
 // Writes timestamped messages to the specified log file
 // @param string $message    - The log content/message
-// @param string $log_file   - Filename within ACCOUNTS_LOGS_PATH or LOGS_PATH
+// @param string $log_file   - Filename (e.g., acc_auth.txt)
+// @param string $module     - Module name (e.g., accounts, tools); if empty, logs to ERROR_LOG_PATH
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
-function log_message($message, $log_file = 'tool_error.txt', $log_type = 'INFO') {
-    $log_path = str_starts_with($log_file, 'acc_') ? ACCOUNTS_LOGS_PATH . $log_file : LOGS_PATH . $log_file;
+function log_message($message, $log_file = 'acc_auth.txt', $module = 'accounts', $log_type = 'INFO') {
+    $log_path = empty($module) ? ERROR_LOG_PATH : LOGS_PATH . $module . '/' . $log_file;
+    $dir_path = empty($module) ? LOGS_PATH : LOGS_PATH . $module . '/';
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
     try {
         // Ensure the log directory and file are set up correctly
-        $dir_path = str_starts_with($log_file, 'acc_') ? ACCOUNTS_LOGS_PATH : LOGS_PATH;
-        if (!ensure_directory_and_file($dir_path, $log_path, $log_file)) {
+        if (!ensure_directory_and_file($dir_path, $log_path)) {
             error_log("Log setup failed for $log_path: $message");
             return;
         }
