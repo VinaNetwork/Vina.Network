@@ -1,26 +1,32 @@
 # ============================================================================
-# Vina Network - Optimized .htaccess
-# Description: Security, performance, and rewrite rules for Apache server.
+# Vina Network - Safe & Optimized .htaccess
+# ============================================================================
+# Features:
+# ✅ Enable URL rewriting
+# ✅ Block access to sensitive files and folders
+# ✅ Disable directory listing
+# ✅ Enable compression (Brotli / Deflate)
+# ✅ Enable caching for static assets
+# ✅ Block dangerous HTTP methods
+# ✅ Prevent image hotlinking
 # ============================================================================
 
-# Enable Rewrite Engine
+# Enable URL rewriting
 RewriteEngine On
 
-# --------------------------------------------------------------------------
-# SECURITY
-# --------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# 🔐 SECURITY
+# ----------------------------------------------------------------------------
 
-# Deny direct access to sensitive files
+# Block direct access to sensitive files
 <FilesMatch "^(config\.php|db\.php|bootstrap\.php|\.htaccess|\.env|composer\.json|composer\.lock|php\.ini|LICENSE|README\.md)$">
     Require all denied
 </FilesMatch>
 
-# Block access to /config/, /logs/, /include/ except via PHP includes
-<DirectoryMatch "/(config|logs|include|accounts/include)/">
-    Require all denied
-</DirectoryMatch>
+# Block direct URL access to private folders
+RewriteRule ^(config|logs|include|accounts/include)/ - [F,L]
 
-# Prevent access to .git or hidden files
+# Block access to hidden files (e.g., .git, .env)
 RedirectMatch 404 /\.(?!well-known)
 
 # Disable directory listing
@@ -32,31 +38,34 @@ Options -Indexes
     RewriteRule .* - [F]
 </IfModule>
 
-# --------------------------------------------------------------------------
-# PERFORMANCE - Compression and Caching
-# --------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# ⚡ PERFORMANCE: COMPRESSION
+# ----------------------------------------------------------------------------
 
-# Enable Brotli Compression
+# Enable Brotli compression
 <IfModule mod_brotli.c>
     AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css application/json application/javascript font/woff2 application/xml image/x-icon
 </IfModule>
 
-# Enable Deflate Compression
+# Enable Deflate compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/json application/javascript font/woff2 application/xml image/x-icon
 </IfModule>
 
-# Set Expires headers
+# ----------------------------------------------------------------------------
+# 🗂️ PERFORMANCE: CACHING
+# ----------------------------------------------------------------------------
+
 <IfModule mod_expires.c>
     ExpiresActive On
-    # Images
+    # Images and favicon
     ExpiresByType image/jpg "access plus 1 month"
     ExpiresByType image/jpeg "access plus 1 month"
     ExpiresByType image/png "access plus 1 month"
     ExpiresByType image/gif "access plus 1 month"
     ExpiresByType image/webp "access plus 1 month"
     ExpiresByType image/x-icon "access plus 1 year"
-    # CSS and JS
+    # CSS & JS
     ExpiresByType text/css "access plus 1 week"
     ExpiresByType application/javascript "access plus 1 week"
     ExpiresByType text/javascript "access plus 1 week"
@@ -68,7 +77,6 @@ Options -Indexes
     ExpiresByType application/xml "access plus 1 hour"
 </IfModule>
 
-# Cache-Control headers
 <IfModule mod_headers.c>
     <FilesMatch "\.(jpg|jpeg|png|gif|webp|woff2|ico)$">
         Header set Cache-Control "public, max-age=2592000"
@@ -79,29 +87,24 @@ Options -Indexes
     <FilesMatch "\.(html|json|xml)$">
         Header set Cache-Control "public, max-age=3600"
     </FilesMatch>
-</IfModule>
 
-# Disable ETag
-<IfModule mod_headers.c>
+    # Disable ETag headers
     Header unset ETag
 </IfModule>
 FileETag None
 
-# --------------------------------------------------------------------------
-# HOTLINK PROTECTION
-# --------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# 🚫 PREVENT IMAGE HOTLINKING
+# ----------------------------------------------------------------------------
 
 RewriteCond %{HTTP_REFERER} !^$
 RewriteCond %{HTTP_REFERER} !^https?://(www\.)?vina\.network/ [NC]
 RewriteRule \.(jpg|jpeg|png|gif|webp)$ - [F,NC]
 
-# --------------------------------------------------------------------------
-# FALLBACK REWRITE TO INDEX.PHP (OPTIONAL)
-# Enable this block if you plan to use path-based routing like /tool/abc
-# --------------------------------------------------------------------------
-
-# Rewrite non-existent files/folders to index.php
-# Uncomment below only if needed
+# ----------------------------------------------------------------------------
+# 🧪 OPTIONAL: SPA-style fallback to index.php
+# ----------------------------------------------------------------------------
+# Enable this block only if your site uses route-style URLs like /tools/view/...
 # RewriteCond %{REQUEST_FILENAME} !-f
 # RewriteCond %{REQUEST_FILENAME} !-d
 # RewriteRule ^ index.php [QSA,L]
