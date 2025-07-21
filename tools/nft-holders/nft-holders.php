@@ -8,10 +8,13 @@
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
+// Log to confirm file is loaded
+log_message("nft_holders: nft-holders.php loaded", 'nft_holders_log.txt', 'tools', 'INFO');
+
 // Load bootstrap
-$bootstrap_path = __DIR__ . '/../bootstrap.php';
+$bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft-holders: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'ERROR');
+    log_message("nft_holders: bootstrap.php not found at $bootstrap_path", 'nft_holders_log.txt', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
@@ -20,8 +23,10 @@ require_once $bootstrap_path;
 // Cache setup
 $cache_dir = NFT_HOLDERS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_holders_cache.json';
-if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_holders_log.txt')) {
-    log_message("nft-holders: Cache setup failed", 'nft_holders_log.txt', 'ERROR');
+log_message("nft_holders: Checking cache directory: $cache_dir, file: $cache_file", 'nft_holders_log.txt', 'tools', 'DEBUG');
+
+if (!ensure_directory_and_file($cache_dir, $cache_file)) {
+    log_message("nft_holders: Cache setup failed for $cache_dir or $cache_file", 'nft_holders_log.txt', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
@@ -29,8 +34,8 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_holders_log.txt')) 
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft-holders: tools-api.php not found", 'nft_holders_log.txt', 'ERROR');
-    echo '<div class="result-error"><p>Missing tools-api.php</p></div>';
+    log_message("nft_holders: tools-api.php not found at $api_helper_path", 'nft_holders_log.txt', 'tools', 'ERROR');
+    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
@@ -48,6 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
     $key = "rate_limit_nft_holders:$ip";
     $count = $_SESSION[$key]['count'] ?? 0;
     $time = $_SESSION[$key]['time'] ?? 0;
+
+    log_message("nft_holders: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_holders_log.txt', 'tools', 'INFO');
 
     if (time() - $time > 60) {
         $_SESSION[$key] = ['count' => 1, 'time' => time()];
@@ -115,10 +122,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                 'collection_data' => $collection_data,
                 'timestamp' => time()
             ];
-            file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+            $fp = fopen($cache_file, 'c');
+            if (flock($fp, LOCK_EX)) {
+                file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT));
+                flock($fp, LOCK_UN);
+            }
+            fclose($fp);
+
+            log_message("nft_holders: Successfully processed mintAddress=$mintAddress, total_wallets=$total_wallets, total_items=$total_items", 'nft_holders_log.txt', 'tools', 'INFO');
         } else {
             extract($cache_data[$mintAddress]);
             $total_wallets = $total_wallets ?? count($wallets ?? []);
+            log_message("nft_holders: Used cached data for mintAddress=$mintAddress, total_wallets=$total_wallets, total_items=$total_items", 'nft_holders_log.txt', 'tools', 'INFO');
         }
 
         ?>
@@ -198,6 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
         <?php
     } catch (Exception $e) {
         echo "<div class='result-error'><p>Error processing request: " . htmlspecialchars($e->getMessage()) . "</p></div>";
+        log_message("nft_holders: Exception - " . $e->getMessage(), 'nft_holders_log.txt', 'tools', 'ERROR');
     }
 }
 ?>
