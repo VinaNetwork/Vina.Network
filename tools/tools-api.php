@@ -129,4 +129,64 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 
     return ['error' => 'Max retries reached.'];
 }
+
+// ============================================================================
+// Handle action: getTokenBurned
+// Description: Tính tổng token đã bị đốt của một token Solana (gửi vào ví 111... + burn thẳng)
+// ============================================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!isset($input['action'])) {
+        echo json_encode(['error' => 'Missing action parameter']);
+        exit;
+    }
+
+    if ($input['action'] === 'getTokenBurned') {
+        $mintAddress = trim($input['address'] ?? '');
+        if (!$mintAddress) {
+            echo json_encode(['error' => 'Missing token address']);
+            exit;
+        }
+
+        $totalBurned = 0;
+        $before = null;
+
+        while (true) {
+            $params = ['address' => '11111111111111111111111111111111'];
+            if ($before) {
+                $params['before'] = $before;
+            }
+            $response = callAPI('transactions', $params, 'GET');
+
+            if (!is_array($response) || empty($response)) break;
+
+            $count = 0;
+            foreach ($response as $tx) {
+                if (!isset($tx['tokenTransfers'])) continue;
+                foreach ($tx['tokenTransfers'] as $transfer) {
+                    if ($transfer['mint'] !== $mintAddress) continue;
+
+                    if (($transfer['toUserAccount'] ?? '') === '11111111111111111111111111111111') {
+                        $totalBurned += floatval($transfer['tokenAmount']);
+                        $count++;
+                    } elseif (empty($transfer['toUserAccount']) && floatval($transfer['tokenAmount']) < 0) {
+                        $totalBurned += abs(floatval($transfer['tokenAmount']));
+                        $count++;
+                    }
+                }
+            }
+
+            // Nếu ít hơn 1000 transaction thì đã hết
+            if (count($response) < 1000) break;
+
+            $before = $response[count($response) - 1]['signature'];
+        }
+
+        echo json_encode([
+            'totalBurned' => $totalBurned,
+            'symbol' => null // bạn có thể bổ sung symbol nếu cần từ getAsset
+        ]);
+        exit;
+    }
+}
 ?>
