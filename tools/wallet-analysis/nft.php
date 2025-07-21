@@ -12,7 +12,7 @@ $formatted_data = $_SESSION['wallet_analysis_data'] ?? null;
 $walletAddress = $formatted_data['wallet_address'] ?? null;
 if (!$formatted_data || !$walletAddress) {
     echo "<div class='result-error'><p>Error: No wallet data available.</p></div>";
-    log_message("nft: No wallet data or address in session", 'wallet_analysis_log.txt', 'ERROR');
+    log_message("wallet_analysis_nft: No wallet data or address in session", 'wallet_analysis_log.txt', 'tools', 'ERROR');
     exit;
 }
 ?>
