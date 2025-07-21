@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 $formatted_data = $_SESSION['wallet_analysis_data'] ?? null;
 if (!$formatted_data) {
     echo "<div class='result-error'><p>Error: No wallet data available.</p></div>";
-    log_message("token: No wallet data in session", 'wallet_analysis_log.txt', 'ERROR');
+    log_message("wallet_analysis_token: No wallet data in session", 'wallet_analysis_log.txt', 'tools', 'ERROR');
     exit;
 }
 ?>
