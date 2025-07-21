@@ -8,12 +8,6 @@
  * Created by: Vina Network
  * ============================================================================ */
 
-// Prevent direct access to this config file
-if (!defined('VINANETWORK_ENTRY')) {
-    http_response_code(403);
-    exit('No direct script access allowed!');
-}
-
 // JWT Secret for authentication
 if (!defined('JWT_SECRET')) {
     define('JWT_SECRET', 'your-secret-key'); // Replace with a random string of at least 32 characters
