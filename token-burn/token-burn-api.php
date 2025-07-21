@@ -19,57 +19,56 @@ if (!$mintAddress) {
 }
 
 $totalBurned = 0;
+$toBurnWallet = 0;
+$explicitBurn = 0;
 $burnTxs = [];
 $before = null;
-$maxPages = 50; // Giới hạn số vòng lặp để tránh quá tải
+$maxPages = 50;
 $page = 0;
 
 do {
     $url = "https://api.helius.xyz/v0/addresses/{$mintAddress}/transactions?limit=100&api-key=" . HELIUS_API_KEY;
     if ($before) $url .= "&before=" . $before;
 
-    $curl = curl_init();
-    curl_setopt_array($curl, [
+    $ch = curl_init();
+    curl_setopt_array($ch, [
         CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 30
     ]);
+    $res = curl_exec($ch);
+    curl_close($ch);
 
-    $response = curl_exec($curl);
-    $err = curl_error($curl);
-    curl_close($curl);
-
-    if ($err) {
-        echo json_encode(['error' => 'cURL error: ' . $err]);
-        exit;
-    }
-
-    $data = json_decode($response, true);
+    $data = json_decode($res, true);
     if (!is_array($data)) {
         echo json_encode(['error' => 'Invalid API response from Helius.']);
         exit;
     }
 
     foreach ($data as $tx) {
-        if (!isset($tx['tokenTransfers'])) continue;
+        if (!isset($tx['tokenBalanceChanges'])) continue;
 
-        foreach ($tx['tokenTransfers'] as $transfer) {
-            if ($transfer['mint'] !== $mintAddress) continue;
+        foreach ($tx['tokenBalanceChanges'] as $change) {
+            if ($change['mint'] !== $mintAddress) continue;
 
-            $isBurn =
-                ($transfer['toUserAccount'] === null ||
-                 $transfer['toUserAccount'] === '11111111111111111111111111111111') &&
-                $transfer['tokenAmount'] < 0;
+            $amount = (float) $change['rawTokenAmount']['amount'];
+            $decimals = (int) $change['rawTokenAmount']['decimals'];
+            $uiAmount = $amount / (10 ** $decimals);
 
-            if ($isBurn) {
-                $amount = abs($transfer['tokenAmount']);
-                $totalBurned += $amount;
-                $burnTxs[] = [
-                    'signature' => $tx['signature'],
-                    'amount' => $amount,
-                    'slot' => $tx['slot'],
-                    'timestamp' => $tx['timestamp']
-                ];
+            if ($uiAmount < 0) {
+                // Trường hợp gửi vào ví burn
+                if (
+                    isset($change['owner']) &&
+                    $change['owner'] === '11111111111111111111111111111111'
+                ) {
+                    $toBurnWallet += abs($uiAmount);
+                    $burnTxs[] = $tx['signature'];
+                }
+                // Trường hợp token bị giảm mà không có counterparty (explicit burn)
+                elseif (empty($change['counterparty'])) {
+                    $explicitBurn += abs($uiAmount);
+                    $burnTxs[] = $tx['signature'];
+                }
             }
         }
     }
@@ -80,8 +79,12 @@ do {
 
 } while (count($data) === 100 && $before && $page < $maxPages);
 
+$totalBurned = $toBurnWallet + $explicitBurn;
+
 echo json_encode([
     'mint' => $mintAddress,
     'total_burned' => $totalBurned,
-    'burn_transactions' => $burnTxs
+    'to_burn_wallet' => $toBurnWallet,
+    'explicit_burn' => $explicitBurn,
+    'burn_transactions' => array_values(array_unique($burnTxs))
 ]);
