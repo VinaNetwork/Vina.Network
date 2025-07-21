@@ -60,12 +60,12 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
     try {
         // Create directory if it doesn't exist
         if (!is_dir($dir_path)) {
-            if (!mkdir($dir_path, 0764, true)) {
+            if (!mkdir($dir_path, 0755, true)) {
                 log_message("Failed to create directory: $dir_path", $log_file, 'ERROR');
                 return false;
             }
             // Skip chown/chgrp to avoid permission issues on shared hosting
-            chmod($dir_path, 0764);
+            chmod($dir_path, 0755);
             log_message("Created directory: $dir_path", $log_file, 'INFO');
         }
         // Check if directory is writable
@@ -79,7 +79,7 @@ function ensure_directory_and_file($dir_path, $file_path, $log_file = 'debug_log
                 log_message("Failed to create file: $file_path", $log_file, 'ERROR');
                 return false;
             }
-            chmod($file_path, 0664);
+            chmod($file_path, 0644);
             log_message("Created file: $file_path", $log_file, 'INFO');
         }
         // Check if file is writable
