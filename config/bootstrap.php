@@ -16,6 +16,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 // ---------------------------------------------------
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('LOGS_PATH', ROOT_PATH . 'logs/');
+define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/'); // Thêm định nghĩa cho thư mục accounts
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
 // ---------------------------------------------------
@@ -92,8 +93,8 @@ function ensure_directory_and_file($dir_path, $file_path) {
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
 function log_message($message, $log_file = 'acc_auth.txt', $module = 'accounts', $log_type = 'INFO') {
-    $log_path = empty($module) ? ERROR_LOG_PATH : LOGS_PATH . $module . '/' . $log_file;
-    $dir_path = empty($module) ? LOGS_PATH : LOGS_PATH . $module . '/';
+    $log_path = empty($module) ? ERROR_LOG_PATH : ACCOUNTS_PATH . $log_file; // Sử dụng ACCOUNTS_PATH
+    $dir_path = empty($module) ? LOGS_PATH : ACCOUNTS_PATH; // Sử dụng ACCOUNTS_PATH
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
