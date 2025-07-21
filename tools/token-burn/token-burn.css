@@ -4,28 +4,79 @@
  * Created by: Vina Network
  * ========================================================================== */
 
-/* Token burn Result */
-.progress-container {
-    margin-top: 20px;
-    width: 100%;
-    max-width: 600px;
+.tool-container {
+  max-width: 600px;
+  margin: 50px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
 }
 
-.progress-bar {
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    overflow: hidden;
-    height: 20px;
+.tool-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
-.progress-bar-fill {
-    background-color: #4caf50;
-    height: 100%;
-    transition: width 0.3s ease-in-out;
+.tool-desc {
+  font-size: 16px;
+  margin-bottom: 20px;
+  color: #555;
 }
 
-.progress-text {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #333;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input[type="text"] {
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  width: 100%;
+}
+
+button {
+  padding: 12px;
+  font-size: 16px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0f5ccd;
+}
+
+#result {
+  margin-top: 25px;
+  font-size: 18px;
+}
+
+.burn-result {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 20px;
+}
+
+.error {
+  color: red;
+  font-weight: bold;
+}
+
+.loading {
+  margin-top: 15px;
+  font-style: italic;
+  color: #333;
+}
+
+.hidden {
+  display: none;
 }
