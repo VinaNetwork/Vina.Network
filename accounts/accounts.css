@@ -48,6 +48,14 @@ h1 {
     color: #fff;
 }
 
+.btn.disconnect {
+    background-color: #dc3545;
+}
+
+.btn.disconnect:hover {
+    background-color: #b02a37;
+}
+
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
     .acc-container {
