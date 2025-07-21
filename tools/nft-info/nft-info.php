@@ -9,9 +9,9 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 // Load bootstrap
-$bootstrap_path = dirname(__DIR__) . '/bootstrap.php';
+$bootstrap_path = dirname(__DIR__) . '/../../config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft_info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'ERROR');
+    log_message("nft_info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
@@ -21,8 +21,8 @@ require_once $bootstrap_path;
 $cache_dir = NFT_INFO_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_info_cache.json';
 
-if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_info_log.txt')) {
-    log_message("nft_info: Cache setup failed for $cache_dir or $cache_file", 'nft_info_log.txt', 'ERROR');
+if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_info_log.txt', 'tools')) {
+    log_message("nft_info: Cache setup failed for $cache_dir or $cache_file", 'nft_info_log.txt', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
@@ -30,7 +30,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_info_log.txt')) {
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft_info_log.txt', 'ERROR');
+    log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft_info_log.txt', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
 <?php
     } catch (Exception $e) {
         echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
-        log_message("nft_info: Exception - " . $e->getMessage(), 'nft_info_log.txt', 'ERROR');
+        log_message("nft_info: Exception - " . $e->getMessage(), 'nft_info_log.txt', 'tools', 'ERROR');
     }
 }
 ?>
