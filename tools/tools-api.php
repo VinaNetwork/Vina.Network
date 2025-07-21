@@ -136,34 +136,26 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 // số token bị burn (gửi đến 1111... hoặc hành động BURN/BURN_CHECKED)
 // ============================================================================
 function getTokenBurned($mintAddress) {
-    $apiKey = getenv('HELIUS_API_KEY'); // Hoặc dùng API key trực tiếp nếu chưa có .env
-    $endpoint = "https://mainnet.helius-rpc.com/?api-key={$apiKey}";
     $totalBurned = 0;
-
     $before = null;
     $hasMore = true;
-    $maxLoop = 20; // Giới hạn truy xuất ~500 tx để tránh timeout
+    $maxLoop = 20;
     $loop = 0;
 
     while ($hasMore && $loop < $maxLoop) {
         $params = [
-            "id" => "burn-check",
-            "jsonrpc" => "2.0",
-            "method" => "getSignaturesForAsset",
-            "params" => [
-                $mintAddress,
-                [
-                    "limit" => 100,
-                ]
+            $mintAddress,
+            [
+                "limit" => 100
             ]
         ];
 
         if ($before) {
-            $params["params"][1]["before"] = $before;
+            $params[1]["before"] = $before;
         }
 
-        $response = callAPI($endpoint, $params, true);
-        if (!$response || !isset($response['result'])) {
+        $response = callAPI("getSignaturesForAsset", $params, 'POST');
+        if (!isset($response['result'])) {
             return ['error' => 'Invalid API response from Helius.'];
         }
 
@@ -174,7 +166,6 @@ function getTokenBurned($mintAddress) {
             if (!isset($tx['tokenTransfers'])) continue;
 
             foreach ($tx['tokenTransfers'] as $transfer) {
-                // Nếu chuyển vào ví 1111... hoặc không có người nhận (burn trực tiếp)
                 $to = $transfer['toUserAccount'] ?? '';
                 $type = strtoupper($transfer['type'] ?? '');
                 $amount = floatval($transfer['tokenAmount'] ?? 0);
