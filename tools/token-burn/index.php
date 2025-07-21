@@ -34,10 +34,12 @@ include '../../include/header.php';
   </div>
 
   <div id="result"></div>
-  <div id="loading" class="loading hidden">Checking burn data...</div>
+  <div id="loading" class="loading hidden">Fetching burn data from Helius...</div>
 </div>
 
 <script>
+  const HELIUS_API_KEY = "8eb75cd9-015a-4e24-9de2-5be9ee0f1c63"; // <-- Thay bằng API key của bạn
+
   async function checkTokenBurn() {
     const address = document.getElementById('tokenAddress').value.trim();
     const resultBox = document.getElementById('result');
@@ -49,31 +51,52 @@ include '../../include/header.php';
     }
 
     loading.classList.remove('hidden');
+
+    let page = 1;
+    let totalBurned = 0;
+    let limit = 1000;
+    let before = null;
     try {
-      const res = await fetch('/tools/tools-api.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'getTokenBurned',
-          address: address
-        })
-      });
+      while (true) {
+        const url = new URL(`https://mainnet.helius.xyz/v0/addresses/11111111111111111111111111111111/transactions?api-key=${HELIUS_API_KEY}`);
+        url.searchParams.set("limit", limit);
+        if (before) url.searchParams.set("before", before);
 
-      const data = await res.json();
-      loading.classList.add('hidden');
+        const res = await fetch(url);
+        const txns = await res.json();
 
-      if (data.error) {
-        resultBox.innerHTML = `<p class="error">Error: ${data.error}</p>`;
-      } else {
-        resultBox.innerHTML = `
-          <div class="burn-result">
-            <p><strong>Total Burned:</strong> ${data.totalBurned.toLocaleString()} ${data.symbol || ''}</p>
-          </div>
-        `;
+        if (!Array.isArray(txns) || txns.length === 0) break;
+
+        for (const tx of txns) {
+          if (!tx.tokenTransfers || tx.tokenTransfers.length === 0) continue;
+
+          for (const transfer of tx.tokenTransfers) {
+            if (transfer.mint === address) {
+              if (transfer.toUserAccount === "11111111111111111111111111111111") {
+                totalBurned += parseFloat(transfer.tokenAmount);
+              } else if (!transfer.toUserAccount && parseFloat(transfer.tokenAmount) < 0) {
+                // Likely a burn without a recipient
+                totalBurned += Math.abs(parseFloat(transfer.tokenAmount));
+              }
+            }
+          }
+        }
+
+        if (txns.length < limit) break;
+        before = txns[txns.length - 1].signature;
+        page++;
       }
+
+      loading.classList.add('hidden');
+      resultBox.innerHTML = `
+        <div class="burn-result">
+          <p><strong>Total Burned:</strong> ${totalBurned.toLocaleString()} tokens</p>
+        </div>
+      `;
     } catch (e) {
       loading.classList.add('hidden');
-      resultBox.innerHTML = '<p class="error">Failed to fetch data.</p>';
+      console.error(e);
+      resultBox.innerHTML = '<p class="error">Failed to fetch burn data from Helius.</p>';
     }
   }
 </script>
