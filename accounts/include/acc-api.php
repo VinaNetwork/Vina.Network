@@ -71,6 +71,10 @@ if ($action === 'register') {
             exit;
         }
 
+        // Cập nhật last_login
+        $stmt = $auth->pdo->prepare('UPDATE users SET last_login = NOW() WHERE public_key = ?');
+        $stmt->execute([$publicKey]);
+
         $token = $auth->createJWT($publicKey);
         log_message("API: Login successful for publicKey=$publicKey", 'acc_auth.txt', 'accounts', 'INFO');
         echo json_encode(['message' => 'Login successful', 'token' => $token]);
