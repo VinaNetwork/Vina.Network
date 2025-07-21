@@ -24,7 +24,7 @@ $payload = [
     'jsonrpc' => '2.0',
     'id' => 1,
     'method' => 'getSignaturesForAsset',
-    'params' => [
+    'params' => (object)[
         'id' => $mint,
         'limit' => 1000
     ]
