@@ -3,6 +3,8 @@ require_once '../config/config.php';
 
 header('Content-Type: application/json');
 
+define('HELIUS_API_URL', 'https://api.helius.xyz/v0/addresses/'); // Di chuyển hằng số vào đây
+
 function callHeliusApi($address) {
     $url = HELIUS_API_URL . $address . '/transactions?api-key=' . HELIUS_API_KEY;
     
