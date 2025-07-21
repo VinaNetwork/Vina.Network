@@ -1,90 +1,125 @@
 <?php
-// ============================================================================
-// File: token-burn/token-burn-api.php
-// Description: Detect burned tokens across all pages using Helius API.
-// ============================================================================
+/*
+ * File: token-burn/token-burn-api.php
+ * Description: API endpoint to check total burned tokens for a given token mint address.
+ * Supports detection of both explicit burns and transfers to the 11111111111111111111111111111111 burn address.
+ * Created by: Vina Network
+ */
 
 define('VINANETWORK_ENTRY', true);
 require_once __DIR__ . '/../config/config.php';
 
 header('Content-Type: application/json');
 
-// Lấy địa chỉ mint từ POST
-$input = json_decode(file_get_contents('php://input'), true);
-$mintAddress = trim($input['address'] ?? '');
+// Get token mint address from GET or POST
+$mintAddress = $_GET['mint'] ?? $_POST['mint'] ?? '';
+$mintAddress = trim($mintAddress);
 
-if (!$mintAddress) {
-    echo json_encode(['error' => 'Missing token mint address']);
+// Validate address
+if (!$mintAddress || strlen($mintAddress) < 32) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Invalid token mint address.']);
     exit;
 }
 
+$apiKey = HELIUS_API_KEY;
+$endpoint = "https://mainnet.helius-rpc.com/?api-key=$apiKey";
+
 $totalBurned = 0;
-$toBurnWallet = 0;
-$explicitBurn = 0;
 $burnTxs = [];
+
 $before = null;
-$maxPages = 50;
-$page = 0;
+$limit = 1000; // Max per request
+$maxIterations = 20; // prevent infinite loop
+$iterations = 0;
 
 do {
-    $url = "https://api.helius.xyz/v0/addresses/{$mintAddress}/transactions?limit=100&api-key=" . HELIUS_API_KEY;
-    if ($before) $url .= "&before=" . $before;
+    $payload = [
+        'jsonrpc' => '2.0',
+        'id' => 'burn-check',
+        'method' => 'getParsedTransactionsByMint',
+        'params' => [
+            'mint' => $mintAddress,
+            'options' => [
+                'limit' => $limit,
+                'before' => $before
+            ]
+        ]
+    ];
 
-    $ch = curl_init();
+    $ch = curl_init($endpoint);
     curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS => json_encode($payload)
     ]);
-    $res = curl_exec($ch);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    $data = json_decode($res, true);
-    if (!is_array($data)) {
+    if ($httpCode !== 200 || !$response) {
         echo json_encode(['error' => 'Invalid API response from Helius.']);
         exit;
     }
 
-    foreach ($data as $tx) {
-        if (!isset($tx['tokenBalanceChanges'])) continue;
+    $data = json_decode($response, true);
+    if (!isset($data['result']) || !is_array($data['result'])) {
+        echo json_encode(['error' => 'Unexpected response format.']);
+        exit;
+    }
 
-        foreach ($tx['tokenBalanceChanges'] as $change) {
-            if ($change['mint'] !== $mintAddress) continue;
+    $transactions = $data['result'];
+    if (empty($transactions)) {
+        break;
+    }
 
-            $amount = (float) $change['rawTokenAmount']['amount'];
-            $decimals = (int) $change['rawTokenAmount']['decimals'];
-            $uiAmount = $amount / (10 ** $decimals);
+    foreach ($transactions as $tx) {
+        if (!isset($tx['tokenTransfers']) || !is_array($tx['tokenTransfers'])) {
+            continue;
+        }
 
-            if ($uiAmount < 0) {
-                // Trường hợp gửi vào ví burn
-                if (
-                    isset($change['owner']) &&
-                    $change['owner'] === '11111111111111111111111111111111'
-                ) {
-                    $toBurnWallet += abs($uiAmount);
-                    $burnTxs[] = $tx['signature'];
-                }
-                // Trường hợp token bị giảm mà không có counterparty (explicit burn)
-                elseif (empty($change['counterparty'])) {
-                    $explicitBurn += abs($uiAmount);
-                    $burnTxs[] = $tx['signature'];
-                }
+        foreach ($tx['tokenTransfers'] as $transfer) {
+            $to = $transfer['toUserAccount'] ?? '';
+            $from = $transfer['fromUserAccount'] ?? '';
+            $amount = abs($transfer['tokenAmount']);
+
+            $isToBurnWallet = ($to === '11111111111111111111111111111111');
+            $isExplicitBurn = (empty($to) && $transfer['tokenAmount'] < 0);
+
+            if ($isToBurnWallet || $isExplicitBurn) {
+                $totalBurned += $amount;
+
+                $burnTxs[] = [
+                    'signature' => $tx['signature'],
+                    'amount' => $amount,
+                    'slot' => $tx['slot'],
+                    'timestamp' => $tx['timestamp'],
+                    'type' => $isToBurnWallet ? 'ToBurnWallet' : 'ExplicitBurn'
+                ];
             }
         }
     }
 
-    $page++;
-    $lastTx = end($data);
-    $before = $lastTx['signature'] ?? null;
+    $before = end($transactions)['signature'] ?? null;
+    $iterations++;
+} while ($before && $iterations < $maxIterations);
 
-} while (count($data) === 100 && $before && $page < $maxPages);
+// Optional breakdown
+$toBurnWallet = 0;
+$explicitBurn = 0;
 
-$totalBurned = $toBurnWallet + $explicitBurn;
+foreach ($burnTxs as $b) {
+    if ($b['type'] === 'ToBurnWallet') $toBurnWallet += $b['amount'];
+    if ($b['type'] === 'ExplicitBurn') $explicitBurn += $b['amount'];
+}
 
 echo json_encode([
     'mint' => $mintAddress,
     'total_burned' => $totalBurned,
     'to_burn_wallet' => $toBurnWallet,
     'explicit_burn' => $explicitBurn,
-    'burn_transactions' => array_values(array_unique($burnTxs))
+    'burn_transactions' => array_map(fn($tx) => $tx['signature'], $burnTxs)
 ]);
+exit;
