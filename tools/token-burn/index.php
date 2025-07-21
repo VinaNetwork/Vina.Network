@@ -18,11 +18,11 @@ $page_og_url = "https://www.vina.network/tools/token-burn/";
 $page_canonical = "https://www.vina.network/tools/token-burn/";
 $page_css = ['token-burn.css'];
 
-include '../../include/header.php';
+include '../../../include/header.php';
 ?>
 <body>
 <!-- Navigation Bar -->
-<?php include '../../include/navbar.php'; ?>
+<?php include '../../../include/navbar.php'; ?>
 
 <div class="tool-container">
   <h1 class="tool-title">Check Token Burned</h1>
@@ -101,11 +101,11 @@ include '../../include/header.php';
   }
 </script>
 
-<?php include __DIR__ . '../../include/footer.php'; ?>
+<?php include __DIR__ . '../../../include/footer.php'; ?>
 
 <!-- Scripts -->
-<script src="../../js/vina.js"></script>
-<script src="../../js/navbar.js"></script>
+<script src="../../../js/vina.js"></script>
+<script src="../../../js/navbar.js"></script>
 <script src="token-burn.js"></script>
 </body>
 </html>
