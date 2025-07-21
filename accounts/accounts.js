@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nacl = window.nacl;
     const Swal = window.Swal;
 
-    // Cấu hình kết nối Solana (khớp với auth.php)
+    // Cấu hình kết nối Solana (Devnet để khớp với auth.php)
     const network = WalletAdapterNetwork.Devnet;
     const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
     const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await sendClientLog('CSRF token not found', 'ERROR');
             Swal.fire({
                 title: 'Error',
-                text: 'CSRF token not found',
+                text: 'CSRF token not found. Please refresh the page.',
                 icon: 'error'
             });
             return;
