@@ -1,4 +1,6 @@
 <?php
+file_put_contents('debug.txt', print_r($_POST, true));
+
 // Nhận dữ liệu từ client
 $wallet = $_POST['wallet'] ?? '';
 $message = $_POST['message'] ?? '';
