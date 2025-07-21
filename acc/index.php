@@ -1,54 +1,58 @@
-<?php session_start(); if (isset($_SESSION['wallet'])) header('Location: dashboard.php'); ?>
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Login with Solana</title>
+  <meta charset="utf-8">
+  <title>Solana Login</title>
+</head>
+<body>
+  <h2>Connect Wallet</h2>
+  <button id="connectBtn">Connect Wallet</button>
+  <p id="status"></p>
+
   <script>
-    async function connectWallet() {
+    document.getElementById('connectBtn').onclick = async () => {
       if (!window.solana || !window.solana.isPhantom) {
-        alert("Please install Phantom wallet!");
+        alert("Please install Phantom Wallet.");
         return;
       }
 
       try {
         const resp = await window.solana.connect();
         const wallet = resp.publicKey.toString();
+        document.getElementById("status").innerText = "Wallet connected: " + wallet;
 
-        // Tạo thông điệp đăng nhập
+        // Message to sign
         const message = `Login to Vina Network\nTime: ${new Date().toISOString()}`;
         const encodedMessage = new TextEncoder().encode(message);
 
-        // Yêu cầu Phantom ký message
+        // Sign
         const signed = await window.solana.signMessage(encodedMessage, 'utf8');
-        const signatureBase64 = btoa(String.fromCharCode(...signed.signature));
+        const signatureBase64 = btoa(String.fromCharCode.apply(null, signed.signature));
 
-        // Gửi lên server
+        // Send to server
         const formData = new FormData();
         formData.append('wallet', wallet);
         formData.append('message', message);
         formData.append('signature', signatureBase64);
 
-        const res = await fetch('login.php', {
+        const response = await fetch('login.php', {
           method: 'POST',
           body: formData
         });
 
-        const result = await res.text();
+        const result = await response.text();
+
         if (result === 'ok') {
-          window.location.href = 'dashboard.php';
+          alert("Login successful!");
         } else {
           alert("Login failed: " + result);
         }
+
       } catch (err) {
         console.error(err);
-        alert("Wallet connect or sign failed.");
+        alert("Error: " + err.message);
       }
-    }
+    };
   </script>
-</head>
-<body>
-  <h2>Login with Solana Wallet</h2>
-  <button onclick="connectWallet()">Connect Wallet</button>
 </body>
 </html>
