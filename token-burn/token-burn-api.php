@@ -20,9 +20,14 @@ function callHeliusApi($address) {
     ]);
 
     $response = curl_exec($curl);
-    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE); // Lấy mã HTTP
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     $err = curl_error($curl);
     curl_close($curl);
+
+    // Ghi log phản hồi thô để debug
+    error_log("Helius API URL: $url");
+    error_log("Helius API Response: $response");
+    error_log("HTTP Code: $httpCode");
 
     if ($err) {
         return ['error' => "cURL Error #: $err"];
@@ -33,7 +38,7 @@ function callHeliusApi($address) {
         return ['error' => "API returned HTTP code $httpCode: $response"];
     }
 
-    // Kiểm tra xem phản hồi có phải JSON hợp lệ không
+    // Kiểm tra JSON hợp lệ
     $decodedResponse = json_decode($response, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
         return ['error' => "Invalid JSON response: $response"];
@@ -50,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Gọi API Helius để lấy lịch sử giao dịch
+    // Gọi API Helius
     $transactions = callHeliusApi($mintAddress);
 
     if (isset($transactions['error'])) {
@@ -68,13 +73,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Lọc các giao dịch burn
     foreach ($transactions as $tx) {
-        // Kiểm tra các giao dịch liên quan đến token burn
         if (isset($tx['tokenTransfers'])) {
             foreach ($tx['tokenTransfers'] as $transfer) {
                 if ($transfer['mint'] === $mintAddress && 
                     ($transfer['toTokenAccount'] === null || 
                      $transfer['toTokenAccount'] === '11111111111111111111111111111111')) {
                     $totalBurned += $transfer['tokenAmount'];
+                }
+            }
+        }
+        // Kiểm tra thêm lệnh Burn trong instructions
+        if (isset($tx['instructions'])) {
+            foreach ($tx['instructions'] as $instruction) {
+                if ($instruction['programId'] === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' && 
+                    isset($instruction['parsed']) && 
+                    $instruction['parsed']['type'] === 'burn') {
+                    if ($instruction['parsed']['info']['mint'] === $mintAddress) {
+                        $totalBurned += $instruction['parsed']['info']['amount'] / pow(10, $instruction['parsed']['info']['decimals']);
+                    }
                 }
             }
         }
