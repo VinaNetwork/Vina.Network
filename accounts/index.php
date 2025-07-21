@@ -7,6 +7,7 @@
 // Created by: Vina Network
 // ============================================================================
 
+define('VINANETWORK_ENTRY', true); // Thêm dòng này để vượt qua kiểm tra bảo mật
 $root_path = '../';
 $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
