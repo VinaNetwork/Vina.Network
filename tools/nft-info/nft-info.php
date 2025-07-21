@@ -8,6 +8,9 @@
 if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
+// Log to confirm file is loaded
+log_message("nft_info: nft-info.php loaded", 'nft_info_log.txt', 'tools', 'INFO');
+
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
@@ -21,7 +24,7 @@ require_once $bootstrap_path;
 $cache_dir = NFT_INFO_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_info_cache.json';
 
-if (!ensure_directory_and_file($cache_dir, $cache_file, 'nft_info_log.txt', 'tools')) {
+if (!ensure_directory_and_file($cache_dir, $cache_file)) {
     log_message("nft_info: Cache setup failed for $cache_dir or $cache_file", 'nft_info_log.txt', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
@@ -46,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
     $rate_limit_key = "rate_limit_nft_info:$ip";
     $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
     $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
+
+    log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'tools', 'INFO');
 
     if (time() - $rate_limit_time > 60) {
         $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
@@ -120,8 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
                 flock($fp, LOCK_UN);
             }
             fclose($fp);
+
+            log_message("nft_info: Successfully processed mintAddress=$mintAddress", 'nft_info_log.txt', 'tools', 'INFO');
         } else {
             $formatted_data = $cache_data[$mintAddress]['data'];
+            log_message("nft_info: Used cached data for mintAddress=$mintAddress", 'nft_info_log.txt', 'tools', 'INFO');
         }
 ?>
         <div class="tools-result nft-info-result">
