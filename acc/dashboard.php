@@ -6,7 +6,7 @@ if (!isset($_SESSION['wallet'])) {
 }
 
 $wallet = $_SESSION['wallet'];
-$userFile = __DIR__ . "/users/$wallet.json";
+$userFile = __DIR__ . "/datas/$wallet.json"; // Đổi từ users/ → datas/
 
 $userData = file_exists($userFile) ? json_decode(file_get_contents($userFile), true) : [];
 ?>
