@@ -1,79 +1,83 @@
 <?php
-session_start();
+// Nhận dữ liệu từ client
+$wallet = $_POST['wallet'] ?? '';
+$message = $_POST['message'] ?? '';
+$signatureRaw = $_POST['signature'] ?? '';
 
-function base58_decode($base58) {
-    $alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-    $indexes = array_flip(str_split($alphabet));
-    $size = strlen($base58);
-    $intVal = gmp_init(0);
+// Ghi log nếu cần debug
+error_log("LOGIN: wallet=$wallet");
 
-    for ($i = 0; $i < $size; ++$i) {
-        $intVal = gmp_add(gmp_mul($intVal, 58), $indexes[$base58[$i]]);
-    }
-
-    $hex = gmp_strval($intVal, 16);
-    if (strlen($hex) % 2 !== 0) $hex = '0' . $hex;
-    $bin = hex2bin($hex);
-
-    $pad = 0;
-    for ($i = 0; $i < $size && $base58[$i] === '1'; $i++) $pad++;
-    return str_repeat("\x00", $pad) . $bin;
-}
-
-function verify_sol_signature($publicKeyBase58, $message, $signatureRaw) {
-    $pubKeyRaw = base58_decode($publicKeyBase58);
-    if (!$pubKeyRaw || strlen($pubKeyRaw) !== 32 || strlen($signatureRaw) !== 64) {
-        return false;
-    }
-    return sodium_crypto_sign_verify_detached($signatureRaw, $message, $pubKeyRaw);
-}
-
-if (
-  $_SERVER['REQUEST_METHOD'] === 'POST' &&
-  isset($_POST['wallet'], $_POST['message'], $_POST['signature'])
-) {
-    $wallet = trim($_POST['wallet']);
-    $message = $_POST['message'];
-    $signatureRaw = base64_decode($_POST['signature']);
-
-    if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $wallet)) {
-        echo 'invalid wallet';
-        exit;
-    }
-
-    if (!$signatureRaw || strlen($signatureRaw) !== 64) {
-        echo 'invalid signature';
-        exit;
-    }
-
-    if (!verify_sol_signature($wallet, $message, $signatureRaw)) {
-        echo 'invalid signature';
-        exit;
-    }
-
-    // Xác thực OK → tạo/lưu file JSON
-    $dataDir = __DIR__ . '/datas';
-    if (!is_dir($dataDir)) mkdir($dataDir);
-
-    $userFile = $dataDir . '/' . $wallet . '.json';
-    $now = date('Y-m-d H:i:s');
-
-    if (!file_exists($userFile)) {
-        $userData = [
-            'id' => bin2hex(random_bytes(6)),
-            'public_key' => $wallet,
-            'created_at' => $now,
-            'last_login' => $now
-        ];
-    } else {
-        $userData = json_decode(file_get_contents($userFile), true);
-        $userData['last_login'] = $now;
-    }
-
-    file_put_contents($userFile, json_encode($userData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-    $_SESSION['wallet'] = $wallet;
-    echo 'ok';
+// Kiểm tra đầu vào
+if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $wallet)) {
+    error_log("Invalid wallet: $wallet");
+    echo 'invalid wallet';
     exit;
 }
 
-echo 'fail';
+if (!$signatureRaw || strlen($signatureRaw) < 64) {
+    error_log("Invalid signature length: " . strlen($signatureRaw));
+    echo 'invalid signature';
+    exit;
+}
+
+// Hàm xác minh chữ ký
+function verify_sol_signature($wallet, $message, $signatureBase64) {
+    if (!function_exists('sodium_crypto_sign_verify_detached')) return false;
+
+    $pubkey = base58_decode($wallet);
+    $signature = base64_decode($signatureBase64);
+    $msg = $message;
+
+    if ($pubkey === false || $signature === false) return false;
+    return sodium_crypto_sign_verify_detached($signature, $msg, $pubkey);
+}
+
+// Hàm decode base58 Solana
+function base58_decode($input) {
+    $alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    $decoded = gmp_init(0, 10);
+    $base = strlen($alphabet);
+
+    for ($i = 0; $i < strlen($input); $i++) {
+        $char = $input[$i];
+        $pos = strpos($alphabet, $char);
+        if ($pos === false) return false;
+        $decoded = gmp_add(gmp_mul($decoded, $base), $pos);
+    }
+
+    $bytes = gmp_export($decoded);
+    return $bytes !== false ? $bytes : false;
+}
+
+// Xác minh
+if (!verify_sol_signature($wallet, $message, $signatureRaw)) {
+    error_log("Signature verification failed");
+    echo 'invalid signature';
+    exit;
+}
+
+// Lưu tài khoản
+$dir = __DIR__ . '/datas';
+if (!is_dir($dir)) mkdir($dir, 0777, true);
+
+$id = hash('sha256', $wallet);
+$filepath = "$dir/$id.json";
+$now = date('c');
+
+if (file_exists($filepath)) {
+    // Cập nhật last login
+    $data = json_decode(file_get_contents($filepath), true);
+    $data['last_login'] = $now;
+} else {
+    // Tạo mới
+    $data = [
+        'id' => $id,
+        'public_key' => $wallet,
+        'created_at' => $now,
+        'last_login' => $now
+    ];
+}
+
+file_put_contents($filepath, json_encode($data, JSON_PRETTY_PRINT));
+
+echo 'ok';
