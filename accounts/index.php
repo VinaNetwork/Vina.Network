@@ -35,6 +35,8 @@ include '../include/header.php';
 
 <!-- CSRF Token -->
 <meta name="csrf-token" content="<?php echo generate_csrf_token(); ?>">
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- Footer Section -->
 <?php include '../include/footer.php'; ?>
