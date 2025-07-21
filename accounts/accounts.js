@@ -1,18 +1,18 @@
-// File: accounts/accounts.js
+// accounts/accounts.js
 document.addEventListener('DOMContentLoaded', () => {
     const connectButton = document.getElementById('connect-wallet');
     const walletAddress = document.getElementById('wallet-address');
     const loading = document.getElementById('loading');
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     const { Connection, PublicKey } = window.solanaWeb3;
     const { PhantomWalletAdapter, SolflareWalletAdapter } = window.solanaWalletAdapterWallets;
     const { WalletAdapterNetwork } = window.solanaWalletAdapterBase;
     const nacl = window.nacl;
     const Swal = window.Swal;
 
-    // Cấu hình kết nối Solana
-    const network = WalletAdapterNetwork.Mainnet;
-    const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+    // Cấu hình kết nối Solana (khớp với auth.php)
+    const network = WalletAdapterNetwork.Devnet;
+    const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
     const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
     let connectedWallet = null;
 
@@ -67,6 +67,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hàm kết nối ví và xác thực
     async function connectAndAuthenticate() {
+        if (!csrfToken) {
+            console.error('Client: CSRF token not found');
+            await sendClientLog('CSRF token not found', 'ERROR');
+            Swal.fire({
+                title: 'Error',
+                text: 'CSRF token not found',
+                icon: 'error'
+            });
+            return;
+        }
+
         loading.style.display = 'block';
         try {
             console.log('Client: Checking available wallets');
@@ -118,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Client: Signature created for publicKey=${publicKey}`);
             await sendClientLog(`Signature created for publicKey=${publicKey}`);
 
-            // Kiểm tra xem ví đã đăng ký chưa
+            // Kiểm tra đăng nhập
             console.log('Client: Checking if user exists');
             await sendClientLog('Checking if user exists');
             const checkResponse = await fetch('/accounts/include/acc-api.php', {
@@ -183,7 +194,4 @@ document.addEventListener('DOMContentLoaded', () => {
             loading.style.display = 'none';
         }
     }
-
-    // Gắn sự kiện
-    connectButton.addEventListener('click', connectAndAuthenticate);
 });
