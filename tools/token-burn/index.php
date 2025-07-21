@@ -1,11 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
 <?php
 // ============================================================================
 // File: tools/token-burn/index.php
-// Description: Giao diện kiểm tra tổng số token đã bị đốt của một token Solana.
+// Description: Check Token Burn
+// Created by: Vina Network
 // ============================================================================
 
-require_once('../../include/header.php');
+// Head Section (Meta, Styles, Title) is included via header.php
+$root_path = '../';
+$page_title = "Check Token Burn - Vina Network";
+$page_description = "";
+$page_keywords = "Vina Network, Web3, cryptocurrency";
+$page_og_title = "Check Token Burn - Vina Network";
+$page_og_description = "Check Token Burn";
+$page_og_url = "https://www.vina.network/tools/token-burn/";
+$page_canonical = "https://www.vina.network/tools/token-burn/";
+$page_css = ['token-burn.css'];
+
+include '../../include/header.php';
 ?>
+<body>
+<!-- Navigation Bar -->
+<?php include '../../include/navbar.php'; ?>
 
 <div class="tool-container">
   <h1 class="tool-title">Check Token Burned</h1>
@@ -20,7 +37,6 @@ require_once('../../include/header.php');
   <div id="loading" class="loading hidden">Checking burn data...</div>
 </div>
 
-<link rel="stylesheet" href="token-burn.css" />
 <script>
   async function checkTokenBurn() {
     const address = document.getElementById('tokenAddress').value.trim();
@@ -62,4 +78,11 @@ require_once('../../include/header.php');
   }
 </script>
 
-<?php require_once('../../include/footer.php'); ?>
+<?php include __DIR__ . '../../include/footer.php'; ?>
+
+<!-- Scripts -->
+<script src="../../js/vina.js"></script>
+<script src="../../js/navbar.js"></script>
+<script src="token-burn.js"></script>
+</body>
+</html>
