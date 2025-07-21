@@ -1,71 +1,63 @@
 <?php
 // ============================================================================
 // File: token-burn/token-burn-api.php
-// Description: Backend API to calculate burned tokens for a given mint address.
-// Created by: Vina Network
+// Description: API xử lý việc kiểm tra lượng token đã burn dựa trên Helius
 // ============================================================================
-
 define('VINANETWORK_ENTRY', true);
-require_once __DIR__ . '/../config/config.php';
+require_once(__DIR__ . '/../config/config.php');
 
 header('Content-Type: application/json');
 
-$input = json_decode(file_get_contents('php://input'), true);
-$mint = trim($input['address'] ?? '');
+$input = json_decode(file_get_contents("php://input"), true);
+$mint = $input['mint'] ?? '';
 
-if (!$mint) {
-    echo json_encode(['error' => 'Missing token mint address']);
+if (!$mint || strlen($mint) < 32) {
+    echo json_encode(['success' => false, 'message' => 'Invalid token mint address.']);
     exit;
 }
 
-// Call Helius API: getSignaturesForAsset
-$rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY;
-$payload = [
-    'jsonrpc' => '2.0',
-    'id' => 1,
-    'method' => 'getSignaturesForAsset',
-    'params' => (object)[
-        'id' => $mint,
-        'limit' => 1000
-    ]
-];
-
-$ch = curl_init($rpcUrl);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-$response = curl_exec($ch);
-curl_close($ch);
-
-$data = json_decode($response, true);
-if (!isset($data['result'])) {
-    echo json_encode(['error' => 'Invalid API response from Helius.']);
-    exit;
-}
-
+// Kiểm tra các địa chỉ ví burn phổ biến
+$burnAddresses = ['11111111111111111111111111111111'];
 $totalBurned = 0;
-$toBurnWallet = 0;
-$explicitBurn = 0;
+$burnTxCount = 0;
 
-foreach ($data['result'] as $tx) {
-    if (!isset($tx['tokenTransfers'])) continue;
-    foreach ($tx['tokenTransfers'] as $transfer) {
-        // Trường hợp gửi về ví 111111... (burn address)
-        if ($transfer['toUserAccount'] === '11111111111111111111111111111111') {
-            $toBurnWallet += $transfer['tokenAmount'];
-            $totalBurned += $transfer['tokenAmount'];
+try {
+    // Truy vấn nhiều ví (tối đa 10K giao dịch theo mặc định)
+    // Cần có ít nhất 1 địa chỉ ví đã từng sở hữu token này
+    $holderAddresses = [$mint]; // giả sử địa chỉ token là ví sở hữu luôn (cần cải thiện sau)
+
+    foreach ($holderAddresses as $address) {
+        $url = "https://api.helius.xyz/v0/addresses/{$address}/transactions?api-key=" . HELIUS_API_KEY;
+
+        $json = file_get_contents($url);
+        $transactions = json_decode($json, true);
+
+        if (!is_array($transactions)) {
+            throw new Exception("Invalid API response from Helius.");
         }
-        // Trường hợp token bị giảm mà không có người nhận
-        elseif ($transfer['toUserAccount'] === null && $transfer['tokenAmount'] < 0) {
-            $explicitBurn += abs($transfer['tokenAmount']);
-            $totalBurned += abs($transfer['tokenAmount']);
+
+        foreach ($transactions as $tx) {
+            if (!isset($tx['tokenTransfers'])) continue;
+
+            foreach ($tx['tokenTransfers'] as $transfer) {
+                if (
+                    $transfer['mint'] === $mint &&
+                    in_array($transfer['toUserAccount'], $burnAddresses)
+                ) {
+                    $totalBurned += floatval($transfer['tokenAmount']);
+                    $burnTxCount++;
+                }
+            }
         }
     }
-}
 
-echo json_encode([
-    'total_burned' => $totalBurned,
-    'to_burn_wallet' => $toBurnWallet,
-    'explicit_burn' => $explicitBurn
-]);
+    echo json_encode([
+        'success' => true,
+        'totalBurned' => rtrim(rtrim(number_format($totalBurned, 6, '.', ''), '0'), '.'),
+        'txCount' => $burnTxCount,
+        'symbol' => '', // Bro có thể dùng thêm API để tra symbol
+    ]);
+
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
