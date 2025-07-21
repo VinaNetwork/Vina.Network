@@ -9,7 +9,7 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 // Load bootstrap
-$bootstrap_path = dirname(__DIR__) . '/../../config/bootstrap.php';
+$bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
     log_message("nft_info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
