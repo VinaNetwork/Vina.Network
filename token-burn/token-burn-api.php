@@ -3,7 +3,7 @@ require_once '../config/config.php';
 
 header('Content-Type: application/json');
 
-define('HELIUS_API_URL', 'https://api.helius.xyz/v0/addresses/'); // Di chuyển hằng số vào đây
+define('HELIUS_API_URL', 'https://api.helius.xyz/v0/addresses/');
 
 function callHeliusApi($address) {
     $url = HELIUS_API_URL . $address . '/transactions?api-key=' . HELIUS_API_KEY;
@@ -20,14 +20,26 @@ function callHeliusApi($address) {
     ]);
 
     $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE); // Lấy mã HTTP
     $err = curl_error($curl);
     curl_close($curl);
 
     if ($err) {
         return ['error' => "cURL Error #: $err"];
     }
-    
-    return json_decode($response, true);
+
+    // Kiểm tra mã HTTP
+    if ($httpCode !== 200) {
+        return ['error' => "API returned HTTP code $httpCode: $response"];
+    }
+
+    // Kiểm tra xem phản hồi có phải JSON hợp lệ không
+    $decodedResponse = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return ['error' => "Invalid JSON response: $response"];
+    }
+
+    return $decodedResponse;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -46,12 +58,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Kiểm tra nếu không có giao dịch
+    if (empty($transactions)) {
+        echo json_encode(['totalBurned' => 0, 'message' => 'No transactions found for this Mint Address']);
+        exit;
+    }
+
     $totalBurned = 0;
 
     // Lọc các giao dịch burn
     foreach ($transactions as $tx) {
         // Kiểm tra các giao dịch liên quan đến token burn
-        // Burn thường có toTokenAccount là null hoặc địa chỉ burn (11111111111111111111111111111111)
         if (isset($tx['tokenTransfers'])) {
             foreach ($tx['tokenTransfers'] as $transfer) {
                 if ($transfer['mint'] === $mintAddress && 
