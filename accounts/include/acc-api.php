@@ -72,7 +72,7 @@ if ($action === 'register') {
     } catch (PDOException $e) {
         log_message("API: Registration failed for publicKey=$publicKey: " . $e->getMessage(), 'acc_auth.txt', 'accounts', 'ERROR');
         http_response_code(500);
-        echo json_encode(['message' => 'Registration failed']);
+        echo json_encode(['message' => 'Registration failed: ' . $e->getMessage()]);
         exit;
     }
 } elseif ($action === 'login') {
@@ -96,7 +96,7 @@ if ($action === 'register') {
     } catch (PDOException $e) {
         log_message("API: Login failed for publicKey=$publicKey: " . $e->getMessage(), 'acc_auth.txt', 'accounts', 'ERROR');
         http_response_code(500);
-        echo json_encode(['message' => 'Login failed']);
+        echo json_encode(['message' => 'Login failed: ' . $e->getMessage()]);
         exit;
     }
 } else {
