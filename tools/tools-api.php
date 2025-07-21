@@ -131,62 +131,67 @@ function callAPI($endpoint, $params = [], $method = 'POST') {
 }
 
 // ============================================================================
-// Handle action: getTokenBurned
-// Description: Tính tổng token đã bị đốt của một token Solana (gửi vào ví 111... + burn thẳng)
+// Function: getTokenBurned
+// Description: Truy xuất danh sách giao dịch liên quan đến token và tính tổng
+// số token bị burn (gửi đến 1111... hoặc hành động BURN/BURN_CHECKED)
 // ============================================================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    if (!isset($input['action'])) {
-        echo json_encode(['error' => 'Missing action parameter']);
-        exit;
-    }
+function getTokenBurned($mintAddress) {
+    $apiKey = getenv('HELIUS_API_KEY'); // Hoặc dùng API key trực tiếp nếu chưa có .env
+    $endpoint = "https://mainnet.helius-rpc.com/?api-key={$apiKey}";
+    $totalBurned = 0;
 
-    if ($input['action'] === 'getTokenBurned') {
-        $mintAddress = trim($input['address'] ?? '');
-        if (!$mintAddress) {
-            echo json_encode(['error' => 'Missing token address']);
-            exit;
+    $before = null;
+    $hasMore = true;
+    $maxLoop = 20; // Giới hạn truy xuất ~500 tx để tránh timeout
+    $loop = 0;
+
+    while ($hasMore && $loop < $maxLoop) {
+        $params = [
+            "id" => "burn-check",
+            "jsonrpc" => "2.0",
+            "method" => "getSignaturesForAsset",
+            "params" => [
+                $mintAddress,
+                [
+                    "limit" => 100,
+                ]
+            ]
+        ];
+
+        if ($before) {
+            $params["params"][1]["before"] = $before;
         }
 
-        $totalBurned = 0;
-        $before = null;
+        $response = callAPI($endpoint, $params, true);
+        if (!$response || !isset($response['result'])) {
+            return ['error' => 'Invalid API response from Helius.'];
+        }
 
-        while (true) {
-            $params = ['address' => '11111111111111111111111111111111'];
-            if ($before) {
-                $params['before'] = $before;
-            }
-            $response = callAPI('transactions', $params, 'GET');
+        $txs = $response['result'];
+        if (count($txs) === 0) break;
 
-            if (!is_array($response) || empty($response)) break;
+        foreach ($txs as $tx) {
+            if (!isset($tx['tokenTransfers'])) continue;
 
-            $count = 0;
-            foreach ($response as $tx) {
-                if (!isset($tx['tokenTransfers'])) continue;
-                foreach ($tx['tokenTransfers'] as $transfer) {
-                    if ($transfer['mint'] !== $mintAddress) continue;
+            foreach ($tx['tokenTransfers'] as $transfer) {
+                // Nếu chuyển vào ví 1111... hoặc không có người nhận (burn trực tiếp)
+                $to = $transfer['toUserAccount'] ?? '';
+                $type = strtoupper($transfer['type'] ?? '');
+                $amount = floatval($transfer['tokenAmount'] ?? 0);
 
-                    if (($transfer['toUserAccount'] ?? '') === '11111111111111111111111111111111') {
-                        $totalBurned += floatval($transfer['tokenAmount']);
-                        $count++;
-                    } elseif (empty($transfer['toUserAccount']) && floatval($transfer['tokenAmount']) < 0) {
-                        $totalBurned += abs(floatval($transfer['tokenAmount']));
-                        $count++;
-                    }
+                if ($to === '11111111111111111111111111111111' || in_array($type, ['BURN', 'BURN_CHECKED'])) {
+                    $totalBurned += $amount;
                 }
             }
-
-            // Nếu ít hơn 1000 transaction thì đã hết
-            if (count($response) < 1000) break;
-
-            $before = $response[count($response) - 1]['signature'];
         }
 
-        echo json_encode([
-            'totalBurned' => $totalBurned,
-            'symbol' => null // bạn có thể bổ sung symbol nếu cần từ getAsset
-        ]);
-        exit;
+        $before = $txs[count($txs) - 1]['signature'] ?? null;
+        $hasMore = ($before !== null);
+        $loop++;
     }
+
+    return [
+        'totalBurned' => $totalBurned
+    ];
 }
 ?>
