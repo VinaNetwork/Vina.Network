@@ -10,22 +10,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wallet'])) {
         exit;
     }
 
-    $userDir = __DIR__ . '/users';
-    if (!is_dir($userDir)) mkdir($userDir);
+    $dataDir = __DIR__ . '/datas'; // Đổi từ users → datas
+    if (!is_dir($dataDir)) mkdir($dataDir);
 
-    $userFile = $userDir . '/' . $wallet . '.json';
+    $userFile = $dataDir . '/' . $wallet . '.json';
     $now = date('Y-m-d H:i:s');
 
     if (!file_exists($userFile)) {
-        // Tạo tài khoản mới
         $userData = [
-            'id' => bin2hex(random_bytes(6)), // id ngắn 12 ký tự
+            'id' => bin2hex(random_bytes(6)), // 12 ký tự
             'public_key' => $wallet,
             'created_at' => $now,
             'last_login' => $now
         ];
     } else {
-        // Cập nhật lần đăng nhập
         $userData = json_decode(file_get_contents($userFile), true);
         $userData['last_login'] = $now;
     }
