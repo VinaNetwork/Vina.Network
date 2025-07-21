@@ -3,11 +3,13 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import nacl from 'tweetnacl';
+import Swal from 'sweetalert2';
 
 // Cấu hình kết nối Solana
 const network = WalletAdapterNetwork.Mainnet;
 const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
 const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
+let connectedWallet = null;
 
 // Hàm gửi log về server
 async function sendClientLog(message) {
@@ -27,6 +29,36 @@ async function sendClientLog(message) {
     }
 }
 
+// Hàm ngắt kết nối ví
+async function disconnectWallet() {
+    if (connectedWallet) {
+        try {
+            await connectedWallet.disconnect();
+            document.getElementById('wallet-address').innerText = 'Kết nối ví để đăng ký hoặc đăng nhập';
+            document.getElementById('connect-wallet').innerText = 'Connect Wallet';
+            document.getElementById('connect-wallet').classList.remove('disconnect');
+            document.getElementById('connect-wallet').onclick = connectAndAuthenticate;
+            connectedWallet = null;
+            await sendClientLog('Wallet disconnected');
+            Swal.fire({
+                title: 'Disconnected',
+                text: 'Wallet has been disconnected successfully.',
+                icon: 'info',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } catch (error) {
+            console.error(`Client: Failed to disconnect wallet: ${error.message}`);
+            await sendClientLog(`Failed to disconnect wallet: ${error.message}`);
+            Swal.fire({
+                title: 'Error',
+                text: 'Failed to disconnect wallet.',
+                icon: 'error'
+            });
+        }
+    }
+}
+
 // Hàm kết nối ví và xác thực
 async function connectAndAuthenticate() {
     const wallet = wallets[0]; // Ví dụ: Phantom
@@ -38,10 +70,23 @@ async function connectAndAuthenticate() {
 
         // Kết nối ví
         await wallet.connect();
+        connectedWallet = wallet;
         const publicKey = wallet.publicKey.toString();
         console.log(`Client: Wallet connected, publicKey=${publicKey}`);
         await sendClientLog(`Wallet connected, publicKey=${publicKey}`);
         document.getElementById('wallet-address').innerText = `Connected: ${publicKey}`;
+        document.getElementById('connect-wallet').innerText = 'Disconnect';
+        document.getElementById('connect-wallet').classList.add('disconnect');
+        document.getElementById('connect-wallet').onclick = disconnectWallet;
+
+        // Thông báo kết nối thành công
+        Swal.fire({
+            title: 'Success',
+            text: 'Wallet connected successfully!',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+        });
 
         // Tạo thông điệp để ký
         const message = `Authenticate for Vina Network at ${new Date().toISOString()}`;
@@ -99,12 +144,20 @@ async function connectAndAuthenticate() {
                 } else {
                     console.error(`Client: Login failed: ${loginResult.message}`);
                     await sendClientLog(`Login failed: ${loginResult.message}`);
-                    alert(loginResult.message);
+                    Swal.fire({
+                        title: 'Error',
+                        text: loginResult.message,
+                        icon: 'error'
+                    });
                 }
             } else {
                 console.error(`Client: Registration failed: ${registerResult.message}`);
                 await sendClientLog(`Registration failed: ${registerResult.message}`);
-                alert(registerResult.message);
+                Swal.fire({
+                    title: 'Error',
+                    text: registerResult.message,
+                    icon: 'error'
+                });
             }
         } else if (checkResult.message === 'Login successful' && checkResult.token) {
             console.log('Client: Login successful, redirecting to dashboard');
@@ -114,7 +167,11 @@ async function connectAndAuthenticate() {
         } else {
             console.error(`Client: Check failed: ${checkResult.message}`);
             await sendClientLog(`Check failed: ${checkResult.message}`);
-            alert(checkResult.message);
+            Swal.fire({
+                title: 'Error',
+                text: checkResult.message,
+                icon: 'error'
+            });
         }
 
         loading.style.display = 'none';
@@ -122,7 +179,11 @@ async function connectAndAuthenticate() {
         loading.style.display = 'none';
         console.error(`Client: Error: ${error.message}`);
         await sendClientLog(`Error: ${error.message}`);
-        alert('Failed to connect wallet or authenticate');
+        Swal.fire({
+            title: 'Error',
+            text: 'Failed to connect wallet or authenticate: ' + error.message,
+            icon: 'error'
+        });
     }
 }
 
