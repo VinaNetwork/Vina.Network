@@ -1,63 +1,67 @@
 <?php
-// ============================================================================
-// File: token-burn/token-burn-api.php
-// Description: API xử lý việc kiểm tra lượng token đã burn dựa trên Helius
-// ============================================================================
-define('VINANETWORK_ENTRY', true);
-require_once(__DIR__ . '/../config/config.php');
+require_once '../config/config.php';
 
 header('Content-Type: application/json');
 
-$input = json_decode(file_get_contents("php://input"), true);
-$mint = $input['mint'] ?? '';
+function callHeliusApi($address) {
+    $url = HELIUS_API_URL . $address . '/transactions?api-key=' . HELIUS_API_KEY;
+    
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "GET",
+    ]);
 
-if (!$mint || strlen($mint) < 32) {
-    echo json_encode(['success' => false, 'message' => 'Invalid token mint address.']);
-    exit;
+    $response = curl_exec($curl);
+    $err = curl_error($curl);
+    curl_close($curl);
+
+    if ($err) {
+        return ['error' => "cURL Error #: $err"];
+    }
+    
+    return json_decode($response, true);
 }
 
-// Kiểm tra các địa chỉ ví burn phổ biến
-$burnAddresses = ['11111111111111111111111111111111'];
-$totalBurned = 0;
-$burnTxCount = 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $mintAddress = $_POST['mintAddress'] ?? '';
 
-try {
-    // Truy vấn nhiều ví (tối đa 10K giao dịch theo mặc định)
-    // Cần có ít nhất 1 địa chỉ ví đã từng sở hữu token này
-    $holderAddresses = [$mint]; // giả sử địa chỉ token là ví sở hữu luôn (cần cải thiện sau)
+    if (empty($mintAddress)) {
+        echo json_encode(['error' => 'Mint Address is required']);
+        exit;
+    }
 
-    foreach ($holderAddresses as $address) {
-        $url = "https://api.helius.xyz/v0/addresses/{$address}/transactions?api-key=" . HELIUS_API_KEY;
+    // Gọi API Helius để lấy lịch sử giao dịch
+    $transactions = callHeliusApi($mintAddress);
 
-        $json = file_get_contents($url);
-        $transactions = json_decode($json, true);
+    if (isset($transactions['error'])) {
+        echo json_encode(['error' => $transactions['error']]);
+        exit;
+    }
 
-        if (!is_array($transactions)) {
-            throw new Exception("Invalid API response from Helius.");
-        }
+    $totalBurned = 0;
 
-        foreach ($transactions as $tx) {
-            if (!isset($tx['tokenTransfers'])) continue;
-
+    // Lọc các giao dịch burn
+    foreach ($transactions as $tx) {
+        // Kiểm tra các giao dịch liên quan đến token burn
+        // Burn thường có toTokenAccount là null hoặc địa chỉ burn (11111111111111111111111111111111)
+        if (isset($tx['tokenTransfers'])) {
             foreach ($tx['tokenTransfers'] as $transfer) {
-                if (
-                    $transfer['mint'] === $mint &&
-                    in_array($transfer['toUserAccount'], $burnAddresses)
-                ) {
-                    $totalBurned += floatval($transfer['tokenAmount']);
-                    $burnTxCount++;
+                if ($transfer['mint'] === $mintAddress && 
+                    ($transfer['toTokenAccount'] === null || 
+                     $transfer['toTokenAccount'] === '11111111111111111111111111111111')) {
+                    $totalBurned += $transfer['tokenAmount'];
                 }
             }
         }
     }
 
-    echo json_encode([
-        'success' => true,
-        'totalBurned' => rtrim(rtrim(number_format($totalBurned, 6, '.', ''), '0'), '.'),
-        'txCount' => $burnTxCount,
-        'symbol' => '', // Bro có thể dùng thêm API để tra symbol
-    ]);
-
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode(['totalBurned' => $totalBurned]);
+} else {
+    echo json_encode(['error' => 'Invalid request method']);
 }
