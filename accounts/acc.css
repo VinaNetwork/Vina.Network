@@ -1,10 +1,18 @@
+/* ============================================================================
+ * File: accounts/accounts.css
+ * Description: CSS styles for the Accounts page of Vina Network.
+ * Created by: Vina Network
+ * ========================================================================== */
+
 .acc-container {
     min-height: 100vh;
     margin-top: 72px;
-    background: white;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex; 
+    justify-content: center;
+    align-items: center;
     text-align: center;
 }
 
