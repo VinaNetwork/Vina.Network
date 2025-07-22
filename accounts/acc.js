@@ -4,20 +4,26 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
     const statusSpan = document.getElementById('status');
 
     try {
-        // Kiểm tra xem ví Phantom có tồn tại không
+        // Kiểm tra ví Phantom
         if (window.solana && window.solana.isPhantom) {
             // Kết nối ví Phantom
             const response = await window.solana.connect();
             const publicKey = response.publicKey.toString();
-
-            // Hiển thị thông tin ví
             publicKeySpan.textContent = publicKey;
             walletInfo.style.display = 'block';
-            statusSpan.textContent = 'Đã kết nối ví! Đang xử lý...';
+            statusSpan.textContent = 'Đã kết nối ví! Đang ký thông điệp...';
 
-            // Gửi Public Key đến server để đăng ký/đăng nhập
+            // Ký thông điệp
+            const message = 'Xác minh đăng nhập cho Vina Network';
+            const encodedMessage = new TextEncoder().encode(message);
+            const signature = await window.solana.signMessage(encodedMessage, 'utf8');
+            const signatureBase64 = Buffer.from(signature.signature).toString('base64');
+
+            // Gửi Public Key, Signature, và Message đến server
             const formData = new FormData();
             formData.append('public_key', publicKey);
+            formData.append('signature', signatureBase64);
+            formData.append('message', message);
 
             const responseServer = await fetch('index.php', {
                 method: 'POST',
@@ -34,7 +40,7 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             walletInfo.style.display = 'block';
         }
     } catch (error) {
-        console.error('Lỗi khi kết nối ví:', error);
+        console.error('Lỗi khi kết nối hoặc ký:', error);
         statusSpan.textContent = 'Lỗi: ' + error.message;
         walletInfo.style.display = 'block';
     }
