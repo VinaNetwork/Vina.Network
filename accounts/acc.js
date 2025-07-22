@@ -13,8 +13,9 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Đã kết nối ví! Đang ký thông điệp...';
 
-            // Ký thông điệp
-            const message = 'Xác minh đăng nhập cho Vina Network';
+            // Tạo thông điệp với timestamp
+            const timestamp = Date.now();
+            const message = `Xác minh đăng nhập cho Vina Network at ${timestamp}`;
             const encodedMessage = new TextEncoder().encode(message);
             const signature = await window.solana.signMessage(encodedMessage, 'utf8');
 
