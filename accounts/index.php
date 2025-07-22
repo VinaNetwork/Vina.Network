@@ -61,6 +61,7 @@ try {
         DB_PASS
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    log_message("Kết nối cơ sở dữ liệu thành công");
 } catch (PDOException $e) {
     log_message("Kết nối cơ sở dữ liệu thất bại: " . $e->getMessage());
     die("Kết nối cơ sở dữ liệu thất bại: " . $e->getMessage());
@@ -75,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
 
     log_message("Nhận POST: public_key=$public_key, message=$message");
 
-    // Kiểm tra timestamp
     try {
+        // Kiểm tra timestamp
         if (!preg_match('/at (\d+)/', $message, $matches)) {
             throw new Exception("Thông điệp không chứa timestamp!");
         }
@@ -85,18 +86,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         if (abs($current_timestamp - $timestamp) > 300000) { // 5 phút
             throw new Exception("Thông điệp đã hết hạn!");
         }
+        log_message("Timestamp hợp lệ: $timestamp");
 
-        // Xác minh chữ ký
-        require_once __DIR__ . '/../vendor/autoload.php';
-        $bs58 = new \Tuupola\Base58;
-        $public_key_bytes = $bs58->decode($public_key);
-
-        if (strlen($public_key_bytes) !== 32) {
-            throw new Exception("Public key không hợp lệ!");
-        }
+        // Kiểm tra thư viện sodium
         if (!function_exists('sodium_crypto_sign_verify_detached')) {
             throw new Exception("Thư viện sodium không được cài đặt!");
         }
+        log_message("Thư viện sodium sẵn sàng");
+
+        // Kiểm tra và nạp thư viện base58
+        if (!file_exists(__DIR__ . '/../vendor/autoload.php')) {
+            throw new Exception("Thư viện Composer (vendor/autoload.php) không tồn tại!");
+        }
+        require_once __DIR__ . '/../vendor/autoload.php';
+        if (!class_exists('\Tuupola\Base58')) {
+            throw new Exception("Thư viện tuupola/base58 không được cài đặt!");
+        }
+        $bs58 = new \Tuupola\Base58;
+        log_message("Thư viện base58 sẵn sàng");
+
+        // Decode public_key từ base58
+        try {
+            $public_key_bytes = $bs58->decode($public_key);
+            if (strlen($public_key_bytes) !== 32) {
+                throw new Exception("Public key không hợp lệ!");
+            }
+            log_message("Public key decoded: $public_key");
+        } catch (Exception $e) {
+            throw new Exception("Lỗi decode public_key: " . $e->getMessage());
+        }
+
+        // Xác minh chữ ký
         $verified = sodium_crypto_sign_verify_detached(
             $signature,
             $message,
@@ -105,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         if (!$verified) {
             throw new Exception("Xác minh chữ ký thất bại!");
         }
+        log_message("Chữ ký xác minh thành công");
 
         // Kiểm tra và lưu vào cơ sở dữ liệu
         $stmt = $pdo->prepare("SELECT * FROM accounts WHERE public_key = ?");
@@ -128,6 +149,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Lỗi: " . $e->getMessage());
         echo "<script>document.getElementById('status').textContent = 'Lỗi: " . addslashes($e->getMessage()) . "';</script>";
         exit;
+    }
+} else {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        log_message("Yêu cầu POST không hợp lệ: Thiếu public_key, signature, hoặc message");
     }
 }
 ?>
