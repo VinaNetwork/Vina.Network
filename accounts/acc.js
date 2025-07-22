@@ -17,7 +17,11 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             const message = 'Xác minh đăng nhập cho Vina Network';
             const encodedMessage = new TextEncoder().encode(message);
             const signature = await window.solana.signMessage(encodedMessage, 'utf8');
-            const signatureBase64 = Buffer.from(signature.signature).toString('base64');
+
+            // Mã hóa chữ ký thành base64 trong trình duyệt
+            const signatureBase64 = btoa(
+                String.fromCharCode.apply(null, new Uint8Array(signature.signature))
+            );
 
             // Gửi Public Key, Signature, và Message đến server
             const formData = new FormData();
