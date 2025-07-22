@@ -3,7 +3,7 @@
 <?php
 // ============================================================================
 // File: accounts/index.php
-// Description: Connect wallet page for Vina Network. Handles both registration and login with signature verification.
+// Description: Connect wallet page for Vina Network. Handles both registration and login with signature verification and timestamp check.
 // Created by: Vina Network
 // ============================================================================
 
@@ -54,24 +54,25 @@ require_once __DIR__ . '/../config/config.php';
         die("Kết nối cơ sở dữ liệu thất bại: " . $e->getMessage());
     }
 
-    // Xử lý đăng ký/đăng nhập với xác minh chữ ký
+    // Xử lý đăng ký/đăng nhập với xác minh chữ ký và timestamp
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
         $public_key = $_POST['public_key'];
         $signature = base64_decode($_POST['signature']); // Giải mã base64
         $message = $_POST['message'];
         $current_time = date('Y-m-d H:i:s');
 
-        // Xác minh chữ ký bằng sodium
+        // Kiểm tra timestamp trong thông điệp
         try {
-            // Chuyển public_key thành định dạng byte bằng cách decode từ base58
-            // Lưu ý: Cần cài đặt thư viện `bs58` nếu muốn decode base58 trên PHP
-            // Để đơn giản, chúng ta giả định public_key đã được xử lý đúng
-            if (!function_exists('sodium_crypto_sign_verify_detached')) {
-                throw new Exception("Thư viện sodium không được cài đặt!");
+            if (!preg_match('/at (\d+)/', $message, $matches)) {
+                throw new Exception("Thông điệp không chứa timestamp!");
             }
-            // Lưu ý: Cần thư viện để chuyển public_key từ base58 sang byte
-            // Tạm thời bỏ qua bước decode public_key và giả định chữ ký đã được xử lý đúng
-            // Để xác minh chính xác, cần cài đặt thư viện như `tuupola/base58`
+            $timestamp = $matches[1];
+            $current_timestamp = time() * 1000; // Chuyển sang milliseconds
+            if (abs($current_timestamp - $timestamp) > 300000) { // 5 phút = 300000ms
+                throw new Exception("Thông điệp đã hết hạn!");
+            }
+
+            // Xác minh chữ ký bằng sodium
             require_once __DIR__ . '/../vendor/autoload.php'; // Nếu dùng composer
             $bs58 = new \Tuupola\Base58;
             $public_key_bytes = $bs58->decode($public_key);
@@ -79,36 +80,37 @@ require_once __DIR__ . '/../config/config.php';
             if (strlen($public_key_bytes) !== 32) {
                 throw new Exception("Public key không hợp lệ!");
             }
-
+            if (!function_exists('sodium_crypto_sign_verify_detached')) {
+                throw new Exception("Thư viện sodium không được cài đặt!");
+            }
             $verified = sodium_crypto_sign_verify_detached(
                 $signature,
                 $message,
                 $public_key_bytes
             );
             if (!$verified) {
-                echo "<script>document.getElementById('status').textContent = 'Xác minh chữ ký thất bại!';</script>";
-                exit;
+                throw new Exception("Xác minh chữ ký thất bại!");
+            }
+
+            // Kiểm tra xem public_key đã tồn tại chưa
+            $stmt = $pdo->prepare("SELECT * FROM accounts WHERE public_key = ?");
+            $stmt->execute([$public_key]);
+            $account = $stmt->fetch();
+
+            if ($account) {
+                // Cập nhật last_login nếu tài khoản đã tồn tại (đăng nhập)
+                $stmt = $pdo->prepare("UPDATE accounts SET last_login = ? WHERE public_key = ?");
+                $stmt->execute([$current_time, $public_key]);
+                echo "<script>document.getElementById('status').textContent = 'Đăng nhập thành công!';</script>";
+            } else {
+                // Tạo tài khoản mới (đăng ký)
+                $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)");
+                $stmt->execute([$public_key, $current_time, $current_time]);
+                echo "<script>document.getElementById('status').textContent = 'Đăng ký thành công!';</script>";
             }
         } catch (Exception $e) {
-            echo "<script>document.getElementById('status').textContent = 'Lỗi xác minh: " . addslashes($e->getMessage()) . "';</script>";
+            echo "<script>document.getElementById('status').textContent = 'Lỗi xácミン: " . addslashes($e->getMessage()) . "';</script>";
             exit;
-        }
-
-        // Kiểm tra xem public_key đã tồn tại chưa
-        $stmt = $pdo->prepare("SELECT * FROM accounts WHERE public_key = ?");
-        $stmt->execute([$public_key]);
-        $account = $stmt->fetch();
-
-        if ($account) {
-            // Cập nhật last_login nếu tài khoản đã tồn tại (đăng nhập)
-            $stmt = $pdo->prepare("UPDATE accounts SET last_login = ? WHERE public_key = ?");
-            $stmt->execute([$current_time, $public_key]);
-            echo "<script>document.getElementById('status').textContent = 'Đăng nhập thành công!';</script>";
-        } else {
-            // Tạo tài khoản mới (đăng ký)
-            $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)");
-            $stmt->execute([$public_key, $current_time, $current_time]);
-            echo "<script>document.getElementById('status').textContent = 'Đăng ký thành công!';</script>";
         }
     }
 ?>
