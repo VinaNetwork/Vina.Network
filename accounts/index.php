@@ -107,9 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Public key decoded: $public_key");
         log_message("Độ dài chữ ký: " . strlen($signature));
 
-        // Convert message to raw UTF-8 bytes (as Phantom signed)
-        $message_raw = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
-
+        $message_raw = $message; // Đã là UTF-8 từ JS
+        
         // Log raw bytes for debug
         log_message("Message hex: " . bin2hex($message_raw));
         log_message("Signature hex: " . bin2hex($signature));
