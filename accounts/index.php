@@ -30,13 +30,15 @@ require_once __DIR__ . '/../config/config.php';
 <!-- Navigation Bar -->
 <?php include '../include/navbar.php'; ?>
 
-<div class="container">
+<div class="acc-container">
+    <div class="acc-content">
         <h1>Đăng nhập/Đăng ký với ví Phantom</h1>
         <button id="connect-wallet">Kết nối ví Phantom</button>
         <div id="wallet-info" style="display: none;">
             <p>Địa chỉ ví: <span id="public-key"></span></p>
             <p>Trạng thái: <span id="status"></span></p>
         </div>
+    </div>
 </div>
 
 <?php
