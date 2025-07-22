@@ -11,15 +11,19 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             publicKeySpan.textContent = publicKey;
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Đã kết nối ví! Đang ký thông điệp...';
+            console.log('Public Key:', publicKey);
 
             const timestamp = Date.now();
             const message = `Xác minh đăng nhập cho Vina Network at ${timestamp}`;
             const encodedMessage = new TextEncoder().encode(message);
+            console.log('Message:', message);
+            console.log('Encoded message length:', encodedMessage.length);
 
-            const signature = await window.solana.signMessage(encodedMessage); // Sửa: không cần 'utf8'
-            const signatureBase64 = btoa(
-                String.fromCharCode.apply(null, new Uint8Array(signature.signature))
-            );
+            const signature = await window.solana.signMessage(encodedMessage);
+            const signatureBytes = new Uint8Array(signature.signature);
+            console.log('Signature length:', signatureBytes.length);
+            const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
+            console.log('Signature (base64):', signatureBase64);
 
             const formData = new FormData();
             formData.append('public_key', publicKey);
@@ -32,17 +36,15 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
                 body: formData
             });
 
-            if (responseServer.ok) {
-                const text = await responseServer.text();
-                console.log('Server response:', text);
-            } else {
-                statusSpan.textContent = `Lỗi khi gửi dữ liệu: ${responseServer.status} ${responseServer.statusText}`;
-            }
+            const result = await responseServer.json();
+            console.log('Server response:', result);
+            statusSpan.textContent = result.message || 'Lỗi không xác định';
         } else {
             statusSpan.textContent = 'Vui lòng cài đặt ví Phantom!';
             walletInfo.style.display = 'block';
         }
     } catch (error) {
+        console.error('Lỗi khi kết nối hoặc ký:', error);
         statusSpan.textContent = 'Lỗi: ' + error.message;
         walletInfo.style.display = 'block';
     }
