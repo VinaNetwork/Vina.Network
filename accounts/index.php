@@ -107,10 +107,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Public key decoded: $public_key");
         log_message("Độ dài chữ ký: " . strlen($signature));
 
-        // Xác minh chữ ký
+        // Convert message to byte format for sodium verification
+        $message_bytes = unpack("C*", $message);
+        $message_raw = pack("C*", ...$message_bytes);
+
+        // Log raw bytes for debug
+        log_message("Message hex: " . bin2hex($message_raw));
+        log_message("Signature hex: " . bin2hex($signature));
+
         $verified = sodium_crypto_sign_verify_detached(
             $signature,
-            $message, // PHP string binary-safe
+            $message_raw,
             $public_key_bytes
         );
 
