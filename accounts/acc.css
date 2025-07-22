@@ -1,4 +1,5 @@
-.container {
+.acc-container {
+    min-height: 100vh;
     margin-top: 72px;
     background: white;
     padding: 20px;
@@ -7,10 +8,24 @@
     text-align: center;
 }
 
+.acc-content {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+    border-radius: 15px; 
+    padding: 2rem;
+    margin: 2rem;
+    max-width: 600px; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.notification-content:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
 h1 {
     font-size: 24px;
     margin-bottom: 20px;
-    color: #333;
+    color: #00d4ff;
 }
 
 button#connect-wallet {
@@ -47,5 +62,5 @@ button#connect-wallet:hover {
 
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
-    .container {margin-top: 64px;}
+    .acc-container {margin-top: 64px;}
 }
