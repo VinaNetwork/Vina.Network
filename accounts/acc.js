@@ -44,7 +44,6 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
                 const text = await responseServer.text();
                 console.log('Server response:', text);
                 // Trạng thái sẽ được cập nhật từ PHP
-                // Nếu server trả HTML, sẽ hiển thị trong console
             } else {
                 statusSpan.textContent = `Lỗi khi gửi dữ liệu: ${responseServer.status} ${responseServer.statusText}`;
                 console.error('Fetch error:', responseServer.status, responseServer.statusText);
