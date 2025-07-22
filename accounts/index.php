@@ -7,6 +7,11 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Định nghĩa hằng số để cho phép truy cập trực tiếp
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
 $root_path = '../';
 $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
@@ -18,6 +23,8 @@ $page_canonical = "https://www.vina.network/accounts/";
 $page_css = ['acc.css'];
 
 include '../include/header.php';
+// Load file cấu hình
+require_once __DIR__ . '/../config/config.php';
 ?>
 <body>
 <!-- Navigation Bar -->
@@ -33,14 +40,13 @@ include '../include/header.php';
 </div>
 
 <?php
-    // Kết nối cơ sở dữ liệu
-    $host = 'localhost';
-    $dbname = 'solana_auth';
-    $username = 'your_username'; // Thay bằng username MySQL
-    $password = 'your_password'; // Thay bằng password MySQL
-
+    // Kết nối cơ sở dữ liệu sử dụng các hằng từ config.php
     try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+        $pdo = new PDO(
+            "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
+            DB_USER,
+            DB_PASS
+        );
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     } catch (PDOException $e) {
         die("Kết nối cơ sở dữ liệu thất bại: " . $e->getMessage());
