@@ -107,9 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Public key decoded: $public_key");
         log_message("Độ dài chữ ký: " . strlen($signature));
 
-        // Convert message to byte format for sodium verification
-        $message_bytes = unpack("C*", $message);
-        $message_raw = pack("C*", ...$message_bytes);
+        // Convert message to raw UTF-8 bytes (as Phantom signed)
+        $message_raw = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
 
         // Log raw bytes for debug
         log_message("Message hex: " . bin2hex($message_raw));
