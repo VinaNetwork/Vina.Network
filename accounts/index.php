@@ -3,7 +3,7 @@
 <?php
 // ============================================================================
 // File: accounts/index.php
-// Description: Connect wallet page for Vina Network. Handles both registration and login.
+// Description: Connect wallet page for Vina Network. Handles both registration and login with signature verification.
 // Created by: Vina Network
 // ============================================================================
 
@@ -54,10 +54,35 @@ require_once __DIR__ . '/../config/config.php';
         die("Kết nối cơ sở dữ liệu thất bại: " . $e->getMessage());
     }
 
-    // Xử lý đăng ký/đăng nhập
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'])) {
+    // Xử lý đăng ký/đăng nhập với xác minh chữ ký
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
         $public_key = $_POST['public_key'];
+        $signature = base64_decode($_POST['signature']); // Giải mã base64
+        $message = $_POST['message'];
         $current_time = date('Y-m-d H:i:s');
+
+        // Xác minh chữ ký bằng sodium
+        try {
+            $public_key_bytes = base64_decode($public_key); // Public key từ ví Solana
+            if (strlen($public_key_bytes) !== 32) {
+                throw new Exception("Public key không hợp lệ!");
+            }
+            if (!function_exists('sodium_crypto_sign_verify_detached')) {
+                throw new Exception("Thư viện sodium không được cài đặt!");
+            }
+            $verified = sodium_crypto_sign_verify_detached(
+                $signature,
+                $message,
+                $public_key_bytes
+            );
+            if (!$verified) {
+                echo "<script>document.getElementById('status').textContent = 'Xác minh chữ ký thất bại!';</script>";
+                exit;
+            }
+        } catch (Exception $e) {
+            echo "<script>document.getElementById('status').textContent = 'Lỗi xác minh: " . addslashes($e->getMessage()) . "';</script>";
+            exit;
+        }
 
         // Kiểm tra xem public_key đã tồn tại chưa
         $stmt = $pdo->prepare("SELECT * FROM accounts WHERE public_key = ?");
