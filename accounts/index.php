@@ -63,13 +63,23 @@ require_once __DIR__ . '/../config/config.php';
 
         // Xác minh chữ ký bằng sodium
         try {
-            $public_key_bytes = base64_decode($public_key); // Public key từ ví Solana
-            if (strlen($public_key_bytes) !== 32) {
-                throw new Exception("Public key không hợp lệ!");
-            }
+            // Chuyển public_key thành định dạng byte bằng cách decode từ base58
+            // Lưu ý: Cần cài đặt thư viện `bs58` nếu muốn decode base58 trên PHP
+            // Để đơn giản, chúng ta giả định public_key đã được xử lý đúng
             if (!function_exists('sodium_crypto_sign_verify_detached')) {
                 throw new Exception("Thư viện sodium không được cài đặt!");
             }
+            // Lưu ý: Cần thư viện để chuyển public_key từ base58 sang byte
+            // Tạm thời bỏ qua bước decode public_key và giả định chữ ký đã được xử lý đúng
+            // Để xác minh chính xác, cần cài đặt thư viện như `tuupola/base58`
+            require_once __DIR__ . '/../vendor/autoload.php'; // Nếu dùng composer
+            $bs58 = new \Tuupola\Base58;
+            $public_key_bytes = $bs58->decode($public_key);
+
+            if (strlen($public_key_bytes) !== 32) {
+                throw new Exception("Public key không hợp lệ!");
+            }
+
             $verified = sodium_crypto_sign_verify_detached(
                 $signature,
                 $message,
