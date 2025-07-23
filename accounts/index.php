@@ -154,13 +154,13 @@ $page_og_url = "https://www.vina.network/accounts/";
 $page_canonical = "https://www.vina.network/accounts/";
 $page_css = ['acc.css'];
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <?php include '../include/header.php'; ?>
-</head>
+<?php include '../include/header.php'; ?>
 <body>
     <?php include '../include/navbar.php'; ?>
+
     <div class="acc-container">
         <div class="acc-content">
             <h1>Đăng nhập/Đăng ký với ví Phantom</h1>
@@ -171,7 +171,9 @@ $page_css = ['acc.css'];
             </div>
         </div>
     </div>
+    
     <?php include '../include/footer.php'; ?>
+
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="../js/vina.js"></script>
     <script src="../js/navbar.js"></script>
