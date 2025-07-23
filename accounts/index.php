@@ -99,10 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             throw new Exception("Lỗi decode public_key: " . $e->getMessage());
         }
 
-        // Thử cả raw message và UTF-8 encoded
+        // Convert message to raw UTF-8 bytes
         $message_raw = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
-        log_message("Message hex (UTF-8): " . bin2hex($message_raw));
-        log_message("Message hex (raw): " . bin2hex($message));
+        log_message("Message hex: " . bin2hex($message_raw));
         log_message("Signature hex: " . bin2hex($signature));
 
         // Xác minh chữ ký
@@ -112,19 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $public_key_bytes
         );
         if (!$verified) {
-            // Thử với raw message
-            $verified = sodium_crypto_sign_verify_detached(
-                $signature,
-                $message,
-                $public_key_bytes
-            );
-            if (!$verified) {
-                throw new Exception("Xác minh chữ ký thất bại!");
-            }
-            log_message("Chữ ký xác minh thành công với raw message");
-        } else {
-            log_message("Chữ ký xác minh thành công với UTF-8 message");
+            throw new Exception("Xác minh chữ ký thất bại!");
         }
+        log_message("Chữ ký xác minh thành công");
 
         // Kiểm tra và lưu vào cơ sở dữ liệu
         try {
