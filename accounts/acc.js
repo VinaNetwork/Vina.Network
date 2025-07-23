@@ -13,7 +13,6 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             const publicKey = publicKeyObj.toBase58();
             console.log('Raw publicKey object:', response.publicKey);
             console.log('Public Key (base58):', publicKey);
-            // Validate public key
             const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{44}$/;
             if (!base58Regex.test(publicKey)) {
                 throw new Error(`Invalid public key format: ${publicKey}`);
@@ -25,23 +24,22 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Wallet connected! Signing message...';
 
-            const message = 'Verify login for Vina Network at 1753240941288'; // Fixed message
+            const message = 'Verify login for Vina Network at 1753240941288';
             const encodedMessage = new TextEncoder().encode(message);
             console.log('Message:', message, 'Length:', encodedMessage.length, 'Hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
-            // Sign message as raw bytes
             const signature = await window.solana.signMessage(encodedMessage);
             const signatureBytes = new Uint8Array(signature.signature);
             if (signatureBytes.length !== 64) {
                 throw new Error('Invalid signature length from Phantom');
             }
             console.log('Signature length:', signatureBytes.length);
-            const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
-            console.log('Signature (base64):', signatureBase64, 'Hex:', Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join(''));
+            const signatureHex = Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+            console.log('Signature (hex):', signatureHex);
 
             const formData = new FormData();
             formData.append('public_key', publicKey);
-            formData.append('signature', signatureBase64);
+            formData.append('signature_hex', signatureHex); // Send hex instead of base64
             formData.append('message', message);
 
             statusSpan.textContent = 'Sending data to server...';
