@@ -30,22 +30,36 @@ try {
         DB_PASS
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    log_message("Database connection successful");
+    log_message("Database connection successful: host=" . DB_HOST . ", dbname=" . DB_NAME);
     // Check if accounts table exists
     $stmt = $pdo->query("SHOW TABLES LIKE 'accounts'");
     if ($stmt->rowCount() === 0) {
-        log_message("Error: Table 'accounts' does not exist");
+        log_message("Error: Table 'accounts' does not exist in database " . DB_NAME);
         throw new Exception("Table 'accounts' does not exist");
     }
-    log_message("Table 'accounts' exists");
-} catch (PDOException $e) {
+    log_message("Table 'accounts' exists in database " . DB_NAME);
+} catch (Exception $e) {
     log_message("Database connection failed: " . $e->getMessage());
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
         exit;
     }
-    die("Database connection failed: " . $e->getMessage());
+    // Render error page for GET
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Error - Vina Network</title>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+        <h1>Error</h1>
+        <p>Database connection failed. Please contact support.</p>
+    </body>
+    </html>
+    <?php
+    exit;
 }
 
 // Handle POST
