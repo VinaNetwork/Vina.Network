@@ -18,13 +18,16 @@ async function connectWallet() {
         const encodedMessage = new TextEncoder().encode(message);
         const signature = await window.solana.signMessage(encodedMessage, 'utf8');
 
+        // Mã hóa chữ ký thành base64
+        const signatureBase64 = btoa(String.fromCharCode(...signature.signature));
+
         // Gửi chữ ký tới API xác minh
         const response = await fetch('/accounts/auth.js', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 publicKey: publicKey,
-                signature: Buffer.from(signature.signature).toString('base64'),
+                signature: signatureBase64,
                 message: message
             })
         });
