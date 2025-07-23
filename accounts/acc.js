@@ -15,16 +15,18 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
 
             const timestamp = Date.now();
             const message = `Xác minh đăng nhập cho Vina Network at ${timestamp}`;
-            const encodedMessage = new TextEncoder().encode(message); // Dùng để log
+            const encodedMessage = new TextEncoder().encode(message);
             console.log('Message:', message);
             console.log('Encoded message length:', encodedMessage.length);
+            console.log('Message hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
-            // Ký message dạng string
-            const signature = await window.solana.signMessage(new TextEncoder().encode(message), 'utf8');
+            // Ký message dạng raw bytes
+            const signature = await window.solana.signMessage(encodedMessage, 'utf8');
             const signatureBytes = new Uint8Array(signature.signature);
             console.log('Signature length:', signatureBytes.length);
             const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
             console.log('Signature (base64):', signatureBase64);
+            console.log('Signature hex:', Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join(''));
 
             const formData = new FormData();
             formData.append('public_key', publicKey);
