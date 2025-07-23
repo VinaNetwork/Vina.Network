@@ -8,6 +8,11 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             statusSpan.textContent = 'Connecting wallet...';
             const response = await window.solana.connect();
             const publicKey = response.publicKey.toString();
+            // Validate public key (basic base58 check)
+            const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{44}$/;
+            if (!base58Regex.test(publicKey)) {
+                throw new Error('Invalid public key format');
+            }
             publicKeySpan.textContent = publicKey;
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Wallet connected! Signing message...';
