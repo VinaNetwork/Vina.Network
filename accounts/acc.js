@@ -31,9 +31,15 @@ async function connectWallet() {
 
         const result = await response.json();
         if (result.success) {
+            // Gửi publicKey về PHP để lưu session
+            await fetch('/accounts/set_session.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publicKey: result.publicKey })
+            });
             window.location.href = '/accounts/profile.php';
         } else {
-            status.innerText = 'Authentication failed';
+            status.innerText = `Authentication failed: ${result.message}`;
         }
     } catch (error) {
         status.innerText = `Error: ${error.message}`;
