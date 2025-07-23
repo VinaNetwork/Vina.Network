@@ -16,17 +16,17 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             const timestamp = Date.now();
             const message = `Verify login for Vina Network at ${timestamp}`;
             const encodedMessage = new TextEncoder().encode(message);
-            console.log('Message:', message);
-            console.log('Encoded message length:', encodedMessage.length);
-            console.log('Message hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
+            console.log('Message:', message, 'Length:', encodedMessage.length, 'Hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
             // Sign message as raw bytes
             const signature = await window.solana.signMessage(encodedMessage);
             const signatureBytes = new Uint8Array(signature.signature);
+            if (signatureBytes.length !== 64) {
+                throw new Error('Invalid signature length from Phantom');
+            }
             console.log('Signature length:', signatureBytes.length);
             const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
-            console.log('Signature (base64):', signatureBase64);
-            console.log('Signature hex:', Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join(''));
+            console.log('Signature (base64):', signatureBase64, 'Hex:', Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join(''));
 
             const formData = new FormData();
             formData.append('public_key', publicKey);
