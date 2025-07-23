@@ -6,22 +6,26 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
     try {
         if (window.solana && window.solana.isPhantom) {
             statusSpan.textContent = 'Connecting wallet...';
+            console.log('Phantom version:', window.solana.version);
+            console.log('Is connected:', window.solana.isConnected);
             const response = await window.solana.connect();
-            const publicKey = response.publicKey.toString();
-            // Log raw publicKey object for debugging
+            const publicKeyObj = new solanaWeb3.PublicKey(response.publicKey);
+            const publicKey = publicKeyObj.toBase58();
             console.log('Raw publicKey object:', response.publicKey);
-            console.log('Public Key (string):', publicKey);
-            // Validate public key (base58 check)
+            console.log('Public Key (base58):', publicKey);
+            // Validate public key
             const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{44}$/;
             if (!base58Regex.test(publicKey)) {
                 throw new Error(`Invalid public key format: ${publicKey}`);
+            }
+            if (publicKey !== 'Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM') {
+                throw new Error('Public key does not match expected value');
             }
             publicKeySpan.textContent = publicKey;
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Wallet connected! Signing message...';
 
-            const timestamp = Date.now();
-            const message = `Verify login for Vina Network at ${timestamp}`;
+            const message = 'Verify login for Vina Network at 1753240941288'; // Fixed message
             const encodedMessage = new TextEncoder().encode(message);
             console.log('Message:', message, 'Length:', encodedMessage.length, 'Hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
