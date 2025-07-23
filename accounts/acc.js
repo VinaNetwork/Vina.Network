@@ -24,7 +24,7 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Wallet connected! Signing message...';
 
-            const message = 'Verify login for Vina Network at 1753240941288';
+            const message = 'VinaNetworkLogin';
             const encodedMessage = new TextEncoder().encode(message);
             console.log('Message:', message, 'Length:', encodedMessage.length, 'Hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
@@ -37,15 +37,11 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             const signatureHex = Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('');
             console.log('Signature (hex):', signatureHex);
 
-            const formData = new FormData();
-            formData.append('public_key', publicKey);
-            formData.append('signature_hex', signatureHex); // Send hex instead of base64
-            formData.append('message', message);
-
             statusSpan.textContent = 'Sending data to server...';
-            const responseServer = await fetch('index.php', {
+            const responseServer = await fetch('http://localhost:3000/verify', {
                 method: 'POST',
-                body: formData
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ public_key, message, signature_hex: signatureHex })
             });
 
             const result = await responseServer.json();
