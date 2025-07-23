@@ -141,10 +141,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         exit;
     }
-    exit; // Đảm bảo không render HTML
+    exit;
 }
 
-// Render HTML chỉ khi không phải POST
+// Render HTML cho GET
 $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
 $page_keywords = "Vina Network, connect wallet, login, register";
