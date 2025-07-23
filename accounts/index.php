@@ -10,7 +10,20 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = '../';
+
+function log_message($message) {
+    $log_file = __DIR__ . '/../logs/accounts.log';
+    $log_dir = dirname($log_file);
+    if (!is_dir($log_dir)) {
+        mkdir($log_dir, 0755, true);
+    }
+    $timestamp = date('Y-m-d H:i:s');
+    file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND);
+}
+
+log_message("Processing GET request for wallet connection page");
 require_once __DIR__ . '/auth.php';
+log_message("Included auth.php for POST request handling");
 
 // Render HTML for GET
 $page_title = "Connect Wallet to Vina Network";
@@ -41,6 +54,7 @@ $page_css = ['acc.css'];
     </div>
     
     <?php include '../include/footer.php'; ?>
+    <?php log_message("HTML rendering completed for wallet connection page"); ?>
 
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="../js/vina.js"></script>
