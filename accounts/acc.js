@@ -11,15 +11,20 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             publicKeySpan.textContent = publicKey;
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Đã kết nối ví! Đang ký thông điệp...';
+            console.log('Public Key:', publicKey);
 
             const timestamp = Date.now();
-            const message = `Login verification for Vina Network at ${timestamp}`;
-            const encodedMessage = new TextEncoder().encode(message);
+            const message = `Xác minh đăng nhập cho Vina Network at ${timestamp}`;
+            const encodedMessage = new TextEncoder().encode(message); // Dùng để log
+            console.log('Message:', message);
+            console.log('Encoded message length:', encodedMessage.length);
 
-            const signature = await window.solana.signMessage(encodedMessage, 'utf8');
-            const signatureBase64 = btoa(
-                String.fromCharCode.apply(null, new Uint8Array(signature.signature))
-            );
+            // Ký message dạng string
+            const signature = await window.solana.signMessage(new TextEncoder().encode(message), 'utf8');
+            const signatureBytes = new Uint8Array(signature.signature);
+            console.log('Signature length:', signatureBytes.length);
+            const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
+            console.log('Signature (base64):', signatureBase64);
 
             const formData = new FormData();
             formData.append('public_key', publicKey);
@@ -32,35 +37,15 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
                 body: formData
             });
 
-            const responseText = await responseServer.text();
-
-            if (responseServer.ok) {
-                // Cập nhật kết quả từ response HTML (script chứa status message)
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = responseText;
-                const scriptTags = tempDiv.querySelectorAll('script');
-                for (const scriptTag of scriptTags) {
-                    const content = scriptTag.textContent || scriptTag.innerText;
-                    const match = content.match(/document\.getElementById\(['"]status['"]\)\.textContent\s*=\s*(.*);/);
-                    if (match) {
-                        try {
-                            const msg = eval(match[1]); // parse nội dung trong json_encode(...)
-                            statusSpan.textContent = msg;
-                        } catch (e) {
-                            statusSpan.textContent = 'Xác thực thành công, nhưng không đọc được phản hồi từ server.';
-                        }
-                        break;
-                    }
-                }
-            } else {
-                statusSpan.textContent = `Lỗi khi gửi dữ liệu: ${responseServer.status} ${responseServer.statusText}`;
-                console.error('Phản hồi server:', responseText);
-            }
+            const result = await responseServer.json();
+            console.log('Server response:', result);
+            statusSpan.textContent = result.message || 'Lỗi không xác định';
         } else {
             statusSpan.textContent = 'Vui lòng cài đặt ví Phantom!';
             walletInfo.style.display = 'block';
         }
     } catch (error) {
+        console.error('Lỗi khi kết nối hoặc ký:', error);
         statusSpan.textContent = 'Lỗi: ' + error.message;
         walletInfo.style.display = 'block';
     }
