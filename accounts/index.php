@@ -65,18 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         }
         $timestamp = $matches[1];
         $current_timestamp = time() * 1000;
-        if (abs($current_timestamp - $timestamp) > 300000) {
+        if (abs($current_timestamp - $timestamp) > 60000) { // 1 minute
             throw new Exception("Message has expired!");
         }
         log_message("Timestamp valid: $timestamp");
+        log_message("Server timezone: " . date_default_timezone_get());
 
-        // Check sodium library
+        // Check sodium and base58 libraries
         if (!function_exists('sodium_crypto_sign_verify_detached')) {
             throw new Exception("Sodium library not installed!");
         }
-        log_message("Sodium library ready");
-
-        // Check and load base58 library
         $autoload_path = __DIR__ . '/../vendor/autoload.php';
         if (!file_exists($autoload_path)) {
             throw new Exception("Composer autoload (vendor/autoload.php) not found!");
@@ -86,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             throw new Exception("tuupola/base58 library not installed!");
         }
         $bs58 = new \Tuupola\Base58;
-        log_message("Base58 library ready");
+        log_message("Libraries loaded: sodium, base58");
 
         // Decode public_key
         try {
@@ -99,8 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             throw new Exception("Error decoding public_key: " . $e->getMessage());
         }
 
-        // Convert message to raw UTF-8 bytes
-        $message_raw = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
+        // Use raw message (ASCII)
+        $message_raw = $message;
         log_message("Message hex: " . bin2hex($message_raw));
         log_message("Signature hex: " . bin2hex($signature));
 
