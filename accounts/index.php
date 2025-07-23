@@ -99,8 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             throw new Exception("Lỗi decode public_key: " . $e->getMessage());
         }
 
-        // Convert message to raw UTF-8 bytes
-        $message_raw = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
+        // Dùng raw message thay vì mb_convert_encoding
+        $message_raw = $message;
         log_message("Message hex: " . bin2hex($message_raw));
         log_message("Signature hex: " . bin2hex($signature));
 
