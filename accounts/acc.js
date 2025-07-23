@@ -20,14 +20,15 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             console.log('Encoded message length:', encodedMessage.length);
             console.log('Message hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
-            // Ký message dạng raw bytes
-            const signature = await window.solana.signMessage(encodedMessage, 'utf8');
+            // Ký message với Phantom
+            const signature = await window.solana.signMessage(encodedMessage);
             const signatureBytes = new Uint8Array(signature.signature);
             console.log('Signature length:', signatureBytes.length);
             const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
             console.log('Signature (base64):', signatureBase64);
             console.log('Signature hex:', Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join(''));
 
+            // Gửi dữ liệu lên server
             const formData = new FormData();
             formData.append('public_key', publicKey);
             formData.append('signature', signatureBase64);
