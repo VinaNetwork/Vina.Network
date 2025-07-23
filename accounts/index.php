@@ -31,7 +31,6 @@ try {
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     log_message("Database connection successful: host=" . DB_HOST . ", dbname=" . DB_NAME);
-    // Check if accounts table exists
     $stmt = $pdo->query("SHOW TABLES LIKE 'accounts'");
     if ($stmt->rowCount() === 0) {
         log_message("Error: Table 'accounts' does not exist in database " . DB_NAME);
@@ -62,39 +61,46 @@ try {
 }
 
 // Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['message'])) {
     header('Content-Type: application/json');
     $public_key = $_POST['public_key'];
-    $signature = base64_decode($_POST['signature'], true);
     $message = $_POST['message'];
     $current_time = date('Y-m-d H:i:s');
 
     log_message("Received POST: public_key=$public_key, message=$message");
-    log_message("Signature (base64): " . $_POST['signature']);
-    if ($signature === false || strlen($signature) !== 64) {
-        log_message("Error: Base64 decode failed or invalid signature (length: " . strlen($signature) . ")");
-        echo json_encode(['status' => 'error', 'message' => 'Base64 decode failed or invalid signature']);
-        exit;
+    if (isset($_POST['signature_hex'])) {
+        $signature_hex = $_POST['signature_hex'];
+        log_message("Signature (hex): " . $signature_hex);
+        if (!preg_match('/^[0-9a-fA-F]{128}$/', $signature_hex)) {
+            log_message("Error: Invalid signature hex format (length: " . strlen($signature_hex) . ")");
+            echo json_encode(['status' => 'error', 'message' => 'Invalid signature hex format']);
+            exit;
+        }
+        $signature = hex2bin($signature_hex);
+    } else {
+        $signature = base64_decode($_POST['signature'], true);
+        log_message("Signature (base64): " . $_POST['signature']);
+        if ($signature === false || strlen($signature) !== 64) {
+            log_message("Error: Base64 decode failed or invalid signature (length: " . strlen($signature) . ")");
+            echo json_encode(['status' => 'error', 'message' => 'Base64 decode failed or invalid signature']);
+            exit;
+        }
     }
     log_message("Signature decoded length: " . strlen($signature) . " bytes");
 
     try {
-        // Validate public_key format
         if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{44}$/', $public_key)) {
             throw new Exception("Invalid public key format: Must be 44-character base58 string");
         }
         if ($public_key !== 'Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM') {
             throw new Exception("Public key does not match expected value");
         }
-
-        // Check timestamp (skip for fixed message)
         if ($message !== 'Verify login for Vina Network at 1753240941288') {
             throw new Exception("Message does not match expected value");
         }
         log_message("Message validated: $message");
         log_message("Server timezone: " . date_default_timezone_get());
 
-        // Check sodium and base58 libraries
         if (!function_exists('sodium_crypto_sign_verify_detached')) {
             throw new Exception("Sodium library not installed!");
         }
@@ -109,7 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         $bs58 = new \Tuupola\Base58;
         log_message("Libraries loaded: sodium, base58");
 
-        // Decode public_key
         try {
             $public_key_bytes = $bs58->decode($public_key);
             if (strlen($public_key_bytes) !== 32) {
@@ -120,12 +125,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             throw new Exception("Error decoding public_key: " . $e->getMessage());
         }
 
-        // Use raw message (ASCII)
         $message_raw = $message;
         log_message("Message hex: " . bin2hex($message_raw));
         log_message("Signature hex: " . bin2hex($signature));
 
-        // Verify signature
         $verified = sodium_crypto_sign_verify_detached(
             $signature,
             $message_raw,
@@ -136,7 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         }
         log_message("Signature verified successfully");
 
-        // Check and save to database
         try {
             $sql = "SELECT * FROM accounts WHERE public_key = ?";
             $stmt = $pdo->prepare($sql);
