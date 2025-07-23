@@ -8,15 +8,17 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             statusSpan.textContent = 'Connecting wallet...';
             const response = await window.solana.connect();
             const publicKey = response.publicKey.toString();
-            // Validate public key (basic base58 check)
+            // Log raw publicKey object for debugging
+            console.log('Raw publicKey object:', response.publicKey);
+            console.log('Public Key (string):', publicKey);
+            // Validate public key (base58 check)
             const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{44}$/;
             if (!base58Regex.test(publicKey)) {
-                throw new Error('Invalid public key format');
+                throw new Error(`Invalid public key format: ${publicKey}`);
             }
             publicKeySpan.textContent = publicKey;
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Wallet connected! Signing message...';
-            console.log('Public Key:', publicKey);
 
             const timestamp = Date.now();
             const message = `Verify login for Vina Network at ${timestamp}`;
