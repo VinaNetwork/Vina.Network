@@ -5,23 +5,23 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
 
     try {
         if (window.solana && window.solana.isPhantom) {
-            statusSpan.textContent = 'Đang kết nối ví...';
+            statusSpan.textContent = 'Connecting wallet...';
             const response = await window.solana.connect();
             const publicKey = response.publicKey.toString();
             publicKeySpan.textContent = publicKey;
             walletInfo.style.display = 'block';
-            statusSpan.textContent = 'Đã kết nối ví! Đang ký thông điệp...';
+            statusSpan.textContent = 'Wallet connected! Signing message...';
             console.log('Public Key:', publicKey);
 
             const timestamp = Date.now();
-            const message = `Xác minh đăng nhập cho Vina Network at ${timestamp}`;
+            const message = `Verify login for Vina Network at ${timestamp}`;
             const encodedMessage = new TextEncoder().encode(message);
             console.log('Message:', message);
             console.log('Encoded message length:', encodedMessage.length);
             console.log('Message hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
-            // Ký message dạng raw bytes
-            const signature = await window.solana.signMessage(encodedMessage, 'utf8');
+            // Sign message as raw bytes
+            const signature = await window.solana.signMessage(encodedMessage);
             const signatureBytes = new Uint8Array(signature.signature);
             console.log('Signature length:', signatureBytes.length);
             const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
@@ -33,7 +33,7 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             formData.append('signature', signatureBase64);
             formData.append('message', message);
 
-            statusSpan.textContent = 'Đang gửi dữ liệu đến server...';
+            statusSpan.textContent = 'Sending data to server...';
             const responseServer = await fetch('index.php', {
                 method: 'POST',
                 body: formData
@@ -41,14 +41,14 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
 
             const result = await responseServer.json();
             console.log('Server response:', result);
-            statusSpan.textContent = result.message || 'Lỗi không xác định';
+            statusSpan.textContent = result.message || 'Unknown error';
         } else {
-            statusSpan.textContent = 'Vui lòng cài đặt ví Phantom!';
+            statusSpan.textContent = 'Please install Phantom wallet!';
             walletInfo.style.display = 'block';
         }
     } catch (error) {
-        console.error('Lỗi khi kết nối hoặc ký:', error);
-        statusSpan.textContent = 'Lỗi: ' + error.message;
+        console.error('Error connecting or signing:', error);
+        statusSpan.textContent = 'Error: ' + error.message;
         walletInfo.style.display = 'block';
     }
 });
