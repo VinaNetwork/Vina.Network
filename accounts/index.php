@@ -45,7 +45,6 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
         exit;
     }
-    // Render error page for GET
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -80,6 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     log_message("Signature decoded length: " . strlen($signature) . " bytes");
 
     try {
+        // Validate public_key format
+        if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{44}$/', $public_key)) {
+            throw new Exception("Invalid public key format: Must be 44-character base58 string");
+        }
+
         // Check timestamp
         if (!preg_match('/at (\d+)/', $message, $matches)) {
             throw new Exception("Message does not contain timestamp!");
@@ -111,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         try {
             $public_key_bytes = $bs58->decode($public_key);
             if (strlen($public_key_bytes) !== 32) {
-                throw new Exception("Invalid public key!");
+                throw new Exception("Invalid public key: Incorrect length after decoding");
             }
             log_message("Public key decoded: $public_key");
         } catch (Exception $e) {
