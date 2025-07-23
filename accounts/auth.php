@@ -5,11 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Prevent direct access to this file
-if (!defined('VINANETWORK_ENTRY')) {
-    die("Access denied: Direct access to this file is not allowed.");
-}
-
 // Additional check to ensure the file is included from index.php
 if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {
     die("Access denied: This file cannot be accessed directly.");
