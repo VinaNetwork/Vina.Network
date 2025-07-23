@@ -1,220 +1,26 @@
 <?php
-// ============================================================================
 // File: accounts/index.php
-// Description: Connect wallet page for Vina Network. Handles both registration and login with signature verification and timestamp check.
-// Created by: Vina Network
-// ============================================================================
-
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
+session_start();
+if (isset($_SESSION['public_key'])) {
+    header("Location: profile.php");
+    exit();
 }
-
-$root_path = '../';
-require_once __DIR__ . '/../config/config.php';
-
-function log_message($message) {
-    $log_file = __DIR__ . '/../logs/accounts.log';
-    $log_dir = dirname($log_file);
-    if (!is_dir($log_dir)) {
-        mkdir($log_dir, 0755, true);
-    }
-    $timestamp = date('Y-m-d H:i:s');
-    file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND);
-}
-
-// Connect to database
-try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    log_message("Database connection successful: host=" . DB_HOST . ", dbname=" . DB_NAME);
-    $stmt = $pdo->query("SHOW TABLES LIKE 'accounts'");
-    if ($stmt->rowCount() === 0) {
-        log_message("Error: Table 'accounts' does not exist in database " . DB_NAME);
-        throw new Exception("Table 'accounts' does not exist");
-    }
-    log_message("Table 'accounts' exists in database " . DB_NAME);
-} catch (Exception $e) {
-    log_message("Database connection failed: " . $e->getMessage());
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
-        exit;
-    }
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <title>Error - Vina Network</title>
-        <meta charset="UTF-8">
-    </head>
-    <body>
-        <h1>Error</h1>
-        <p>Database connection failed. Please contact support.</p>
-    </body>
-    </html>
-    <?php
-    exit;
-}
-
-// Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['message'])) {
-    header('Content-Type: application/json');
-    $public_key = $_POST['public_key'];
-    $message = $_POST['message'];
-    $current_time = date('Y-m-d H:i:s');
-
-    log_message("Received POST: public_key=$public_key, message=$message");
-    if (isset($_POST['signature_hex'])) {
-        $signature_hex = $_POST['signature_hex'];
-        log_message("Signature (hex): " . $signature_hex);
-        if (!preg_match('/^[0-9a-fA-F]{128}$/', $signature_hex)) {
-            log_message("Error: Invalid signature hex format (length: " . strlen($signature_hex) . ")");
-            echo json_encode(['status' => 'error', 'message' => 'Invalid signature hex format']);
-            exit;
-        }
-        $signature = hex2bin($signature_hex);
-    } else {
-        $signature = base64_decode($_POST['signature'], true);
-        log_message("Signature (base64): " . $_POST['signature']);
-        if ($signature === false || strlen($signature) !== 64) {
-            log_message("Error: Base64 decode failed or invalid signature (length: " . strlen($signature) . ")");
-            echo json_encode(['status' => 'error', 'message' => 'Base64 decode failed or invalid signature']);
-            exit;
-        }
-    }
-    log_message("Signature decoded length: " . strlen($signature) . " bytes");
-
-    try {
-        if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{44}$/', $public_key)) {
-            throw new Exception("Invalid public key format: Must be 44-character base58 string");
-        }
-        if ($public_key !== 'Frd7k5Thac1Mm76g4ET5jBiHtdABePvNRZFCFYf6GhDM') {
-            throw new Exception("Public key does not match expected value");
-        }
-        if ($message !== 'Verify login for Vina Network at 1753240941288') {
-            throw new Exception("Message does not match expected value");
-        }
-        log_message("Message validated: $message");
-        log_message("Server timezone: " . date_default_timezone_get());
-
-        if (!function_exists('sodium_crypto_sign_verify_detached')) {
-            throw new Exception("Sodium library not installed!");
-        }
-        $autoload_path = __DIR__ . '/../vendor/autoload.php';
-        if (!file_exists($autoload_path)) {
-            throw new Exception("Composer autoload (vendor/autoload.php) not found!");
-        }
-        require_once $autoload_path;
-        if (!class_exists('\Tuupola\Base58')) {
-            throw new Exception("tuupola/base58 library not installed!");
-        }
-        $bs58 = new \Tuupola\Base58;
-        log_message("Libraries loaded: sodium, base58");
-
-        try {
-            $public_key_bytes = $bs58->decode($public_key);
-            if (strlen($public_key_bytes) !== 32) {
-                throw new Exception("Invalid public key: Incorrect length after decoding");
-            }
-            log_message("Public key decoded: $public_key");
-        } catch (Exception $e) {
-            throw new Exception("Error decoding public_key: " . $e->getMessage());
-        }
-
-        $message_raw = $message;
-        log_message("Message hex: " . bin2hex($message_raw));
-        log_message("Signature hex: " . bin2hex($signature));
-
-        $verified = sodium_crypto_sign_verify_detached(
-            $signature,
-            $message_raw,
-            $public_key_bytes
-        );
-        if (!$verified) {
-            throw new Exception("Signature verification failed!");
-        }
-        log_message("Signature verified successfully");
-
-        try {
-            $sql = "SELECT * FROM accounts WHERE public_key = ?";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$public_key]);
-            $account = $stmt->fetch();
-            log_message("Executing SQL: $sql with public_key=$public_key");
-            log_message("Account check result: " . ($account ? "Found" : "Not found"));
-        } catch (PDOException $e) {
-            log_message("Database query error (SELECT): " . $e->getMessage() . " | SQL: $sql | Params: public_key=$public_key");
-            throw new Exception("Database query error: " . $e->getMessage());
-        }
-
-        if ($account) {
-            $sql = "UPDATE accounts SET last_login = ? WHERE public_key = ?";
-            try {
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$current_time, $public_key]);
-                log_message("Executing SQL: $sql with last_login=$current_time, public_key=$public_key");
-                log_message("Login successful: public_key=$public_key");
-                echo json_encode(['status' => 'success', 'message' => 'Login successful!']);
-            } catch (PDOException $e) {
-                log_message("Database query error (UPDATE): " . $e->getMessage() . " | SQL: $sql | Params: last_login=$current_time, public_key=$public_key");
-                throw new Exception("Database query error: " . $e->getMessage());
-            }
-        } else {
-            $sql = "INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)";
-            try {
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$public_key, $current_time, $current_time]);
-                log_message("Executing SQL: $sql with public_key=$public_key, created_at=$current_time, last_login=$current_time");
-                log_message("Registration successful: public_key=$public_key");
-                echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
-            } catch (PDOException $e) {
-                log_message("Database query error (INSERT): " . $e->getMessage() . " | SQL: $sql | Params: public_key=$public_key, created_at=$current_time, last_login=$current_time");
-                throw new Exception("Database query error: " . $e->getMessage());
-            }
-        }
-    } catch (Exception $e) {
-        log_message("Error: " . $e->getMessage());
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-        exit;
-    }
-    exit;
-}
-
-// Render HTML for GET
-$page_title = "Connect Wallet to Vina Network";
-$page_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_keywords = "Vina Network, connect wallet, login, register";
-$page_og_title = "Connect Wallet to Vina Network";
-$page_og_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_og_url = "https://www.vina.network/accounts/";
-$page_canonical = "https://www.vina.network/accounts/";
-$page_css = ['acc.css'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <?php include '../include/header.php'; ?>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Solana Wallet</title>
+    <link rel="stylesheet" href="acc.css">
 </head>
 <body>
-    <?php include '../include/navbar.php'; ?>
-    <div class="acc-container">
-        <div class="acc-content">
-            <h1>Login/Register with Phantom Wallet</h1>
-            <button id="connect-wallet">Connect Phantom Wallet</button>
-            <div id="wallet-info" style="display: none;">
-                <p>Wallet Address: <span id="public-key"></span></p>
-                <p>Status: <span id="status"></span></p>
-            </div>
-        </div>
+    <div class="container">
+        <h1>Connect Your Solana Wallet</h1>
+        <button id="connectWallet">Connect Wallet</button>
+        <p id="status"></p>
     </div>
-    <?php include '../include/footer.php'; ?>
-    <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
-    <script src="../js/vina.js"></script>
-    <script src="../js/navbar.js"></script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
     <script src="acc.js"></script>
 </body>
 </html>
