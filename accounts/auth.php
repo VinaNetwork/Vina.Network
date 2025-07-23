@@ -5,6 +5,10 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
 // Additional check to ensure the file is included from index.php
 if (basename($_SERVER['SCRIPT_FILENAME']) === basename(__FILE__)) {
     die("Access denied: This file cannot be accessed directly.");
