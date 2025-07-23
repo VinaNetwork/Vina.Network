@@ -20,8 +20,8 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             console.log('Encoded message length:', encodedMessage.length);
             console.log('Message hex:', Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join(''));
 
-            // Ký message dạng raw bytes
-            const signature = await window.solana.signMessage(encodedMessage, 'utf8');
+            // Ký message dạng string trực tiếp
+            const signature = await window.solana.signMessage(new TextEncoder().encode(message), 'utf8');
             const signatureBytes = new Uint8Array(signature.signature);
             console.log('Signature length:', signatureBytes.length);
             const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
