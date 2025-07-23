@@ -31,6 +31,13 @@ try {
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     log_message("Database connection successful");
+    // Check if accounts table exists
+    $stmt = $pdo->query("SHOW TABLES LIKE 'accounts'");
+    if ($stmt->rowCount() === 0) {
+        log_message("Error: Table 'accounts' does not exist");
+        throw new Exception("Table 'accounts' does not exist");
+    }
+    log_message("Table 'accounts' exists");
 } catch (PDOException $e) {
     log_message("Database connection failed: " . $e->getMessage());
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -115,24 +122,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
 
         // Check and save to database
         try {
-            $stmt = $pdo->prepare("SELECT * FROM accounts WHERE public_key = ?");
+            $sql = "SELECT * FROM accounts WHERE public_key = ?";
+            $stmt = $pdo->prepare($sql);
             $stmt->execute([$public_key]);
             $account = $stmt->fetch();
-            log_message("Account check query: public_key=$public_key");
+            log_message("Executing SQL: $sql with public_key=$public_key");
+            log_message("Account check result: " . ($account ? "Found" : "Not found"));
         } catch (PDOException $e) {
+            log_message("Database query error (SELECT): " . $e->getMessage() . " | SQL: $sql | Params: public_key=$public_key");
             throw new Exception("Database query error: " . $e->getMessage());
         }
 
         if ($account) {
-            $stmt = $pdo->prepare("UPDATE accounts SET last_login = ? WHERE public_key = ?");
-            $stmt->execute([$current_time, $public_key]);
-            log_message("Login successful: public_key=$public_key");
-            echo json_encode(['status' => 'success', 'message' => 'Login successful!']);
+            $sql = "UPDATE accounts SET last_login = ? WHERE public_key = ?";
+            try {
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$current_time, $public_key]);
+                log_message("Executing SQL: $sql with last_login=$current_time, public_key=$public_key");
+                log_message("Login successful: public_key=$public_key");
+                echo json_encode(['status' => 'success', 'message' => 'Login successful!']);
+            } catch (PDOException $e) {
+                log_message("Database query error (UPDATE): " . $e->getMessage() . " | SQL: $sql | Params: last_login=$current_time, public_key=$public_key");
+                throw new Exception("Database query error: " . $e->getMessage());
+            }
         } else {
-            $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)");
-            $stmt->execute([$public_key, $current_time, $current_time]);
-            log_message("Registration successful: public_key=$public_key");
-            echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
+            $sql = "INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)";
+            try {
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$public_key, $current_time, $current_time]);
+                log_message("Executing SQL: $sql with public_key=$public_key, created_at=$current_time, last_login=$current_time");
+                log_message("Registration successful: public_key=$public_key");
+                echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
+            } catch (PDOException $e) {
+                log_message("Database query error (INSERT): " . $e->getMessage() . " | SQL: $sql | Params: public_key=$public_key, created_at=$current_time, last_login=$current_time");
+                throw new Exception("Database query error: " . $e->getMessage());
+            }
         }
     } catch (Exception $e) {
         log_message("Error: " . $e->getMessage());
