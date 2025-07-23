@@ -5,10 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 // Prevent direct access to this file
 if (!defined('VINANETWORK_ENTRY')) {
     die("Access denied: Direct access to this file is not allowed.");
