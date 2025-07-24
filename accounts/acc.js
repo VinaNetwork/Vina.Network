@@ -12,13 +12,16 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
                 userAgent: navigator.userAgent,
                 url: window.location.href
             };
-            await fetch('/logs/client-log.php', {
+            const response = await fetch('/accounts/client-log.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(logData)
             });
+            if (!response.ok) {
+                console.error(`Failed to send log to server: HTTP ${response.status}`);
+            }
         } catch (error) {
-            console.error('Failed to send log to server:', error);
+            console.error('Failed to send log to server:', error.message);
         }
     }
 
