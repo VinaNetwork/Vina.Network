@@ -1,7 +1,7 @@
 <?php
 // File: accounts/client-log.php
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $log_file = __DIR__ . '/../logs/client.log'; // Ghi vào logs/client.log
+    $log_file = __DIR__ . '/../logs/client.log';
     $log_dir = dirname($log_file);
     if (!is_dir($log_dir)) {
         mkdir($log_dir, 0755, true);
@@ -14,6 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $url = $data['url'] ?? 'Unknown';
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
     $log_message = "[$timestamp] [$level] [IP:$ip] [URL:$url] [UA:$userAgent] $message\n";
-    file_put_contents($log_file, $log_message, FILE_APPEND);
+    if (!file_put_contents($log_file, $log_message, FILE_APPEND)) {
+        error_log("Failed to write to client.log: Check permissions for $log_file");
+    }
     echo json_encode(['status' => 'success']);
+} else {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method Not Allowed']);
 }
