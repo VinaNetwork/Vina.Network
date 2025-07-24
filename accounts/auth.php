@@ -5,6 +5,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../vendor/autoload.php'; // Đảm bảo autoload Composer
+use StephenHill\Base58; // Import thư viện stephen-hill/base58
+
 session_start(); // Khởi tạo session
 
 function log_message($message, $level = 'INFO') {
@@ -75,21 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         }
         log_message("Sodium library ready", 'INFO');
 
-        // Check and load base58 library
-        $autoload_path = __DIR__ . '/../vendor/autoload.php';
-        if (!file_exists($autoload_path)) {
-            throw new Exception("Composer library (vendor/autoload.php) does not exist!");
-        }
-        require_once $autoload_path;
-        if (!class_exists('\Tuupola\Base58')) {
-            throw new Exception("tuupola/base58 library is not installed!");
-        }
-        log_message("Base58 library ready", 'INFO');
-
-        // Decode public_key
+        // Decode public_key using stephen-hill/base58
         $start_time = microtime(true);
         try {
-            $bs58 = new \Tuupola\Base58;
+            $bs58 = new Base58();
             $public_key_bytes = $bs58->decode($public_key);
             if (strlen($public_key_bytes) !== 32) {
                 throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
