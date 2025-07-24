@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     log_message("Signature (base64): {$_POST['signature']}", 'DEBUG');
 
     if ($signature === false || strlen($signature) !== 64) {
-        log_message("Invalid signature: Base64 decode failed or length incorrect (length: " . strlen($signature) . ")", 'ERROR');
+        log_message("Invalid signature: Base64 decode failed or length incorrect (length: " . ($signature === false ? 'decode failed' : strlen($signature)) . ")", 'ERROR');
         echo json_encode(['status' => 'error', 'message' => 'Base64 decode failed or invalid signature']);
         exit;
     }
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $bs58 = new \Tuupola\Base58;
             $public_key_bytes = $bs58->decode($public_key);
             if (strlen($public_key_bytes) !== 32) {
-                throw new Exception("Invalid public key!");
+                throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
             }
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Public key decoded: $public_key (took {$duration}ms)", 'INFO');
@@ -104,18 +104,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Message hex: " . bin2hex($message_raw), 'DEBUG');
         log_message("Signature hex: " . bin2hex($signature), 'DEBUG');
 
-        // Verify signature
+        // Verify signature with detailed checks
         $start_time = microtime(true);
-        $verified = sodium_crypto_sign_verify_detached(
-            $signature,
-            $message_raw,
-            $public_key_bytes
-        );
-        $duration = (microtime(true) - $start_time) * 1000;
-        if (!$verified) {
-            throw new Exception("Signature verification failed!");
+        try {
+            // Kiểm tra chi tiết trước khi xác minh
+            if (!is_string($message_raw) || empty($message_raw)) {
+                throw new Exception("Invalid message: Empty or non-string message");
+            }
+            if (!is_string($public_key_bytes) || strlen($public_key_bytes) !== 32) {
+                throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
+            }
+            if (!is_string($signature) || strlen($signature) !== 64) {
+                throw new Exception("Invalid signature: Length is " . strlen($signature) . " bytes, expected 64 bytes");
+            }
+
+            // Xác minh chữ ký
+            $verified = sodium_crypto_sign_verify_detached(
+                $signature,
+                $message_raw,
+                $public_key_bytes
+            );
+            $duration = (microtime(true) - $start_time) * 1000;
+
+            if (!$verified) {
+                // Phân tích nguyên nhân lỗi xác minh
+                $errors = [];
+                if (bin2hex($message_raw) !== bin2hex(mb_convert_encoding($message, 'UTF-8', 'UTF-8'))) {
+                    $errors[] = "Message encoding mismatch";
+                }
+                if (strlen($public_key_bytes) !== 32) {
+                    $errors[] = "Public key length invalid";
+                }
+                if (strlen($signature) !== 64) {
+                    $errors[] = "Signature length invalid";
+                }
+                $error_message = "Signature verification failed: " . (empty($errors) ? "Signature does not match public key or message" : implode(", ", $errors));
+                throw new Exception($error_message);
+            }
+            log_message("Signature verified successfully (took {$duration}ms)", 'INFO');
+        } catch (Exception $e) {
+            $duration = (microtime(true) - $start_time) * 1000;
+            log_message("Signature verification error: {$e->getMessage()} (took {$duration}ms)", 'ERROR');
+            throw $e;
         }
-        log_message("Signature verified successfully (took {$duration}ms)", 'INFO');
 
         // Check and save to database
         $start_time = microtime(true);
