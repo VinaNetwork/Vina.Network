@@ -6,7 +6,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../vendor/autoload.php'; // Đảm bảo autoload Composer
-use StephenHill\Base58; // Import thư viện stephen-hill/base58
+use StephenHill\Base58; // Sử dụng stephenhill/base58
 
 session_start(); // Khởi tạo session
 
@@ -78,7 +78,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         }
         log_message("Sodium library ready", 'INFO');
 
-        // Decode public_key using stephen-hill/base58
+        // Check and load stephenhill/base58 library
+        if (!class_exists('\StephenHill\Base58')) {
+            throw new Exception("stephenhill/base58 library is not installed!");
+        }
+        log_message("Base58 library ready", 'INFO');
+
+        // Decode public_key
         $start_time = microtime(true);
         try {
             $bs58 = new Base58();
