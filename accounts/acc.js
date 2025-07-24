@@ -72,6 +72,9 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
             await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
             if (result.status === 'error' && result.message.includes('Signature verification failed')) {
                 statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
+            } else if (result.status === 'success' && result.redirect) {
+                statusSpan.textContent = result.message || 'Success';
+                window.location.href = result.redirect; // Chuyển hướng đến profile.php
             } else {
                 statusSpan.textContent = result.message || 'Unknown error';
             }
