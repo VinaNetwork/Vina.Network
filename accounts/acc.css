@@ -68,6 +68,25 @@ button#connect-wallet:hover {
     color: #007bff;
 }
 
+/* Profile */
+#account-info {
+    margin-top: 20px;
+}
+#account-info table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+#account-info th, #account-info td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    color: #fff; /* Phù hợp với nền tối của acc-content */
+}
+#account-info th {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
     .acc-container {
