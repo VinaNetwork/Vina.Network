@@ -12,7 +12,7 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
                 userAgent: navigator.userAgent,
                 url: window.location.href
             };
-            console.log(`Sending log to server: ${message}`); // Debug log gửi
+            console.log(`Sending log to server: ${message}`);
             const response = await fetch('/accounts/client-log.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -23,7 +23,7 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
                 throw new Error(`HTTP ${response.status} - ${response.statusText}`);
             }
             const result = await response.json();
-            console.log(`Log server response: ${JSON.stringify(result)}`); // Debug phản hồi
+            console.log(`Log server response: ${JSON.stringify(result)}`);
         } catch (error) {
             console.error(`Failed to send log to server: ${error.message}`);
         }
@@ -70,7 +70,11 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
 
             const result = await responseServer.json();
             await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
-            statusSpan.textContent = result.message || 'Unknown error';
+            if (result.status === 'error' && result.message.includes('Signature verification failed')) {
+                statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
+            } else {
+                statusSpan.textContent = result.message || 'Unknown error';
+            }
         } else {
             statusSpan.textContent = 'Please install Phantom wallet!';
             walletInfo.style.display = 'block';
