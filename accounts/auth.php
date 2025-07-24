@@ -95,12 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             }
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Public key decoded: $public_key (took {$duration}ms)", 'INFO');
+            log_message("Public key hex: " . bin2hex($public_key_bytes), 'DEBUG');
         } catch (Exception $e) {
             throw new Exception("Public key decode error: " . $e->getMessage());
         }
 
-        // Convert message to raw UTF-8 bytes
-        $message_raw = mb_convert_encoding($message, 'UTF-8', 'UTF-8');
+        // Use raw message directly
+        $message_raw = $message;
         log_message("Message hex: " . bin2hex($message_raw), 'DEBUG');
         log_message("Signature hex: " . bin2hex($signature), 'DEBUG');
 
@@ -127,9 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $duration = (microtime(true) - $start_time) * 1000;
 
             if (!$verified) {
-                // Phân tích nguyên nhân lỗi xác minh
                 $errors = [];
-                if (bin2hex($message_raw) !== bin2hex(mb_convert_encoding($message, 'UTF-8', 'UTF-8'))) {
+                if (bin2hex($message_raw) !== bin2hex($message)) {
                     $errors[] = "Message encoding mismatch";
                 }
                 if (strlen($public_key_bytes) !== 32) {
@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
                 if (strlen($signature) !== 64) {
                     $errors[] = "Signature length invalid";
                 }
-                $error_message = "Signature verification failed: " . (empty($errors) ? "Signature does not match public key or message" : implode(", ", $errors));
+                $error_message = "Signature verification failed: " . (empty($errors) ? "Signature does not match, please try reconnecting your wallet" : implode(", ", $errors));
                 throw new Exception($error_message);
             }
             log_message("Signature verified successfully (took {$duration}ms)", 'INFO');
