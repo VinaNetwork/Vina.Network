@@ -5,6 +5,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 require_once __DIR__ . '/../config/config.php';
+session_start(); // Khởi tạo session
 
 function log_message($message, $level = 'INFO') {
     $log_file = __DIR__ . '/../logs/accounts.log';
@@ -166,14 +167,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt->execute([$current_time, $public_key]);
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Login successful: public_key=$public_key (took {$duration}ms)", 'INFO');
-            echo json_encode(['status' => 'success', 'message' => 'Login successful!']);
+            $_SESSION['public_key'] = $public_key; // Lưu public_key vào session
+            echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => 'profile.php']);
         } else {
             $start_time = microtime(true);
             $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)");
             $stmt->execute([$public_key, $current_time, $current_time]);
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Registration successful: public_key=$public_key (took {$duration}ms)", 'INFO');
-            echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
+            $_SESSION['public_key'] = $public_key; // Lưu public_key vào session
+            echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => 'profile.php']);
         }
     } catch (Exception $e) {
         log_message("Error: {$e->getMessage()}", 'ERROR');
