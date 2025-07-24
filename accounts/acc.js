@@ -12,16 +12,20 @@ document.getElementById('connect-wallet').addEventListener('click', async () => 
                 userAgent: navigator.userAgent,
                 url: window.location.href
             };
+            console.log(`Sending log to server: ${message}`); // Debug log gửi
             const response = await fetch('/accounts/client-log.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(logData)
             });
             if (!response.ok) {
-                console.error(`Failed to send log to server: HTTP ${response.status}`);
+                console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
+                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
             }
+            const result = await response.json();
+            console.log(`Log server response: ${JSON.stringify(result)}`); // Debug phản hồi
         } catch (error) {
-            console.error('Failed to send log to server:', error.message);
+            console.error(`Failed to send log to server: ${error.message}`);
         }
     }
 
