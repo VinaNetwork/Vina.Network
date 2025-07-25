@@ -88,6 +88,36 @@ button#connect-wallet:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Copy icon */
+.copy-icon {
+    cursor: pointer;
+    font-size: 20px;
+    color: #007bff;
+    transition: color 0.3s ease;
+    pointer-events: auto;
+    user-select: none;
+    display: inline-block;
+    margin-left: 5px;
+}
+.copy-icon:hover {
+    color: #0056b3;
+}
+.copy-icon.copied {
+    color: #28a745;
+}
+.copy-tooltip {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10;
+}
+
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
     .acc-container {
