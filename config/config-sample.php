@@ -2,9 +2,6 @@
 /*
  * File: config/config.php
  * Description: Central configuration file for Vina Network.
- * Defines global constants such as API keys, base paths,
- * error logging settings, security access control, JWT secret,
- * and database credentials.
  * Created by: Vina Network
  */
 
