@@ -7,7 +7,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 ob_start();
 require_once __DIR__ . '/../config/config.php';
 
-// Set error reporting
+// Error reporting
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
 ini_set('display_errors', 0);
@@ -96,12 +96,12 @@ $page_og_description = "View your Vina Network account information";
 $page_og_image = "https://www.vina.network/assets/images/og-profile.jpg";
 $page_og_url = "https://www.vina.network/accounts/profile.php";
 $page_canonical = "https://www.vina.network/accounts/profile.php";
-$page_css = ['/css/acc.css']; // Dùng đường dẫn tuyệt đối
+$page_css = ['/accounts/acc.css']; // Đúng đường dẫn
 
-// Include header
+// Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("profile: header.php not found at $header_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: header.php not found at $header_path", 'accounts.log', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -110,10 +110,10 @@ if (!file_exists($header_path)) {
 <html lang="en">
 <?php include $header_path; ?>
 <body>
-<?php 
+<?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("profile: navbar.php not found at $navbar_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: navbar.php not found at $navbar_path", 'accounts.log', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -126,7 +126,7 @@ include $navbar_path;
             <table>
                 <tr><th>ID</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr><th>Public Key</th><td><?php echo htmlspecialchars($account['public_key']); ?></td></tr>
-                <tr><th>Created At</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
+                <tr><th>Created at</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
                 <tr><th>Last Login</th><td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td></tr>
             </table>
         </div>
@@ -136,18 +136,18 @@ include $navbar_path;
     </div>
 </div>
 
-<?php 
+<?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    log_message("profile: footer.php not found at $footer_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: footer.php not found at $footer_path", 'accounts.log', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
 ?>
 
 <script>console.log('Attempting to load JS files...');</script>
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
-<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/navbar.js')"></script>
+<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
