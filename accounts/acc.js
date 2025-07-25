@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
+            const csrfToken = document.getElementById('csrf-token').value;
 
             try {
                 if (window.solana && window.solana.isPhantom) {
@@ -74,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('public_key', publicKey);
                     formData.append('signature', signatureBase64);
                     formData.append('message', message);
+                    formData.append('csrf_token', csrfToken);
 
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('index.php', {
@@ -85,6 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
                     if (result.status === 'error' && result.message.includes('Signature verification failed')) {
                         statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
+                    } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
+                        statusSpan.textContent = 'Error: Invalid CSRF token. Please try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
                         window.location.href = result.redirect; // Chuyển hướng đến profile.php
