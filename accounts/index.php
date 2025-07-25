@@ -6,13 +6,19 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 ob_start();
 $root_path = '../';
-require_once __DIR__ . '/../config/bootstrap.php'; // Thay auth.php bằng bootstrap.php
+require_once __DIR__ . '/../config/bootstrap.php';
 
 // Error reporting
 ini_set('log_errors', 1);
 ini_set('error_log', LOGS_PATH . 'php_errors.log');
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
+
+// Handle POST request
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once __DIR__ . '/auth.php';
+    exit;
+}
 
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
