@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hàm ghi log vào server
     async function logToServer(message, level = 'INFO') {
         try {
+            // Rút ngắn public_key trong log
+            message = message.replace(/([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44})/g, '$1'.substring(0, 4) + '...' + '$1'.substring('$1'.length - 4));
             const logData = {
                 timestamp: new Date().toISOString(),
                 level: level,
@@ -32,6 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Check HTTPS
+    if (!window.isSecureContext) {
+        console.warn('Non-secure context detected. Some features may not work.');
+        logToServer('Non-secure context detected', 'WARNING');
+    }
+
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
@@ -39,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
+            const csrfToken = connectWalletButton.getAttribute('data-csrf');
 
             try {
                 if (window.solana && window.solana.isPhantom) {
@@ -72,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('public_key', publicKey);
                     formData.append('signature', signatureBase64);
                     formData.append('message', message);
+                    formData.append('csrf_token', csrfToken);
 
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('index.php', {
@@ -104,16 +114,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Copy functionality for public_key
+    let lastCopyTime = 0;
     document.addEventListener('click', function(e) {
         const icon = e.target.closest('.copy-icon');
         if (!icon) return;
+
+        const now = Date.now();
+        if (now - lastCopyTime < 1000) {
+            console.log('Copy request ignored: Too frequent');
+            return;
+        }
+        lastCopyTime = now;
 
         console.log('Copy icon clicked:', icon);
 
         // Get address from data-full
         const fullAddress = icon.getAttribute('data-full');
-        if (!fullAddress) {
-            console.error('Copy failed: data-full attribute not found or empty');
+        if (!fullAddress || fullAddress.includes('<') || fullAddress.includes('>')) {
+            console.error('Copy failed: Invalid or suspicious address');
             alert('Unable to copy address: Invalid address');
             return;
         }
@@ -184,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             icon.classList.remove('copied');
             tooltip.remove();
-        }, 2000); // Tăng lên 2 giây cho rõ ràng
+        }, 2000);
         console.log('Copy successful');
     }
 });
