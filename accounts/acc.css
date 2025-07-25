@@ -71,7 +71,7 @@ button#connect-wallet:hover {
 
 /* Profile */
 #account-info {
-    margin-top: 20px;
+    margin: 20px auto;
 }
 #account-info table {
     width: 100%;
@@ -82,7 +82,7 @@ button#connect-wallet:hover {
     padding: 8px;
     border: 1px solid #ddd;
     text-align: left;
-    color: #fff; /* Phù hợp với nền tối của acc-content */
+    color: #fff;
 }
 #account-info th {
     background-color: rgba(255, 255, 255, 0.1);
