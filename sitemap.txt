@@ -1,5 +1,5 @@
 Sitemap: Vina Network
-/root (/var/www/vinanetwork/public_html)
+/root/ (/var/www/vinanetwork/public_html/)
 ├── index.php
 ├── robots.txt
 ├── .htaccess
