@@ -5,6 +5,33 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
 
+    // Hàm ghi log vào server
+    async function logToServer(message, level = 'INFO') {
+        try {
+            const logData = {
+                timestamp: new Date().toISOString(),
+                level: level,
+                message: message,
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            };
+            console.log(`Sending log to server: ${message}`);
+            const response = await fetch('/accounts/client-log.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(logData)
+            });
+            if (!response.ok) {
+                console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
+                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+            }
+            const result = await response.json();
+            console.log(`Log server response: ${JSON.stringify(result)}`);
+        } catch (error) {
+            console.error(`Failed to send log to server: ${error.message}`);
+        }
+    }
+
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
@@ -12,32 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
-
-            async function logToServer(message, level = 'INFO') {
-                try {
-                    const logData = {
-                        timestamp: new Date().toISOString(),
-                        level: level,
-                        message: message,
-                        userAgent: navigator.userAgent,
-                        url: window.location.href
-                    };
-                    console.log(`Sending log to server: ${message}`);
-                    const response = await fetch('/accounts/client-log.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(logData)
-                    });
-                    if (!response.ok) {
-                        console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
-                        throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-                    }
-                    const result = await response.json();
-                    console.log(`Log server response: ${JSON.stringify(result)}`);
-                } catch (error) {
-                    console.error(`Failed to send log to server: ${error.message}`);
-                }
-            }
 
             try {
                 if (window.solana && window.solana.isPhantom) {
