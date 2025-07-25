@@ -127,5 +127,7 @@ button#connect-wallet:hover {
 
     .acc-content {
         max-width: 100%;
+        margin: 1rem;
+        padding: 1rem;
     }
 }
