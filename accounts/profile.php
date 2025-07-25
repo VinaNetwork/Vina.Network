@@ -1,5 +1,10 @@
 <?php
+// ============================================================================
 // File: accounts/profile.php
+// Description: Account information page.
+// Created by: Vina Network
+// ============================================================================
+
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
