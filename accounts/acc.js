@@ -1,5 +1,5 @@
 // ============================================================================
-// File: tools/tools.js
+// File: accounts/acc.js
 // Description: Script for managing the entire Accounts page.
 // Created by: Vina Network
 // ============================================================================
