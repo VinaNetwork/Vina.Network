@@ -51,7 +51,8 @@ try {
 
 // Check session
 $public_key = $_SESSION['public_key'] ?? null;
-log_message("Profile.php - Session public_key: " . ($public_key ?? 'Not set'), 'acc_auth.txt', 'accounts', 'DEBUG');
+$short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+log_message("Profile.php - Session public_key: " . ($short_public_key ?? 'Not set'), 'acc_auth.txt', 'accounts', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'acc_auth.txt', 'accounts', 'INFO');
     header('Location: /accounts');
@@ -64,11 +65,11 @@ try {
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        log_message("No account found for public_key: $public_key", 'acc_auth.txt', 'accounts', 'ERROR');
+        log_message("No account found for public_key: $short_public_key", 'acc_auth.txt', 'accounts', 'ERROR');
         header('Location: /accounts');
         exit;
     }
-    log_message("Profile accessed for public_key: $public_key", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("Profile accessed for public_key: $short_public_key", 'acc_auth.txt', 'accounts', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'acc_auth.txt', 'accounts', 'ERROR');
     header('Content-Type: application/json');
@@ -84,7 +85,7 @@ if (isset($_POST['logout']) && isset($_POST['csrf_token'])) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
         exit;
     }
-    log_message("User logged out: public_key=$public_key", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("User logged out: public_key=$short_public_key", 'acc_auth.txt', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
     exit;
