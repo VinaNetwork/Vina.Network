@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: accounts/auth.php
-// Description: API handles Solana wallet signature verification with rate limiting.
+// Description: API handles Solana wallet signature verification with rate limiting and session regeneration.
 // Created by: Vina Network
 // ============================================================================
 
@@ -46,7 +46,7 @@ try {
     log_message("Cleaned up old login attempts for IP: $ip_address", 'acc_auth.txt', 'accounts', 'INFO');
 
     // Count recent attempts
-    $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
+    $stmt = $pdo->prepare("SELECT COUNT(*) as attemptsome text attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
     $stmt->execute([$ip_address, date('Y-m-d H:i:s', time() - $rate_limit_window)]);
     $attempt_count = $stmt->fetchColumn();
 
@@ -194,6 +194,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         } catch (PDOException $e) {
             throw new Exception("Database query error: " . $e->getMessage());
         }
+
+        // Regenerate session ID to prevent session fixation
+        $old_session_id = session_id();
+        session_regenerate_id(true);
+        $new_session_id = session_id();
+        log_message("Session ID regenerated: old=$old_session_id, new=$new_session_id, public_key=$short_public_key", 'acc_auth.txt', 'accounts', 'INFO');
 
         if ($account) {
             $start_time = microtime(true);
