@@ -1,5 +1,10 @@
 <?php
+// ============================================================================
 // File: accounts/auth.php
+// Description: API handles Solana wallet signature verification.
+// Created by: Vina Network
+// ============================================================================
+
 if (!defined('VINANETWORK_ENTRY')) {
     die("Access denied: Direct access to this file is not allowed.");
 }
