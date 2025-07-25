@@ -49,10 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer('Initiating Phantom wallet connection', 'INFO');
                     const response = await window.solana.connect();
                     const publicKey = response.publicKey.toString();
+                    const shortPublicKey = publicKey.length >= 8 ? publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4) : 'Invalid';
                     publicKeySpan.textContent = publicKey;
                     walletInfo.style.display = 'block';
                     statusSpan.textContent = 'Wallet connected! Signing message...';
-                    await logToServer(`Wallet connected, publicKey: ${publicKey}`, 'INFO');
+                    await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
                     const message = `Verify login for Vina Network at ${timestamp}`;
@@ -89,6 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
                     } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
                         statusSpan.textContent = 'Error: Invalid CSRF token. Please try again.';
+                    } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
+                        statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
                         window.location.href = result.redirect; // Chuyển hướng đến profile.php
@@ -131,14 +134,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        console.log('Attempting to copy address:', fullAddress);
+        const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' + fullAddress.substring(fullAddress.length - 4) : 'Invalid';
+        console.log('Attempting to copy address:', shortAddress);
 
         // Try Clipboard API
         if (navigator.clipboard && window.isSecureContext) {
             console.log('Using Clipboard API');
             navigator.clipboard.writeText(fullAddress).then(() => {
                 showCopyFeedback(icon);
-                logToServer(`Copied public_key: ${fullAddress}`, 'INFO');
+                logToServer(`Copied public_key: ${shortAddress}`, 'INFO');
             }).catch(err => {
                 console.error('Clipboard API failed:', err);
                 fallbackCopy(fullAddress, icon);
@@ -150,7 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function fallbackCopy(text, icon) {
-        console.log('Using fallback copy for:', text);
+        const shortText = text.length >= 8 ? text.substring(0, 4) + '...' + text.substring(text.length - 4) : 'Invalid';
+        console.log('Using fallback copy for:', shortText);
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -165,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Fallback copy result:', success);
             if (success) {
                 showCopyFeedback(icon);
-                logToServer(`Copied public_key: ${text}`, 'INFO');
+                logToServer(`Copied public_key: ${shortText}`, 'INFO');
             } else {
                 console.error('Fallback copy failed');
                 alert('Unable to copy address: Copy error');
