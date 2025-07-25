@@ -5,10 +5,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../vendor/autoload.php'; // Đảm bảo autoload Composer
-use StephenHill\Base58; // Sử dụng stephenhill/base58
+require_once __DIR__ . '/../vendor/autoload.php';
+use StephenHill\Base58;
 
-session_start(); // Khởi tạo session
+session_start();
 
 function log_message($message, $level = 'INFO') {
     $log_file = __DIR__ . '/../logs/accounts.log';
@@ -78,9 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         }
         log_message("Sodium library ready", 'INFO');
 
-        // Check and load stephenhill/base58 library
+        // Check stephenhill/base58 and extensions
         if (!class_exists('\StephenHill\Base58')) {
             throw new Exception("stephenhill/base58 library is not installed!");
+        }
+        if (!extension_loaded('bcmath') && !extension_loaded('gmp')) {
+            throw new Exception("Please install the BC Math or GMP extension");
         }
         log_message("Base58 library ready", 'INFO');
 
@@ -104,10 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Message hex: " . bin2hex($message_raw), 'DEBUG');
         log_message("Signature hex: " . bin2hex($signature), 'DEBUG');
 
-        // Verify signature with detailed checks
+        // Verify signature
         $start_time = microtime(true);
         try {
-            // Kiểm tra chi tiết trước khi xác minh
             if (!is_string($message_raw) || empty($message_raw)) {
                 throw new Exception("Invalid message: Empty or non-string message");
             }
@@ -118,7 +120,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
                 throw new Exception("Invalid signature: Length is " . strlen($signature) . " bytes, expected 64 bytes");
             }
 
-            // Xác minh chữ ký
             $verified = sodium_crypto_sign_verify_detached(
                 $signature,
                 $message_raw,
@@ -165,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt->execute([$current_time, $public_key]);
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Login successful: public_key=$public_key (took {$duration}ms)", 'INFO');
-            $_SESSION['public_key'] = $public_key; // Lưu public_key vào session
+            $_SESSION['public_key'] = $public_key;
             echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => 'profile.php']);
         } else {
             $start_time = microtime(true);
@@ -173,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt->execute([$public_key, $current_time, $current_time]);
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Registration successful: public_key=$public_key (took {$duration}ms)", 'INFO');
-            $_SESSION['public_key'] = $public_key; // Lưu public_key vào session
+            $_SESSION['public_key'] = $public_key;
             echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => 'profile.php']);
         }
     } catch (Exception $e) {
