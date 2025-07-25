@@ -10,14 +10,14 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 ob_start();
-require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/bootstrap.php';
 require_once __DIR__ . '/../vendor/autoload.php'; // Load composer for stephenhill/base58
 
 use StephenHill\Base58;
 
 // Error reporting
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
+ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
@@ -26,19 +26,6 @@ session_start([
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict'
 ]);
-
-function log_message($message, $level = 'INFO') {
-    $log_file = __DIR__ . '/../logs/accounts.log';
-    $log_dir = dirname($log_file);
-    if (!is_dir($log_dir)) {
-        mkdir($log_dir, 0755, true);
-    }
-    $timestamp = date('Y-m-d H:i:s');
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
-    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-    $log_message = "[$timestamp] [$level] [IP:$ip] [UA:$userAgent] $message\n";
-    file_put_contents($log_file, $log_message, FILE_APPEND);
-}
 
 // Database connection
 $start_time = microtime(true);
@@ -50,10 +37,10 @@ try {
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection successful (took {$duration}ms)", 'INFO');
+    log_message("Database connection successful (took {$duration}ms)", 'acc_auth.txt', 'accounts', 'INFO');
 } catch (PDOException $e) {
     $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'acc_auth.txt', 'accounts', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
     exit;
@@ -61,9 +48,9 @@ try {
 
 // Check session
 $public_key = $_SESSION['public_key'] ?? null;
-log_message("Profile.php - Session public_key: " . ($public_key ?? 'Not set'), 'DEBUG');
+log_message("Profile.php - Session public_key: " . ($public_key ?? 'Not set'), 'acc_auth.txt', 'accounts', 'DEBUG');
 if (!$public_key) {
-    log_message("No public key in session, redirecting to login", 'INFO');
+    log_message("No public key in session, redirecting to login", 'acc_auth.txt', 'accounts', 'INFO');
     header('Location: /accounts');
     exit;
 }
@@ -74,13 +61,13 @@ try {
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        log_message("No account found for public_key: $public_key", 'ERROR');
+        log_message("No account found for public_key: $public_key", 'acc_auth.txt', 'accounts', 'ERROR');
         header('Location: /accounts');
         exit;
     }
-    log_message("Profile accessed for public_key: $public_key", 'INFO');
+    log_message("Profile accessed for public_key: $public_key", 'acc_auth.txt', 'accounts', 'INFO');
 } catch (PDOException $e) {
-    log_message("Database query failed: {$e->getMessage()}", 'ERROR');
+    log_message("Database query failed: {$e->getMessage()}", 'acc_auth.txt', 'accounts', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving account information']);
     exit;
@@ -88,7 +75,7 @@ try {
 
 // Handle logout
 if (isset($_POST['logout'])) {
-    log_message("User logged out: public_key=$public_key", 'INFO');
+    log_message("User logged out: public_key=$public_key", 'acc_auth.txt', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
     exit;
@@ -101,7 +88,7 @@ try {
     $base58->decode($account['public_key']);
     $short_public_key = substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4);
 } catch (Exception $e) {
-    log_message("Invalid public_key format: {$e->getMessage()}", 'ERROR');
+    log_message("Invalid public_key format: {$e->getMessage()}", 'acc_auth.txt', 'accounts', 'ERROR');
 }
 
 // SEO meta
@@ -119,7 +106,7 @@ $page_css = ['/accounts/acc.css'];
 // Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("profile.php: header.php not found at $header_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: header.php not found at $header_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -131,7 +118,7 @@ if (!file_exists($header_path)) {
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("profile.php: navbar.php not found at $navbar_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: navbar.php not found at $navbar_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -169,7 +156,7 @@ include $navbar_path;
 <?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    log_message("profile.php: footer.php not found at $footer_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: footer.php not found at $footer_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
