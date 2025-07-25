@@ -15,17 +15,17 @@ if (!defined('DB_HOST')) {
     define('DB_HOST', 'localhost');
 }
 if (!defined('DB_NAME')) {
-    define('DB_NAME', 'vina');
+    define('DB_NAME', 'vina_database');
 }
 if (!defined('DB_USER')) {
     define('DB_USER', 'vina_user');
 }
 if (!defined('DB_PASS')) {
-    define('DB_PASS', 'your_db_password');
+    define('DB_PASS', 'vina_database_password');
 }
 
 // Helius API Configuration
 if (!defined('HELIUS_API_KEY')) {
-    define('HELIUS_API_KEY', 'your_helius_api_key');
+    define('HELIUS_API_KEY', 'helius_api_key');
 }
 ?>
