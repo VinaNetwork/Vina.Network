@@ -10,11 +10,6 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-// JWT Secret for authentication
-if (!defined('JWT_SECRET')) {
-    define('JWT_SECRET', 'your_random_string_of_at_least_32_characters');
-}
-
 // Database Configuration
 if (!defined('DB_HOST')) {
     define('DB_HOST', 'localhost');
