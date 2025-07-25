@@ -38,8 +38,7 @@ Sitemap: Vina Network
 │
 ├── config/
 │   ├── bootstrap.php
-│   ├── config.php
-│   └── db.php
+│   └── config.php
 │
 ├── accounts/
 │   ├── index.php
