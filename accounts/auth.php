@@ -35,20 +35,27 @@ try {
 }
 
 // Rate limiting
-$ip_address = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+$ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+if ($ip_address === 'Unknown') {
+    log_message("Failed to retrieve IP address", 'acc_auth.txt', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Unable to process request: Invalid IP address']);
+    exit;
+}
 $rate_limit = 5; // Maximum 5 attempts per minute
 $rate_limit_window = 60; // 1 minute in seconds
 
 try {
-    // Clean up old attempts (older than 1 minute)
+    // Clean up old attempts
     $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE attempt_time < ?");
     $stmt->execute([date('Y-m-d H:i:s', time() - $rate_limit_window)]);
     log_message("Cleaned up old login attempts for IP: $ip_address", 'acc_auth.txt', 'accounts', 'INFO');
 
     // Count recent attempts
-    $stmt = $pdo->prepare("SELECT COUNT(*) as attemptsome text attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
+    $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
     $stmt->execute([$ip_address, date('Y-m-d H:i:s', time() - $rate_limit_window)]);
     $attempt_count = $stmt->fetchColumn();
+    log_message("Checked login attempts for IP: $ip_address, count: $attempt_count", 'acc_auth.txt', 'accounts', 'INFO');
 
     if ($attempt_count >= $rate_limit) {
         log_message("Rate limit exceeded for IP: $ip_address, attempts: $attempt_count", 'acc_auth.txt', 'accounts', 'ERROR');
@@ -62,9 +69,9 @@ try {
     $stmt->execute([$ip_address, date('Y-m-d H:i:s')]);
     log_message("Recorded login attempt for IP: $ip_address, attempt count: " . ($attempt_count + 1), 'acc_auth.txt', 'accounts', 'INFO');
 } catch (PDOException $e) {
-    log_message("Rate limiting error: {$e->getMessage()}", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("Rate limiting error for IP: $ip_address, SQL Error: {$e->getMessage()}, Code: {$e->getCode()}", 'acc_auth.txt', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Rate limiting error']);
+    echo json_encode(['status' => 'error', 'message' => 'Rate limiting error. Please try again later.']);
     exit;
 }
 
