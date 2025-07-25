@@ -54,7 +54,7 @@ include $navbar_path;
 <div class="acc-container">
     <div class="acc-content">
         <h1>Login/Register with Phantom Wallet</h1>
-        <button id="connect-wallet">Connect Phantom Wallet</button>
+        <button class="cta-button" id="connect-wallet">Connect Phantom Wallet</button>
         <div id="wallet-info" style="display: none;">
             <p>Wallet address: <span id="public-key"></span></p>
             <p>Status: <span id="status"></span></p>
