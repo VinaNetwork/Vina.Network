@@ -6,6 +6,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 ob_start();
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../vendor/autoload.php'; // Load composer for stephenhill/base58
+
+use StephenHill\Base58;
 
 // Error reporting
 ini_set('log_errors', 1);
@@ -86,6 +89,16 @@ if (isset($_POST['logout'])) {
     exit;
 }
 
+// Validate public_key format
+$base58 = new Base58();
+$short_public_key = 'Invalid address';
+try {
+    $base58->decode($account['public_key']);
+    $short_public_key = substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4);
+} catch (Exception $e) {
+    log_message("Invalid public_key format: {$e->getMessage()}", 'ERROR');
+}
+
 // SEO meta
 $root_path = '../';
 $page_title = "Vina Network - Profile";
@@ -96,7 +109,7 @@ $page_og_description = "View your Vina Network account information";
 $page_og_image = "https://www.vina.network/assets/images/og-profile.jpg";
 $page_og_url = "https://www.vina.network/accounts/profile.php";
 $page_canonical = "https://www.vina.network/accounts/profile.php";
-$page_css = ['/accounts/acc.css']; // Đúng đường dẫn
+$page_css = ['/accounts/acc.css'];
 
 // Header
 $header_path = $root_path . 'include/header.php';
@@ -125,7 +138,19 @@ include $navbar_path;
         <div id="account-info">
             <table>
                 <tr><th>ID</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
-                <tr><th>Public Key</th><td><?php echo htmlspecialchars($account['public_key']); ?></td></tr>
+                <tr>
+                    <th>Public Key</th>
+                    <td>
+                        <?php if ($short_public_key !== 'Invalid address'): ?>
+                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+                                <?php echo htmlspecialchars($short_public_key); ?>
+                            </a>
+                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+                        <?php else: ?>
+                            <span>Invalid address</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
                 <tr><th>Created at</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
                 <tr><th>Last Login</th><td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td></tr>
             </table>
@@ -148,6 +173,7 @@ include $footer_path;
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
