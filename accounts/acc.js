@@ -1,11 +1,23 @@
 // ============================================================================
 // File: accounts/acc.js
-// Description: Script for managing the entire Accounts page.
+// Description: Script for managing the entire Accounts page with HTTPS and XSS checks.
 // Created by: Vina Network
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
+
+    // Check if running in a secure context (HTTPS)
+    if (!window.isSecureContext) {
+        logToServer('Page not loaded over HTTPS, secure context unavailable', 'ERROR');
+        const walletInfo = document.getElementById('wallet-info');
+        const statusSpan = document.getElementById('status');
+        if (walletInfo && statusSpan) {
+            walletInfo.style.display = 'block';
+            statusSpan.textContent = 'Error: This page must be loaded over HTTPS';
+        }
+        return; // Stop further execution
+    }
 
     // Hàm ghi log vào server
     async function logToServer(message, level = 'INFO') {
@@ -42,6 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
             const csrfToken = document.getElementById('csrf-token').value;
+
+            // Double-check HTTPS
+            if (!window.isSecureContext) {
+                logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
+                walletInfo.style.display = 'block';
+                statusSpan.textContent = 'Error: Wallet connection requires HTTPS';
+                return;
+            }
 
             try {
                 if (window.solana && window.solana.isPhantom) {
@@ -117,19 +137,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const icon = e.target.closest('.copy-icon');
         if (!icon) return;
 
+        // Check HTTPS
+        if (!window.isSecureContext) {
+            logToServer('Copy blocked: Not in secure context', 'ERROR');
+            alert('Unable to copy: This feature requires HTTPS');
+            return;
+        }
+
         console.log('Copy icon clicked:', icon);
 
         // Get address from data-full
         const fullAddress = icon.getAttribute('data-full');
         if (!fullAddress) {
             console.error('Copy failed: data-full attribute not found or empty');
+            logToServer('Copy failed: data-full attribute not found or empty', 'ERROR');
             alert('Unable to copy address: Invalid address');
             return;
         }
 
-        // Validate address format (Base58)
-        if (!fullAddress.match(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/)) {
+        // Validate address format (Base58) to prevent XSS
+        const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
+        if (!base58Regex.test(fullAddress)) {
             console.error('Invalid address format:', fullAddress);
+            logToServer(`Copy blocked: Invalid address format in data-full: ${fullAddress.substring(0, 8)}...`, 'ERROR');
             alert('Unable to copy: Invalid address format');
             return;
         }
@@ -173,10 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 logToServer(`Copied public_key: ${shortText}`, 'INFO');
             } else {
                 console.error('Fallback copy failed');
+                logToServer('Fallback copy failed', 'ERROR');
                 alert('Unable to copy address: Copy error');
             }
         } catch (err) {
             console.error('Fallback copy error:', err);
+            logToServer(`Fallback copy error: ${err.message}`, 'ERROR');
             alert('Unable to copy address: ' + err.message);
         } finally {
             document.body.removeChild(textarea);
@@ -195,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             icon.classList.remove('copied');
             tooltip.remove();
-        }, 2000); // Tăng lên 2 giây cho rõ ràng
+        }, 2000); // 2 seconds for clarity
         console.log('Copy successful');
     }
 });
