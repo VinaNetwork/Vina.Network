@@ -1,11 +1,13 @@
 <?php
 // File: accounts/client-log.php
+if (!defined('VINANETWORK_ENTRY')) {
+    die("Access denied: Direct access to this file is not allowed.");
+}
+
+require_once __DIR__ . '/../config/bootstrap.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $log_file = __DIR__ . '/../logs/client.log';
-    $log_dir = dirname($log_file);
-    if (!is_dir($log_dir)) {
-        mkdir($log_dir, 0755, true);
-    }
+    $log_file = ACCOUNTS_PATH . 'client.log';
     $data = json_decode(file_get_contents('php://input'), true);
     $timestamp = $data['timestamp'] ?? date('Y-m-d H:i:s');
     $level = $data['level'] ?? 'INFO';
@@ -20,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (file_exists($log_file) && filesize($log_file) > 10 * 1024 * 1024) {
         rename($log_file, $log_file . '.' . time() . '.bak');
     }
-    if (!file_put_contents($log_file, $log_message, FILE_APPEND)) {
+    if (!file_put_contents($log_file, $log_message, FILE_APPEND | LOCK_EX)) {
         error_log("Failed to write to client.log: Check permissions for $log_file");
     }
     echo json_encode(['status' => 'success']);
