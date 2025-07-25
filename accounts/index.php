@@ -7,7 +7,7 @@ ob_start();
 $root_path = '../';
 require_once __DIR__ . '/auth.php';
 
-// Set error reporting
+// Error reporting
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
 ini_set('display_errors', 0);
@@ -22,12 +22,12 @@ $page_og_description = "Connect your Solana wallet to register or login to Vina 
 $page_og_image = "https://www.vina.network/assets/images/og-connect.jpg";
 $page_og_url = "https://www.vina.network/accounts/";
 $page_canonical = "https://www.vina.network/accounts/";
-$page_css = ['/css/acc.css'];
+$page_css = ['/accounts/acc.css'];
 
-// Include header
+// Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    error_log("index: header.php not found at $header_path");
+    error_log("index.php: header.php not found at $header_path");
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -36,10 +36,10 @@ if (!file_exists($header_path)) {
 <html lang="en">
 <?php include $header_path; ?>
 <body>
-<?php 
+<?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    error_log("index: navbar.php not found at $navbar_path");
+    error_log("index.php: navbar.php not found at $navbar_path");
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -56,10 +56,10 @@ include $navbar_path;
     </div>
 </div>
 
-<?php 
+<?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    error_log("index: footer.php not found at $footer_path");
+    error_log("index.php: footer.php not found at $footer_path");
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
@@ -67,9 +67,9 @@ include $footer_path;
 
 <script>console.log('Attempting to load JS files...');</script>
 <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
-<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/navbar.js')"></script>
-<script src="acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load acc.js')"></script>
+<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
