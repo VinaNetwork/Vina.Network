@@ -6,8 +6,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 ob_start();
 require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../vendor/autoload.php'; // Load composer for stephenhill/base58
-
+require_once __DIR__ . '/../config/utils.php'; // Thêm file utils cho CSRF
+require_once __DIR__ . '/../vendor/autoload.php';
 use StephenHill\Base58;
 
 // Error reporting
@@ -31,7 +31,13 @@ function log_message($message, $level = 'INFO') {
     $timestamp = date('Y-m-d H:i:s');
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+    // Rút ngắn public_key trong log
+    $message = preg_replace('/([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44})/', substr('$1', 0, 4) . '...'. substr('$1', -4), $message);
     $log_message = "[$timestamp] [$level] [IP:$ip] [UA:$userAgent] $message\n";
+    // Giới hạn kích thước log (10MB)
+    if (file_exists($log_file) && filesize($log_file) > 10 * 1024 * 1024) {
+        rename($log_file, $log_file . '.' . time() . '.bak');
+    }
     file_put_contents($log_file, $log_message, FILE_APPEND);
 }
 
@@ -83,6 +89,12 @@ try {
 
 // Handle logout
 if (isset($_POST['logout'])) {
+    if (!isset($_POST['csrf_token']) || !validate_csrf_token($_POST['csrf_token'])) {
+        log_message("Invalid CSRF token for logout attempt: public_key=$public_key", 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit;
+    }
     log_message("User logged out: public_key=$public_key", 'INFO');
     session_destroy();
     header('Location: /accounts/index.php');
@@ -111,10 +123,17 @@ $page_og_url = "https://www.vina.network/accounts/profile.php";
 $page_canonical = "https://www.vina.network/accounts/profile.php";
 $page_css = ['/accounts/acc.css'];
 
+// Security headers
+header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://www.vina.network;");
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: DENY");
+header("X-XSS-Protection: 1; mode=block");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+
 // Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("profile.php: header.php not found at $header_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: header.php not found at $header_path", 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -126,7 +145,7 @@ if (!file_exists($header_path)) {
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("profile.php: navbar.php not found at $navbar_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: navbar.php not found at $navbar_path", 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -156,6 +175,7 @@ include $navbar_path;
             </table>
         </div>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
             <button type="submit" name="logout">Logout</button>
         </form>
     </div>
@@ -164,7 +184,7 @@ include $navbar_path;
 <?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    log_message("profile.php: footer.php not found at $footer_path", 'accounts.log', 'ERROR');
+    log_message("profile.php: footer.php not found at $footer_path", 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
