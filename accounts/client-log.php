@@ -13,7 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userAgent = $data['userAgent'] ?? 'Unknown';
     $url = $data['url'] ?? 'Unknown';
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+    // Rút ngắn public_key trong log
+    $message = preg_replace('/([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44})/', substr('$1', 0, 4) . '...'. substr('$1', -4), $message);
     $log_message = "[$timestamp] [$level] [IP:$ip] [URL:$url] [UA:$userAgent] $message\n";
+    // Giới hạn kích thước log (10MB)
+    if (file_exists($log_file) && filesize($log_file) > 10 * 1024 * 1024) {
+        rename($log_file, $log_file . '.' . time() . '.bak');
+    }
     if (!file_put_contents($log_file, $log_message, FILE_APPEND)) {
         error_log("Failed to write to client.log: Check permissions for $log_file");
     }
