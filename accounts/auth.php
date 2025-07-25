@@ -35,8 +35,16 @@ try {
 }
 
 // Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'], $_POST['csrf_token'])) {
     header('Content-Type: application/json');
+
+    // Validate CSRF token
+    if (!validate_csrf_token($_POST['csrf_token'])) {
+        log_message("Invalid CSRF token for login attempt", 'acc_auth.txt', 'accounts', 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+
     $public_key = $_POST['public_key'];
     $signature = base64_decode($_POST['signature'], true);
     $message = $_POST['message'];
