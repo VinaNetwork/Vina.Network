@@ -64,7 +64,7 @@ $public_key = $_SESSION['public_key'] ?? null;
 log_message("Profile.php - Session public_key: " . ($public_key ?? 'Not set'), 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'INFO');
-    header('Location: /accounts/index.php');
+    header('Location: /accounts');
     exit;
 }
 
@@ -75,7 +75,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for public_key: $public_key", 'ERROR');
-        header('Location: /accounts/index.php');
+        header('Location: /accounts');
         exit;
     }
     log_message("Profile accessed for public_key: $public_key", 'INFO');
@@ -90,7 +90,7 @@ try {
 if (isset($_POST['logout'])) {
     log_message("User logged out: public_key=$public_key", 'INFO');
     session_destroy();
-    header('Location: /accounts/index.php');
+    header('Location: /accounts');
     exit;
 }
 
