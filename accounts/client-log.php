@@ -1,5 +1,10 @@
 <?php
+// ============================================================================
 // File: accounts/client-log.php
+// Description: Logging processing.
+// Created by: Vina Network
+// ============================================================================
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $log_file = __DIR__ . '/../logs/client.log';
     $log_dir = dirname($log_file);
