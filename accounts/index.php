@@ -6,21 +6,13 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 ob_start();
 $root_path = '../';
-require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/../config/utils.php'; // Thêm file utils cho CSRF
+require_once __DIR__ . '/../config/bootstrap.php'; // Thay auth.php bằng bootstrap.php
 
-// Error reporting
+// Error reporting (đã có trong bootstrap.php, nhưng xác nhận lại)
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
+ini_set('error_log', LOGS_PATH . 'php_errors.log');
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
-
-// Session start
-session_start([
-    'cookie_secure' => true,
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict'
-]);
 
 // Rate limiting
 $ip = $_SERVER['REMOTE_ADDR'];
@@ -31,7 +23,7 @@ $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
 if (time() - $rate_limit_time > 60) {
     $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
 } elseif ($rate_limit_count >= 5) {
-    log_message("Rate limit exceeded for login attempt: IP=$ip", 'ERROR');
+    log_message("Rate limit exceeded for login attempt: IP=$ip", 'acc_auth.txt', 'accounts', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Too many login attempts. Try again in 1 minute.']);
     exit;
@@ -63,7 +55,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 // Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("index.php: header.php not found at $header_path", 'ERROR');
+    log_message("index.php: header.php not found at $header_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -75,7 +67,7 @@ if (!file_exists($header_path)) {
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("index.php: navbar.php not found at $navbar_path", 'ERROR');
+    log_message("index.php: navbar.php not found at $navbar_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -95,7 +87,7 @@ include $navbar_path;
 <?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    log_message("index.php: footer.php not found at $footer_path", 'ERROR');
+    log_message("index.php: footer.php not found at $footer_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
