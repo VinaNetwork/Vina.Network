@@ -80,11 +80,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     }
 
     $public_key = $_POST['public_key'];
+    $short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
     $signature = base64_decode($_POST['signature'], true);
     $message = $_POST['message'];
     $current_time = date('Y-m-d H:i:s');
 
-    log_message("Received POST: public_key=$public_key, message=$message, IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("Received POST: public_key=$short_public_key, message=$message, IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
     log_message("Signature (base64): {$_POST['signature']}", 'acc_auth.txt', 'accounts', 'DEBUG');
 
     if ($signature === false || strlen($signature) !== 64) {
@@ -130,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
                 throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
             }
             $duration = (microtime(true) - $start_time) * 1000;
-            log_message("Public key decoded: $public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
+            log_message("Public key decoded: $short_public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
             log_message("Public key hex: " . bin2hex($public_key_bytes), 'acc_auth.txt', 'accounts', 'DEBUG');
         } catch (Exception $e) {
             throw new Exception("Public key decode error: " . $e->getMessage());
@@ -189,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt->execute([$public_key]);
             $account = $stmt->fetch();
             $duration = (microtime(true) - $start_time) * 1000;
-            log_message("Account check query: public_key=$public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
+            log_message("Account check query: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
         } catch (PDOException $e) {
             throw new Exception("Database query error: " . $e->getMessage());
         }
@@ -199,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt = $pdo->prepare("UPDATE accounts SET last_login = ? WHERE public_key = ?");
             $stmt->execute([$current_time, $public_key]);
             $duration = (microtime(true) - $start_time) * 1000;
-            log_message("Login successful: public_key=$public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
+            log_message("Login successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
             echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => 'profile.php']);
         } else {
@@ -207,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)");
             $stmt->execute([$public_key, $current_time, $current_time]);
             $duration = (microtime(true) - $start_time) * 1000;
-            log_message("Registration successful: public_key=$public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
+            log_message("Registration successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'acc_auth.txt', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
             echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => 'profile.php']);
         }
