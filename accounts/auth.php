@@ -5,10 +5,15 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/utils.php'; // Thêm file utils cho CSRF
 require_once __DIR__ . '/../vendor/autoload.php';
 use StephenHill\Base58;
 
-session_start();
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict'
+]);
 
 function log_message($message, $level = 'INFO') {
     $log_file = __DIR__ . '/../logs/accounts.log';
@@ -19,7 +24,13 @@ function log_message($message, $level = 'INFO') {
     $timestamp = date('Y-m-d H:i:s');
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+    // Rút ngắn public_key trong log
+    $message = preg_replace('/([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44})/', substr('$1', 0, 4) . '...'. substr('$1', -4), $message);
     $log_message = "[$timestamp] [$level] [IP:$ip] [UA:$userAgent] $message\n";
+    // Giới hạn kích thước log (10MB)
+    if (file_exists($log_file) && filesize($log_file) > 10 * 1024 * 1024) {
+        rename($log_file, $log_file . '.' . time() . '.bak');
+    }
     file_put_contents($log_file, $log_message, FILE_APPEND);
 }
 
@@ -43,8 +54,16 @@ try {
 }
 
 // Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'], $_POST['csrf_token'])) {
     header('Content-Type: application/json');
+
+    // Kiểm tra CSRF
+    if (!validate_csrf_token($_POST['csrf_token'])) {
+        log_message("Invalid CSRF token for login attempt", 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+
     $public_key = $_POST['public_key'];
     $signature = base64_decode($_POST['signature'], true);
     $message = $_POST['message'];
@@ -166,6 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt->execute([$current_time, $public_key]);
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Login successful: public_key=$public_key (took {$duration}ms)", 'INFO');
+            session_regenerate_id(true); // Tái tạo session ID
             $_SESSION['public_key'] = $public_key;
             echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => 'profile.php']);
         } else {
@@ -174,6 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt->execute([$public_key, $current_time, $current_time]);
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Registration successful: public_key=$public_key (took {$duration}ms)", 'INFO');
+            session_regenerate_id(true); // Tái tạo session ID
             $_SESSION['public_key'] = $public_key;
             echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => 'profile.php']);
         }
@@ -182,5 +203,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         exit;
     }
+    exit;
+} else {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method Not Allowed']);
     exit;
 }
