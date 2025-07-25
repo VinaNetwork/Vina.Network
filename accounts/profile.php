@@ -161,7 +161,7 @@ include $navbar_path;
             </table>
         </div>
         <form method="POST">
-            <button type="submit" name="logout">Logout</button>
+            <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
     </div>
 </div>
