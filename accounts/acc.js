@@ -1,6 +1,8 @@
-// File: accounts/acc.js
-// Description: Script for handling account-related functionality, including Phantom wallet connection and copy address feature
+// ============================================================================
+// File: tools/tools.js
+// Description: Script for managing the entire Accounts page.
 // Created by: Vina Network
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
