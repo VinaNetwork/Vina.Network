@@ -27,6 +27,9 @@ session_start([
     'cookie_samesite' => 'Strict'
 ]);
 
+// Generate CSRF token
+$csrf_token = generate_csrf_token();
+
 // Database connection
 $start_time = microtime(true);
 try {
@@ -74,7 +77,13 @@ try {
 }
 
 // Handle logout
-if (isset($_POST['logout'])) {
+if (isset($_POST['logout']) && isset($_POST['csrf_token'])) {
+    if (!validate_csrf_token($_POST['csrf_token'])) {
+        log_message("Invalid CSRF token for logout attempt", 'acc_auth.txt', 'accounts', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit;
+    }
     log_message("User logged out: public_key=$public_key", 'acc_auth.txt', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
@@ -148,6 +157,7 @@ include $navbar_path;
             </table>
         </div>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
     </div>
