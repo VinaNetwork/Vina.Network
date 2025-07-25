@@ -12,12 +12,16 @@ if (!defined('VINANETWORK_ENTRY')) {
 ob_start();
 $root_path = '../';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../config/bootstrap.php';
 
 // Error reporting
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/php_errors.log');
+ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
+
+// Generate CSRF token
+$csrf_token = generate_csrf_token();
 
 // SEO meta
 $page_title = "Connect Wallet to Vina Network";
@@ -33,7 +37,7 @@ $page_css = ['/accounts/acc.css'];
 // Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    error_log("index.php: header.php not found at $header_path");
+    log_message("index.php: header.php not found at $header_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -45,7 +49,7 @@ if (!file_exists($header_path)) {
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    error_log("index.php: navbar.php not found at $navbar_path");
+    log_message("index.php: navbar.php not found at $navbar_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -59,13 +63,14 @@ include $navbar_path;
             <p>Wallet address: <span id="public-key"></span></p>
             <p>Status: <span id="status"></span></p>
         </div>
+        <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
     </div>
 </div>
 
 <?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    error_log("index.php: footer.php not found at $footer_path");
+    log_message("index.php: footer.php not found at $footer_path", 'acc_auth.txt', 'accounts', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
