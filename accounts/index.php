@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://api.mainnet-beta.solana.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
@@ -65,8 +65,8 @@ include $navbar_path;
 
 <div class="acc-container">
     <div class="acc-content">
-        <h1>Login/Register with Solana Wallet</h1>
-        <div id="wallet-connect-root"></div>
+        <h1>Login/Register with Phantom Wallet</h1>
+        <button class="cta-button" id="connect-wallet">Connect Phantom Wallet</button>
         <div id="wallet-info" style="display: none;">
             <p>Wallet address: <span id="public-key"></span></p>
             <p>Status: <span id="status"></span></p>
@@ -85,12 +85,7 @@ include $footer_path;
 ?>
 
 <script>console.log('Attempting to load JS files...');</script>
-<script src="https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@jup-ag/wallet-adapter@0.1.24/dist/index.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.9.23/dist/index.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.19.32/dist/index.umd.js"></script>
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
