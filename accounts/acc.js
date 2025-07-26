@@ -1,6 +1,6 @@
 // ============================================================================
 // File: accounts/acc.js
-// Description: Script for managing the entire Accounts page with HTTPS and XSS checks.
+// Description: Script for managing the Accounts page with multi-wallet support via CDN, HTTPS, and XSS checks.
 // Created by: Vina Network
 // ============================================================================
 
@@ -16,7 +16,17 @@ document.addEventListener('DOMContentLoaded', () => {
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Error: This page must be loaded over HTTPS';
         }
-        return; // Stop further execution
+        return;
+    }
+
+    // Polyfill Buffer for browser
+    if (!window.Buffer) {
+        window.Buffer = {
+            from: (data, encoding) => {
+                if (encoding === 'utf8') return new Uint8Array([...data].map(c => c.charCodeAt(0)));
+                throw new Error('Unsupported encoding');
+            }
+        };
     }
 
     // Hàm ghi log vào server
@@ -46,107 +56,126 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Connect wallet functionality
-    const connectWalletButton = document.getElementById('connect-wallet');
-    if (connectWalletButton) {
-        connectWalletButton.addEventListener('click', async () => {
-            const walletInfo = document.getElementById('wallet-info');
-            const publicKeySpan = document.getElementById('public-key');
-            const statusSpan = document.getElementById('status');
-            const csrfToken = document.getElementById('csrf-token').value;
+    // Wallet connection logic
+    const connection = new window.SolanaWeb3.Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+    const wallets = [
+        new window.SolanaWalletAdapterWallets.PhantomWalletAdapter(),
+        new window.SolanaWalletAdapterWallets.SolflareWalletAdapter(),
+        new window.SolanaWalletAdapterWallets.BackpackWalletAdapter(),
+        // Jupiter Mobile via WalletConnect (if supported)
+        // new window.SolanaWalletAdapterWallets.WalletConnectWalletAdapter({ network: 'mainnet-beta' })
+    ];
 
-            // Double-check HTTPS
+    // Render wallet button
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const { UnifiedWalletProvider, UnifiedWalletButton } = window.Jupiter;
+
+    ReactDOM.render(
+        React.createElement(
+            UnifiedWalletProvider,
+            {
+                wallets: wallets,
+                config: {
+                    autoConnect: false,
+                    cluster: 'mainnet-beta',
+                    connection: connection
+                }
+            },
+            React.createElement(UnifiedWalletButton)
+        ),
+        root
+    );
+
+    // Listen for wallet connection
+    let connectedWallet = null;
+    wallets.forEach(wallet => {
+        wallet.on('connect', async (publicKey) => {
             if (!window.isSecureContext) {
                 logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
+                const walletInfo = document.getElementById('wallet-info');
+                const statusSpan = document.getElementById('status');
                 walletInfo.style.display = 'block';
                 statusSpan.textContent = 'Error: Wallet connection requires HTTPS';
                 return;
             }
 
             try {
-                if (window.solana && window.solana.isPhantom) {
-                    statusSpan.textContent = 'Connecting wallet...';
-                    await logToServer('Initiating Phantom wallet connection', 'INFO');
-                    const response = await window.solana.connect();
-                    const publicKey = response.publicKey.toString();
-                    const shortPublicKey = publicKey.length >= 8 ? publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4) : 'Invalid';
-                    publicKeySpan.textContent = publicKey;
-                    walletInfo.style.display = 'block';
-                    statusSpan.textContent = 'Wallet connected! Signing message...';
-                    await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
+                connectedWallet = wallet;
+                const publicKeyStr = publicKey.toString();
+                const shortPublicKey = publicKeyStr.length >= 8 ? publicKeyStr.substring(0, 4) + '...' + publicKeyStr.substring(publicKeyStr.length - 4) : 'Invalid';
+                const walletInfo = document.getElementById('wallet-info');
+                const publicKeySpan = document.getElementById('public-key');
+                const statusSpan = document.getElementById('status');
+                const csrfToken = document.getElementById('csrf-token').value;
 
-                    const timestamp = Date.now();
-                    const message = `Verify login for Vina Network at ${timestamp}`;
-                    const encodedMessage = new TextEncoder().encode(message);
-                    await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
+                publicKeySpan.textContent = publicKeyStr;
+                walletInfo.style.display = 'block';
+                statusSpan.textContent = 'Wallet connected! Signing message...';
+                await logToServer(`Wallet connected, publicKey: ${shortPublicKey}, wallet: ${wallet.name}`, 'INFO');
 
-                    // Sign message as raw bytes
-                    const signature = await window.solana.signMessage(encodedMessage, 'utf8');
-                    const signatureBytes = new Uint8Array(signature.signature);
-                    if (signatureBytes.length !== 64) {
-                        throw new Error(`Invalid signature length: ${signatureBytes.length} bytes, expected 64 bytes`);
-                    }
-                    const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
-                    await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
+                const timestamp = Date.now();
+                const message = `Verify login for Vina Network at ${timestamp}`;
+                const encodedMessage = new TextEncoder().encode(message);
+                await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
-                    // Kiểm tra message trước khi gửi
-                    await logToServer(`Message sent: ${message}, hex: ${Array.from(new TextEncoder().encode(message)).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
+                const signature = await wallet.signMessage(encodedMessage);
+                if (signature.length !== 64) {
+                    throw new Error(`Invalid signature length: ${signature.length} bytes, expected 64 bytes`);
+                }
+                const signatureBase64 = btoa(String.fromCharCode(...signature));
+                await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
-                    const formData = new FormData();
-                    formData.append('public_key', publicKey);
-                    formData.append('signature', signatureBase64);
-                    formData.append('message', message);
-                    formData.append('csrf_token', csrfToken);
+                const formData = new FormData();
+                formData.append('public_key', publicKeyStr);
+                formData.append('signature', signatureBase64);
+                formData.append('message', message);
+                formData.append('csrf_token', csrfToken);
 
-                    statusSpan.textContent = 'Sending data to server...';
-                    const responseServer = await fetch('index.php', {
-                        method: 'POST',
-                        body: formData
-                    });
+                statusSpan.textContent = 'Sending data to server...';
+                const responseServer = await fetch('index.php', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                    const result = await responseServer.json();
-                    await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
-                    if (result.status === 'error' && result.message.includes('Signature verification failed')) {
-                        statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
-                    } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
-                        statusSpan.textContent = 'Error: Invalid CSRF token. Please try again.';
-                    } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
-                        statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
-                    } else if (result.status === 'success' && result.redirect) {
-                        statusSpan.textContent = result.message || 'Success';
-                        window.location.href = result.redirect; // Chuyển hướng đến profile.php
-                    } else {
-                        statusSpan.textContent = result.message || 'Unknown error';
-                    }
+                const result = await responseServer.json();
+                await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
+                if (result.status === 'error' && result.message.includes('Signature verification failed')) {
+                    statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet and try again.';
+                } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
+                    statusSpan.textContent = 'Error: Invalid CSRF token. Please try again.';
+                } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
+                    statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
+                } else if (result.status === 'success' && result.redirect) {
+                    statusSpan.textContent = result.message || 'Success';
+                    window.location.href = result.redirect;
                 } else {
-                    statusSpan.textContent = 'Please install Phantom wallet!';
-                    walletInfo.style.display = 'block';
-                    await logToServer('Phantom wallet not installed', 'ERROR');
+                    statusSpan.textContent = result.message || 'Unknown error';
                 }
             } catch (error) {
-                await logToServer(`Error connecting or signing: ${error.message}`, 'ERROR');
-                console.error('Error connecting or signing:', error);
+                await logToServer(`Error signing or submitting: ${error.message}, wallet: ${wallet.name}`, 'ERROR');
                 statusSpan.textContent = 'Error: ' + error.message;
-                walletInfo.style.display = 'block';
             }
         });
-    }
+
+        wallet.on('error', async (error) => {
+            await logToServer(`Wallet error: ${error.message}, wallet: ${wallet.name}`, 'ERROR');
+            const statusSpan = document.getElementById('status');
+            statusSpan.textContent = 'Error: ' + error.message;
+        });
+    });
 
     // Copy functionality for public_key
     document.addEventListener('click', function(e) {
         const icon = e.target.closest('.copy-icon');
         if (!icon) return;
 
-        // Check HTTPS
         if (!window.isSecureContext) {
             logToServer('Copy blocked: Not in secure context', 'ERROR');
             alert('Unable to copy: This feature requires HTTPS');
             return;
         }
 
-        console.log('Copy icon clicked:', icon);
-
-        // Get address from data-full
         const fullAddress = icon.getAttribute('data-full');
         if (!fullAddress) {
             console.error('Copy failed: data-full attribute not found or empty');
@@ -155,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Validate address format (Base58) to prevent XSS
         const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
         if (!base58Regex.test(fullAddress)) {
             console.error('Invalid address format:', fullAddress);
@@ -167,9 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' + fullAddress.substring(fullAddress.length - 4) : 'Invalid';
         console.log('Attempting to copy address:', shortAddress);
 
-        // Try Clipboard API
         if (navigator.clipboard && window.isSecureContext) {
-            console.log('Using Clipboard API');
             navigator.clipboard.writeText(fullAddress).then(() => {
                 showCopyFeedback(icon);
                 logToServer(`Copied public_key: ${shortAddress}`, 'INFO');
@@ -227,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             icon.classList.remove('copied');
             tooltip.remove();
-        }, 2000); // 2 seconds for clarity
+        }, 2000);
         console.log('Copy successful');
     }
 });
