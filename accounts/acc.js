@@ -19,6 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Check if required libraries are loaded
+    if (!window.React || !window.ReactDOM || !window.SolanaWeb3 || !window.Jupiter) {
+        logToServer('Required libraries (React, ReactDOM, SolanaWeb3, Jupiter) not loaded', 'ERROR');
+        const statusSpan = document.getElementById('status');
+        statusSpan.textContent = 'Error: Failed to load required libraries';
+        return;
+    }
+
     // Polyfill Buffer for browser
     if (!window.Buffer) {
         window.Buffer = {
@@ -62,17 +70,22 @@ document.addEventListener('DOMContentLoaded', () => {
         new window.SolanaWalletAdapterWallets.PhantomWalletAdapter(),
         new window.SolanaWalletAdapterWallets.SolflareWalletAdapter(),
         new window.SolanaWalletAdapterWallets.BackpackWalletAdapter(),
-        // Jupiter Mobile via WalletConnect (if supported)
+        // Add WalletConnect for Jupiter Mobile later if needed
         // new window.SolanaWalletAdapterWallets.WalletConnectWalletAdapter({ network: 'mainnet-beta' })
     ];
 
     // Render wallet button
-    const root = document.createElement('div');
-    document.body.appendChild(root);
-    const { UnifiedWalletProvider, UnifiedWalletButton } = window.Jupiter;
+    const root = document.getElementById('wallet-connect-root');
+    if (!root) {
+        logToServer('Root element #wallet-connect-root not found', 'ERROR');
+        const statusSpan = document.getElementById('status');
+        statusSpan.textContent = 'Error: Page setup failed';
+        return;
+    }
 
-    ReactDOM.render(
-        React.createElement(
+    const { UnifiedWalletProvider, UnifiedWalletButton } = window.Jupiter;
+    window.ReactDOM.render(
+        window.React.createElement(
             UnifiedWalletProvider,
             {
                 wallets: wallets,
@@ -82,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     connection: connection
                 }
             },
-            React.createElement(UnifiedWalletButton)
+            window.React.createElement(UnifiedWalletButton)
         ),
         root
     );
