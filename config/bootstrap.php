@@ -60,11 +60,11 @@ function ensure_directory_and_file($dir_path, $file_path) {
     try {
         // Create directory if it doesn't exist
         if (!is_dir($dir_path)) {
-            if (!mkdir($dir_path, 0700, true)) {
+            if (!mkdir($dir_path, 0755, true)) {
                 error_log("Failed to create directory: $dir_path");
                 return false;
             }
-            chmod($dir_path, 0700);
+            chmod($dir_path, 0755);
         }
         // Check if directory is writable
         if (!is_writable($dir_path)) {
@@ -77,7 +77,7 @@ function ensure_directory_and_file($dir_path, $file_path) {
                 error_log("Failed to create file: $file_path");
                 return false;
             }
-            chmod($file_path, 0600);
+            chmod($file_path, 0664);
         }
         // Check if file is writable
         if (!is_writable($file_path)) {
