@@ -18,7 +18,7 @@ define('ROOT_PATH', dirname(__DIR__) . '/');
 define('LOGS_PATH', ROOT_PATH . 'logs/');
 define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
 define('TOOLS_PATH', LOGS_PATH . 'tools/');
-define('NFT_INFO_PATH', TOOLS_PATH . 'nft-info/');
+define('TOOLS_CACHE_PATH', TOOLS_PATH . 'cache/');
 define('NFT_HOLDERS_PATH', TOOLS_PATH . 'nft-holders/');
 define('NFT_TRANSACTIONS_PATH', TOOLS_PATH . 'nft-transactions/');
 define('WALLET_CREATORS_PATH', TOOLS_PATH . 'wallet-creators/');
