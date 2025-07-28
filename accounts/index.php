@@ -45,7 +45,7 @@ $page_css = ['/accounts/acc.css'];
 // Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("index.php: header.php not found at $header_path", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("index.php: header.php not found at $header_path", 'acc_index.log', 'accounts', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -57,7 +57,7 @@ if (!file_exists($header_path)) {
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("index.php: navbar.php not found at $navbar_path", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("index.php: navbar.php not found at $navbar_path", 'acc_index.log', 'accounts', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -78,7 +78,7 @@ include $navbar_path;
 <?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    log_message("index.php: footer.php not found at $footer_path", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("index.php: footer.php not found at $footer_path", 'acc_index.log', 'accounts', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
