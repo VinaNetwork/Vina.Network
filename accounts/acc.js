@@ -1,11 +1,23 @@
 // ============================================================================
 // File: accounts/acc.js
-// Description: Script for managing the entire Accounts page.
+// Description: Script for managing the entire Accounts page with HTTPS and XSS checks.
 // Created by: Vina Network
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
+
+    // Check if running in a secure context (HTTPS)
+    if (!window.isSecureContext) {
+        logToServer('Page not loaded over HTTPS, secure context unavailable', 'ERROR');
+        const walletInfo = document.getElementById('wallet-info');
+        const statusSpan = document.getElementById('status');
+        if (walletInfo && statusSpan) {
+            walletInfo.style.display = 'block';
+            statusSpan.textContent = 'Error: This page must be loaded over HTTPS';
+        }
+        return; // Stop further execution
+    }
 
     // Hàm ghi log vào server
     async function logToServer(message, level = 'INFO') {
@@ -41,6 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
+            const csrfToken = document.getElementById('csrf-token').value;
+
+            // Double-check HTTPS
+            if (!window.isSecureContext) {
+                logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
+                walletInfo.style.display = 'block';
+                statusSpan.textContent = 'Error: Wallet connection requires HTTPS';
+                return;
+            }
 
             try {
                 if (window.solana && window.solana.isPhantom) {
@@ -48,10 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer('Initiating Phantom wallet connection', 'INFO');
                     const response = await window.solana.connect();
                     const publicKey = response.publicKey.toString();
+                    const shortPublicKey = publicKey.length >= 8 ? publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4) : 'Invalid';
                     publicKeySpan.textContent = publicKey;
                     walletInfo.style.display = 'block';
                     statusSpan.textContent = 'Wallet connected! Signing message...';
-                    await logToServer(`Wallet connected, publicKey: ${publicKey}`, 'INFO');
+                    await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
                     const message = `Verify login for Vina Network at ${timestamp}`;
@@ -74,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('public_key', publicKey);
                     formData.append('signature', signatureBase64);
                     formData.append('message', message);
+                    formData.append('csrf_token', csrfToken);
 
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('index.php', {
@@ -85,6 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
                     if (result.status === 'error' && result.message.includes('Signature verification failed')) {
                         statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
+                    } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
+                        statusSpan.textContent = 'Error: Invalid CSRF token. Please try again.';
+                    } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
+                        statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
                         window.location.href = result.redirect; // Chuyển hướng đến profile.php
@@ -110,31 +137,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const icon = e.target.closest('.copy-icon');
         if (!icon) return;
 
+        // Check HTTPS
+        if (!window.isSecureContext) {
+            logToServer('Copy blocked: Not in secure context', 'ERROR');
+            alert('Unable to copy: This feature requires HTTPS');
+            return;
+        }
+
         console.log('Copy icon clicked:', icon);
 
         // Get address from data-full
         const fullAddress = icon.getAttribute('data-full');
         if (!fullAddress) {
             console.error('Copy failed: data-full attribute not found or empty');
+            logToServer('Copy failed: data-full attribute not found or empty', 'ERROR');
             alert('Unable to copy address: Invalid address');
             return;
         }
 
-        // Validate address format (Base58)
-        if (!fullAddress.match(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/)) {
+        // Validate address format (Base58) to prevent XSS
+        const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
+        if (!base58Regex.test(fullAddress)) {
             console.error('Invalid address format:', fullAddress);
+            logToServer(`Copy blocked: Invalid address format in data-full: ${fullAddress.substring(0, 8)}...`, 'ERROR');
             alert('Unable to copy: Invalid address format');
             return;
         }
 
-        console.log('Attempting to copy address:', fullAddress);
+        const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' + fullAddress.substring(fullAddress.length - 4) : 'Invalid';
+        console.log('Attempting to copy address:', shortAddress);
 
         // Try Clipboard API
         if (navigator.clipboard && window.isSecureContext) {
             console.log('Using Clipboard API');
             navigator.clipboard.writeText(fullAddress).then(() => {
                 showCopyFeedback(icon);
-                logToServer(`Copied public_key: ${fullAddress}`, 'INFO');
+                logToServer(`Copied public_key: ${shortAddress}`, 'INFO');
             }).catch(err => {
                 console.error('Clipboard API failed:', err);
                 fallbackCopy(fullAddress, icon);
@@ -146,7 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function fallbackCopy(text, icon) {
-        console.log('Using fallback copy for:', text);
+        const shortText = text.length >= 8 ? text.substring(0, 4) + '...' + text.substring(text.length - 4) : 'Invalid';
+        console.log('Using fallback copy for:', shortText);
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -161,13 +200,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Fallback copy result:', success);
             if (success) {
                 showCopyFeedback(icon);
-                logToServer(`Copied public_key: ${text}`, 'INFO');
+                logToServer(`Copied public_key: ${shortText}`, 'INFO');
             } else {
                 console.error('Fallback copy failed');
+                logToServer('Fallback copy failed', 'ERROR');
                 alert('Unable to copy address: Copy error');
             }
         } catch (err) {
             console.error('Fallback copy error:', err);
+            logToServer(`Fallback copy error: ${err.message}`, 'ERROR');
             alert('Unable to copy address: ' + err.message);
         } finally {
             document.body.removeChild(textarea);
@@ -186,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             icon.classList.remove('copied');
             tooltip.remove();
-        }, 2000); // Tăng lên 2 giây cho rõ ràng
+        }, 2000); // 2 seconds for clarity
         console.log('Copy successful');
     }
 });
