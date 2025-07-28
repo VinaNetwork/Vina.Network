@@ -30,7 +30,7 @@ include '../include/header.php';
     <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
     
     <!-- Form đăng nhập -->
-    <div id="login-form" style="display: none;">
+    <div id="login-form">
       <h2>Đăng nhập</h2>
       <form id="loginForm">
         <label for="username">Tên người dùng:</label>
@@ -42,7 +42,7 @@ include '../include/header.php';
     </div>
 
     <!-- Form Make Market -->
-    <form id="makeMarketForm" style="display: none;">
+    <form id="makeMarketForm">
       <label for="processName">Tên tiến trình:</label>
       <input type="text" name="processName" id="processName" required>
       
@@ -75,7 +75,5 @@ include '../include/header.php';
   <!-- Scripts -->
   <script src="../js/vina.js"></script>
   <script src="../js/navbar.js"></script>
-  <script src="mm.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </body>
 </html>
