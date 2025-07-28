@@ -82,6 +82,39 @@ const Accounts = () => {
         }
     };
 
+    const handleCopy = (fullAddress) => {
+        const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
+        if (!base58Regex.test(fullAddress)) {
+            logToServer(`Copy blocked: Invalid address format: ${fullAddress.substring(0, 4)}...`, 'ERROR');
+            setStatus('Error: Invalid address format');
+            return;
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(fullAddress).then(() => {
+                logToServer(`Copied public_key: ${fullAddress.substring(0, 4)}...${fullAddress.substring(fullAddress.length - 4)}`, 'INFO');
+                setStatus('Copied address!');
+            }).catch(err => {
+                logToServer(`Clipboard API failed: ${err.message}`, 'ERROR');
+                setStatus('Error: Unable to copy address');
+            });
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = fullAddress;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                logToServer(`Copied public_key: ${fullAddress.substring(0, 4)}...${fullAddress.substring(fullAddress.length - 4)}`, 'INFO');
+                setStatus('Copied address!');
+            } catch (err) {
+                logToServer(`Fallback copy error: ${err.message}`, 'ERROR');
+                setStatus('Error: Unable to copy address');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+    };
+
     return (
         <UnifiedWalletProvider
             wallets={[]}
@@ -97,14 +130,14 @@ const Accounts = () => {
             }}
             onWalletChange={handleWalletChange}
         >
-            <div>
+            <div className="acc-content">
                 <h1>Login/Register with Solana Wallet</h1>
-                <UnifiedWalletButton />
+                <UnifiedWalletButton className="cta-button" />
                 <p>Status: {status}</p>
                 {publicKey && (
                     <p>
-                        Wallet address: <span>{publicKey.substring(0, 4)}...{publicKey.substring(publicKey.length - 4)}</span>
-                        <span className="copy-icon" data-full={publicKey} title="Copy address">📋</span>
+                        Wallet address: <span id="public-key">{publicKey.substring(0, 4)}...{publicKey.substring(publicKey.length - 4)}</span>
+                        <span className="copy-icon" onClick={() => handleCopy(publicKey)} title="Copy address">📋</span>
                     </p>
                 )}
             </div>
