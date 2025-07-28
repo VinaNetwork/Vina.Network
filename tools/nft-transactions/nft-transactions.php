@@ -21,7 +21,7 @@ if (!file_exists($bootstrap_path)) {
 require_once $bootstrap_path;
 
 // Cache directory and file
-$cache_dir = NFT_TRANSACTIONS_PATH . 'cache/';
+$cache_dir = TOOLS_CACHE_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_transactions_cache.json';
 log_message("nft_transactions: Checking cache directory: $cache_dir, file: $cache_file", 'nft_transactions_log.txt', 'tools', 'DEBUG');
 
