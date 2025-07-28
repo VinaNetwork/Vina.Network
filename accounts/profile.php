@@ -48,10 +48,10 @@ try {
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection successful (took {$duration}ms)", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
     $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
     exit;
@@ -60,9 +60,9 @@ try {
 // Check session
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-log_message("Profile.php - Session public_key: " . ($short_public_key ?? 'Not set'), 'acc_auth.txt', 'accounts', 'DEBUG');
+log_message("Profile.php - Session public_key: " . ($short_public_key ?? 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key) {
-    log_message("No public key in session, redirecting to login", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("No public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
     header('Location: /accounts');
     exit;
 }
@@ -73,13 +73,13 @@ try {
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        log_message("No account found for public_key: $short_public_key", 'acc_auth.txt', 'accounts', 'ERROR');
+        log_message("No account found for public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
         header('Location: /accounts');
         exit;
     }
-    log_message("Profile accessed for public_key: $short_public_key", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("Profile accessed for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
-    log_message("Database query failed: {$e->getMessage()}", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("Database query failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving account information']);
     exit;
@@ -88,12 +88,12 @@ try {
 // Handle logout
 if (isset($_POST['logout']) && isset($_POST['csrf_token'])) {
     if (!validate_csrf_token($_POST['csrf_token'])) {
-        log_message("Invalid CSRF token for logout attempt", 'acc_auth.txt', 'accounts', 'ERROR');
+        log_message("Invalid CSRF token for logout attempt", 'accounts.log', 'accounts', 'ERROR');
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
         exit;
     }
-    log_message("User logged out: public_key=$short_public_key", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
     exit;
@@ -106,7 +106,7 @@ try {
     $base58->decode($account['public_key']);
     $short_public_key = substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4);
 } catch (Exception $e) {
-    log_message("Invalid public_key format: {$e->getMessage()}", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("Invalid public_key format: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
 }
 
 // SEO meta
@@ -124,7 +124,7 @@ $page_css = ['/accounts/acc.css'];
 // Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("profile.php: header.php not found at $header_path", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("profile.php: header.php not found at $header_path", 'accounts.log', 'accounts', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 ?>
@@ -136,7 +136,7 @@ if (!file_exists($header_path)) {
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("profile.php: navbar.php not found at $navbar_path", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("profile.php: navbar.php not found at $navbar_path", 'accounts.log', 'accounts', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -151,20 +151,21 @@ include $navbar_path;
                 <tr>
                     <th>Public Key</th>
                     <td>
-                        <?php if ($short_public_key !== 'Invalid address'): ?>
-                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
-                                <?php echo htmlspecialchars($short_public_key); ?>
-                            </a>
-                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
-                        <?php else: ?>
-                            <span>Invalid address</span>
-                        <?php endif; ?>
+					<?php if ($short_public_key !== 'Invalid address'): ?>
+						<a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+							<?php echo htmlspecialchars($short_public_key); ?>
+						</a>
+						<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+					<?php else: ?>
+						<span>Invalid address</span>
+					<?php endif; ?>
                     </td>
                 </tr>
                 <tr><th>Created at</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
                 <tr><th>Last Login</th><td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td></tr>
             </table>
         </div>
+		
         <form method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
@@ -175,7 +176,7 @@ include $navbar_path;
 <?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    log_message("profile.php: footer.php not found at $footer_path", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("profile.php: footer.php not found at $footer_path", 'accounts.log', 'accounts', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
