@@ -49,7 +49,7 @@ if (file_exists($log_file) && filesize($log_file) >= $max_size) {
         echo json_encode(['status' => 'error', 'message' => 'Failed to rotate log file']);
         exit;
     }
-    log_message("Rotated log file to $new_log_file due to size limit (10MB)", 'accounts.log', 'accounts', 'INFO');
+    log_message("Rotated log file to $new_log_file due to size limit (10MB)", 'client.log', 'accounts', 'INFO');
 }
 
 // Log the message
