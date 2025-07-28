@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://api.mainnet-beta.solana.com https://phantom.app https://solflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
@@ -65,7 +65,12 @@ include $navbar_path;
 
 <div class="acc-container">
     <div class="acc-content">
-        <div id="accounts-root"></div>
+        <h1>Login/Register with Phantom Wallet</h1>
+        <button class="cta-button" id="connect-wallet">Connect Phantom Wallet</button>
+        <div id="wallet-info" style="display: none;">
+            <p>Wallet address: <span id="public-key"></span></p>
+            <p>Status: <span id="status"></span></p>
+        </div>
         <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
     </div>
 </div>
@@ -79,9 +84,11 @@ if (!file_exists($footer_path)) {
 include $footer_path;
 ?>
 
+<script>console.log('Attempting to load JS files...');</script>
+<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script src="/accounts/acc.bundle.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.bundle.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>

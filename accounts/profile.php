@@ -19,7 +19,7 @@ header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 
 ob_start();
 require_once __DIR__ . '/../config/bootstrap.php';
-require_once __DIR__ . '/../../vendor/autoload.php'; // Load composer for stephenhill/base58
+require_once __DIR__ . '/../vendor/autoload.php'; // Load composer for stephenhill/base58
 
 use StephenHill\Base58;
 
