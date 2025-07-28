@@ -73,10 +73,6 @@ $tools = [
     'wallet-analysis' => [
         'file' => __DIR__ . '/wallet-analysis/wallet-analysis.php',
         'icon' => 'fas fa-wallet'
-    ],
-    'token-burn' => [
-        'file' => __DIR__ . '/token-burn/token-burn.php',
-        'icon' => 'fas fa-wallet'
     ]
 ];
 
