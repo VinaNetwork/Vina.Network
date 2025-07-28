@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://api.mainnet-beta.solana.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://api.mainnet-beta.solana.com https://phantom.app https://solflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
@@ -77,7 +77,7 @@ if (!file_exists($footer_path)) {
 include $footer_path;
 ?>
 
-<script src="/js/acc.bundle.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/acc.bundle.js')"></script>
+<script src="/accounts/acc.bundle.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.bundle.js')"></script>
 <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
 <script>eruda.init();</script>
 </body>
