@@ -29,16 +29,16 @@ include '../include/header.php';
     <h1>🟢 Make Market</h1>
     <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
     
-    <!-- Form đăng nhập -->
-    <div id="login-form">
-      <h2>Đăng nhập</h2>
-      <form id="loginForm">
-        <label for="username">Tên người dùng:</label>
-        <input type="text" name="username" id="username" required>
-        <label for="password">Mật khẩu:</label>
-        <input type="password" name="password" id="password" required>
-        <button type="submit">Đăng nhập</button>
-      </form>
+    <!-- Login -->
+    <div class="acc-container">
+    <div class="acc-content">
+        <h1>Login/Register with Phantom Wallet</h1>
+        <button class="cta-button" id="connect-wallet">Connect Wallet</button>
+        <div id="wallet-info" style="display: none;">
+            <p>Wallet address: <span id="public-key"></span></p>
+            <p>Status: <span id="status"></span></p>
+        </div>
+    </div>
     </div>
 
     <!-- Form Make Market -->
