@@ -1,0 +1,90 @@
+/* ============================================================================
+ * File: make-market/mm.css
+ * Description: Styles specific to the Make Market page of Vina Network.
+ * Created by: Vina Network
+ * ========================================================================== */
+
+/* Make Market – Giao diện cơ bản */
+.mm-container {
+  margin-top: 72px;
+  max-width: 600px;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+form {padding:20px;}
+
+h1 {
+  text-align: center;
+  color: #218c74;
+}
+
+form label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+form input,
+form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+form button {
+  margin-top: 20px;
+  padding: 12px;
+  width: 100%;
+  background: #218c74;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+form button:hover {
+  background: #1e7e66;
+}
+
+#mm-status {
+  margin-top: 20px;
+  padding: 10px;
+  background: #f7f7f7;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.status-box {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-top: 20px;
+  background-color: #f9f9f9;
+}
+
+.status-box p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.status-box p strong {
+  color: #28a745;
+}
+
+.status-box p::before {
+  content: "• ";
+  color: #28a745;
+}
+
+/*  Responsive Design */
+@media screen and (max-width: 768px) {
+    .mm-container {margin-top: 64px;}
+}
