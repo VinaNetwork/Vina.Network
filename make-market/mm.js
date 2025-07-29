@@ -1,6 +1,6 @@
 // ============================================================================
 // File: make-market/mm.js
-// Description:
+// Description: File JavaScript xử lý logic mua bán
 // Created by: Vina Network
 // ============================================================================
 
