@@ -80,7 +80,7 @@ try {
 }
 
 // SEO meta
-$defaultSlippage = 0.5; // Đồng bộ với giá trị trong form
+$defaultSlippage = 0.5;
 $root_path = '../';
 $page_title = "Make Market - Automated Solana Token Trading | Vina Network";
 $page_description = "Automate token trading on Solana with Vina Network's Make Market tool using Jupiter API. Secure, fast, and customizable.";
@@ -115,53 +115,55 @@ include $navbar_path;
 ?>
 
 <div class="mm-container">
-    <h1>🟢 Make Market</h1>
-    <div id="account-info">
-        <table>
-            <tr>
-                <th>Public Key</th>
-                <td>
-                    <?php if ($short_public_key !== 'Invalid'): ?>
-                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
-                            <?php echo htmlspecialchars($short_public_key); ?>
-                        </a>
-                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
-                    <?php else: ?>
-                        <span>Invalid address</span>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        </table>
-    </div>
-    <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
-    
-    <!-- Form Make Market -->
-    <form id="makeMarketForm" autocomplete="off">
-        <label for="processName">Tên tiến trình:</label>
-        <input type="text" name="processName" id="processName" required>
-        
-        <label>🔑 Private Key (Base58):</label>
-        <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
+	<div class="mm-content">
+		<h1>🟢 Make Market</h1>
+		<div id="account-info">
+			<table>
+			<tr>
+			<th>Public Key</th>
+			<td>
+			<?php if ($short_public_key !== 'Invalid'): ?>
+				<a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+					<?php echo htmlspecialchars($short_public_key); ?>
+				</a>
+				<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+			<?php else: ?>
+				<span>Invalid address</span>
+			<?php endif; ?>
+			</td>
+			</tr>
+			</table>
+		</div>
+		<p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
+		
+		<!-- Form Make Market -->
+		<form id="makeMarketForm" autocomplete="off">
+			<label for="processName">Tên tiến trình:</label>
+			<input type="text" name="processName" id="processName" required>
+			
+			<label>🔑 Private Key (Base58):</label>
+			<textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
 
-        <label>🎯 Token Address:</label>
-        <input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
+			<label>🎯 Token Address:</label>
+			<input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
 
-        <label>💰 Số lượng SOL muốn mua:</label>
-        <input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
+			<label>💰 Số lượng SOL muốn mua:</label>
+			<input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
 
-        <label>📉 Slippage (%):</label>
-        <input type="number" name="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
+			<label>📉 Slippage (%):</label>
+			<input type="number" name="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
 
-        <label>⏱️ Delay giữa mua và bán (giây):</label>
-        <input type="number" name="delay" value="0" min="0">
+			<label>⏱️ Delay giữa mua và bán (giây):</label>
+			<input type="number" name="delay" value="0" min="0">
 
-        <label>🔁 Số vòng lặp:</label>
-        <input type="number" name="loopCount" min="1" value="1">
+			<label>🔁 Số vòng lặp:</label>
+			<input type="number" name="loopCount" min="1" value="1">
 
-        <button type="submit">🚀 Make Market</button>
-    </form>
+			<button type="submit">🚀 Make Market</button>
+		</form>
 
-    <div id="mm-result" class="status-box"></div>
+		<div id="mm-result" class="status-box"></div>
+	</div>
 </div>
 
 <?php
