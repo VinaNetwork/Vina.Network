@@ -54,7 +54,7 @@ try {
 // Check session
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-log_message("Make-market.php - Session public_key: " . ($short_public_key ?? 'Not set'), 'make-market.log', 'make-market', 'DEBUG');
+log_message("Session public_key: " . ($short_public_key ?? 'Not set'), 'make-market.log', 'make-market', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
     header('Location: /accounts');
@@ -94,9 +94,10 @@ $page_css = ['mm.css'];
 // Header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("make-market.php: header.php not found at $header_path", 'make-market.log', 'make-market', 'ERROR');
+    log_message("header.php not found at $header_path", 'make-market.log', 'make-market', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
+log_message("Including header.php", 'make-market.log', 'make-market', 'DEBUG');
 ?>
 
 <!DOCTYPE html>
@@ -106,9 +107,10 @@ if (!file_exists($header_path)) {
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("make-market.php: navbar.php not found at $navbar_path", 'make-market.log', 'make-market', 'ERROR');
+    log_message("navbar.php not found at $navbar_path", 'make-market.log', 'make-market', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
+log_message("Including navbar.php", 'make-market.log', 'make-market', 'DEBUG');
 include $navbar_path;
 ?>
 
@@ -165,9 +167,10 @@ include $navbar_path;
 <?php
 $footer_path = $root_path . 'include/footer.php';
 if (!file_exists($footer_path)) {
-    log_message("make-market.php: footer.php not found at $footer_path", 'make-market.log', 'make-market', 'ERROR');
+    log_message("footer.php not found at $footer_path", 'make-market.log', 'make-market', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
+log_message("Including footer.php", 'make-market.log', 'make-market', 'DEBUG');
 include $footer_path;
 ?>
 
