@@ -148,6 +148,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Loop count must be at least 1']);
             exit;
         }
+        if (strlen($public_key) > 255) {
+            log_message("Public key too long: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Public key too long']);
+            exit;
+        }
 
         // Encrypt private key
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
@@ -247,13 +253,13 @@ include $navbar_path;
             </table>
         </div>
         <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
-        
+
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
             <label for="processName">Tên tiến trình:</label>
             <input type="text" name="processName" id="processName" required>
-            
+
             <label>🔑 Private Key (Base58):</label>
             <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
 
