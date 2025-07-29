@@ -13,7 +13,11 @@ require_once __DIR__ . '/../config/bootstrap.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 use StephenHill\Base58;
 
-session_start();
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict'
+]);
 
 // Database connection
 $start_time = microtime(true);
@@ -30,7 +34,7 @@ try {
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    echo json_encode(['status' => 'error', 'message' => 'Kết nối cơ sở dữ liệu thất bại']);
     exit;
 }
 
@@ -39,7 +43,7 @@ $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Un
 if ($ip_address === 'Unknown') {
     log_message("Failed to retrieve IP address", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Unable to process request: Invalid IP address']);
+    echo json_encode(['status' => 'error', 'message' => 'Không thể xử lý yêu cầu: Địa chỉ IP không hợp lệ']);
     exit;
 }
 $rate_limit = 5; // Maximum 5 attempts per minute
@@ -60,7 +64,7 @@ try {
     if ($attempt_count >= $rate_limit) {
         log_message("Rate limit exceeded for IP: $ip_address, attempts: $attempt_count", 'accounts.log', 'accounts', 'ERROR');
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Too many login attempts. Please wait 1 minute and try again.']);
+        echo json_encode(['status' => 'error', 'message' => 'Quá nhiều lần thử đăng nhập. Vui lòng đợi 1 phút và thử lại.']);
         exit;
     }
 
@@ -71,7 +75,7 @@ try {
 } catch (PDOException $e) {
     log_message("Rate limiting error for IP: $ip_address, SQL Error: {$e->getMessage()}, Code: {$e->getCode()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Rate limiting error. Please try again later.']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi giới hạn tần suất. Vui lòng thử lại sau.']);
     exit;
 }
 
@@ -82,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     // Validate CSRF token
     if (!validate_csrf_token($_POST['csrf_token'])) {
         log_message("Invalid CSRF token for login attempt from IP: $ip_address", 'accounts.log', 'accounts', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        echo json_encode(['status' => 'error', 'message' => 'Mã CSRF không hợp lệ']);
         exit;
     }
 
@@ -97,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
 
     if ($signature === false || strlen($signature) !== 64) {
         log_message("Invalid signature: Base64 decode failed or length incorrect (length: " . ($signature === false ? 'decode failed' : strlen($signature)) . "), IP=$ip_address", 'accounts.log', 'accounts', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Base64 decode failed or invalid signature']);
+        echo json_encode(['status' => 'error', 'message' => 'Giải mã Base64 thất bại hoặc chữ ký không hợp lệ']);
         exit;
     }
     log_message("Signature decoded length: " . strlen($signature) . " bytes", 'accounts.log', 'accounts', 'DEBUG');
@@ -105,27 +109,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     try {
         // Check timestamp
         if (!preg_match('/at (\d+)/', $message, $matches)) {
-            throw new Exception("Message does not contain timestamp!");
+            throw new Exception("Tin nhắn không chứa dấu thời gian!");
         }
         $timestamp = $matches[1];
         $current_timestamp = time() * 1000;
         if (abs($current_timestamp - $timestamp) > 300000) {
-            throw new Exception("Message has expired!");
+            throw new Exception("Tin nhắn đã hết hạn!");
         }
         log_message("Valid timestamp: $timestamp, IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
 
         // Check sodium library
         if (!function_exists('sodium_crypto_sign_verify_detached')) {
-            throw new Exception("Sodium library is not installed!");
+            throw new Exception("Thư viện Sodium chưa được cài đặt!");
         }
         log_message("Sodium library ready", 'accounts.log', 'accounts', 'INFO');
 
         // Check stephenhill/base58 and extensions
         if (!class_exists('\StephenHill\Base58')) {
-            throw new Exception("stephenhill/base58 library is not installed!");
+            throw new Exception("Thư viện stephenhill/base58 chưa được cài đặt!");
         }
         if (!extension_loaded('bcmath') && !extension_loaded('gmp')) {
-            throw new Exception("Please install the BC Math or GMP extension");
+            throw new Exception("Vui lòng cài đặt phần mở rộng BC Math hoặc GMP");
         }
         log_message("Base58 library ready", 'accounts.log', 'accounts', 'INFO');
 
@@ -135,13 +139,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $bs58 = new Base58();
             $public_key_bytes = $bs58->decode($public_key);
             if (strlen($public_key_bytes) !== 32) {
-                throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
+                throw new Exception("Khóa công khai không hợp lệ: Độ dài là " . strlen($public_key_bytes) . " bytes, cần 32 bytes");
             }
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Public key decoded: $short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             log_message("Public key hex: " . bin2hex($public_key_bytes), 'accounts.log', 'accounts', 'DEBUG');
         } catch (Exception $e) {
-            throw new Exception("Public key decode error: " . $e->getMessage());
+            throw new Exception("Lỗi giải mã khóa công khai: " . $e->getMessage());
         }
 
         // Use raw message directly
@@ -153,13 +157,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         $start_time = microtime(true);
         try {
             if (!is_string($message_raw) || empty($message_raw)) {
-                throw new Exception("Invalid message: Empty or non-string message");
+                throw new Exception("Tin nhắn không hợp lệ: Trống hoặc không phải chuỗi");
             }
             if (!is_string($public_key_bytes) || strlen($public_key_bytes) !== 32) {
-                throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
+                throw new Exception("Khóa công khai không hợp lệ: Độ dài là " . strlen($public_key_bytes) . " bytes, cần 32 bytes");
             }
             if (!is_string($signature) || strlen($signature) !== 64) {
-                throw new Exception("Invalid signature: Length is " . strlen($signature) . " bytes, expected 64 bytes");
+                throw new Exception("Chữ ký không hợp lệ: Độ dài là " . strlen($signature) . " bytes, cần 64 bytes");
             }
 
             $verified = sodium_crypto_sign_verify_detached(
@@ -172,15 +176,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             if (!$verified) {
                 $errors = [];
                 if (bin2hex($message_raw) !== bin2hex($message)) {
-                    $errors[] = "Message encoding mismatch";
+                    $errors[] = "Mã hóa tin nhắn không khớp";
                 }
                 if (strlen($public_key_bytes) !== 32) {
-                    $errors[] = "Public key length invalid";
+                    $errors[] = "Độ dài khóa công khai không hợp lệ";
                 }
                 if (strlen($signature) !== 64) {
-                    $errors[] = "Signature length invalid";
+                    $errors[] = "Độ dài chữ ký không hợp lệ";
                 }
-                $error_message = "Signature verification failed: " . (empty($errors) ? "Signature does not match, please try reconnecting your wallet" : implode(", ", $errors));
+                $error_message = "Xác thực chữ ký thất bại: " . (empty($errors) ? "Chữ ký không khớp, vui lòng thử kết nối lại ví" : implode(", ", $errors));
                 throw new Exception($error_message);
             }
             log_message("Signature verified successfully (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
@@ -199,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Account check query: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
         } catch (PDOException $e) {
-            throw new Exception("Database query error: " . $e->getMessage());
+            throw new Exception("Lỗi truy vấn cơ sở dữ liệu: " . $e->getMessage());
         }
 
         // Regenerate session ID to prevent session fixation
@@ -213,20 +217,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $stmt = $pdo->prepare("UPDATE accounts SET last_login = ? WHERE public_key = ?");
             $stmt->execute([$current_time, $public_key]);
             $duration = (microtime(true) - $start_time) * 1000;
-            log_message("Login successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+            log_message("Đăng nhập thành công: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
-            echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => 'profile.php']);
+            echo json_encode(['status' => 'success', 'message' => 'Đăng nhập thành công!', 'redirect' => '/accounts/profile.php']);
         } else {
             $start_time = microtime(true);
             $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)");
             $stmt->execute([$public_key, $current_time, $current_time]);
             $duration = (microtime(true) - $start_time) * 1000;
-            log_message("Registration successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+            log_message("Đăng ký thành công: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
-            echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => 'profile.php']);
+            echo json_encode(['status' => 'success', 'message' => 'Đăng ký thành công!', 'redirect' => '/accounts/profile.php']);
         }
     } catch (Exception $e) {
-        log_message("Error: {$e->getMessage()}, IP=$ip_address", 'accounts.log', 'accounts', 'ERROR');
+        log_message("Lỗi: {$e->getMessage()}, IP=$ip_address", 'accounts.log', 'accounts', 'ERROR');
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         exit;
     }
