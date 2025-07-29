@@ -31,7 +31,7 @@ session_start([
 
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
-    log_message("Người dùng đã đăng nhập với public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
+    log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
     header('Location: /accounts/profile.php');
     exit;
 }
@@ -51,7 +51,7 @@ $page_description = "Connect your Solana wallet to register or login to Vina Net
 $page_keywords = "Vina Network, connect wallet, login, register";
 $page_og_title = "Connect Wallet to Vina Network";
 $page_og_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_og_image = "https://www.vina.network/assets/images/og-connect.jpg";
+$page_og_image = "https://www.vina.network/img/logo.png";
 $page_og_url = "https://www.vina.network/accounts/";
 $page_canonical = "https://www.vina.network/accounts/";
 $page_css = ['/accounts/acc.css'];
