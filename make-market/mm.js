@@ -1,6 +1,6 @@
 // ============================================================================
 // File: make-market/mm.js
-// Description: File JavaScript xử lý logic mua bán
+// Description: JavaScript file for automated token trading on Solana using Jupiter API
 // Created by: Vina Network
 // ============================================================================
 
@@ -25,15 +25,23 @@ async function makeMarket(
   delay,
   loopCount
 ) {
+  const resultDiv = document.getElementById('mm-result');
+  const submitButton = document.querySelector('#makeMarketForm button');
   try {
+    // Kiểm tra input
+    if (!tokenMint.match(/^[A-Za-z0-9]{32,44}$/)) throw new Error('Invalid token address');
+    if (solAmount <= 0) throw new Error('SOL amount must be positive');
+    if (slippage < 0) throw new Error('Slippage must be non-negative');
+    if (loopCount < 1) throw new Error('Loop count must be at least 1');
+
     // Decode private key
     const keypair = Keypair.fromSecretKey(bs58.decode(privateKey));
     const wallet = new Wallet(keypair);
 
-    document.getElementById('mm-result').innerHTML = `<p><strong>[${processName}]</strong> Starting market making...</p>`;
+    resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Starting market making...</p>`;
 
     for (let i = 0; i < loopCount; i++) {
-      document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Loop ${i + 1}/${loopCount}</p>`;
+      resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Loop ${i + 1}/${loopCount}</p>`;
 
       // Thực hiện mua token
       const buyTx = await swapSOLtoToken(wallet, tokenMint, solAmount, slippage);
@@ -41,11 +49,11 @@ async function makeMarket(
         skipPreflight: true
       });
       await connection.confirmTransaction(buyTxId);
-      document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Buy transaction: <a href="https://solscan.io/tx/${buyTxId}" target="_blank">${buyTxId}</a></p>`;
+      resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Buy transaction: <a href="https://solscan.io/tx/${buyTxId}" target="_blank">${buyTxId}</a></p>`;
 
       // Delay giữa mua và bán
       if (delay > 0) {
-        document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Waiting ${delay} seconds...</p>`;
+        resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Waiting ${delay} seconds...</p>`;
         await new Promise(resolve => setTimeout(resolve, delay * 1000));
       }
 
@@ -55,12 +63,14 @@ async function makeMarket(
         skipPreflight: true
       });
       await connection.confirmTransaction(sellTxId);
-      document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Sell transaction: <a href="https://solscan.io/tx/${sellTxId}" target="_blank">${sellTxId}</a></p>`;
+      resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Sell transaction: <a href="https://solscan.io/tx/${sellTxId}" target="_blank">${sellTxId}</a></p>`;
     }
 
-    document.getElementById('mm-result').innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p>`;
+    resultDiv.innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p>`;
   } catch (error) {
-    document.getElementById('mm-result').innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p>`;
+    resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p>`;
+  } finally {
+    submitButton.disabled = false;
   }
 }
 
@@ -136,6 +146,8 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const resultDiv = document.getElementById('mm-result');
+  const submitButton = document.querySelector('#makeMarketForm button');
+  submitButton.disabled = true;
   resultDiv.innerHTML = '<p><strong>Processing...</strong></p>';
 
   const formData = new FormData(e.target);
