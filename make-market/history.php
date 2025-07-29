@@ -33,6 +33,12 @@ if (!$public_key) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit;
 }
+if (strlen($public_key) > 255) {
+    log_message("Public key too long for history fetch: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Public key too long']);
+    exit;
+}
 
 try {
     $pdo = new PDO(
