@@ -89,7 +89,7 @@ $page_og_title = "Make Market: Automate Your Solana Token Trades with Vina Netwo
 $page_og_description = "Use Vina Network's Make Market to automate buying and selling Solana tokens with Jupiter API. Try it now!";
 $page_og_url = "https://www.vina.network/make-market/";
 $page_canonical = "https://www.vina.network/make-market/";
-$page_css = ['mm.css'];
+$page_css = ['/make-market/mm.css'];
 
 // Header
 $header_path = $root_path . 'include/header.php';
@@ -174,7 +174,7 @@ include $footer_path;
 <!-- Scripts -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script type="module" src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script type="module" src="/make-market/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
