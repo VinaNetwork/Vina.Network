@@ -9,12 +9,12 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
 
 // Log to confirm script is loaded
-log_message("export_holders: nft-holders-export.php loaded", 'holders_export_log.txt', 'tools', 'INFO');
+log_message("export_holders: nft-holders-export.php loaded", 'holders-export.log', 'tools', 'INFO');
 
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("export_holders: bootstrap.php not found at $bootstrap_path", 'holders_export_log.txt', 'tools', 'ERROR');
+    log_message("export_holders: bootstrap.php not found at $bootstrap_path", 'holders-export.log', 'tools', 'ERROR');
     http_response_code(500);
     echo json_encode(['error' => 'Cannot find bootstrap.php']);
     exit;
@@ -28,10 +28,10 @@ require_once __DIR__ . '/nft-holders-helper.php';
 // Define cache directory and file
 $cache_dir = NFT_HOLDERS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_holders_cache.json';
-log_message("export_holders: Checking cache directory: $cache_dir, file: $cache_file", 'holders_export_log.txt', 'tools', 'DEBUG');
+log_message("export_holders: Checking cache directory: $cache_dir, file: $cache_file", 'holders-export.log', 'tools', 'DEBUG');
 
 if (!ensure_directory_and_file($cache_dir, $cache_file)) {
-    log_message("export_holders: Cache setup failed for $cache_dir or $cache_file", 'holders_export_log.txt', 'tools', 'ERROR');
+    log_message("export_holders: Cache setup failed for $cache_dir or $cache_file", 'holders-export.log', 'tools', 'ERROR');
     http_response_code(500);
     echo json_encode(['error' => 'Cache setup failed']);
     exit;
@@ -39,7 +39,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file)) {
 
 // Validate request method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("export_holders: Invalid request method", 'holders_export_log.txt', 'tools', 'ERROR');
+    log_message("export_holders: Invalid request method", 'holders-export.log', 'tools', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid request method']);
     exit;
@@ -50,24 +50,24 @@ $mintAddress = trim($_POST['mintAddress'] ?? '');
 $export_type = $_POST['export_type'] ?? 'all';
 $export_format = $_POST['export_format'] ?? 'csv';
 
-log_message("export_holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format", 'holders_export_log.txt', 'tools', 'DEBUG');
+log_message("export_holders: Parameters - mintAddress=$mintAddress, export_type=$export_type, export_format=$export_format", 'holders-export.log', 'tools', 'DEBUG');
 
 if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $mintAddress)) {
-    log_message("export_holders: Invalid collection address: $mintAddress", 'holders_export_log.txt', 'tools', 'ERROR');
+    log_message("export_holders: Invalid collection address: $mintAddress", 'holders-export.log', 'tools', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid collection address']);
     exit;
 }
 
 if (!in_array($export_format, ['csv', 'json'])) {
-    log_message("export_holders: Invalid export format: $export_format", 'holders_export_log.txt', 'tools', 'ERROR');
+    log_message("export_holders: Invalid export format: $export_format", 'holders-export.log', 'tools', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export format']);
     exit;
 }
 
 if (!in_array($export_type, ['all', 'address-only'])) {
-    log_message("export_holders: Invalid export type: $export_type", 'holders_export_log.txt', 'tools', 'ERROR');
+    log_message("export_holders: Invalid export type: $export_type", 'holders-export.log', 'tools', 'ERROR');
     http_response_code(400);
     echo json_encode(['error' => 'Invalid export type']);
     exit;
@@ -85,9 +85,9 @@ try {
     if ($cache_valid && isset($cache_data[$mintAddress]['wallets'])) {
         $wallets = $cache_data[$mintAddress]['wallets'];
         $total_items = $cache_data[$mintAddress]['total_items'] ?? count($wallets);
-        log_message("export_holders: Using cache for mintAddress=$mintAddress", 'holders_export_log.txt', 'tools', 'INFO');
+        log_message("export_holders: Using cache for mintAddress=$mintAddress", 'holders-export.log', 'tools', 'INFO');
     } else {
-        log_message("export_holders: Fetching new data for mintAddress=$mintAddress", 'holders_export_log.txt', 'tools', 'INFO');
+        log_message("export_holders: Fetching new data for mintAddress=$mintAddress", 'holders-export.log', 'tools', 'INFO');
         ini_set('memory_limit', '512M');
 
         $holderData = fetchNFTCollectionHolders($mintAddress, 100, 100, 2000000);
@@ -95,7 +95,7 @@ try {
         $total_items = $holderData['total_items'];
 
         if (empty($wallets)) {
-            log_message("export_holders: No items found for mintAddress=$mintAddress", 'holders_export_log.txt', 'tools', 'ERROR');
+            log_message("export_holders: No items found for mintAddress=$mintAddress", 'holders-export.log', 'tools', 'ERROR');
             throw new Exception('No items found');
         }
 
@@ -111,7 +111,7 @@ try {
             flock($fp, LOCK_UN);
         }
         fclose($fp);
-        log_message("export_holders: Cache updated for mintAddress=$mintAddress", 'holders_export_log.txt', 'tools', 'INFO');
+        log_message("export_holders: Cache updated for mintAddress=$mintAddress", 'holders-export.log', 'tools', 'INFO');
     }
 
     // Output
@@ -152,11 +152,11 @@ try {
         echo json_encode($json_data, JSON_PRETTY_PRINT);
     }
 
-    log_message("export_holders: Successfully exported data for mintAddress=$mintAddress, format=$export_format, type=$export_type", 'holders_export_log.txt', 'tools', 'INFO');
+    log_message("export_holders: Successfully exported data for mintAddress=$mintAddress, format=$export_format, type=$export_type", 'holders-export.log', 'tools', 'INFO');
     exit;
 
 } catch (Exception $e) {
-    log_message("export_holders: Exception - " . $e->getMessage(), 'holders_export_log.txt', 'tools', 'ERROR');
+    log_message("export_holders: Exception - " . $e->getMessage(), 'holders-export.log', 'tools', 'ERROR');
     http_response_code(500);
     echo json_encode(['error' => 'Export failed: ' . $e->getMessage()]);
     exit;
