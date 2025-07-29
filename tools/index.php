@@ -32,7 +32,7 @@ $page_css = ['../css/vina.css', 'tools.css'];
 // Function to extract title and description from a PHP file
 function getToolInfo($file_path) {
     if (!file_exists($file_path)) {
-        log_message("getToolInfo: File not found at $file_path", 'index_log.txt', 'tools', 'ERROR');
+        log_message("getToolInfo: File not found at $file_path", 'index.log', 'tools', 'ERROR');
         return ['title' => 'N/A', 'description' => 'File not found'];
     }
     $content = file_get_contents($file_path);
@@ -82,7 +82,7 @@ $tool = isset($_GET['tool']) && array_key_exists($_GET['tool'], $tools) ? $_GET[
 // Include header
 $header_path = $root_path . 'include/header.php';
 if (!file_exists($header_path)) {
-    log_message("index: header.php not found at $header_path", 'index_log.txt', 'tools', 'ERROR');
+    log_message("index: header.php not found at $header_path", 'index.log', 'tools', 'ERROR');
     die('Internal Server Error: Missing header.php');
 }
 include $header_path;
@@ -95,7 +95,7 @@ include $header_path;
 // Include navigation bar
 $navbar_path = $root_path . 'include/navbar.php';
 if (!file_exists($navbar_path)) {
-    log_message("index: navbar.php not found at $navbar_path", 'index_log.txt', 'tools', 'ERROR');
+    log_message("index: navbar.php not found at $navbar_path", 'index.log', 'tools', 'ERROR');
     die('Internal Server Error: Missing navbar.php');
 }
 include $navbar_path;
@@ -135,9 +135,9 @@ include $navbar_path;
 <?php 
 // Include footer
 $footer_path = __DIR__ . '/../include/footer.php';
-log_message("index: Checking footer_path: $footer_path", 'index_log.txt', 'tools', 'DEBUG');
+log_message("index: Checking footer_path: $footer_path", 'index.log', 'tools', 'DEBUG');
 if (!file_exists($footer_path)) {
-    log_message("index: footer.php not found at $footer_path", 'index_log.txt', 'tools', 'ERROR');
+    log_message("index: footer.php not found at $footer_path", 'index.log', 'tools', 'ERROR');
     die('Internal Server Error: Missing footer.php');
 }
 include $footer_path;
