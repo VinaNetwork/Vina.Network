@@ -79,6 +79,118 @@ try {
     exit;
 }
 
+// Fetch transaction history
+try {
+    $stmt = $pdo->prepare("
+        SELECT id, process_name, token_mint, sol_amount, slippage, delay_seconds, 
+               loop_count, status, buy_tx_id, sell_tx_id, created_at
+        FROM make_market 
+        WHERE public_key = ? 
+        ORDER BY created_at DESC 
+        LIMIT 10
+    ");
+    $stmt->execute([$public_key]);
+    $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    log_message("Fetched " . count($transactions) . " transactions for public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
+} catch (PDOException $e) {
+    log_message("Error fetching transaction history: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    $transactions = [];
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        // Validate CSRF token
+        if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+            log_message("Invalid CSRF token", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+            exit;
+        }
+
+        // Get form data
+        $processName = $_POST['processName'] ?? '';
+        $privateKey = $_POST['privateKey'] ?? '';
+        $tokenMint = $_POST['tokenMint'] ?? '';
+        $solAmount = floatval($_POST['solAmount'] ?? 0);
+        $slippage = floatval($_POST['slippage'] ?? 0.5);
+        $delay = intval($_POST['delay'] ?? 0);
+        $loopCount = intval($_POST['loopCount'] ?? 1);
+
+        // Validate inputs
+        if (empty($processName) || empty($privateKey) || empty($tokenMint)) {
+            log_message("Missing required fields", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
+            exit;
+        }
+        if (!preg_match('/^[A-Za-z0-9]{32,44}$/', $tokenMint)) {
+            log_message("Invalid token address: $tokenMint", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid token address']);
+            exit;
+        }
+        if ($solAmount <= 0) {
+            log_message("Invalid SOL amount: $solAmount", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'SOL amount must be positive']);
+            exit;
+        }
+        if ($slippage < 0) {
+            log_message("Invalid slippage: $slippage", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Slippage must be non-negative']);
+            exit;
+        }
+        if ($loopCount < 1) {
+            log_message("Invalid loop count: $loopCount", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Loop count must be at least 1']);
+            exit;
+        }
+
+        // Encrypt private key
+        $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
+        if ($encryptedPrivateKey === false) {
+            log_message("Failed to encrypt private key", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Encryption failed']);
+            exit;
+        }
+
+        // Insert transaction into database
+        $stmt = $pdo->prepare("
+            INSERT INTO make_market (
+                user_id, public_key, process_name, private_key, token_mint, 
+                sol_amount, slippage, delay_seconds, loop_count, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+        ");
+        $stmt->execute([
+            $account['id'],
+            $public_key,
+            $processName,
+            $encryptedPrivateKey,
+            $tokenMint,
+            $solAmount,
+            $slippage,
+            $delay,
+            $loopCount
+        ]);
+        $transactionId = $pdo->lastInsertId();
+        log_message("Transaction saved to database: ID=$transactionId, processName=$processName", 'make-market.log', 'make-market', 'INFO');
+
+        // Return transaction ID for JavaScript to process
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'success', 'transactionId' => $transactionId]);
+        exit;
+    } catch (Exception $e) {
+        log_message("Error saving transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Error saving transaction']);
+        exit;
+    }
+}
+
 // SEO meta
 $defaultSlippage = 0.5;
 $root_path = '../';
@@ -115,55 +227,119 @@ include $navbar_path;
 ?>
 
 <div class="mm-container">
-	<div class="mm-content">
-		<h1>🟢 Make Market</h1>
-		<div id="account-info">
-			<table>
-			<tr>
-			<th>Public Key</th>
-			<td>
-			<?php if ($short_public_key !== 'Invalid'): ?>
-				<a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
-					<?php echo htmlspecialchars($short_public_key); ?>
-				</a>
-				<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
-			<?php else: ?>
-				<span>Invalid address</span>
-			<?php endif; ?>
-			</td>
-			</tr>
-			</table>
-		</div>
-		<p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
-		
-		<!-- Form Make Market -->
-		<form id="makeMarketForm" autocomplete="off">
-			<label for="processName">Tên tiến trình:</label>
-			<input type="text" name="processName" id="processName" required>
-			
-			<label>🔑 Private Key (Base58):</label>
-			<textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
+    <div class="mm-content">
+        <h1>🟢 Make Market</h1>
+        <div id="account-info">
+            <table>
+                <tr>
+                    <th>Public Key</th>
+                    <td>
+                        <?php if ($short_public_key !== 'Invalid'): ?>
+                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+                                <?php echo htmlspecialchars($short_public_key); ?>
+                            </a>
+                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+                        <?php else: ?>
+                            <span>Invalid address</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
+        
+        <!-- Form Make Market -->
+        <form id="makeMarketForm" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
+            <label for="processName">Tên tiến trình:</label>
+            <input type="text" name="processName" id="processName" required>
+            
+            <label>🔑 Private Key (Base58):</label>
+            <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
 
-			<label>🎯 Token Address:</label>
-			<input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
+            <label>🎯 Token Address:</label>
+            <input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
 
-			<label>💰 Số lượng SOL muốn mua:</label>
-			<input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
+            <label>💰 Số lượng SOL muốn mua:</label>
+            <input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
 
-			<label>📉 Slippage (%):</label>
-			<input type="number" name="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
+            <label>📉 Slippage (%):</label>
+            <input type="number" name="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
 
-			<label>⏱️ Delay giữa mua và bán (giây):</label>
-			<input type="number" name="delay" value="0" min="0">
+            <label>⏱️ Delay giữa mua và bán (giây):</label>
+            <input type="number" name="delay" value="0" min="0">
 
-			<label>🔁 Số vòng lặp:</label>
-			<input type="number" name="loopCount" min="1" value="1">
+            <label>🔁 Số vòng lặp:</label>
+            <input type="number" name="loopCount" min="1" value="1">
 
-			<button type="submit">🚀 Make Market</button>
-		</form>
+            <button type="submit">🚀 Make Market</button>
+        </form>
 
-		<div id="mm-result" class="status-box"></div>
-	</div>
+        <div id="mm-result" class="status-box"></div>
+
+        <!-- Transaction History -->
+        <h2>Lịch sử giao dịch</h2>
+        <div id="transaction-history">
+            <?php if (empty($transactions)): ?>
+                <p>Chưa có giao dịch nào.</p>
+            <?php else: ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên tiến trình</th>
+                            <th>Token Address</th>
+                            <th>SOL Amount</th>
+                            <th>Slippage (%)</th>
+                            <th>Delay (s)</th>
+                            <th>Vòng lặp</th>
+                            <th>Trạng thái</th>
+                            <th>Buy Tx</th>
+                            <th>Sell Tx</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($transactions as $tx): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($tx['id']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
+                                <td>
+                                    <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
+                                        <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
+                                    </a>
+                                </td>
+                                <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
+                                <td><?php echo htmlspecialchars($tx['status']); ?></td>
+                                <td>
+                                    <?php if ($tx['buy_tx_id']): ?>
+                                        <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id']); ?>" target="_blank">
+                                            <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...'); ?>
+                                        </a>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($tx['sell_tx_id']): ?>
+                                        <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id']); ?>" target="_blank">
+                                            <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...'); ?>
+                                        </a>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <?php
