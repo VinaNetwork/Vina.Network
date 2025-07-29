@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return; // Stop further execution
     }
 
-    // Hàm ghi log vào server
+    // Function to log to server
     async function logToServer(message, level = 'INFO') {
         try {
             const logData = {
@@ -50,12 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function checkWalletConnection() {
         try {
             if (window.solana && window.solana.isPhantom) {
-                await logToServer('Kiểm tra kết nối ví Phantom khi load trang', 'INFO');
+                await logToServer('Checking Phantom wallet connection on page load', 'INFO');
                 // Attempt to auto-connect if already authorized
                 const response = await window.solana.connect({ onlyIfTrusted: true });
                 const publicKey = response.publicKey.toString();
                 const shortPublicKey = publicKey.length >= 8 ? publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4) : 'Invalid';
-                await logToServer(`Ví tự động kết nối, publicKey: ${shortPublicKey}`, 'INFO');
+                await logToServer(`Wallet auto-connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                 // Verify with server
                 const csrfToken = document.getElementById('csrf-token').value;
@@ -78,19 +78,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const result = await responseServer.json();
-                await logToServer(`Phản hồi server khi tự động kết nối: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
+                await logToServer(`Server response for auto-connect: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
                 if (result.status === 'success' && result.redirect) {
                     window.location.href = result.redirect; // Redirect to profile.php
                 } else {
                     const statusSpan = document.getElementById('status');
                     const walletInfo = document.getElementById('wallet-info');
-                    statusSpan.textContent = result.message || 'Tự động kết nối thất bại';
+                    statusSpan.textContent = result.message || 'Auto-connect failed';
                     walletInfo.style.display = 'block';
                 }
             }
         } catch (error) {
-            await logToServer(`Lỗi tự động kết nối: ${error.message}`, 'INFO');
-            console.log('Chưa kết nối ví hoặc tự động kết nối không được cấp quyền');
+            await logToServer(`Auto-connect error: ${error.message}`, 'INFO');
+            console.log('No wallet connected or auto-connect not authorized');
         }
     }
 
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
                     await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
-                    // Kiểm tra message trước khi gửi
+                    // Check message before sending
                     await logToServer(`Message sent: ${message}, hex: ${Array.from(new TextEncoder().encode(message)).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
                     const formData = new FormData();
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
-                        window.location.href = result.redirect; // Chuyển hướng đến profile.php
+                        window.location.href = result.redirect; // Redirect to profile.php
                     } else {
                         statusSpan.textContent = result.message || 'Unknown error';
                     }
