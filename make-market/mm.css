@@ -150,7 +150,7 @@ form button:disabled {
         margin-top: 64px;
     }
 	
-	.mm-content {
-		max-width: 100%;
-	}
+    .mm-content {
+	max-width: 100%;
+    }
 }
