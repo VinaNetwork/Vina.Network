@@ -17,7 +17,7 @@ $max_age = 7 * 24 * 60 * 60; // 7 days in seconds
 
 // Ensure log directory exists
 if (!is_dir($log_dir)) {
-    log_message("Log directory $log_dir does not exist", 'acc_auth.txt', 'accounts', 'ERROR');
+    log_message("Log directory $log_dir does not exist", 'accounts.log', 'accounts', 'ERROR');
     exit;
 }
 
@@ -35,7 +35,7 @@ foreach ($log_files as $file) {
     // Check file modification time
     $mtime = filemtime($file);
     if ($mtime === false) {
-        log_message("Failed to get modification time for $file", 'acc_auth.txt', 'accounts', 'ERROR');
+        log_message("Failed to get modification time for $file", 'accounts.log', 'accounts', 'ERROR');
         continue;
     }
 
@@ -43,18 +43,18 @@ foreach ($log_files as $file) {
     if ($current_time - $mtime > $max_age) {
         if (unlink($file)) {
             $deleted_files[] = basename($file);
-            log_message("Deleted old log file: $file", 'acc_auth.txt', 'accounts', 'INFO');
+            log_message("Deleted old log file: $file", 'accounts.log', 'accounts', 'INFO');
         } else {
-            log_message("Failed to delete old log file: $file", 'acc_auth.txt', 'accounts', 'ERROR');
+            log_message("Failed to delete old log file: $file", 'accounts.log', 'accounts', 'ERROR');
         }
     }
 }
 
 // Log summary of deleted files
 if (empty($deleted_files)) {
-    log_message("No log files older than 7 days found in $log_dir", 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("No log files older than 7 days found in $log_dir", 'accounts.log', 'accounts', 'INFO');
 } else {
-    log_message("Deleted " . count($deleted_files) . " old log files: " . implode(', ', $deleted_files), 'acc_auth.txt', 'accounts', 'INFO');
+    log_message("Deleted " . count($deleted_files) . " old log files: " . implode(', ', $deleted_files), 'accounts.log', 'accounts', 'INFO');
 }
 
 exit;
