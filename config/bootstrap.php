@@ -90,13 +90,13 @@ function ensure_directory_and_file($dir_path, $file_path) {
 // Logging utility function
 // Writes timestamped messages to the specified log file
 // @param string $message    - The log content/message
-// @param string $log_file   - Filename (e.g., acc_auth.txt, tools_log.txt)
-// @param string $module     - Module name (e.g., accounts, tools); if empty, logs to ERROR_LOG_PATH
+// @param string $log_file   - Filename (e.g., accounts.log, tools.log, make-market.log)
+// @param string $module     - Module name (e.g., accounts, tools, make-market); if empty, logs to ERROR_LOG_PATH
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
-function log_message($message, $log_file = 'acc_auth.txt', $module = 'accounts', $log_type = 'INFO') {
-    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : TOOLS_PATH);
-    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : TOOLS_PATH . $log_file);
+function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
+    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : TOOLS_PATH));
+    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : TOOLS_PATH . $log_file));
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
