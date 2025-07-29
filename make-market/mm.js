@@ -177,9 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('mm.js loaded');
 
   // Copy functionality
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', (e) => {
+    console.log('Click event detected on:', e.target);
     const icon = e.target.closest('.copy-icon');
-    if (!icon) return;
+    if (!icon) {
+      console.log('No copy-icon found for click');
+      return;
+    }
+
+    console.log('Copy icon clicked:', icon);
 
     // Check HTTPS
     if (!window.isSecureContext) {
@@ -187,8 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Unable to copy: This feature requires HTTPS');
       return;
     }
-
-    console.log('Copy icon clicked:', icon);
 
     // Get address from data-full
     const fullAddress = icon.getAttribute('data-full');
@@ -265,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       icon.classList.remove('copied');
       tooltip.remove();
-    }, 2000); // 2 seconds for clarity
+    }, 2000);
     console.log('Copy successful');
   }
 });
