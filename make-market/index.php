@@ -48,7 +48,6 @@ try {
     log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
-    ob_end_clean();
     exit;
 }
 
@@ -59,21 +58,6 @@ log_message("Session public_key: " . ($short_public_key ?? 'Not set'), 'make-mar
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
     header('Location: /accounts');
-    ob_end_clean();
-    exit;
-}
-if (!preg_match('/^[A-Za-z0-9]{32,44}$/', $public_key)) {
-    log_message("Invalid public key format: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
-    ob_end_clean();
-    exit;
-}
-if (strlen($public_key) > 255) {
-    log_message("Public key too long: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Public key too long']);
-    ob_end_clean();
     exit;
 }
 
@@ -85,7 +69,6 @@ try {
     if (!$account) {
         log_message("No account found for public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
         header('Location: /accounts');
-        ob_end_clean();
         exit;
     }
     log_message("Make Market accessed for public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
@@ -93,7 +76,6 @@ try {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving account information']);
-    ob_end_clean();
     exit;
 }
 
@@ -123,7 +105,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_message("Invalid CSRF token", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-            ob_end_clean();
             exit;
         }
 
@@ -141,35 +122,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_message("Missing required fields", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
-            ob_end_clean();
             exit;
         }
         if (!preg_match('/^[A-Za-z0-9]{32,44}$/', $tokenMint)) {
             log_message("Invalid token address: $tokenMint", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid token address']);
-            ob_end_clean();
             exit;
         }
         if ($solAmount <= 0) {
             log_message("Invalid SOL amount: $solAmount", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'SOL amount must be positive']);
-            ob_end_clean();
             exit;
         }
         if ($slippage < 0) {
             log_message("Invalid slippage: $slippage", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Slippage must be non-negative']);
-            ob_end_clean();
             exit;
         }
         if ($loopCount < 1) {
             log_message("Invalid loop count: $loopCount", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Loop count must be at least 1']);
-            ob_end_clean();
+            exit;
+        }
+        if (strlen($public_key) > 255) {
+            log_message("Public key too long: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Public key too long']);
             exit;
         }
 
@@ -179,7 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_message("Failed to encrypt private key", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Encryption failed']);
-            ob_end_clean();
             exit;
         }
 
@@ -207,18 +188,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Return transaction ID for JavaScript to process
         header('Content-Type: application/json');
         echo json_encode(['status' => 'success', 'transactionId' => $transactionId]);
-        ob_end_clean();
         exit;
     } catch (Exception $e) {
         log_message("Error saving transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Error saving transaction']);
-        ob_end_clean();
         exit;
     }
 }
 
-// SEO meta and HTML rendering (unchanged from previous version)
+// SEO meta
 $defaultSlippage = 0.5;
 $root_path = '../';
 $page_title = "Make Market - Automated Solana Token Trading | Vina Network";
@@ -274,13 +253,13 @@ include $navbar_path;
             </table>
         </div>
         <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
-        
+
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
             <label for="processName">Tên tiến trình:</label>
             <input type="text" name="processName" id="processName" required>
-            
+
             <label>🔑 Private Key (Base58):</label>
             <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
 
@@ -391,4 +370,4 @@ include $footer_path;
 <script src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 </body>
 </html>
-<?php ob_end_clean(); ?>
+<?php ob_end_flush(); ?>
