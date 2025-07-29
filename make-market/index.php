@@ -29,42 +29,30 @@ include '../include/header.php';
     <h1>🟢 Make Market</h1>
     <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
     
-    <!-- Login -->
-    <div class="acc-container">
-    <div class="acc-content">
-        <h1>Login/Register with Phantom Wallet</h1>
-        <button class="cta-button" id="connect-wallet">Connect Wallet</button>
-        <div id="wallet-info" style="display: none;">
-            <p>Wallet address: <span id="public-key"></span></p>
-            <p>Status: <span id="status"></span></p>
-        </div>
-    </div>
-    </div>
-
     <!-- Form Make Market -->
     <form id="makeMarketForm">
-      <label for="processName">Tên tiến trình:</label>
-      <input type="text" name="processName" id="processName" required>
-      
-      <label>🔑 Private Key (Base58):</label>
-      <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
+            <label for="processName">Tên tiến trình:</label>
+            <input type="text" name="processName" id="processName" required>
+            
+            <label>🔑 Private Key (Base58):</label>
+            <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
 
-      <label>🎯 Token Address:</label>
-      <input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
+            <label>🎯 Token Address:</label>
+            <input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
 
-      <label>💰 Số lượng SOL muốn mua:</label>
-      <input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
+            <label>💰 Số lượng SOL muốn mua:</label>
+            <input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
 
-      <label>📉 Slippage (%):</label>
-      <input type="number" name="slippage" step="0.1" value="<?= $defaultSlippage ?>">
+            <label>📉 Slippage (%):</label>
+            <input type="number" name="slippage" step="0.1" value="0.5">
 
-      <label>⏱️ Delay giữa mua và bán (giây):</label>
-      <input type="number" name="delay" value="0" min="0">
+            <label>⏱️ Delay giữa mua và bán (giây):</label>
+            <input type="number" name="delay" value="0" min="0">
 
-      <label>🔁 Số vòng lặp:</label>
-      <input type="number" name="loopCount" min="1" value="1">
+            <label>🔁 Số vòng lặp:</label>
+            <input type="number" name="loopCount" min="1" value="1">
 
-      <button type="submit">🚀 Make Market</button>
+            <button type="submit">🚀 Make Market</button>
     </form>
 
     <div id="mm-result" class="result-content"></div>
@@ -75,5 +63,6 @@ include '../include/header.php';
   <!-- Scripts -->
   <script src="../js/vina.js"></script>
   <script src="../js/navbar.js"></script>
+  <script type="module" src="mm.js"></script>
 </body>
 </html>
