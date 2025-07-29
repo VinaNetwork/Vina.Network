@@ -46,6 +46,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Check wallet connection on page load
+    async function checkWalletConnection() {
+        try {
+            if (window.solana && window.solana.isPhantom) {
+                await logToServer('Kiểm tra kết nối ví Phantom khi load trang', 'INFO');
+                // Attempt to auto-connect if already authorized
+                const response = await window.solana.connect({ onlyIfTrusted: true });
+                const publicKey = response.publicKey.toString();
+                const shortPublicKey = publicKey.length >= 8 ? publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4) : 'Invalid';
+                await logToServer(`Ví tự động kết nối, publicKey: ${shortPublicKey}`, 'INFO');
+
+                // Verify with server
+                const csrfToken = document.getElementById('csrf-token').value;
+                const timestamp = Date.now();
+                const message = `Verify login for Vina Network at ${timestamp}`;
+                const encodedMessage = new TextEncoder().encode(message);
+                const signature = await window.solana.signMessage(encodedMessage, 'utf8');
+                const signatureBytes = new Uint8Array(signature.signature);
+                const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
+
+                const formData = new FormData();
+                formData.append('public_key', publicKey);
+                formData.append('signature', signatureBase64);
+                formData.append('message', message);
+                formData.append('csrf_token', csrfToken);
+
+                const responseServer = await fetch('index.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await responseServer.json();
+                await logToServer(`Phản hồi server khi tự động kết nối: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
+                if (result.status === 'success' && result.redirect) {
+                    window.location.href = result.redirect; // Redirect to profile.php
+                } else {
+                    const statusSpan = document.getElementById('status');
+                    const walletInfo = document.getElementById('wallet-info');
+                    statusSpan.textContent = result.message || 'Tự động kết nối thất bại';
+                    walletInfo.style.display = 'block';
+                }
+            }
+        } catch (error) {
+            await logToServer(`Lỗi tự động kết nối: ${error.message}`, 'INFO');
+            console.log('Chưa kết nối ví hoặc tự động kết nối không được cấp quyền');
+        }
+    }
+
+    // Run wallet connection check on page load
+    checkWalletConnection();
+
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
