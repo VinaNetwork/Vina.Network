@@ -22,6 +22,20 @@ $root_path = '../';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../config/bootstrap.php';
 
+// Start session
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict'
+]);
+
+// Check if user is already logged in
+if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
+    log_message("Người dùng đã đăng nhập với public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
+    header('Location: /accounts/profile.php');
+    exit;
+}
+
 // Error reporting
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
