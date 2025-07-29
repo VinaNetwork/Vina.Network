@@ -9,12 +9,12 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 // Log to confirm file is loaded
-log_message("wallet_creators: wallet-creators.php loaded", 'wallet_creators_log.txt', 'tools', 'INFO');
+log_message("wallet_creators: wallet-creators.php loaded", 'wallet-creators.log', 'tools', 'INFO');
 
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("wallet_creators: bootstrap.php not found at $bootstrap_path", 'wallet_creators_log.txt', 'tools', 'ERROR');
+    log_message("wallet_creators: bootstrap.php not found at $bootstrap_path", 'wallet-creators.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
@@ -23,10 +23,10 @@ require_once $bootstrap_path;
 // Define cache directory and file
 $cache_dir = TOOLS_PATH . 'cache/';
 $cache_file = $cache_dir . 'wallet_creators_cache.json';
-log_message("wallet_creators: Checking cache directory: $cache_dir, file: $cache_file", 'wallet_creators_log.txt', 'tools', 'DEBUG');
+log_message("wallet_creators: Checking cache directory: $cache_dir, file: $cache_file", 'wallet-creators.log', 'tools', 'DEBUG');
 
 if (!ensure_directory_and_file($cache_dir, $cache_file)) {
-    log_message("wallet_creators: Cache setup failed for $cache_dir or $cache_file", 'wallet_creators_log.txt', 'tools', 'ERROR');
+    log_message("wallet_creators: Cache setup failed for $cache_dir or $cache_file", 'wallet-creators.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
@@ -34,12 +34,12 @@ if (!ensure_directory_and_file($cache_dir, $cache_file)) {
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("wallet_creators: tools-api.php not found at $api_helper_path", 'wallet_creators_log.txt', 'tools', 'ERROR');
+    log_message("wallet_creators: tools-api.php not found at $api_helper_path", 'wallet-creators.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
 require_once $api_helper_path;
-log_message("wallet_creators: tools-api.php loaded", 'wallet_creators_log.txt', 'tools', 'INFO');
+log_message("wallet_creators: tools-api.php loaded", 'wallet-creators.log', 'tools', 'INFO');
 ?>
 
 <link rel="stylesheet" href="/tools/wallet-creators/wallet-creators.css">
@@ -53,18 +53,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress'])) {
     $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
     $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
 
-    log_message("wallet_creators: POST request received, creatorAddress=" . ($_POST['creatorAddress'] ?? 'N/A'), 'wallet_creators_log.txt', 'tools', 'INFO');
+    log_message("wallet_creators: POST request received, creatorAddress=" . ($_POST['creatorAddress'] ?? 'N/A'), 'wallet-creators.log', 'tools', 'INFO');
 
     if (time() - $rate_limit_time > 60) {
         $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
-        log_message("wallet_creators: Reset rate limit for IP=$ip, count=1", 'wallet_creators_log.txt', 'tools', 'INFO');
+        log_message("wallet_creators: Reset rate limit for IP=$ip, count=1", 'wallet-creators.log', 'tools', 'INFO');
     } elseif ($rate_limit_count >= 5) {
         $rate_limit_exceeded = true;
-        log_message("wallet_creators: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet_creators_log.txt', 'tools', 'ERROR');
+        log_message("wallet_creators: Rate limit exceeded for IP=$ip, count=$rate_limit_count", 'wallet-creators.log', 'tools', 'ERROR');
         echo "<div class='result-error'><p>Rate limit exceeded. Please try again in a minute.</p></div>";
     } else {
         $_SESSION[$rate_limit_key]['count']++;
-        log_message("wallet_creators: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet_creators_log.txt', 'tools', 'INFO');
+        log_message("wallet_creators: Incremented rate limit for IP=$ip, count=" . $_SESSION[$rate_limit_key]['count'], 'wallet-creators.log', 'tools', 'INFO');
     }
 }
 
@@ -96,19 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
             throw new Exception('Invalid Creator Address format');
         }
 
-        log_message("wallet_creators: Processing creatorAddress=$creatorAddress", 'wallet_creators_log.txt', 'tools', 'INFO');
+        log_message("wallet_creators: Processing creatorAddress=$creatorAddress", 'wallet-creators.log', 'tools', 'INFO');
 
         $cache_data = @json_decode(@file_get_contents($cache_file), true) ?? [];
         $cache_expiration = 3 * 3600;
         $cache_valid = isset($cache_data[$creatorAddress]) && (time() - $cache_data[$creatorAddress]['timestamp'] < $cache_expiration);
 
-        log_message("wallet_creators: Cache check for creatorAddress=$creatorAddress, cache_valid=$cache_valid", 'wallet_creators_log.txt', 'tools', 'DEBUG');
+        log_message("wallet_creators: Cache check for creatorAddress=$creatorAddress, cache_valid=$cache_valid", 'wallet-creators.log', 'tools', 'DEBUG');
 
         if ($cache_valid) {
             $formatted_data = $cache_data[$creatorAddress]['data'];
-            log_message("wallet_creators: Used cached data for creatorAddress=$creatorAddress, assets=" . count($formatted_data), 'wallet_creators_log.txt', 'tools', 'INFO');
+            log_message("wallet_creators: Used cached data for creatorAddress=$creatorAddress, assets=" . count($formatted_data), 'wallet-creators.log', 'tools', 'INFO');
         } else {
-            log_message("wallet_creators: Sending request to getAssetsByCreator with creatorAddress=$creatorAddress", 'wallet_creators_log.txt', 'tools', 'INFO');
+            log_message("wallet_creators: Sending request to getAssetsByCreator with creatorAddress=$creatorAddress", 'wallet-creators.log', 'tools', 'INFO');
             $params = [
                 'creatorAddress' => $creatorAddress,
                 'onlyVerified' => false,
@@ -123,14 +123,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
             $fp_debug = @fopen($debug_file, 'c');
             if ($fp_debug && flock($fp_debug, LOCK_EX)) {
                 if (@file_put_contents($debug_file, json_encode($response, JSON_PRETTY_PRINT)) === false) {
-                    log_message("wallet_creators: Failed to write debug file at $debug_file", 'wallet_creators_log.txt', 'tools', 'ERROR');
+                    log_message("wallet_creators: Failed to write debug file at $debug_file", 'wallet-creators.log', 'tools', 'ERROR');
                 } else {
-                    log_message("wallet_creators: Wrote API response to debug file at $debug_file", 'wallet_creators_log.txt', 'tools', 'DEBUG');
+                    log_message("wallet_creators: Wrote API response to debug file at $debug_file", 'wallet-creators.log', 'tools', 'DEBUG');
                 }
                 flock($fp_debug, LOCK_UN);
                 fclose($fp_debug);
             } else {
-                log_message("wallet_creators: Failed to open or lock debug file at $debug_file", 'wallet_creators_log.txt', 'tools', 'ERROR');
+                log_message("wallet_creators: Failed to open or lock debug file at $debug_file", 'wallet-creators.log', 'tools', 'ERROR');
             }
 
             if (isset($response['error'])) {
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
             $items = $response['items'] ?? ($response['result']['items'] ?? []);
             if (empty($items)) {
                 echo "<div class='result-info'><p>This wallet has not created any NFTs or Tokens yet.</p></div>";
-                log_message("wallet_creators: No assets found for creatorAddress=$creatorAddress", 'wallet_creators_log.txt', 'tools', 'INFO');
+                log_message("wallet_creators: No assets found for creatorAddress=$creatorAddress", 'wallet-creators.log', 'tools', 'INFO');
                 return;
             }
 
@@ -172,14 +172,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
             $fp = @fopen($cache_file, 'c');
             if ($fp && flock($fp, LOCK_EX)) {
                 if (@file_put_contents($cache_file, json_encode($cache_data, JSON_PRETTY_PRINT)) === false) {
-                    log_message("wallet_creators: Failed to write cache file at $cache_file", 'wallet_creators_log.txt', 'tools', 'ERROR');
+                    log_message("wallet_creators: Failed to write cache file at $cache_file", 'wallet-creators.log', 'tools', 'ERROR');
                     throw new Exception('Failed to write cache file');
                 }
                 flock($fp, LOCK_UN);
                 fclose($fp);
-                log_message("wallet_creators: Successfully processed and cached assets for creatorAddress=$creatorAddress, assets=" . count($formatted_data), 'wallet_creators_log.txt', 'tools', 'INFO');
+                log_message("wallet_creators: Successfully processed and cached assets for creatorAddress=$creatorAddress, assets=" . count($formatted_data), 'wallet-creators.log', 'tools', 'INFO');
             } else {
-                log_message("wallet_creators: Failed to open or lock cache file at $cache_file", 'wallet_creators_log.txt', 'tools', 'ERROR');
+                log_message("wallet_creators: Failed to open or lock cache file at $cache_file", 'wallet-creators.log', 'tools', 'ERROR');
                 fclose($fp);
                 throw new Exception('Failed to open or lock cache file');
             }
@@ -256,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creatorAddress']) && 
 
     } catch (Exception $e) {
         echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
-        log_message("wallet_creators: Exception - " . $e->getMessage(), 'wallet_creators_log.txt', 'tools', 'ERROR');
+        log_message("wallet_creators: Exception - " . $e->getMessage(), 'wallet-creators.log', 'tools', 'ERROR');
     }
 }
 ?>
