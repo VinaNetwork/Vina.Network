@@ -11,23 +11,12 @@ const connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
 
 // Hàm log_message (gọi từ PHP qua inline script trong index.php)
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
+    // Gọi endpoint PHP để ghi log
     fetch('/log.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, log_file, module, log_type })
     }).catch(err => console.error('Log error:', err));
-}
-
-// Hàm cập nhật trạng thái giao dịch vào database
-function updateTransaction(transactionId, updates) {
-    fetch('/update-transaction.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactionId, ...updates })
-    }).catch(err => {
-        console.error('Update transaction error:', err);
-        log_message(`Failed to update transaction ${transactionId}: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-    });
 }
 
 // Hàm chính xử lý make market
@@ -38,32 +27,27 @@ async function makeMarket(
   solAmount,
   slippage,
   delay,
-  loopCount,
-  transactionId
+  loopCount
 ) {
   const resultDiv = document.getElementById('mm-result');
   const submitButton = document.querySelector('#makeMarketForm button');
-  log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}, transactionId=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+  log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}`, 'make-market.log', 'make-market', 'INFO');
   try {
     // Kiểm tra input
     if (!tokenMint.match(/^[A-Za-z0-9]{32,44}$/)) {
       log_message(`Invalid token address: ${tokenMint}`, 'make-market.log', 'make-market', 'ERROR');
-      updateTransaction(transactionId, { status: 'failed', error: 'Invalid token address' });
       throw new Error('Invalid token address');
     }
     if (solAmount <= 0) {
       log_message(`Invalid SOL amount: ${solAmount}`, 'make-market.log', 'make-market', 'ERROR');
-      updateTransaction(transactionId, { status: 'failed', error: 'SOL amount must be positive' });
       throw new Error('SOL amount must be positive');
     }
     if (slippage < 0) {
       log_message(`Invalid slippage: ${slippage}`, 'make-market.log', 'make-market', 'ERROR');
-      updateTransaction(transactionId, { status: 'failed', error: 'Slippage must be non-negative' });
       throw new Error('Slippage must be non-negative');
     }
     if (loopCount < 1) {
       log_message(`Invalid loop count: ${loopCount}`, 'make-market.log', 'make-market', 'ERROR');
-      updateTransaction(transactionId, { status: 'failed', error: 'Loop count must be at least 1' });
       throw new Error('Loop count must be at least 1');
     }
 
@@ -88,7 +72,6 @@ async function makeMarket(
       await connection.confirmTransaction(buyTxId);
       resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Buy transaction: <a href="https://solscan.io/tx/${buyTxId}" target="_blank">${buyTxId}</a></p>`;
       log_message(`Buy transaction completed: ${buyTxId}`, 'make-market.log', 'make-market', 'INFO');
-      updateTransaction(transactionId, { buy_tx_id: buyTxId });
 
       // Delay giữa mua và bán
       if (delay > 0) {
@@ -106,16 +89,13 @@ async function makeMarket(
       await connection.confirmTransaction(sellTxId);
       resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Sell transaction: <a href="https://solscan.io/tx/${sellTxId}" target="_blank">${sellTxId}</a></p>`;
       log_message(`Sell transaction completed: ${sellTxId}`, 'make-market.log', 'make-market', 'INFO');
-      updateTransaction(transactionId, { sell_tx_id: sellTxId });
     }
 
     resultDiv.innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p>`;
     log_message(`Market making completed for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
-    updateTransaction(transactionId, { status: 'success' });
   } catch (error) {
     resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p>`;
     log_message(`Error in makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-    updateTransaction(transactionId, { status: 'failed', error: error.message });
   } finally {
     submitButton.disabled = false;
     log_message(`makeMarket function ended for process: ${processName}`, 'make-market.log', 'make-market', 'DEBUG');
