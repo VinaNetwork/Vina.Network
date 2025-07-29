@@ -30,10 +30,10 @@ async function makeMarket(
     const keypair = Keypair.fromSecretKey(bs58.decode(privateKey));
     const wallet = new Wallet(keypair);
 
-    document.getElementById('tx-result').innerHTML = `[${processName}] Starting market making...`;
+    document.getElementById('mm-result').innerHTML = `<p><strong>[${processName}]</strong> Starting market making...</p>`;
 
     for (let i = 0; i < loopCount; i++) {
-      document.getElementById('tx-result').innerHTML += `<br>[${processName}] Loop ${i + 1}/${loopCount}`;
+      document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Loop ${i + 1}/${loopCount}</p>`;
 
       // Thực hiện mua token
       const buyTx = await swapSOLtoToken(wallet, tokenMint, solAmount, slippage);
@@ -41,11 +41,11 @@ async function makeMarket(
         skipPreflight: true
       });
       await connection.confirmTransaction(buyTxId);
-      document.getElementById('tx-result').innerHTML += `<br>[${processName}] Buy transaction: <a href="https://solscan.io/tx/${buyTxId}" target="_blank">${buyTxId}</a>`;
+      document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Buy transaction: <a href="https://solscan.io/tx/${buyTxId}" target="_blank">${buyTxId}</a></p>`;
 
       // Delay giữa mua và bán
       if (delay > 0) {
-        document.getElementById('tx-result').innerHTML += `<br>[${processName}] Waiting ${delay} seconds...`;
+        document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Waiting ${delay} seconds...</p>`;
         await new Promise(resolve => setTimeout(resolve, delay * 1000));
       }
 
@@ -55,12 +55,12 @@ async function makeMarket(
         skipPreflight: true
       });
       await connection.confirmTransaction(sellTxId);
-      document.getElementById('tx-result').innerHTML += `<br>[${processName}] Sell transaction: <a href="https://solscan.io/tx/${sellTxId}" target="_blank">${sellTxId}</a>`;
+      document.getElementById('mm-result').innerHTML += `<p><strong>[${processName}]</strong> Sell transaction: <a href="https://solscan.io/tx/${sellTxId}" target="_blank">${sellTxId}</a></p>`;
     }
 
-    document.getElementById('tx-result').innerHTML += `<br><p style="color: green;">[${processName}] Market making completed</p>`;
+    document.getElementById('mm-result').innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p>`;
   } catch (error) {
-    document.getElementById('tx-result').innerHTML += `<br><p style="color: red;">[${processName}] Error: ${error.message}</p>`;
+    document.getElementById('mm-result').innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p>`;
   }
 }
 
@@ -135,8 +135,8 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
 // Xử lý form submit
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const resultDiv = document.getElementById('tx-result');
-  resultDiv.innerHTML = 'Processing...';
+  const resultDiv = document.getElementById('mm-result');
+  resultDiv.innerHTML = '<p><strong>Processing...</strong></p>';
 
   const formData = new FormData(e.target);
   const params = {
