@@ -20,11 +20,11 @@ require_once $bootstrap_path;
 $tool = isset($_GET['tool']) ? trim($_GET['tool']) : '';
 $tab = isset($_GET['tab']) ? trim($_GET['tab']) : '';
 
-log_message("load-tool: Request received - tool=$tool, tab=$tab, method={$_SERVER['REQUEST_METHOD']}", 'tools_load_log.txt', 'tools', 'INFO');
+log_message("load-tool: Request received - tool=$tool, tab=$tab, method={$_SERVER['REQUEST_METHOD']}", 'tools-load.log', 'tools', 'INFO');
 
 $valid_tools = ['nft-info', 'nft-holders', 'nft-transactions', 'wallet-creators', 'wallet-analysis', 'token-burn'];
 if (!in_array($tool, $valid_tools)) {
-    log_message("load-tool: Invalid tool parameter - tool=$tool", 'tools_load_log.txt', 'tools', 'ERROR');
+    log_message("load-tool: Invalid tool parameter - tool=$tool", 'tools-load.log', 'tools', 'ERROR');
     http_response_code(400);
     echo '<div class="result-error"><p>Error: Invalid tool parameter</p></div>';
     exit;
@@ -42,7 +42,7 @@ $tool_files = [
 if ($tool === 'wallet-analysis' && $tab) {
     $valid_tabs = ['token', 'nft', 'domain'];
     if (!in_array($tab, $valid_tabs)) {
-        log_message("load-tool: Invalid tab parameter - tab=$tab", 'tools_load_log.txt', 'tools', 'ERROR');
+        log_message("load-tool: Invalid tab parameter - tab=$tab", 'tools-load.log', 'tools', 'ERROR');
         http_response_code(400);
         echo '<div class="result-error"><p>Error: Invalid tab parameter</p></div>';
         exit;
@@ -52,10 +52,10 @@ if ($tool === 'wallet-analysis' && $tab) {
     $tool_file = __DIR__ . '/' . ($tool_files[$tool] ?? '');
 }
 
-log_message("load-tool: Attempting to include file - $tool_file", 'tools_load_log.txt', 'tools', 'INFO');
+log_message("load-tool: Attempting to include file - $tool_file", 'tools-load.log', 'tools', 'INFO');
 
 if (!file_exists($tool_file)) {
-    log_message("load-tool: Tool file not found - $tool_file", 'tools_load_log.txt', 'tools', 'ERROR');
+    log_message("load-tool: Tool file not found - $tool_file", 'tools-load.log', 'tools', 'ERROR');
     http_response_code(404);
     echo '<div class="result-error"><p>Error: Tool file not found</p></div>';
     exit;
@@ -65,10 +65,10 @@ try {
     ob_start();
     include $tool_file;
     $output = ob_get_clean();
-    log_message("load-tool: Output length: " . strlen($output) . ", output_preview=" . substr(htmlspecialchars($output), 0, 200), 'tools_load_log.txt', 'tools', 'INFO');
+    log_message("load-tool: Output length: " . strlen($output) . ", output_preview=" . substr(htmlspecialchars($output), 0, 200), 'tools-load.log', 'tools', 'INFO');
     echo $output;
 } catch (Throwable $e) {
-    log_message("load-tool: Exception in $tool_file - " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine(), 'tools_load_log.txt', 'tools', 'ERROR');
+    log_message("load-tool: Exception in $tool_file - " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine(), 'tools-load.log', 'tools', 'ERROR');
     http_response_code(500);
     echo '<div class="result-error"><p>Error: Failed to load tool - ' . htmlspecialchars($e->getMessage()) . '</p></div>';
 }
