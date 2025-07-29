@@ -176,33 +176,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 document.addEventListener('DOMContentLoaded', () => {
   console.log('mm.js loaded');
 
-  // Hàm ghi log vào server
-  async function logToServer(message, level = 'INFO') {
-    try {
-      const logData = {
-        timestamp: new Date().toISOString(),
-        level: level,
-        message: message,
-        userAgent: navigator.userAgent,
-        url: window.location.href
-      };
-      console.log(`Sending log to server: ${message}`);
-      const response = await fetch('/make-market/client-log.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(logData)
-      });
-      if (!response.ok) {
-        console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
-        throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-      }
-      const result = await response.json();
-      console.log(`Log server response: ${JSON.stringify(result)}`);
-    } catch (error) {
-      console.error(`Failed to send log to server: ${error.message}`);
-    }
-  }
-
   // Copy functionality
   document.addEventListener('click', function(e) {
     const icon = e.target.closest('.copy-icon');
@@ -210,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Check HTTPS
     if (!window.isSecureContext) {
-      logToServer('Copy blocked: Not in secure context', 'ERROR');
+      console.error('Copy blocked: Not in secure context');
       alert('Unable to copy: This feature requires HTTPS');
       return;
     }
@@ -221,7 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const fullAddress = icon.getAttribute('data-full');
     if (!fullAddress) {
       console.error('Copy failed: data-full attribute not found or empty');
-      logToServer('Copy failed: data-full attribute not found or empty', 'ERROR');
       alert('Unable to copy address: Invalid address');
       return;
     }
@@ -230,7 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
     if (!base58Regex.test(fullAddress)) {
       console.error('Invalid address format:', fullAddress);
-      logToServer(`Copy blocked: Invalid address format in data-full: ${fullAddress.substring(0, 8)}...`, 'ERROR');
       alert('Unable to copy: Invalid address format');
       return;
     }
@@ -243,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Using Clipboard API');
       navigator.clipboard.writeText(fullAddress).then(() => {
         showCopyFeedback(icon);
-        logToServer(`Copied public_key: ${shortAddress}`, 'INFO');
       }).catch(err => {
         console.error('Clipboard API failed:', err);
         fallbackCopy(fullAddress, icon);
@@ -271,15 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Fallback copy result:', success);
       if (success) {
         showCopyFeedback(icon);
-        logToServer(`Copied public_key: ${shortText}`, 'INFO');
       } else {
         console.error('Fallback copy failed');
-        logToServer('Fallback copy failed', 'ERROR');
         alert('Unable to copy address: Copy error');
       }
     } catch (err) {
       console.error('Fallback copy error:', err);
-      logToServer(`Fallback copy error: ${err.message}`, 'ERROR');
       alert('Unable to copy address: ' + err.message);
     } finally {
       document.body.removeChild(textarea);
