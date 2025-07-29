@@ -4,10 +4,16 @@
  * Created by: Vina Network
  * ========================================================================== */
 
-/* Make Market – Giao diện cơ bản */
+/* Make Market */
 .mm-container {
     margin-top: 72px;
-    max-width: 600px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mm-content {
+	max-width: 600px;
     padding: 20px;
     background: #ffffff;
     border-radius: 12px;
@@ -146,4 +152,8 @@ form button:disabled {
     .mm-container {
         margin-top: 64px;
     }
+	
+	.mm-content {
+		max-width: 100%;
+	}
 }
