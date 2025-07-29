@@ -10,6 +10,14 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
+// Dynamic Domain Name Definition
+// Determine the protocol: https or http
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+// Get the current domain (e.g., www.vina.network)
+$domain = $_SERVER['HTTP_HOST'];
+// Combine to form the base URL and define it as a constant
+define('BASE_URL', $protocol . $domain . '/');
+
 // ---------------------------------------------------
 // Define core path constants
 // Used for logging and configuration across modules
