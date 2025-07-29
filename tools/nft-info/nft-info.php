@@ -9,12 +9,12 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 // Log to confirm file is loaded
-log_message("nft_info: nft-info.php loaded", 'nft_info_log.txt', 'tools', 'INFO');
+log_message("nft_info: nft-info.php loaded", 'nft-info.log', 'tools', 'INFO');
 
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft_info: bootstrap.php not found at $bootstrap_path", 'nft_info_log.txt', 'tools', 'ERROR');
+    log_message("nft_info: bootstrap.php not found at $bootstrap_path", 'nft-info.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
@@ -25,7 +25,7 @@ $cache_dir = TOOLS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_info_cache.json';
 
 if (!ensure_directory_and_file($cache_dir, $cache_file)) {
-    log_message("nft_info: Cache setup failed for $cache_dir or $cache_file", 'nft_info_log.txt', 'tools', 'ERROR');
+    log_message("nft_info: Cache setup failed for $cache_dir or $cache_file", 'nft-info.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
@@ -33,7 +33,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file)) {
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft_info_log.txt', 'tools', 'ERROR');
+    log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft-info.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
     $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
     $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
 
-    log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_info_log.txt', 'tools', 'INFO');
+    log_message("nft_info: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft-info.log', 'tools', 'INFO');
 
     if (time() - $rate_limit_time > 60) {
         $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
@@ -126,10 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             }
             fclose($fp);
 
-            log_message("nft_info: Successfully processed mintAddress=$mintAddress", 'nft_info_log.txt', 'tools', 'INFO');
+            log_message("nft_info: Successfully processed mintAddress=$mintAddress", 'nft-info.log', 'tools', 'INFO');
         } else {
             $formatted_data = $cache_data[$mintAddress]['data'];
-            log_message("nft_info: Used cached data for mintAddress=$mintAddress", 'nft_info_log.txt', 'tools', 'INFO');
+            log_message("nft_info: Used cached data for mintAddress=$mintAddress", 'nft-info.log', 'tools', 'INFO');
         }
 ?>
         <div class="tools-result nft-info-result">
@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
 <?php
     } catch (Exception $e) {
         echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
-        log_message("nft_info: Exception - " . $e->getMessage(), 'nft_info_log.txt', 'tools', 'ERROR');
+        log_message("nft_info: Exception - " . $e->getMessage(), 'nft-info.log', 'tools', 'ERROR');
     }
 }
 ?>
