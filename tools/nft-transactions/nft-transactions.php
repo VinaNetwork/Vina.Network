@@ -9,12 +9,12 @@ if (!defined('VINANETWORK')) define('VINANETWORK', true);
 if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
 
 // Log to confirm file is loaded
-log_message("nft_transactions: nft-transactions.php loaded", 'nft_transactions_log.txt', 'tools', 'INFO');
+log_message("nft_transactions: nft-transactions.php loaded", 'nft-transactions.log', 'tools', 'INFO');
 
 // Load bootstrap
 $bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
-    log_message("nft_transactions: bootstrap.php not found at $bootstrap_path", 'nft_transactions_log.txt', 'tools', 'ERROR');
+    log_message("nft_transactions: bootstrap.php not found at $bootstrap_path", 'nft-transactions.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
     exit;
 }
@@ -23,10 +23,10 @@ require_once $bootstrap_path;
 // Cache directory and file
 $cache_dir = TOOLS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_transactions_cache.json';
-log_message("nft_transactions: Checking cache directory: $cache_dir, file: $cache_file", 'nft_transactions_log.txt', 'tools', 'DEBUG');
+log_message("nft_transactions: Checking cache directory: $cache_dir, file: $cache_file", 'nft-transactions.log', 'tools', 'DEBUG');
 
 if (!ensure_directory_and_file($cache_dir, $cache_file)) {
-    log_message("nft_transactions: Cache setup failed for $cache_dir or $cache_file", 'nft_transactions_log.txt', 'tools', 'ERROR');
+    log_message("nft_transactions: Cache setup failed for $cache_dir or $cache_file", 'nft-transactions.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
@@ -34,7 +34,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file)) {
 // Load API helper
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
 if (!file_exists($api_helper_path)) {
-    log_message("nft_transactions: tools-api.php not found at $api_helper_path", 'nft_transactions_log.txt', 'tools', 'ERROR');
+    log_message("nft_transactions: tools-api.php not found at $api_helper_path", 'nft-transactions.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
     exit;
 }
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress'])) {
     $rate_limit_count = $_SESSION[$rate_limit_key]['count'] ?? 0;
     $rate_limit_time = $_SESSION[$rate_limit_key]['time'] ?? 0;
 
-    log_message("nft_transactions: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft_transactions_log.txt', 'tools', 'INFO');
+    log_message("nft_transactions: POST request received, mintAddress=" . ($_POST['mintAddress'] ?? 'N/A'), 'nft-transactions.log', 'tools', 'INFO');
 
     if (time() - $rate_limit_time > 60) {
         $_SESSION[$rate_limit_key] = ['count' => 1, 'time' => time()];
@@ -115,12 +115,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
         $use_cache = isset($cache_data[$mintAddress]) && (time() - $cache_data[$mintAddress]['timestamp'] < $cache_expiration);
         if ($use_cache) {
             $formatted = $cache_data[$mintAddress];
-            log_message("nft_transactions: Used cached data for mintAddress=$mintAddress, transactions=" . count($formatted['transactions']), 'nft_transactions_log.txt', 'tools', 'INFO');
+            log_message("nft_transactions: Used cached data for mintAddress=$mintAddress, transactions=" . count($formatted['transactions']), 'nft-transactions.log', 'tools', 'INFO');
         } else {
-            log_message("nft_transactions: Sending request to getSignaturesForAsset with mintAddress=$mintAddress", 'nft_transactions_log.txt', 'tools', 'INFO');
+            log_message("nft_transactions: Sending request to getSignaturesForAsset with mintAddress=$mintAddress", 'nft-transactions.log', 'tools', 'INFO');
             $params = ['id' => $mintAddress];
             $response = callAPI('getSignaturesForAsset', $params, 'POST');
-            log_message("nft_transactions: Raw API response: " . json_encode($response), 'nft_transactions_log.txt', 'tools', 'DEBUG');
+            log_message("nft_transactions: Raw API response: " . json_encode($response), 'nft-transactions.log', 'tools', 'DEBUG');
 
             if (isset($response['error'])) {
                 throw new Exception("Helius API error: " . (is_array($response['error']) ? json_encode($response['error']) : $response['error']));
@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
             }
             fclose($fp);
 
-            log_message("nft_transactions: Successfully processed mintAddress=$mintAddress, transactions=" . count($formatted['transactions']), 'nft_transactions_log.txt', 'tools', 'INFO');
+            log_message("nft_transactions: Successfully processed mintAddress=$mintAddress, transactions=" . count($formatted['transactions']), 'nft-transactions.log', 'tools', 'INFO');
         }
 ?>
         <div class="tools-result nft-tx-result">
@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
 <?php
     } catch (Exception $e) {
         echo "<div class='result-error'><p>Error: " . htmlspecialchars($e->getMessage()) . "</p></div>";
-        log_message("nft_transactions: Exception - " . $e->getMessage(), 'nft_transactions_log.txt', 'tools', 'ERROR');
+        log_message("nft_transactions: Exception - " . $e->getMessage(), 'nft-transactions.log', 'tools', 'ERROR');
     }
 }
 ?>
