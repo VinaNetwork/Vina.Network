@@ -20,7 +20,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
 
 // Hàm cập nhật trạng thái giao dịch vào database
 function updateTransaction(transactionId, updates) {
-    fetch('/update-transaction.php', {
+    fetch('/status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transactionId, ...updates })
