@@ -7,11 +7,15 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+require_once __DIR__ . '/../config/bootstrap.php';
+
 // Set path and SEO metadata for this page
-$root_path = '../';
 $page_title = "Notification - Vina Network";
-$page_og_url = "https://www.vina.network/notification/";
-$page_canonical = "https://www.vina.network/notification/";
+$page_og_url = BASE_URL . "notification/";
+$page_canonical = BASE_URL . "notification/";
 $page_css = ['notification.css'];
 
 // Include shared <head> content (meta, title, styles, etc.)
