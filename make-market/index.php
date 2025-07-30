@@ -237,7 +237,7 @@ include $navbar_path;
         <div id="account-info">
             <table>
             <tr>
-            <th>Public Key</th>
+            <th>Account:</th>
             <td>
             <?php if ($short_public_key !== 'Invalid'): ?>
                 <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
