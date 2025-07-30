@@ -27,7 +27,8 @@ $page_og_description = "Discover Solana NFT tools on Vina Network: Check NFT Inf
 $page_og_url = BASE_URL . "tools/";
 $page_canonical = BASE_URL . "tools/";
 
-$page_css = ['/accounts/tools.css'];
+// CSS for Tools
+$page_css = ['/tools/tools.css'];
 
 // Function to extract title and description from a PHP file
 function getToolInfo($file_path) {
