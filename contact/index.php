@@ -7,6 +7,11 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+require_once __DIR__ . '/config/bootstrap.php';
+
 // Head Section (Meta, Styles, Title) is included via header.php
 $page_title = "Contact Us - Vina Network";
 $page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
