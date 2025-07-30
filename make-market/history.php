@@ -63,7 +63,10 @@ try {
         ORDER BY created_at DESC 
         LIMIT ? OFFSET ?
     ");
-    $stmt->execute([$public_key, $per_page, $offset]);
+    $stmt->bindValue(1, $public_key, PDO::PARAM_STR);
+    $stmt->bindValue(2, $per_page, PDO::PARAM_INT);
+    $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     log_message("Fetched " . count($transactions) . " transactions for public_key: $short_public_key, page: $page, per_page: $per_page", 'make-market.log', 'make-market', 'INFO');
