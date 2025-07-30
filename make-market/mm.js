@@ -43,6 +43,7 @@ async function refreshTransactionHistory() {
                         <th>Buy Tx</th>
                         <th>Sell Tx</th>
                         <th>Thời gian</th>
+                        <th>Lý do lỗi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -51,6 +52,7 @@ async function refreshTransactionHistory() {
             const shortTokenMint = tx.token_mint.substring(0, 4) + '...' + tx.token_mint.substring(tx.token_mint.length - 4);
             const shortBuyTx = tx.buy_tx_id ? tx.buy_tx_id.substring(0, 4) + '...' : '-';
             const shortSellTx = tx.sell_tx_id ? tx.sell_tx_id.substring(0, 4) + '...' : '-';
+            const errorMessage = tx.error || '-';
             html += `
                 <tr>
                     <td>${tx.id}</td>
@@ -64,6 +66,7 @@ async function refreshTransactionHistory() {
                     <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
                     <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
                     <td>${tx.created_at}</td>
+                    <td>${errorMessage}</td>
                 </tr>
             `;
         });
