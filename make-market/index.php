@@ -52,6 +52,7 @@ $short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key
 log_message("Session public_key: " . ($short_public_key ?? 'Not set'), 'make-market.log', 'make-market', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
+    $_SESSION['redirect_url'] = '/make-market'; // Store current URL for redirect after login
     header('Location: /accounts');
     exit;
 }
@@ -63,6 +64,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
+        $_SESSION['redirect_url'] = '/make-market'; // Store current URL for redirect after login
         header('Location: /accounts');
         exit;
     }
@@ -253,26 +255,26 @@ include $navbar_path;
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
-            <label for="processName">Tên tiến trình:</label>
+            <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
 
             <label>🔑 Private Key (Base58):</label>
-            <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
-            <p class="note-warning">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
+            <textarea name="privateKey" required placeholder="Enter private key..."></textarea>
+            <p class="note-warning">⚠️ Warning: Entering a private key carries security risks. Ensure you understand before proceeding!</p>
 
             <label>🎯 Token Address:</label>
-            <input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
+            <input type="text" name="tokenMint" required placeholder="E.g., So111... or any SPL token">
 
-            <label>💰 Số lượng SOL muốn mua:</label>
-            <input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
+            <label>💰 SOL Amount to Buy:</label>
+            <input type="number" step="0.01" name="solAmount" required placeholder="E.g., 0.1">
 
             <label>📉 Slippage (%):</label>
             <input type="number" name="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
 
-            <label>⏱️ Delay giữa mua và bán (giây):</label>
+            <label>⏱️ Delay between Buy and Sell (seconds):</label>
             <input type="number" name="delay" value="0" min="0">
 
-            <label>🔁 Số vòng lặp:</label>
+            <label>🔁 Loop Count:</label>
             <input type="number" name="loopCount" min="1" value="1">
 
             <button class="cta-button" type="submit">🚀 Make Market</button>
@@ -281,24 +283,24 @@ include $navbar_path;
         <div id="mm-result" class="status-box"></div>
 
         <!-- Transaction History -->
-        <h2 class="history-title">Lịch sử giao dịch</h2>
+        <h2 class="history-title">Transaction History</h2>
         <div id="transaction-history">
             <?php if (empty($transactions)): ?>
-                <p>Chưa có giao dịch nào.</p>
+                <p>No transactions yet.</p>
             <?php else: ?>
                 <table>
                     <tr>
                     <th>ID</th>
-                    <th>Tên tiến trình</th>
+                    <th>Process Name</th>
                     <th>Token Address</th>
                     <th>SOL Amount</th>
                     <th>Slippage (%)</th>
                     <th>Delay (s)</th>
-                    <th>Vòng lặp</th>
-                    <th>Trạng thái</th>
+                    <th>Loop Count</th>
+                    <th>Status</th>
                     <th>Buy Tx</th>
                     <th>Sell Tx</th>
-                    <th>Thời gian</th>
+                    <th>Time</th>
                     </tr>
                     <?php foreach ($transactions as $tx): ?>
                         <tr>
