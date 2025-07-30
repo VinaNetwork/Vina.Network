@@ -66,9 +66,19 @@ li {
     background-color: #f9f9f9;
     border-left: 4px solid #007acc;
     padding: 6px 10px;
-    margin: 10px 0 !important;
+    margin: 10px 0;
     font-size: 0.9em;
     color: #333;
+    font-style: italic;
+    border-radius: 10px;
+}
+.note-warning {
+    background-color: #f9f9f9;
+    border-left: 4px solid #007acc;
+    padding: 6px 10px;
+    margin: 10px 0;
+    font-size: 0.9em;
+    color: red;
     font-style: italic;
     border-radius: 10px;
 }
