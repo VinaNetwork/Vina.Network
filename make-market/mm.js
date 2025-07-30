@@ -6,10 +6,14 @@
 
 // Hàm log_message
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
-    fetch('/log.php', {
+    fetch('/make-market/log.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, log_file, module, log_type })
+    }).then(response => {
+        if (!response.ok) {
+            console.error(`Log failed: HTTP ${response.status}`);
+        }
     }).catch(err => console.error('Log error:', err));
 }
 
@@ -36,6 +40,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     <tr>
                         <th>ID</th>
                         <th>Tên tiến trình</th>
+                        <th>Public Key</th>
                         <th>Token Address</th>
                         <th>SOL Amount</th>
                         <th>Slippage (%)</th>
@@ -51,6 +56,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                 <tbody>
         `;
         data.transactions.forEach(tx => {
+            const shortPublicKey = tx.public_key.substring(0, 4) + '...' + tx.public_key.substring(tx.public_key.length - 4);
             const shortTokenMint = tx.token_mint.substring(0, 4) + '...' + tx.token_mint.substring(tx.token_mint.length - 4);
             const shortBuyTx = tx.buy_tx_id ? tx.buy_tx_id.substring(0, 4) + '...' : '-';
             const shortSellTx = tx.sell_tx_id ? tx.sell_tx_id.substring(0, 4) + '...' : '-';
@@ -59,6 +65,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                 <tr>
                     <td>${tx.id}</td>
                     <td>${tx.process_name}</td>
+                    <td><a href="https://solscan.io/address/${tx.public_key}" target="_blank">${shortPublicKey}</a></td>
                     <td><a href="https://solscan.io/token/${tx.token_mint}" target="_blank">${shortTokenMint}</a></td>
                     <td>${tx.sol_amount}</td>
                     <td>${tx.slippage}</td>
@@ -126,20 +133,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     resultDiv.classList.add('active');
     log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
 
-    // Validate public_key
-    const publicKey = '<?php echo htmlspecialchars($public_key); ?>';
-    if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
-        log_message(`Invalid public key format: ${publicKey.substring(0, 4)}...`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: Invalid public key format</p>';
-        resultDiv.classList.add('active');
-        submitButton.disabled = false;
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
-        return;
-    }
-
     const formData = new FormData(e.target);
     const params = {
         processName: formData.get('processName'),
@@ -153,9 +146,24 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     };
     log_message(`Form data: processName=${params.processName}, tokenMint=${params.tokenMint}, solAmount=${params.solAmount}, slippage=${params.slippage}, delay=${params.delay}, loopCount=${params.loopCount}`, 'make-market.log', 'make-market', 'DEBUG');
 
-    // Validate privateKey
-    if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64}$/.test(params.privateKey)) {
-        log_message(`Invalid private key format`, 'make-market.log', 'make-market', 'ERROR');
+    // Validate privateKey and derive publicKey
+    let transactionPublicKey;
+    try {
+        const keypair = solanaWeb3.Keypair.fromSecretKey(bs58.decode(params.privateKey));
+        transactionPublicKey = keypair.publicKey.toBase58();
+        if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(transactionPublicKey)) {
+            log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
+            resultDiv.innerHTML = '<p style="color: red;">Error: Invalid public key format</p>';
+            resultDiv.classList.add('active');
+            submitButton.disabled = false;
+            setTimeout(() => {
+                resultDiv.classList.remove('active');
+                resultDiv.innerHTML = '';
+            }, 5000);
+            return;
+        }
+    } catch (error) {
+        log_message(`Invalid private key format: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         resultDiv.innerHTML = '<p style="color: red;">Error: Invalid private key format</p>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
@@ -165,6 +173,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         }, 5000);
         return;
     }
+
+    // Thêm transactionPublicKey vào formData
+    formData.set('transactionPublicKey', transactionPublicKey);
+    document.getElementById('transactionPublicKey').value = transactionPublicKey;
 
     try {
         // Gửi form data qua AJAX
@@ -177,6 +189,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         }
         const result = await response.json();
         if (result.status !== 'success') {
+            log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(result.message);
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
