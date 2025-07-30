@@ -10,7 +10,11 @@
     text-align: center;
 }
 
-.contact-content {padding: 20px;}
+.contact-content {
+     margin: 20px;
+     padding: 20px;
+}
+
 .contact-content h1 {color: #4a90e2;}
 
 .contact-table {
