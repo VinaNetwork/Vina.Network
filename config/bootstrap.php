@@ -53,6 +53,11 @@ if (!file_exists($config_path)) {
 require_once $config_path;
 
 // ---------------------------------------------------
+// Load database connection
+// ---------------------------------------------------
+require_once __DIR__ . '/db.php';
+
+// ---------------------------------------------------
 // Ensure directory and file exist with correct permissions
 // Creates directory and file if they don't exist, sets permissions
 // @param string $dir_path  - Directory path to check/create
