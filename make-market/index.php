@@ -29,19 +29,8 @@ error_reporting(E_ALL);
 session_start([
     'cookie_secure' => true,
     'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict',
-    'gc_maxlifetime' => 3600
+    'cookie_samesite' => 'Strict'
 ]);
-
-// Kiểm tra session và public_key
-$public_key = $_SESSION['public_key'] ?? null;
-$short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-log_message("Session public_key: " . ($short_public_key ?? 'Not set'), 'make-market.log', 'make-market', 'DEBUG');
-if (!$public_key || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
-    log_message("Invalid or missing public key in session: " . ($public_key ? substr($public_key, 0, 4) . '...' : 'null'), 'make-market.log', 'make-market', 'ERROR');
-    header('Location: /accounts');
-    exit;
-}
 
 // Database connection
 $start_time = microtime(true);
@@ -59,6 +48,16 @@ try {
     log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    exit;
+}
+
+// Check session
+$public_key = $_SESSION['public_key'] ?? null;
+$short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+log_message("Session public_key: " . ($short_public_key ?? 'Not set'), 'make-market.log', 'make-market', 'DEBUG');
+if (!$public_key) {
+    log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
+    header('Location: /accounts');
     exit;
 }
 
@@ -80,33 +79,22 @@ try {
     exit;
 }
 
-// Fetch transaction history with pagination
-$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$per_page = 10;
-$offset = ($page - 1) * $per_page;
+// Fetch transaction history
 try {
-    // Count total transactions
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM make_market WHERE public_key = ?");
-    $stmt->execute([$public_key]);
-    $total_transactions = $stmt->fetchColumn();
-    $total_pages = max(1, ceil($total_transactions / $per_page));
-
-    // Fetch transactions for current page
     $stmt = $pdo->prepare("
         SELECT id, process_name, token_mint, sol_amount, slippage, delay_seconds, 
                loop_count, status, buy_tx_id, sell_tx_id, created_at
         FROM make_market 
         WHERE public_key = ? 
         ORDER BY created_at DESC 
-        LIMIT ? OFFSET ?
+        LIMIT 10
     ");
-    $stmt->execute([$public_key, $per_page, $offset]);
+    $stmt->execute([$public_key]);
     $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    log_message("Fetched " . count($transactions) . " transactions for public_key: $short_public_key, page: $page", 'make-market.log', 'make-market', 'INFO');
+    log_message("Fetched " . count($transactions) . " transactions for public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Error fetching transaction history: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     $transactions = [];
-    $total_pages = 1;
 }
 
 // Handle form submission
@@ -255,10 +243,10 @@ include $navbar_path;
             <th>Public Key</th>
             <td>
             <?php if ($short_public_key !== 'Invalid'): ?>
-                <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank">
-                    <?php echo htmlspecialchars($short_public_key, ENT_QUOTES, 'UTF-8'); ?>
+                <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+                    <?php echo htmlspecialchars($short_public_key); ?>
                 </a>
-                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key'], ENT_QUOTES, 'UTF-8'); ?>"></i>
+                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
             <?php else: ?>
                 <span>Invalid address</span>
             <?php endif; ?>
@@ -269,7 +257,7 @@ include $navbar_path;
 
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
             <label for="processName">Tên tiến trình:</label>
             <input type="text" name="processName" id="processName" required>
 
@@ -319,22 +307,22 @@ include $navbar_path;
                     </tr>
                     <?php foreach ($transactions as $tx): ?>
                         <tr>
-                        <td><?php echo htmlspecialchars($tx['id'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?php echo htmlspecialchars($tx['process_name'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars($tx['id']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
                         <td>
-                            <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank">
-                                <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4), ENT_QUOTES, 'UTF-8'); ?>
+                            <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
+                                <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
                             </a>
                         </td>
-                        <td><?php echo htmlspecialchars($tx['sol_amount'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?php echo htmlspecialchars($tx['slippage'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?php echo htmlspecialchars($tx['delay_seconds'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?php echo htmlspecialchars($tx['loop_count'], ENT_QUOTES, 'UTF-8'); ?></td>
-                        <td><?php echo htmlspecialchars($tx['status'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['status']); ?></td>
                         <td>
                         <?php if ($tx['buy_tx_id']): ?>
-                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank">
-                                <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...', ENT_QUOTES, 'UTF-8'); ?>
+                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id']); ?>" target="_blank">
+                                <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...'); ?>
                             </a>
                         <?php else: ?>
                             -
@@ -342,22 +330,17 @@ include $navbar_path;
                         </td>
                         <td>
                         <?php if ($tx['sell_tx_id']): ?>
-                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank">
-                                <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...', ENT_QUOTES, 'UTF-8'); ?>
+                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id']); ?>" target="_blank">
+                                <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...'); ?>
                             </a>
                         <?php else: ?>
                             -
                         <?php endif; ?>
                         </td>
-                        <td><?php echo htmlspecialchars($tx['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </table>
-                <div class="pagination">
-                    <button id="prev-page" <?php if ($page <= 1) echo 'disabled'; ?>>Previous</button>
-                    <span>Trang <?php echo $page; ?> / <?php echo $total_pages; ?></span>
-                    <button id="next-page" <?php if ($page >= $total_pages) echo 'disabled'; ?>>Next</button>
-                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -378,15 +361,11 @@ include $footer_path;
 <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@0.26.0/dist/browser/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios-retry/dist/axios-retry.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bs58@6.0.0/index.js"></script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
 <script src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
-<script>
-    console.log('Public Key: <?php echo htmlspecialchars($account['public_key'], ENT_QUOTES, 'UTF-8'); ?>');
-</script>
 </body>
 </html>
 <?php ob_end_flush(); ?>

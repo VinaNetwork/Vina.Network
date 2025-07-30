@@ -13,26 +13,14 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     }).catch(err => console.error('Log error:', err));
 }
 
-// Hàm retry fetch
-async function retryFetch(url, options, retries = 3, delay = 1000) {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-        try {
-            const response = await fetch(url, options);
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            return response;
-        } catch (error) {
-            if (attempt === retries) throw error;
-            log_message(`Retry fetch attempt ${attempt}/${retries} failed: ${error.message}`, 'make-market.log', 'make-market', 'DEBUG');
-            await new Promise(resolve => setTimeout(resolve, delay * attempt));
-        }
-    }
-}
-
 // Hàm làm mới lịch sử giao dịch
 async function refreshTransactionHistory() {
     const resultDiv = document.getElementById('mm-result');
     try {
-        const response = await retryFetch('/make-market/history.php', {});
+        const response = await fetch('/make-market/history.php');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const data = await response.json();
         log_message(`Fetched transaction history: ${data.transactions.length} records`, 'make-market.log', 'make-market', 'INFO');
         const historyDiv = document.getElementById('transaction-history');
@@ -82,14 +70,14 @@ async function refreshTransactionHistory() {
         html += '</tbody></table>';
         historyDiv.innerHTML = html;
     } catch (err) {
-        const errorMsg = err.message || 'Unknown error';
-        log_message(`Error refreshing transaction history: ${errorMsg}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = `<p style="color: red;" class="error">Lỗi khi tải lịch sử giao dịch: ${errorMsg}</p>`;
+        log_message(`Error refreshing transaction history: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        historyDiv.innerHTML = '<p>Lỗi khi tải lịch sử giao dịch.</p>';
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
         resultDiv.classList.add('active');
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000);
+        }, 5000); // Ẩn sau 5 giây
     }
 }
 
@@ -99,32 +87,21 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     const resultDiv = document.getElementById('mm-result');
     const submitButton = document.querySelector('#makeMarketForm button');
     submitButton.disabled = true;
-    resultDiv.innerHTML = '<div class="spinner">Đang xử lý...</div>';
-    resultDiv.classList.add('active');
+    resultDiv.innerHTML = '<div class="spinner">Loading...</div>';
+    resultDiv.classList.add('active'); // Hiển thị div
     log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
 
     // Validate public_key
-    const publicKey = '<?php echo htmlspecialchars($account['public_key'], ENT_QUOTES, 'UTF-8'); ?>';
-    if (!publicKey) {
-        log_message('Public key is empty or not set', 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;" class="error">Lỗi: Không tìm thấy public key. Vui lòng đăng nhập lại.</p>';
-        resultDiv.classList.add('active');
-        submitButton.disabled = false;
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
-        return;
-    }
+    const publicKey = '<?php echo htmlspecialchars($public_key); ?>';
     if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
         log_message(`Invalid public key format: ${publicKey.substring(0, 4)}...`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;" class="error">Lỗi: Định dạng public key không hợp lệ. Vui lòng kiểm tra ví của bạn.</p>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: Invalid public key format</p>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000);
+        }, 5000); // Ẩn sau 5 giây
         return;
     }
 
@@ -144,24 +121,30 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     // Validate privateKey
     if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64}$/.test(params.privateKey)) {
         log_message(`Invalid private key format`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;" class="error">Lỗi: Định dạng private key không hợp lệ.</p>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: Invalid private key format</p>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000);
+        }, 5000); // Ẩn sau 5 giây
         return;
     }
 
     try {
-        resultDiv.innerHTML += `<p>Đang khởi tạo tiến trình <strong>${params.processName}</strong>...</p>`;
+        // Kiểm tra bs58
+        if (typeof bs58 === 'undefined') {
+            log_message('bs58 is not defined before calling makeMarket', 'make-market.log', 'make-market', 'ERROR');
+            throw new Error('bs58 is not defined');
+        }
+
+        // Gửi form data qua AJAX
         const response = await fetch('/make-market/', {
             method: 'POST',
             body: formData
         });
         if (!response.ok) {
-            throw new Error(`Lỗi server: ${response.status}`);
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const result = await response.json();
         if (result.status !== 'success') {
@@ -169,7 +152,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
 
-        resultDiv.innerHTML += `<p>Tiến trình đã được lưu, bắt đầu giao dịch...</p>`;
+        // Gọi makeMarket với transactionId
         await makeMarket(
             params.processName,
             params.privateKey,
@@ -180,17 +163,26 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             params.loopCount,
             result.transactionId
         );
-        resultDiv.innerHTML += `<p style="color: green;">Hoàn tất tiến trình <strong>${params.processName}</strong>!</p>`;
+        log_message('makeMarket called successfully', 'make-market.log', 'make-market', 'INFO');
+
+        // Làm mới lịch sử giao dịch
         await refreshTransactionHistory();
-    } catch (error) {
-        resultDiv.innerHTML += `<p style="color: red;" class="error">Lỗi: ${error.message}</p>`;
-        log_message(`Form submission error: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-    } finally {
-        submitButton.disabled = false;
+        resultDiv.innerHTML = '<p style="color: green;">Transaction submitted successfully!</p>';
+        resultDiv.classList.add('active');
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 10000);
+        }, 5000); // Ẩn sau 5 giây
+    } catch (error) {
+        log_message(`Error calling makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        resultDiv.classList.add('active');
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000); // Ẩn sau 5 giây
+    } finally {
+        submitButton.disabled = false;
     }
 });
 
@@ -223,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!window.isSecureContext) {
                 console.error('Copy blocked: Not in secure context');
                 log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
-                alert('Không thể sao chép: Tính năng này yêu cầu HTTPS');
+                alert('Unable to copy: This feature requires HTTPS');
                 return;
             }
 
@@ -232,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!fullAddress) {
                 console.error('Copy failed: data-full attribute not found or empty');
                 log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
-                alert('Không thể sao chép địa chỉ: Địa chỉ không hợp lệ');
+                alert('Unable to copy address: Invalid address');
                 return;
             }
 
@@ -241,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!base58Regex.test(fullAddress)) {
                 console.error('Invalid address format:', fullAddress);
                 log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
-                alert('Không thể sao chép: Định dạng địa chỉ không hợp lệ');
+                alert('Unable to copy: Invalid address format');
                 return;
             }
 
@@ -290,12 +282,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.error('Fallback copy failed');
                 log_message('Fallback copy failed', 'make-market.log', 'make-market', 'ERROR');
-                alert('Không thể sao chép địa chỉ: Lỗi sao chép');
+                alert('Unable to copy address: Copy error');
             }
         } catch (err) {
             console.error('Fallback copy error:', err);
             log_message(`Fallback copy error: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-            alert('Không thể sao chép địa chỉ: ' + err.message);
+            alert('Unable to copy address: ' + err.message);
         } finally {
             document.body.removeChild(textarea);
         }
@@ -307,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         icon.classList.add('copied');
         const tooltip = document.createElement('span');
         tooltip.className = 'copy-tooltip';
-        tooltip.textContent = 'Đã sao chép!';
+        tooltip.textContent = 'Copied!';
         const parent = icon.parentNode;
         parent.style.position = 'relative';
         parent.appendChild(tooltip);
