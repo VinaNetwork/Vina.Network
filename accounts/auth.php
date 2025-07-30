@@ -212,6 +212,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         $new_session_id = session_id();
         log_message("Session ID regenerated: old=$old_session_id, new=$new_session_id, public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
 
+        // Determine redirect URL
+        $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile.php';
+        unset($_SESSION['redirect_url']); // Clear after use
+
         if ($account) {
             $start_time = microtime(true);
             $stmt = $pdo->prepare("UPDATE accounts SET last_login = ? WHERE public_key = ?");
@@ -219,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Login successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
-            echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => '/accounts/profile.php']);
+            echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => $redirect_url]);
         } else {
             $start_time = microtime(true);
             $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login) VALUES (?, ?, ?)");
@@ -227,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Registration successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
-            echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => '/accounts/profile.php']);
+            echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => $redirect_url]);
         }
     } catch (Exception $e) {
         log_message("Error: {$e->getMessage()}, IP=$ip_address", 'accounts.log', 'accounts', 'ERROR');
