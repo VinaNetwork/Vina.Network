@@ -78,11 +78,7 @@ form button:disabled {
     margin-top: 20px;
     background-color: #f9f9f9;
     font-size: 15px;
-}
-
-.status-box p {
-    margin: 5px 0;
-    font-size: 14px;
+    display: none;
 }
 
 .status-box p strong {
