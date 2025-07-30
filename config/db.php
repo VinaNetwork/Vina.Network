@@ -10,8 +10,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-// Yêu cầu config.php
+// Yêu cầu config.php và bootstrap.php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/bootstrap.php';
 
 // Hàm lấy kết nối database
 function get_db_connection() {
@@ -26,10 +27,10 @@ function get_db_connection() {
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
             ]
         );
-        log_message("Database connection established", 'database.log', 'database', 'INFO');
+        log_message("Database connection established", 'database.log', 'make-market', 'INFO');
         return $pdo;
     } catch (PDOException $e) {
-        log_message("Database connection failed: {$e->getMessage()}", 'database.log', 'database', 'ERROR');
+        log_message("Database connection failed: {$e->getMessage()}", 'database.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
         exit;
