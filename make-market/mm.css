@@ -16,9 +16,10 @@
     max-width: 600px;
     padding: 20px;
     margin: 20px;
-    background: #ffffff;
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+    color: #fff;
 }
 
 h1 {
@@ -26,12 +27,25 @@ h1 {
     color: #218c74;
 }
 
-h2 {
-    margin-top: 30px;
-    color: #218c74;
-    font-size: 20px;
+/* Account Info */
+#account-info {
+    margin: 20px auto;
 }
 
+#account-info table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#account-info th, #account-info td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    background: #a3a3a3;
+}
+
+/* Form */
 form label {
     display: block;
     margin-top: 15px;
@@ -98,32 +112,17 @@ form button:disabled {
     color: #28a745;
 }
 
-/* Account Info */
-#account-info {
-    margin: 20px auto;
-}
-
-#account-info table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-#account-info th, #account-info td {
-    padding: 8px;
-    border: 1px solid #ddd;
-    text-align: left;
-    color: #333;
-}
-
-#account-info th {
-    background-color: rgba(0, 0, 0, 0.05);
-    font-weight: bold;
-}
-
-/* Transaction History */
+/* History */
 #transaction-history {
     margin-top: 20px;
+}
+.history-title {
+    margin-top: 20px;
+    background-color: #f9f9f9;
+    border-left: 4px solid #007acc;
+    padding: 6px 10px;
+    font-size: 20px;
+    color: #000000;
 }
 
 #transaction-history table {
@@ -131,19 +130,17 @@ form button:disabled {
     border-collapse: collapse;
     margin-top: 10px;
 }
-
-#transaction-history th, #transaction-history td {
+#transaction-history th,
+#transaction-history td {
     padding: 8px;
     border: 1px solid #ddd;
     text-align: left;
     font-size: 14px;
 }
-
 #transaction-history th {
     background-color: rgba(0, 0, 0, 0.05);
     font-weight: bold;
 }
-
 #transaction-history td a {
     color: #007bff;
     text-decoration: none;
