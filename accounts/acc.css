@@ -31,42 +31,7 @@
 }
 
 h1 {
-    font-size: 24px;
-    margin-bottom: 20px;
     color: #00d4ff;
-}
-
-button#connect-wallet {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-button#connect-wallet:hover {
-    background-color: #45a049;
-}
-
-#wallet-info {
-    margin-top: 20px;
-}
-
-#wallet-info p {
-    margin: 10px 0;
-    font-size: 16px;
-}
-
-#public-key {
-    font-weight: bold;
-    color: #333;
-    word-wrap: break-word;
-}
-
-#status {
-    color: #007bff;
 }
 
 /* Profile */
