@@ -83,8 +83,8 @@ if (!file_exists($header_path)) {
             <h1>Login with Phantom Wallet</h1>
             <button class="cta-button" id="connect-wallet">Connect Wallet</button>
             <div id="wallet-info" style="display: none;">
-                <p>Wallet address: <span id="public-key"></span></p>
-                <p>Status: <span id="status"></span></p>
+                <p><span id="public-key"></span></p>
+                <p><span id="status"></span></p>
             </div>
             <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
         </div>
