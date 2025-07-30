@@ -5,9 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
+ob_start();
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
+require_once __DIR__ . '/../config/bootstrap.php';
+$root_path = '../';
 
 // Add Security Headers
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://quote-api.jup.ag https://api.mainnet-beta.solana.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
@@ -16,9 +19,6 @@ header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
-
-ob_start();
-require_once __DIR__ . '/../config/bootstrap.php';
 
 // Error reporting
 ini_set('log_errors', 1);
@@ -198,16 +198,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // SEO meta
-$defaultSlippage = 0.5;
-$root_path = '../';
 $page_title = "Make Market - Automated Solana Token Trading | Vina Network";
 $page_description = "Automate token trading on Solana with Vina Network's Make Market tool using Jupiter API. Secure, fast, and customizable.";
 $page_keywords = "Solana trading, automated token trading, Jupiter API, make market, Vina Network, Solana tokens, crypto trading";
 $page_og_title = "Make Market: Automate Your Solana Token Trades with Vina Network";
 $page_og_description = "Use Vina Network's Make Market to automate buying and selling Solana tokens with Jupiter API. Try it now!";
-$page_og_url = "https://www.vina.network/make-market/";
-$page_canonical = "https://www.vina.network/make-market/";
+$page_og_url = BASE_URL . "make-market/";
+$page_canonical = BASE_URL . "make-market/";
+
+// CSS for Make Market
 $page_css = ['mm.css'];
+
+// Slippage
+$defaultSlippage = 0.5;
 
 // Header
 $header_path = $root_path . 'include/header.php';
@@ -290,58 +293,54 @@ include $navbar_path;
                 <p>Chưa có giao dịch nào.</p>
             <?php else: ?>
                 <table>
-                    <thead>
+                    <tr>
+                    <th>ID</th>
+                    <th>Tên tiến trình</th>
+                    <th>Token Address</th>
+                    <th>SOL Amount</th>
+                    <th>Slippage (%)</th>
+                    <th>Delay (s)</th>
+                    <th>Vòng lặp</th>
+                    <th>Trạng thái</th>
+                    <th>Buy Tx</th>
+                    <th>Sell Tx</th>
+                    <th>Thời gian</th>
+                    </tr>
+                    <?php foreach ($transactions as $tx): ?>
                         <tr>
-                            <th>ID</th>
-                            <th>Tên tiến trình</th>
-                            <th>Token Address</th>
-                            <th>SOL Amount</th>
-                            <th>Slippage (%)</th>
-                            <th>Delay (s)</th>
-                            <th>Vòng lặp</th>
-                            <th>Trạng thái</th>
-                            <th>Buy Tx</th>
-                            <th>Sell Tx</th>
-                            <th>Thời gian</th>
+                        <td><?php echo htmlspecialchars($tx['id']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
+                        <td>
+                            <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
+                                <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
+                            </a>
+                        </td>
+                        <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['status']); ?></td>
+                        <td>
+                        <?php if ($tx['buy_tx_id']): ?>
+                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id']); ?>" target="_blank">
+                                <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...'); ?>
+                            </a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                        </td>
+                        <td>
+                        <?php if ($tx['sell_tx_id']): ?>
+                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id']); ?>" target="_blank">
+                                <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...'); ?>
+                            </a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                        </td>
+                        <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($transactions as $tx): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($tx['id']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
-                                <td>
-                                    <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
-                                        <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
-                                    </a>
-                                </td>
-                                <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['status']); ?></td>
-                                <td>
-                                    <?php if ($tx['buy_tx_id']): ?>
-                                        <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id']); ?>" target="_blank">
-                                            <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...'); ?>
-                                        </a>
-                                    <?php else: ?>
-                                        -
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if ($tx['sell_tx_id']): ?>
-                                        <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id']); ?>" target="_blank">
-                                            <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...'); ?>
-                                        </a>
-                                    <?php else: ?>
-                                        -
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
+                    <?php endforeach; ?>
                 </table>
             <?php endif; ?>
         </div>
