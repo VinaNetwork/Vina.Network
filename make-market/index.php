@@ -30,7 +30,7 @@ session_start([
     'cookie_secure' => true,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict',
-    'gc_maxlifetime' => 3600 // 1 giờ
+    'gc_maxlifetime' => 3600
 ]);
 
 // Kiểm tra session và public_key
@@ -80,22 +80,33 @@ try {
     exit;
 }
 
-// Fetch transaction history
+// Fetch transaction history with pagination
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$per_page = 10;
+$offset = ($page - 1) * $per_page;
 try {
+    // Count total transactions
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM make_market WHERE public_key = ?");
+    $stmt->execute([$public_key]);
+    $total_transactions = $stmt->fetchColumn();
+    $total_pages = max(1, ceil($total_transactions / $per_page));
+
+    // Fetch transactions for current page
     $stmt = $pdo->prepare("
         SELECT id, process_name, token_mint, sol_amount, slippage, delay_seconds, 
                loop_count, status, buy_tx_id, sell_tx_id, created_at
         FROM make_market 
         WHERE public_key = ? 
         ORDER BY created_at DESC 
-        LIMIT 10
+        LIMIT ? OFFSET ?
     ");
-    $stmt->execute([$public_key]);
+    $stmt->execute([$public_key, $per_page, $offset]);
     $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    log_message("Fetched " . count($transactions) . " transactions for public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
+    log_message("Fetched " . count($transactions) . " transactions for public_key: $short_public_key, page: $page", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Error fetching transaction history: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     $transactions = [];
+    $total_pages = 1;
 }
 
 // Handle form submission
@@ -342,6 +353,11 @@ include $navbar_path;
                         </tr>
                     <?php endforeach; ?>
                 </table>
+                <div class="pagination">
+                    <button id="prev-page" <?php if ($page <= 1) echo 'disabled'; ?>>Previous</button>
+                    <span>Trang <?php echo $page; ?> / <?php echo $total_pages; ?></span>
+                    <button id="next-page" <?php if ($page >= $total_pages) echo 'disabled'; ?>>Next</button>
+                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -369,7 +385,7 @@ include $footer_path;
 <script src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
 <script src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 <script>
-    console.log('Public Key: <?php echo htmlspecialchars($public_key, ENT_QUOTES, 'UTF-8'); ?>');
+    console.log('Public Key: <?php echo htmlspecialchars($account['public_key'], ENT_QUOTES, 'UTF-8'); ?>');
 </script>
 </body>
 </html>
