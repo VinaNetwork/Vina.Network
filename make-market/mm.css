@@ -149,6 +149,11 @@ form button:disabled {
     text-decoration: underline;
 }
 
+#transaction-history th:nth-child(12),
+#transaction-history td:nth-child(12) {
+    min-width: 150px; /* Đảm bảo cột Lý do lỗi đủ rộng */
+}
+
 /* Copy icon */
 .copy-icon {
     cursor: pointer;
