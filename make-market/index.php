@@ -35,15 +35,10 @@ session_start([
 // Database connection
 $start_time = microtime(true);
 try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = get_db_connection();
     $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection successful (took {$duration}ms)", 'make-market.log', 'make-market', 'INFO');
-} catch (PDOException $e) {
+    log_message("Database connection retrieved (took {$duration}ms)", 'make-market.log', 'make-market', 'INFO');
+} catch (Exception $e) {
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
