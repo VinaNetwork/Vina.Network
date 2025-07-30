@@ -13,21 +13,23 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     }).catch(err => console.error('Log error:', err));
 }
 
-// Hàm làm mới lịch sử giao dịch
-async function refreshTransactionHistory() {
+// Hàm làm mới lịch sử giao dịch với phân trang
+async function refreshTransactionHistory(page = 1, per_page = 10) {
     const resultDiv = document.getElementById('mm-result');
+    const historyDiv = document.getElementById('transaction-history');
     try {
-        const response = await fetch('/make-market/history.php');
+        const response = await fetch(`/make-market/history.php?page=${page}&per_page=${per_page}`);
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        log_message(`Fetched transaction history: ${data.transactions.length} records`, 'make-market.log', 'make-market', 'INFO');
-        const historyDiv = document.getElementById('transaction-history');
+        log_message(`Fetched transaction history: ${data.transactions.length} records, page: ${page}, per_page: ${per_page}`, 'make-market.log', 'make-market', 'INFO');
+
         if (data.transactions.length === 0) {
             historyDiv.innerHTML = '<p>Chưa có giao dịch nào.</p>';
             return;
         }
+
         let html = `
             <table>
                 <thead>
@@ -71,6 +73,19 @@ async function refreshTransactionHistory() {
             `;
         });
         html += '</tbody></table>';
+
+        // Thêm điều hướng phân trang
+        const { current_page, total_pages, total_transactions } = data.pagination;
+        html += `
+            <div class="pagination">
+                <p>Trang ${current_page}/${total_pages} (${total_transactions} giao dịch)</p>
+                <div class="pagination-buttons">
+                    <button class="pagination-btn" ${current_page === 1 ? 'disabled' : ''} onclick="refreshTransactionHistory(${current_page - 1}, ${per_page})">Previous</button>
+                    ${generatePageNumbers(current_page, total_pages, per_page)}
+                    <button class="pagination-btn" ${current_page === total_pages ? 'disabled' : ''} onclick="refreshTransactionHistory(${current_page + 1}, ${per_page})">Next</button>
+                </div>
+            </div>
+        `;
         historyDiv.innerHTML = html;
     } catch (err) {
         log_message(`Error refreshing transaction history: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -80,8 +95,25 @@ async function refreshTransactionHistory() {
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000); // Ẩn sau 5 giây
+        }, 5000);
     }
+}
+
+// Hàm tạo các nút số trang
+function generatePageNumbers(current_page, total_pages, per_page) {
+    let html = '';
+    const maxButtons = 5; // Số nút trang tối đa hiển thị
+    let startPage = Math.max(1, current_page - Math.floor(maxButtons / 2));
+    let endPage = Math.min(total_pages, startPage + maxButtons - 1);
+
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="pagination-btn${i === current_page ? ' active' : ''}" onclick="refreshTransactionHistory(${i}, ${per_page})">${i}</button>`;
+    }
+    return html;
 }
 
 // Xử lý form submit
@@ -91,7 +123,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     const submitButton = document.querySelector('#makeMarketForm button');
     submitButton.disabled = true;
     resultDiv.innerHTML = '<div class="spinner">Loading...</div>';
-    resultDiv.classList.add('active'); // Hiển thị div
+    resultDiv.classList.add('active');
     log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
 
     // Validate public_key
@@ -104,7 +136,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000); // Ẩn sau 5 giây
+        }, 5000);
         return;
     }
 
@@ -130,17 +162,11 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000); // Ẩn sau 5 giây
+        }, 5000);
         return;
     }
 
     try {
-        // Kiểm tra bs58
-        if (typeof bs58 === 'undefined') {
-            log_message('bs58 is not defined before calling makeMarket', 'make-market.log', 'make-market', 'ERROR');
-            throw new Error('bs58 is not defined');
-        }
-
         // Gửi form data qua AJAX
         const response = await fetch('/make-market/', {
             method: 'POST',
@@ -168,14 +194,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         );
         log_message('makeMarket called successfully', 'make-market.log', 'make-market', 'INFO');
 
-        // Làm mới lịch sử giao dịch
-        await refreshTransactionHistory();
+        // Làm mới lịch sử giao dịch (trang 1)
+        await refreshTransactionHistory(1, 10);
         resultDiv.innerHTML = '<p style="color: green;">Transaction submitted successfully!</p>';
         resultDiv.classList.add('active');
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000); // Ẩn sau 5 giây
+        }, 5000);
     } catch (error) {
         log_message(`Error calling makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
@@ -183,7 +209,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 5000); // Ẩn sau 5 giây
+        }, 5000);
     } finally {
         submitButton.disabled = false;
     }
@@ -194,8 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
 
-    // Làm mới lịch sử giao dịch khi load trang
-    refreshTransactionHistory();
+    // Làm mới lịch sử giao dịch khi load trang (trang 1)
+    refreshTransactionHistory(1, 10);
 
     // Tìm và gắn sự kiện trực tiếp cho .copy-icon
     const copyIcons = document.querySelectorAll('.copy-icon');
