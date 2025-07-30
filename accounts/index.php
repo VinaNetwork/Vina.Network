@@ -5,11 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
+ob_start();
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 require_once __DIR__ . '/../config/bootstrap.php';
-
+$root_path = '../';
 
 // Add Security Headers
 header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
@@ -19,8 +20,6 @@ header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 
-ob_start();
-$root_path = '../';
 require_once __DIR__ . '/auth.php';
 
 // Start session
@@ -55,6 +54,7 @@ $page_og_description = "Connect your Solana wallet to register or login to Vina 
 $page_og_url = BASE_URL . "accounts/";
 $page_canonical = BASE_URL . "accounts/";
 
+// CSS for Accounts
 $page_css = ['/accounts/acc.css'];
 
 // Header
