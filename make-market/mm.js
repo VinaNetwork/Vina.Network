@@ -15,8 +15,12 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
 
 // Hàm làm mới lịch sử giao dịch
 async function refreshTransactionHistory() {
+    const resultDiv = document.getElementById('mm-result');
     try {
         const response = await fetch('/make-market/history.php');
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const data = await response.json();
         log_message(`Fetched transaction history: ${data.transactions.length} records`, 'make-market.log', 'make-market', 'INFO');
         const historyDiv = document.getElementById('transaction-history');
@@ -67,7 +71,13 @@ async function refreshTransactionHistory() {
         historyDiv.innerHTML = html;
     } catch (err) {
         log_message(`Error refreshing transaction history: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        document.getElementById('transaction-history').innerHTML = '<p>Lỗi khi tải lịch sử giao dịch.</p>';
+        historyDiv.innerHTML = '<p>Lỗi khi tải lịch sử giao dịch.</p>';
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+        resultDiv.classList.add('active');
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000); // Ẩn sau 5 giây
     }
 }
 
@@ -77,8 +87,23 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     const resultDiv = document.getElementById('mm-result');
     const submitButton = document.querySelector('#makeMarketForm button');
     submitButton.disabled = true;
-    resultDiv.innerHTML = '<p><strong>Processing...</strong></p>';
+    resultDiv.innerHTML = '<div class="spinner">Loading...</div>';
+    resultDiv.classList.add('active'); // Hiển thị div
     log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
+
+    // Validate public_key
+    const publicKey = '<?php echo htmlspecialchars($public_key); ?>';
+    if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
+        log_message(`Invalid public key format: ${publicKey.substring(0, 4)}...`, 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = '<p style="color: red;">Error: Invalid public key format</p>';
+        resultDiv.classList.add('active');
+        submitButton.disabled = false;
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000); // Ẩn sau 5 giây
+        return;
+    }
 
     const formData = new FormData(e.target);
     const params = {
@@ -93,12 +118,34 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     };
     log_message(`Form data: processName=${params.processName}, tokenMint=${params.tokenMint}, solAmount=${params.solAmount}, slippage=${params.slippage}, delay=${params.delay}, loopCount=${params.loopCount}`, 'make-market.log', 'make-market', 'DEBUG');
 
+    // Validate privateKey
+    if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64}$/.test(params.privateKey)) {
+        log_message(`Invalid private key format`, 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = '<p style="color: red;">Error: Invalid private key format</p>';
+        resultDiv.classList.add('active');
+        submitButton.disabled = false;
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000); // Ẩn sau 5 giây
+        return;
+    }
+
     try {
+        // Kiểm tra bs58
+        if (typeof bs58 === 'undefined') {
+            log_message('bs58 is not defined before calling makeMarket', 'make-market.log', 'make-market', 'ERROR');
+            throw new Error('bs58 is not defined');
+        }
+
         // Gửi form data qua AJAX
         const response = await fetch('/make-market/', {
             method: 'POST',
             body: formData
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const result = await response.json();
         if (result.status !== 'success') {
             throw new Error(result.message);
@@ -120,9 +167,20 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
         // Làm mới lịch sử giao dịch
         await refreshTransactionHistory();
+        resultDiv.innerHTML = '<p style="color: green;">Transaction submitted successfully!</p>';
+        resultDiv.classList.add('active');
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000); // Ẩn sau 5 giây
     } catch (error) {
         log_message(`Error calling makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        resultDiv.classList.add('active');
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000); // Ẩn sau 5 giây
     } finally {
         submitButton.disabled = false;
     }
