@@ -10,6 +10,7 @@ ob_start();
 define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
 require_once '../config/bootstrap.php';
+$root_path = '../';
 
 // Set error reporting and logging
 ini_set('log_errors', 1);
@@ -18,16 +19,15 @@ ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 // Set SEO meta variables
-$root_path = '../';
 $page_title = "Vina Network - Solana NFT Tools & Solana Checker";
 $page_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
 $page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT Info, Wallet Analysis, blockchain, NFT";
 $page_og_title = "Vina Network - Solana NFT Tools & Solana Checker";
 $page_og_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
-$page_og_image = "https://vina.network/tools/image/tools-og-image.jpg";
-$page_og_url = "https://vina.network/tools/";
-$page_canonical = "https://vina.network/tools/" . (isset($_GET['tool']) && $_GET['tool'] ? $_GET['tool'] . '/' : '');
-$page_css = ['../css/vina.css', 'tools.css'];
+$page_og_url = BASE_URL . "tools/";
+$page_canonical = BASE_URL . "tools/";
+
+$page_css = ['/accounts/tools.css'];
 
 // Function to extract title and description from a PHP file
 function getToolInfo($file_path) {
