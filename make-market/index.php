@@ -32,6 +32,16 @@ session_start([
     'cookie_samesite' => 'Strict'
 ]);
 
+// Kiểm tra session và public_key
+$public_key = $_SESSION['public_key'] ?? null;
+if (!$public_key || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
+    log_message("Invalid or missing public key in session: " . ($public_key ? substr($public_key, 0, 4) . '...' : 'null'), 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or missing public key']);
+    exit;
+}
+?>
+
 // Database connection
 $start_time = microtime(true);
 try {
@@ -363,6 +373,7 @@ include $footer_path;
 <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios-retry/dist/axios-retry.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bs58@6.0.0/index.js"></script>
+<script>const publicKey = '<?php echo htmlspecialchars($public_key, ENT_QUOTES, 'UTF-8'); ?>';</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
