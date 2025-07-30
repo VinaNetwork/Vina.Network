@@ -240,19 +240,19 @@ include $navbar_path;
         <h1>🟢 Make Market</h1>
         <div id="account-info">
             <table>
-                <tr>
-                    <th>Public Key</th>
-                    <td>
-                        <?php if ($short_public_key !== 'Invalid'): ?>
-                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
-                                <?php echo htmlspecialchars($short_public_key); ?>
-                            </a>
-                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
-                        <?php else: ?>
-                            <span>Invalid address</span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
+            <tr>
+            <th>Public Key</th>
+            <td>
+            <?php if ($short_public_key !== 'Invalid'): ?>
+                <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+                    <?php echo htmlspecialchars($short_public_key); ?>
+                </a>
+                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+            <?php else: ?>
+                <span>Invalid address</span>
+            <?php endif; ?>
+            </td>
+            </tr>
             </table>
         </div>
         <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
