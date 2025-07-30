@@ -46,34 +46,29 @@ try {
     exit;
 }
 
-// Check session
+// Check session for authentication
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 log_message("Session public_key: " . ($short_public_key ?? 'Not set'), 'make-market.log', 'make-market', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
+    $_SESSION['redirect_url'] = '/make-market';
     header('Location: /accounts');
     exit;
 }
-// Validate public key format (Solana Base58, 32-44 characters)
-if (!preg_match('/^[A-Za-z0-9]{32,44}$/', $public_key)) {
-    log_message("Invalid public key format: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
-    exit;
-}
 
-// Fetch account info
+// Fetch account info for user_id
 try {
-    $stmt = $pdo->prepare("SELECT id, public_key FROM accounts WHERE public_key = ?");
+    $stmt = $pdo->prepare("SELECT id FROM accounts WHERE public_key = ?");
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        log_message("No account found for public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
+        log_message("No account found for session public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
+        $_SESSION['redirect_url'] = '/make-market';
         header('Location: /accounts');
         exit;
     }
-    log_message("Make Market accessed for public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
+    log_message("Make Market accessed for session public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
@@ -87,16 +82,13 @@ try {
         SELECT id, process_name, token_mint, sol_amount, slippage, delay_seconds, 
                loop_count, status, buy_tx_id, sell_tx_id, created_at
         FROM make_market 
-        WHERE public_key = ? 
+        WHERE user_id = ? 
         ORDER BY created_at DESC 
-        LIMIT ? OFFSET ?
+        LIMIT 10
     ");
-    $stmt->bindValue(1, $public_key, PDO::PARAM_STR);
-    $stmt->bindValue(2, 10, PDO::PARAM_INT);
-    $stmt->bindValue(3, 0, PDO::PARAM_INT);
-    $stmt->execute();
+    $stmt->execute([$account['id']]);
     $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    log_message("Fetched " . count($transactions) . " transactions for public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
+    log_message("Fetched " . count($transactions) . " transactions for user_id: {$account['id']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Error fetching transaction history: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     $transactions = [];
@@ -121,15 +113,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $slippage = floatval($_POST['slippage'] ?? 0.5);
         $delay = intval($_POST['delay'] ?? 0);
         $loopCount = intval($_POST['loopCount'] ?? 1);
+        $transactionPublicKey = $_POST['transactionPublicKey'] ?? '';
 
         // Validate inputs
-        if (empty($processName) || empty($privateKey) || empty($tokenMint)) {
+        if (empty($processName) || empty($privateKey) || empty($tokenMint) || empty($transactionPublicKey)) {
             log_message("Missing required fields", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
             exit;
         }
-        if (!preg_match('/^[A-Za-z0-9]{32,44}$/', $tokenMint)) {
+        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64}$/', $privateKey)) {
+            log_message("Invalid private key format", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid private key format']);
+            exit;
+        }
+        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transactionPublicKey)) {
+            log_message("Invalid transaction public key format: " . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid transaction public key format']);
+            exit;
+        }
+        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $tokenMint)) {
             log_message("Invalid token address: $tokenMint", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid token address']);
@@ -153,12 +158,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Loop count must be at least 1']);
             exit;
         }
-        if (strlen($public_key) > 255) {
-            log_message("Public key too long: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Public key too long']);
-            exit;
-        }
 
         // Encrypt private key
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
@@ -178,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $stmt->execute([
             $account['id'],
-            $public_key,
+            $transactionPublicKey,
             $processName,
             $encryptedPrivateKey,
             $tokenMint,
@@ -188,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $loopCount
         ]);
         $transactionId = $pdo->lastInsertId();
-        log_message("Transaction saved to database: ID=$transactionId, processName=$processName", 'make-market.log', 'make-market', 'INFO');
+        log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
 
         // Return transaction ID for JavaScript to process
         header('Content-Type: application/json');
@@ -245,13 +244,13 @@ include $navbar_path;
         <div id="account-info">
             <table>
             <tr>
-            <th>Public Key</th>
+            <th>Account:</th>
             <td>
             <?php if ($short_public_key !== 'Invalid'): ?>
-                <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+                <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
                     <?php echo htmlspecialchars($short_public_key); ?>
                 </a>
-                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
             <?php else: ?>
                 <span>Invalid address</span>
             <?php endif; ?>
@@ -263,26 +262,27 @@ include $navbar_path;
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
-            <label for="processName">Tên tiến trình:</label>
+            <input type="hidden" name="transactionPublicKey" id="transactionPublicKey">
+            <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
 
             <label>🔑 Private Key (Base58):</label>
-            <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
-            <p class="note-warning">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
+            <textarea name="privateKey" required placeholder="Enter private key..."></textarea>
+            <p class="note-warning">⚠️ Warning: Entering a private key carries security risks. Ensure you understand before proceeding!</p>
 
             <label>🎯 Token Address:</label>
-            <input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
+            <input type="text" name="tokenMint" required placeholder="E.g., So111... or any SPL token">
 
-            <label>💰 Số lượng SOL muốn mua:</label>
-            <input type="number" step="0.01" name="solAmount" required placeholder="VD: 0.1">
+            <label>💰 SOL Amount to Buy:</label>
+            <input type="number" step="0.01" name="solAmount" required placeholder="E.g., 0.1">
 
             <label>📉 Slippage (%):</label>
             <input type="number" name="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
 
-            <label>⏱️ Delay giữa mua và bán (giây):</label>
+            <label>⏱️ Delay between Buy and Sell (seconds):</label>
             <input type="number" name="delay" value="0" min="0">
 
-            <label>🔁 Số vòng lặp:</label>
+            <label>🔁 Loop Count:</label>
             <input type="number" name="loopCount" min="1" value="1">
 
             <button class="cta-button" type="submit">🚀 Make Market</button>
@@ -291,29 +291,35 @@ include $navbar_path;
         <div id="mm-result" class="status-box"></div>
 
         <!-- Transaction History -->
-        <h2 class="history-title">Lịch sử giao dịch</h2>
+        <h2 class="history-title">Transaction History</h2>
         <div id="transaction-history">
             <?php if (empty($transactions)): ?>
-                <p>Chưa có giao dịch nào.</p>
+                <p>No transactions yet.</p>
             <?php else: ?>
                 <table>
                     <tr>
                     <th>ID</th>
-                    <th>Tên tiến trình</th>
+                    <th>Process Name</th>
+                    <th>Public Key</th>
                     <th>Token Address</th>
                     <th>SOL Amount</th>
                     <th>Slippage (%)</th>
                     <th>Delay (s)</th>
-                    <th>Vòng lặp</th>
-                    <th>Trạng thái</th>
+                    <th>Loop Count</th>
+                    <th>Status</th>
                     <th>Buy Tx</th>
                     <th>Sell Tx</th>
-                    <th>Thời gian</th>
+                    <th>Time</th>
                     </tr>
                     <?php foreach ($transactions as $tx): ?>
                         <tr>
                         <td><?php echo htmlspecialchars($tx['id']); ?></td>
                         <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
+                        <td>
+                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['public_key']); ?>" target="_blank">
+                                <?php echo htmlspecialchars(substr($tx['public_key'], 0, 4) . '...' . substr($tx['public_key'], -4)); ?>
+                            </a>
+                        </td>
                         <td>
                             <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
                                 <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
