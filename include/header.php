@@ -18,8 +18,8 @@ $page_author = isset($page_author) ? $page_author : 'Vina Network';
 
 $page_og_title = isset($page_og_title) ? $page_og_title : $page_title;
 $page_og_description = isset($page_og_description) ? $page_og_description : $page_description;
-$page_og_image = isset($page_og_image) ? $page_og_image : 'https://vina.network/img/logo.png';
-$page_og_url = isset($page_og_url) ? $page_og_url : 'https://vina.network';
+$page_og_image = isset($page_og_image) ? $page_og_image : BASE_URL . 'img/logo.png';
+$page_og_url = isset($page_og_url) ? $page_og_url : BASE_URL;
 $page_og_type = isset($page_og_type) ? $page_og_type : 'website';
 
 $page_css = isset($page_css) ? $page_css : [];
