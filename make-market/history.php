@@ -50,7 +50,7 @@ try {
 
     $stmt = $pdo->prepare("
         SELECT id, process_name, token_mint, sol_amount, slippage, delay_seconds, 
-               loop_count, status, buy_tx_id, sell_tx_id, created_at
+               loop_count, status, buy_tx_id, sell_tx_id, created_at, error
         FROM make_market 
         WHERE public_key = ? 
         ORDER BY created_at DESC 
