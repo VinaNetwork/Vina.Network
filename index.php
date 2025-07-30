@@ -7,8 +7,13 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+require_once __DIR__ . '/config/bootstrap.php';
+
 // Head Section (Meta, Styles, Title) is included via header.php
-$page_canonical = 'https://vina.network';
+$page_canonical = 'BASE_URL';
 $page_css = ['css/home.css'];
 include __DIR__ . '/include/header.php';
 ?>
