@@ -4,7 +4,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Hàm log_message (gọi từ PHP qua inline script trong index.php)
+// Hàm log_message
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     fetch('/log.php', {
         method: 'POST',
@@ -102,7 +102,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
 // Hàm tạo các nút số trang
 function generatePageNumbers(current_page, total_pages, per_page) {
     let html = '';
-    const maxButtons = 5; // Số nút trang tối đa hiển thị
+    const maxButtons = 5;
     let startPage = Math.max(1, current_page - Math.floor(maxButtons / 2));
     let endPage = Math.min(total_pages, startPage + maxButtons - 1);
 
