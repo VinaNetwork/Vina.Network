@@ -7,3 +7,7 @@
     Order deny,allow
     Deny from all
 </IfModule>
+
+<FilesMatch "\.php$">
+    SetHandler none
+</FilesMatch>
