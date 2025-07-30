@@ -138,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mintAddress']) && !$r
 
         ?>
         <div class="tools-result nft-holders-result">
+            <h2>NFT holders results</h2>
             <?php if (($total_wallets ?? 0) === 0): ?>
                 <p class="result-error">No holders found for this collection.</p>
             <?php else: ?>
