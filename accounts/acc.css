@@ -18,7 +18,7 @@
     border-radius: 10px; 
     padding: 2rem;
     margin: 2rem;
-    max-width: 600px; 
+    max-width: 700px; 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -29,6 +29,8 @@
 
 h1 {
     color: #00d4ff;
+    font-size: 2rem;
+    margin-bottom: 20px;
 }
 
 /* Profile */
@@ -90,6 +92,5 @@ h1 {
     .acc-content {
         max-width: 100%;
         margin: 1rem;
-        padding: 2rem 1rem;
     }
 }
