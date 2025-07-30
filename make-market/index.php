@@ -208,7 +208,6 @@ $page_canonical = BASE_URL . "make-market/";
 
 // CSS for Make Market
 $page_css = ['mm.css'];
-
 // Slippage
 $defaultSlippage = 0.5;
 
@@ -255,7 +254,6 @@ include $navbar_path;
             </tr>
             </table>
         </div>
-        <p style="color: red;">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
 
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off">
@@ -265,6 +263,7 @@ include $navbar_path;
 
             <label>🔑 Private Key (Base58):</label>
             <textarea name="privateKey" required placeholder="Nhập private key..."></textarea>
+            <p class="note-warning">⚠️ Cảnh báo: Nhập private key có rủi ro bảo mật. Hãy đảm bảo bạn hiểu rõ trước khi sử dụng!</p>
 
             <label>🎯 Token Address:</label>
             <input type="text" name="tokenMint" required placeholder="VD: So111... hoặc bất kỳ SPL token nào">
