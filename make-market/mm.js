@@ -104,10 +104,21 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
 
     // Validate public_key
-    const publicKey = '<?php echo htmlspecialchars($public_key); ?>';
+    const publicKey = '<?php echo htmlspecialchars($public_key, ENT_QUOTES, 'UTF-8'); ?>';
+    if (!publicKey) {
+        log_message('Public key is empty or not set', 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = '<p style="color: red;" class="error">Lỗi: Không tìm thấy public key. Vui lòng đăng nhập lại.</p>';
+        resultDiv.classList.add('active');
+        submitButton.disabled = false;
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000);
+        return;
+    }
     if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
         log_message(`Invalid public key format: ${publicKey.substring(0, 4)}...`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;" class="error">Error: Invalid public key format</p>';
+        resultDiv.innerHTML = '<p style="color: red;" class="error">Lỗi: Định dạng public key không hợp lệ. Vui lòng kiểm tra ví của bạn.</p>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         setTimeout(() => {
@@ -179,11 +190,11 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         setTimeout(() => {
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
-        }, 10000); // Tăng thời gian hiển thị thông báo
+        }, 10000);
     }
 });
 
-// Copy functionality for public_key
+// Copy functionality for public_key (giữ nguyên phần này)
 document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
