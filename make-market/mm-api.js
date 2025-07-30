@@ -9,18 +9,22 @@ const JUPITER_API = 'https://quote-api.jup.ag/v6';
 const RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com';
 const connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
 
-// Hàm log_message (gọi từ PHP qua inline script trong index.php)
+// Hàm log_message
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
-    fetch('/log.php', {
+    fetch('/make-market/log.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, log_file, module, log_type })
+    }).then(response => {
+        if (!response.ok) {
+            console.error(`Log failed: HTTP ${response.status}`);
+        }
     }).catch(err => console.error('Log error:', err));
 }
 
 // Hàm cập nhật trạng thái giao dịch vào database
 function updateTransaction(transactionId, updates) {
-    fetch('/status.php', {
+    fetch('/make-market/status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transactionId, ...updates })
@@ -49,6 +53,12 @@ async function makeMarket(
         let keypair;
         try {
             keypair = solanaWeb3.Keypair.fromSecretKey(bs58.decode(privateKey));
+            const publicKey = keypair.publicKey.toBase58();
+            if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
+                log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
+                updateTransaction(transactionId, { status: 'failed', error: 'Invalid public key format' });
+                throw new Error('Invalid public key format');
+            }
         } catch (error) {
             log_message(`Invalid private key: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: 'Invalid private key' });
@@ -77,7 +87,7 @@ async function makeMarket(
         log_message(`Balance validated: ${balance / 1_000_000_000} SOL available`, 'make-market.log', 'make-market', 'INFO');
 
         // Kiểm tra input
-        if (!tokenMint.match(/^[A-Za-z0-9]{32,44}$/)) {
+        if (!tokenMint.match(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/)) {
             log_message(`Invalid token address: ${tokenMint}`, 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: 'Invalid token address' });
             throw new Error('Invalid token address');
