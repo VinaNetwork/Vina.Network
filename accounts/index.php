@@ -7,7 +7,8 @@
 
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
-}require_once __DIR__ . '/../config/bootstrap.php';
+}
+require_once __DIR__ . '/../config/bootstrap.php';
 
 
 // Add Security Headers
@@ -19,6 +20,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 
 ob_start();
+$root_path = '../';
 require_once __DIR__ . '/auth.php';
 
 // Start session
