@@ -7,7 +7,8 @@
 
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
-}
+}require_once __DIR__ . '/../config/bootstrap.php';
+
 
 // Add Security Headers
 header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
@@ -18,9 +19,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 
 ob_start();
-$root_path = '../';
 require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/../config/bootstrap.php';
 
 // Start session
 session_start([
@@ -51,9 +50,9 @@ $page_description = "Connect your Solana wallet to register or login to Vina Net
 $page_keywords = "Vina Network, connect wallet, login, register";
 $page_og_title = "Connect Wallet to Vina Network";
 $page_og_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_og_image = "https://www.vina.network/img/logo.png";
-$page_og_url = "https://www.vina.network/accounts/";
-$page_canonical = "https://www.vina.network/accounts/";
+$page_og_url = BASE_URL . "accounts/";
+$page_canonical = BASE_URL . "accounts/";
+
 $page_css = ['/accounts/acc.css'];
 
 // Header
@@ -68,41 +67,41 @@ if (!file_exists($header_path)) {
 <html lang="en">
 <?php include $header_path; ?>
 <body>
-<?php
-$navbar_path = $root_path . 'include/navbar.php';
-if (!file_exists($navbar_path)) {
-    log_message("index.php: navbar.php not found at $navbar_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing navbar.php');
-}
-include $navbar_path;
-?>
-
-<div class="acc-container">
-    <div class="acc-content">
-        <h1>Login/Register with Phantom Wallet</h1>
-        <button class="cta-button" id="connect-wallet">Connect Phantom Wallet</button>
-        <div id="wallet-info" style="display: none;">
-            <p>Wallet address: <span id="public-key"></span></p>
-            <p>Status: <span id="status"></span></p>
+    <?php
+    $navbar_path = $root_path . 'include/navbar.php';
+    if (!file_exists($navbar_path)) {
+        log_message("index.php: navbar.php not found at $navbar_path", 'accounts.log', 'accounts', 'ERROR');
+        die('Internal Server Error: Missing navbar.php');
+    }
+    include $navbar_path;
+    ?>
+    
+    <div class="acc-container">
+        <div class="acc-content">
+            <h1>Login/Register with Phantom Wallet</h1>
+            <button class="cta-button" id="connect-wallet">Connect Phantom Wallet</button>
+            <div id="wallet-info" style="display: none;">
+                <p>Wallet address: <span id="public-key"></span></p>
+                <p>Status: <span id="status"></span></p>
+            </div>
+            <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
         </div>
-        <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
     </div>
-</div>
-
-<?php
-$footer_path = $root_path . 'include/footer.php';
-if (!file_exists($footer_path)) {
-    log_message("index.php: footer.php not found at $footer_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing footer.php');
-}
-include $footer_path;
-?>
-
-<script>console.log('Attempting to load JS files...');</script>
-<script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
+    
+    <?php
+    $footer_path = $root_path . 'include/footer.php';
+    if (!file_exists($footer_path)) {
+        log_message("index.php: footer.php not found at $footer_path", 'accounts.log', 'accounts', 'ERROR');
+        die('Internal Server Error: Missing footer.php');
+    }
+    include $footer_path;
+    ?>
+    
+    <script>console.log('Attempting to load JS files...');</script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+    <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
+    <script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
