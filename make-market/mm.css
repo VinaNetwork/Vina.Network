@@ -49,15 +49,8 @@ form textarea {
 
 form button {
     margin-top: 20px;
-    padding: 12px;
     width: 100%;
-    background: #218c74;
-    color: white;
-    border: none;
-    border-radius: 8px;
     font-size: 16px;
-    cursor: pointer;
-    transition: background 0.3s ease;
 }
 
 form button:hover {
