@@ -8,30 +8,29 @@
 // ============================================================================
 
 // Head Section (Meta, Styles, Title) is included via header.php
-$root_path = '../';
 $page_title = "Contact Us - Vina Network";
 $page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
 $page_keywords = "Vina Network, contact, X, Telegram, Email, support, Web3, cryptocurrency";
 $page_og_title = "Vina Network - Contact Us";
 $page_og_description = "Contact Vina Network via X, Telegram, or Email. Join our community today!";
-$page_og_url = "https://www.vina.network/contact/";
-$page_canonical = "https://www.vina.network/contact/";
-$page_css = ['contact.css'];
+$page_og_url = BASE_URL . "contact/";
+$page_canonical = BASE_URL . "contact/";
 
+$page_css = ['contact.css'];
 include '../include/header.php';
 ?>
 <body>
 <!-- Navigation Bar -->
 <?php include '../include/navbar.php'; ?>
 
-<!-- Contact Info Section -->
-<section class="contact">
+<!-- Contact Info -->
+<div class="contact">
 	<div class="contact-content">
 		<h1 class="fade-in" data-delay="0">Contact Us</h1>
 		<p class="fade-in" data-delay="200">
 			We'd love to hear from you! Reach out to Vina Network via X, Telegram, or Email.
 		</p>
-
+	
 		<div class="contact-table">
 			<!-- X (Twitter) Contact Option -->
 			<div class="contact-item fade-in" data-delay="200">
@@ -40,7 +39,7 @@ include '../include/header.php';
 				<p>Follow us and send a DM!</p>
 				<a href="https://x.com/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">Follow Now</a>
 			</div>
-
+	
 			<!-- Telegram Contact Option -->
 			<div class="contact-item fade-in" data-delay="300">
 				<i class="fab fa-telegram-plane"></i>
@@ -48,7 +47,7 @@ include '../include/header.php';
 				<p>Join our community on Telegram!</p>
 				<a href="https://t.me/Vina_Network" target="_blank" rel="nofollow noopener noreferrer">Join Now</a>
 			</div>
-
+	
 			<!-- Email Contact Option -->
 			<div class="contact-item fade-in" data-delay="400">
 				<i class="fas fa-envelope"></i>
@@ -58,9 +57,9 @@ include '../include/header.php';
 			</div>
 		</div>
 	</div>
-</section>
+</div>
 
-<!-- Footer Section -->
+<!-- Footer -->
 <?php include '../include/footer.php'; ?>
 <!-- Scripts -->
 <script src="../js/vina.js"></script>
