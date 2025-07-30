@@ -280,7 +280,7 @@ include $navbar_path;
             <label>🔁 Số vòng lặp:</label>
             <input type="number" name="loopCount" min="1" value="1">
 
-            <button type="submit">🚀 Make Market</button>
+            <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
 
         <div id="mm-result" class="status-box"></div>
