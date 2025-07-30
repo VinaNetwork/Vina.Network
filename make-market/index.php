@@ -286,8 +286,8 @@ include $navbar_path;
         <div id="mm-result" class="status-box"></div>
 
         <!-- Transaction History -->
+        <h2 class="history-title">Lịch sử giao dịch</h2>
         <div id="transaction-history">
-            <h2 class="history-title">Lịch sử giao dịch</h2>
             <?php if (empty($transactions)): ?>
                 <p>Chưa có giao dịch nào.</p>
             <?php else: ?>
