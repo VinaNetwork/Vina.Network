@@ -124,7 +124,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
             exit;
         }
-        // Kiểm tra privateKey Base58 (độ dài 64-128 ký tự)
         if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/', $privateKey)) {
             log_message("Invalid private key format: length=" . strlen($privateKey), 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
@@ -168,12 +167,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Encrypt private key
+        // Encrypt private key for checking
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
         if ($encryptedPrivateKey === false) {
             log_message("Failed to encrypt private key", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Encryption failed']);
+            exit;
+        }
+
+        // Check if private_key is already running a pending process
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as count 
+            FROM make_market 
+            WHERE private_key = ? AND status = 'pending'
+        ");
+        $stmt->execute([$encryptedPrivateKey]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($result['count'] > 0) {
+            log_message("Private key is already running a pending process", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'This private key is currently running another process. Please wait for it to complete or use a different private key.'
+            ]);
             exit;
         }
 
