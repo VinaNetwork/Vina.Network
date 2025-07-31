@@ -29,6 +29,10 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
         const data = await response.json();
         log_message(`Fetched transaction history: ${data.transactions.length} records, page: ${page}, per_page: ${per_page}`, 'make-market.log', 'make-market', 'INFO');
 
+        if (data.status !== 'success') {
+            throw new Error(data.message || 'Failed to fetch transaction history');
+        }
+
         if (data.transactions.length === 0) {
             historyDiv.innerHTML = '<p>Chưa có giao dịch nào.</p>';
             return;
@@ -51,14 +55,15 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                         <th>Buy Tx</th>
                         <th>Sell Tx</th>
                         <th>Thời gian</th>
+                        <th>Lý do lỗi</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
         data.transactions.forEach(tx => {
-            const shortPublicKey = tx.public_key.substring(0, 4) + '...' + tx.public_key.substring(tx.public_key.length - 4);
-            const shortTokenMint = tx.token_mint.substring(0, 4) + '...' + tx.token_mint.substring(tx.token_mint.length - 4);
+            const shortPublicKey = tx.public_key ? tx.public_key.substring(0, 4) + '...' + tx.public_key.substring(tx.public_key.length - 4) : '-';
+            const shortTokenMint = tx.token_mint ? tx.token_mint.substring(0, 4) + '...' + tx.token_mint.substring(tx.token_mint.length - 4) : '-';
             const shortBuyTx = tx.buy_tx_id ? tx.buy_tx_id.substring(0, 4) + '...' : '-';
             const shortSellTx = tx.sell_tx_id ? tx.sell_tx_id.substring(0, 4) + '...' : '-';
             const errorMessage = tx.error || '-';
@@ -66,8 +71,8 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                 <tr>
                     <td>${tx.id}</td>
                     <td>${tx.process_name}</td>
-                    <td><a href="https://solscan.io/address/${tx.public_key}" target="_blank">${shortPublicKey}</a></td>
-                    <td><a href="https://solscan.io/token/${tx.token_mint}" target="_blank">${shortTokenMint}</a></td>
+                    <td>${tx.public_key ? `<a href="https://solscan.io/address/${tx.public_key}" target="_blank">${shortPublicKey}</a>` : '-'}</td>
+                    <td>${tx.token_mint ? `<a href="https://solscan.io/token/${tx.token_mint}" target="_blank">${shortTokenMint}</a>` : '-'}</td>
                     <td>${tx.sol_amount}</td>
                     <td>${tx.slippage}</td>
                     <td>${tx.delay_seconds}</td>
@@ -77,6 +82,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
                     <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
                     <td>${tx.created_at}</td>
+                    <td>${errorMessage}</td>
                     <td>
                         ${tx.status === 'success' || tx.status === 'failed' ? `<button class="continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
                     </td>
