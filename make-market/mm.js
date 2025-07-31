@@ -97,12 +97,8 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
     } catch (err) {
         log_message(`Error refreshing transaction history: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         historyDiv.innerHTML = '<p>Lỗi khi tải lịch sử giao dịch.</p>';
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
     }
 }
 
@@ -136,24 +132,16 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     // Kiểm tra các thư viện trước khi gửi form
     if (typeof window.solanaWeb3 === 'undefined') {
         log_message('solanaWeb3 is not defined', 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: solanaWeb3 is not defined</p>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: solanaWeb3 is not defined</p><button onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
         return;
     }
     if (typeof window.bs58 === 'undefined') {
         log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: bs58 library is not loaded</p>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: bs58 library is not loaded</p><button onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
         return;
     }
 
@@ -173,13 +161,9 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     // Kiểm tra privateKey
     if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
         log_message('privateKey is empty or invalid', 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: privateKey is empty or invalid</p>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: privateKey is empty or invalid</p><button onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
         return;
     }
     log_message(`privateKey length: ${params.privateKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -201,13 +185,9 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         }
     } catch (error) {
         log_message(`Invalid private key format: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
         submitButton.disabled = false;
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
         return;
     }
 
@@ -246,20 +226,12 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         // Chỉ log thành công nếu không có lỗi
         log_message('makeMarket called successfully', 'make-market.log', 'make-market', 'INFO');
         await refreshTransactionHistory(1, 10);
-        resultDiv.innerHTML = '<p style="color: green;">Transaction submitted successfully!</p>';
+        resultDiv.innerHTML = '<p style="color: green;">Transaction submitted successfully!</p><button onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
     } catch (error) {
         log_message(`Error calling makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
-        setTimeout(() => {
-            resultDiv.classList.remove('active');
-            resultDiv.innerHTML = '';
-        }, 5000);
     } finally {
         submitButton.disabled = false;
     }
@@ -307,7 +279,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!fullAddress) {
                 console.error('Copy failed: data-full attribute not found or empty');
                 log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
-                alert('Unable to copy address: Invalid address');
+                resultDiv.innerHTML = '<p style="color: red;">Error: Unable to copy address: Invalid address</p>';
+                resultDiv.classList.add('active');
+                setTimeout(() => {
+                    resultDiv.classList.remove('active');
+                    resultDiv.innerHTML = '';
+                }, 5000);
                 return;
             }
 
@@ -316,7 +293,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!base58Regex.test(fullAddress)) {
                 console.error('Invalid address format:', fullAddress);
                 log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
-                alert('Unable to copy: Invalid address format');
+                resultDiv.innerHTML = '<p style="color: red;">Error: Unable to copy: Invalid address format</p>';
+                resultDiv.classList.add('active');
+                setTimeout(() => {
+                    resultDiv.classList.remove('active');
+                    resultDiv.innerHTML = '';
+                }, 5000);
                 return;
             }
 
@@ -365,12 +347,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 console.error('Fallback copy failed');
                 log_message('Fallback copy failed', 'make-market.log', 'make-market', 'ERROR');
-                alert('Unable to copy address: Copy error');
+                resultDiv.innerHTML = '<p style="color: red;">Error: Unable to copy address: Copy error</p>';
+                resultDiv.classList.add('active');
+                setTimeout(() => {
+                    resultDiv.classList.remove('active');
+                    resultDiv.innerHTML = '';
+                }, 5000);
             }
         } catch (err) {
             console.error('Fallback copy error:', err);
             log_message(`Fallback copy error: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-            alert('Unable to copy address: ' + err.message);
+            resultDiv.innerHTML = `<p style="color: red;">Error: Unable to copy address: ${err.message}</p>`;
+            resultDiv.classList.add('active');
+            setTimeout(() => {
+                resultDiv.classList.remove('active');
+                resultDiv.innerHTML = '';
+            }, 5000);
         } finally {
             document.body.removeChild(textarea);
         }
