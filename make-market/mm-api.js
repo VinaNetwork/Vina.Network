@@ -134,6 +134,42 @@ async function getSolBalance(walletAddress) {
     }
 }
 
+// Hàm xử lý một cặp giao dịch (mua + bán) trong lô
+async function processTransactionPair(wallet, tokenMint, solAmount, slippage, delay, processName, transactionId, loopIndex) {
+    try {
+        // Thực hiện mua token
+        log_message(`Initiating buy transaction ${loopIndex + 1} for token: ${tokenMint}, amount: ${solAmount} SOL`, 'make-market.log', 'make-market', 'DEBUG');
+        const buyTx = await swapSOLtoToken(wallet, tokenMint, solAmount, slippage);
+        const buyTxId = await connection.sendRawTransaction(buyTx.serialize(), {
+            skipPreflight: true
+        });
+        await connection.confirmTransaction(buyTxId);
+        log_message(`Buy transaction ${loopIndex + 1} completed: ${buyTxId}`, 'make-market.log', 'make-market', 'INFO');
+        updateTransaction(transactionId, { buy_tx_id: buyTxId });
+
+        // Delay giữa mua và bán
+        if (delay > 0) {
+            log_message(`Waiting ${delay} seconds before sell for transaction ${loopIndex + 1}`, 'make-market.log', 'make-market', 'DEBUG');
+            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+        }
+
+        // Thực hiện bán token
+        log_message(`Initiating sell transaction ${loopIndex + 1} for token: ${tokenMint}`, 'make-market.log', 'make-market', 'DEBUG');
+        const sellTx = await swapTokentoSOL(wallet, tokenMint, slippage);
+        const sellTxId = await connection.sendRawTransaction(sellTx.serialize(), {
+            skipPreflight: true
+        });
+        await connection.confirmTransaction(sellTxId);
+        log_message(`Sell transaction ${loopIndex + 1} completed: ${sellTxId}`, 'make-market.log', 'make-market', 'INFO');
+        updateTransaction(transactionId, { sell_tx_id: sellTxId });
+
+        return { loopIndex, success: true, buyTxId, sellTxId };
+    } catch (error) {
+        log_message(`Error in transaction pair ${loopIndex + 1}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        throw error;
+    }
+}
+
 // Hàm chính xử lý make market
 async function makeMarket(
     processName,
@@ -143,11 +179,12 @@ async function makeMarket(
     slippage,
     delay,
     loopCount,
+    batchSize,
     transactionId
 ) {
     const resultDiv = document.getElementById('mm-result');
     const submitButton = document.querySelector('#makeMarketForm button');
-    log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}, transactionId=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+    log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}, batchSize=${batchSize}, transactionId=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
 
     // Chờ các thư viện tải xong
     if (!(await waitForLibraries())) {
@@ -265,42 +302,48 @@ async function makeMarket(
             updateTransaction(transactionId, { status: 'failed', error: 'Loop count must be at least 1' });
             throw new Error('Loop count must be at least 1');
         }
+        if (batchSize < 1 || batchSize > 10) {
+            log_message(`Invalid batch size: ${batchSize}`, 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: 'Batch size must be between 1 and 10' });
+            throw new Error('Batch size must be between 1 and 10');
+        }
 
-        resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Starting market making...</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Starting market making with ${loopCount} loops in batches of ${batchSize}...</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         log_message(`Market making started for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
 
-        for (let i = 0; i < loopCount; i++) {
-            resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Loop ${i + 1}/${loopCount}</p>`;
-            log_message(`Starting loop ${i + 1}/${loopCount} for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
+        // Chia loopCount thành các lô
+        const totalBatches = Math.ceil(loopCount / batchSize);
+        for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+            const startLoop = batchIndex * batchSize;
+            const endLoop = Math.min(startLoop + batchSize, loopCount);
+            const batchLoops = endLoop - startLoop;
 
-            // Thực hiện mua token
-            log_message(`Initiating buy transaction for token: ${tokenMint}, amount: ${solAmount} SOL`, 'make-market.log', 'make-market', 'DEBUG');
-            const buyTx = await swapSOLtoToken(wallet, tokenMint, solAmount, slippage);
-            const buyTxId = await connection.sendRawTransaction(buyTx.serialize(), {
-                skipPreflight: true
-            });
-            await connection.confirmTransaction(buyTxId);
-            resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Buy transaction: <a href="https://solscan.io/tx/${buyTxId}" target="_blank">${buyTxId}</a></p>`;
-            log_message(`Buy transaction completed: ${buyTxId}`, 'make-market.log', 'make-market', 'INFO');
-            updateTransaction(transactionId, { buy_tx_id: buyTxId });
+            resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Processing batch ${batchIndex + 1}/${totalBatches} (loops ${startLoop + 1} to ${endLoop})</p>`;
+            log_message(`Processing batch ${batchIndex + 1}/${totalBatches} with ${batchLoops} loops for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
 
-            // Delay giữa mua và bán
-            if (delay > 0) {
-                resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Waiting ${delay} seconds...</p>`;
-                log_message(`Waiting ${delay} seconds before sell for process: ${processName}`, 'make-market.log', 'make-market', 'DEBUG');
-                await new Promise(resolve => setTimeout(resolve, delay * 1000));
+            // Xử lý song song các giao dịch trong lô
+            const batchPromises = [];
+            for (let i = startLoop; i < endLoop; i++) {
+                batchPromises.push(processTransactionPair(wallet, tokenMint, solAmount, slippage, delay, processName, transactionId, i));
             }
 
-            // Thực hiện bán token
-            log_message(`Initiating sell transaction for token: ${tokenMint}`, 'make-market.log', 'make-market', 'DEBUG');
-            const sellTx = await swapTokentoSOL(wallet, tokenMint, slippage);
-            const sellTxId = await connection.sendRawTransaction(sellTx.serialize(), {
-                skipPreflight: true
-            });
-            await connection.confirmTransaction(sellTxId);
-            resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Sell transaction: <a href="https://solscan.io/tx/${sellTxId}" target="_blank">${sellTxId}</a></p>`;
-            log_message(`Sell transaction completed: ${sellTxId}`, 'make-market.log', 'make-market', 'INFO');
-            updateTransaction(transactionId, { sell_tx_id: sellTxId });
+            try {
+                const batchResults = await Promise.all(batchPromises.map(p => p.catch(e => ({ loopIndex: null, success: false, error: e }))));
+                for (const result of batchResults) {
+                    if (result.success) {
+                        resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Loop ${result.loopIndex + 1}: Buy transaction: <a href="https://solscan.io/tx/${result.buyTxId}" target="_blank">${result.buyTxId}</a>, Sell transaction: <a href="https://solscan.io/tx/${result.sellTxId}" target="_blank">${result.sellTxId}</a></p>`;
+                    } else {
+                        resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Loop ${result.loopIndex + 1}: Error: ${result.error.message}</p>`;
+                        log_message(`Batch ${batchIndex + 1} failed at loop ${result.loopIndex + 1}: ${result.error.message}`, 'make-market.log', 'make-market', 'ERROR');
+                        updateTransaction(transactionId, { status: 'failed', error: `Batch ${batchIndex + 1} failed at loop ${result.loopIndex + 1}: ${result.error.message}` });
+                        throw new Error(`Batch ${batchIndex + 1} failed at loop ${result.loopIndex + 1}: ${result.error.message}`);
+                    }
+                }
+                resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Batch ${batchIndex + 1}/${totalBatches} completed</p>`;
+                log_message(`Batch ${batchIndex + 1}/${totalBatches} completed for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
+            } catch (error) {
+                throw error; // Ném lỗi để dừng tiến trình
+            }
         }
 
         resultDiv.innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
