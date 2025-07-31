@@ -240,7 +240,7 @@ include $navbar_path;
 
 <div class="mm-container">
     <div class="mm-content">
-        <h1>🟢 Make Market</h1>
+        <h1><i class="fas fa-chart-line"></i> Make Market</h1>
         <div id="account-info">
             <table>
             <tr>
