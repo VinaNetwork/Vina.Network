@@ -370,9 +370,10 @@ include $footer_path;
 
 <!-- Scripts - External library -->
 <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js"></script>
+<script src="https://unpkg.com/@coral-xyz/anchor@0.30.1/dist/browser/index.js"></script>
+<script src="https://unpkg.com/@solana/spl-token@0.4.8/lib/index.browser.min.js"></script>
 <!-- Scripts - Internal library -->
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>"></script>
-<script src="/js/libs/anchor.browser.js?t=<?php echo time(); ?>"></script>
 <script src="/js/libs/axios.min.js?t=<?php echo time(); ?>"></script>
 <script src="/js/libs/bs58.js?t=<?php echo time(); ?>"></script>
 <!-- Scripts - Source code -->
