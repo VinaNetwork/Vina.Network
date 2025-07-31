@@ -70,8 +70,8 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
             <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
         <?php endforeach; ?>
     <?php endif; ?>
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/libs/poppins.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/libs/all.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/poppins.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/all.css">
     
     <!-- Font Preloading (Performance Optimization) -->
     <link rel="preload" href="<?php echo BASE_URL; ?>webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
