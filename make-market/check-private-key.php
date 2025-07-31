@@ -5,6 +5,10 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/bootstrap.php';
 require_once __DIR__ . '/../config/config.php';
