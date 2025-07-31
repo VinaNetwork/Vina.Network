@@ -56,13 +56,10 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
     <meta name="twitter:title" content="<?php echo htmlspecialchars($page_og_title); ?>">
     <meta name="twitter:description" content="<?php echo htmlspecialchars($page_og_description); ?>">
     <meta name="twitter:image" content="<?php echo htmlspecialchars($page_og_image); ?>">
-    
     <!-- Optional override robots -->
     <meta name="robots" content="<?php echo isset($page_robots) ? htmlspecialchars($page_robots) : 'index, follow'; ?>">
-    
     <!-- Canonical URL -->
     <link rel="canonical" href="<?php echo htmlspecialchars($page_canonical); ?>">
-    
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>img/favicon.ico">
     
@@ -73,8 +70,8 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
             <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
         <?php endforeach; ?>
     <?php endif; ?>
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/poppins.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/all.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/libs/poppins.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/libs/all.css">
     
     <!-- Font Preloading (Performance Optimization) -->
     <link rel="preload" href="<?php echo BASE_URL; ?>webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
