@@ -81,7 +81,7 @@ try {
 try {
     $stmt = $pdo->prepare("
         SELECT id, process_name, token_mint, sol_amount, slippage, delay_seconds, 
-               loop_count, status, buy_tx_id, sell_tx_id, created_at
+               loop_count, batch_size, status, buy_tx_id, sell_tx_id, created_at
         FROM make_market 
         WHERE user_id = ? 
         ORDER BY created_at DESC 
@@ -114,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $slippage = floatval($_POST['slippage'] ?? 0.5);
         $delay = intval($_POST['delay'] ?? 0);
         $loopCount = intval($_POST['loopCount'] ?? 1);
+        $batchSize = intval($_POST['batchSize'] ?? 5);
         $transactionPublicKey = $_POST['transactionPublicKey'] ?? '';
 
         // Validate inputs
@@ -160,6 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Loop count must be at least 1']);
             exit;
         }
+        if ($batchSize < 1 || $batchSize > 10) {
+            log_message("Invalid batch size: $batchSize", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Batch size must be between 1 and 10']);
+            exit;
+        }
 
         // Encrypt private key
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
@@ -174,8 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("
             INSERT INTO make_market (
                 user_id, public_key, process_name, private_key, token_mint, 
-                sol_amount, slippage, delay_seconds, loop_count, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+                sol_amount, slippage, delay_seconds, loop_count, batch_size, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
         ");
         $stmt->execute([
             $account['id'],
@@ -186,7 +193,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $solAmount,
             $slippage,
             $delay,
-            $loopCount
+            $loopCount,
+            $batchSize
         ]);
         $transactionId = $pdo->lastInsertId();
         log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
@@ -287,6 +295,9 @@ include $navbar_path;
             <label>🔁 Loop Count:</label>
             <input type="number" name="loopCount" min="1" value="1">
 
+            <label>📦 Batch Size (1-10):</label>
+            <input type="number" name="batchSize" min="1" max="10" value="5" required>
+
             <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
 
@@ -308,6 +319,7 @@ include $navbar_path;
                     <th>Slippage (%)</th>
                     <th>Delay (s)</th>
                     <th>Loop Count</th>
+                    <th>Batch Size</th>
                     <th>Status</th>
                     <th>Buy Tx</th>
                     <th>Sell Tx</th>
@@ -331,6 +343,7 @@ include $navbar_path;
                         <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
                         <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
                         <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
+                        <td><?php echo htmlspecialchars($tx['batch_size']); ?></td>
                         <td><?php echo htmlspecialchars($tx['status']); ?></td>
                         <td>
                         <?php if ($tx['buy_tx_id']): ?>
@@ -370,13 +383,11 @@ include $footer_path;
 ?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>"></script>
-<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>"></script>
-<script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>"></script>
-<script defer src="/js/libs/anchor.umd.js?t=<?php echo time(); ?>"></script>
-<script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>"></script>
-<!-- Scripts - External library -->
-
+<script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
+<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
+<script defer src="/js/libs/anchor.umd.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/anchor.umd.js')"></script>
+<script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/spl-token.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
