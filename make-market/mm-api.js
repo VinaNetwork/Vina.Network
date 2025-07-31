@@ -52,7 +52,12 @@ async function makeMarket(
         // Kiểm tra private key
         let keypair;
         try {
-            keypair = solanaWeb3.Keypair.fromSecretKey(bs58.decode(privateKey));
+            if (typeof window.bs58 === 'undefined') {
+                log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
+                updateTransaction(transactionId, { status: 'failed', error: 'bs58 library is not loaded' });
+                throw new Error('bs58 library is not loaded');
+            }
+            keypair = solanaWeb3.Keypair.fromSecretKey(window.bs58.decode(privateKey));
             const publicKey = keypair.publicKey.toBase58();
             if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
                 log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
