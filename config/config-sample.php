@@ -28,4 +28,9 @@ if (!defined('DB_PASS')) {
 if (!defined('HELIUS_API_KEY')) {
     define('HELIUS_API_KEY', 'helius_api_key');
 }
+
+// JWT Secret for encryption
+if (!defined('JWT_SECRET')) {
+    define('JWT_SECRET', 'jwt_secret_key');
+}
 ?>
