@@ -22,7 +22,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     }).catch(err => console.error('Log error:', err));
 }
 
-// Hàm cập nhật trạng thái giao dịch vào database
+// Hàm cập nhật trạng thái giao dịch
 function updateTransaction(transactionId, updates) {
     fetch('/make-market/status.php', {
         method: 'POST',
@@ -32,6 +32,49 @@ function updateTransaction(transactionId, updates) {
         console.error('Update transaction error:', err);
         log_message(`Failed to update transaction ${transactionId}: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
     });
+}
+
+// Hàm xóa private_key khỏi database
+async function deletePrivateKey(transactionId) {
+    try {
+        const response = await fetch('/make-market/status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transactionId, action: 'delete_private_key' })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to delete private_key`);
+        }
+        const result = await response.json();
+        if (result.status === 'success') {
+            log_message(`Successfully deleted private_key for transaction ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        } else {
+            throw new Error(result.message || 'Failed to delete private_key');
+        }
+    } catch (err) {
+        log_message(`Error deleting private_key for transaction ${transactionId}: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+    }
+}
+
+// Hàm lấy và giải mã private_key từ database
+async function getDecryptedPrivateKey(transactionId) {
+    try {
+        const response = await fetch(`/make-market/get-private-key.php?transactionId=${transactionId}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to fetch private_key`);
+        }
+        const result = await response.json();
+        if (result.status !== 'success' || !result.privateKey) {
+            throw new Error(result.message || 'No private key found');
+        }
+        return result.privateKey;
+    } catch (err) {
+        log_message(`Error fetching private_key for transaction ${transactionId}: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        throw err;
+    }
 }
 
 // Hàm chờ các thư viện cần thiết
@@ -63,7 +106,7 @@ async function getSolBalance(walletAddress) {
     while (retryCount < maxRetries) {
         try {
             const response = await window.axios.get(`/make-market/get-balance.php?walletAddress=${walletAddress}`, {
-                timeout: 30000, // Khớp với timeout 30s của callMarketAPI
+                timeout: 30000,
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
@@ -94,7 +137,7 @@ async function getSolBalance(walletAddress) {
 // Hàm chính xử lý make market
 async function makeMarket(
     processName,
-    privateKey,
+    privateKey, // Không sử dụng privateKey trực tiếp từ tham số
     tokenMint,
     solAmount,
     slippage,
@@ -110,8 +153,10 @@ async function makeMarket(
     if (!(await waitForLibraries())) {
         log_message('Required libraries not loaded for makeMarket', 'make-market.log', 'make-market', 'ERROR');
         updateTransaction(transactionId, { status: 'failed', error: 'Required libraries not loaded' });
-        resultDiv.innerHTML = `<p style="color: red;"><strong>[${processName}]</strong> Error: Required libraries not loaded</p>`;
+        resultDiv.innerHTML = `<p style="color: red;"><strong>[${processName}]</strong> Error: Required libraries not loaded</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.classList.add('active');
         submitButton.disabled = false;
+        await deletePrivateKey(transactionId); // Xóa private_key ngay cả khi lỗi
         return false;
     }
 
@@ -138,10 +183,21 @@ async function makeMarket(
             throw new Error('axios is not defined');
         }
 
+        // Lấy và giải mã private_key từ database
+        let decodedPrivateKey;
+        try {
+            decodedPrivateKey = await getDecryptedPrivateKey(transactionId);
+            log_message(`Successfully fetched and decrypted private_key for transaction ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        } catch (error) {
+            log_message(`Failed to fetch or decrypt private_key: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: `Failed to fetch or decrypt private_key: ${error.message}` });
+            throw new Error(`Failed to fetch or decrypt private_key: ${error.message}`);
+        }
+
         // Kiểm tra private key
         let keypair;
         try {
-            const decodedKey = window.bs58.decode(privateKey);
+            const decodedKey = window.bs58.decode(decodedPrivateKey);
             if (decodedKey.length !== 64) {
                 log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
                 updateTransaction(transactionId, { status: 'failed', error: `Invalid private key length: ${decodedKey.length} bytes` });
@@ -210,7 +266,7 @@ async function makeMarket(
             throw new Error('Loop count must be at least 1');
         }
 
-        resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Starting market making...</p>`;
+        resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Starting market making...</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         log_message(`Market making started for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
 
         for (let i = 0; i < loopCount; i++) {
@@ -247,18 +303,19 @@ async function makeMarket(
             updateTransaction(transactionId, { sell_tx_id: sellTxId });
         }
 
-        resultDiv.innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p>`;
+        resultDiv.innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         log_message(`Market making completed for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
         updateTransaction(transactionId, { status: 'success' });
         return true; // Trả về true để báo thành công
     } catch (error) {
-        resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p>`;
+        resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         log_message(`Error in makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         updateTransaction(transactionId, { status: 'failed', error: error.message });
         throw error; // Ném lại lỗi để mm.js xử lý
     } finally {
         submitButton.disabled = false;
         log_message(`makeMarket function ended for process: ${processName}`, 'make-market.log', 'make-market', 'DEBUG');
+        await deletePrivateKey(transactionId); // Xóa private_key sau khi tiến trình hoàn tất
     }
 }
 
