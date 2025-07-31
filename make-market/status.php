@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/status.php
-// Description: Endpoint to update Make Market transaction status and delete private_key
+// Description: Endpoint to update Make Market transaction status and delete private_key.
 // Created by: Vina Network
 // ============================================================================
 
