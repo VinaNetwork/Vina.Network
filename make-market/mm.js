@@ -133,6 +133,30 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     resultDiv.classList.add('active');
     log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
 
+    // Kiểm tra các thư viện trước khi gửi form
+    if (typeof window.solanaWeb3 === 'undefined') {
+        log_message('solanaWeb3 is not defined', 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = '<p style="color: red;">Error: solanaWeb3 is not defined</p>';
+        resultDiv.classList.add('active');
+        submitButton.disabled = false;
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000);
+        return;
+    }
+    if (typeof window.bs58 === 'undefined') {
+        log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = '<p style="color: red;">Error: bs58 library is not loaded</p>';
+        resultDiv.classList.add('active');
+        submitButton.disabled = false;
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000);
+        return;
+    }
+
     const formData = new FormData(e.target);
     const params = {
         processName: formData.get('processName'),
@@ -163,17 +187,13 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     // Validate privateKey and derive publicKey
     let transactionPublicKey;
     try {
-        if (typeof window.bs58 === 'undefined') {
-            log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
-            throw new Error('bs58 library is not loaded');
-        }
         const decodedKey = window.bs58.decode(params.privateKey);
         log_message(`Decoded privateKey length: ${decodedKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
         if (decodedKey.length !== 64) {
             log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`Invalid private key length: ${decodedKey.length} bytes, expected 64 bytes`);
         }
-        const keypair = solanaWeb3.Keypair.fromSecretKey(decodedKey);
+        const keypair = window.solanaWeb3.Keypair.fromSecretKey(decodedKey);
         transactionPublicKey = keypair.publicKey.toBase58();
         if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(transactionPublicKey)) {
             log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
@@ -240,6 +260,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
         }, 5000);
+    } finally {
         submitButton.disabled = false;
     }
 });
@@ -249,6 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     log_message(`bs58 available: ${typeof window.bs58 !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`anchor available: ${typeof window.anchor !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`solanaWeb3 available: ${typeof window.solanaWeb3 !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`splToken available: ${typeof window.splToken !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`axios available: ${typeof window.axios !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
 
     // Làm mới lịch sử giao dịch khi load trang (trang 1)
     refreshTransactionHistory(1, 10);
