@@ -6,7 +6,7 @@
 
 // Cấu hình
 const JUPITER_API = 'https://quote-api.jup.ag/v6';
-const RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com'; // Có thể thay bằng QuickNode nếu cần
+const RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com';
 const connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
 
 // Hàm log_message
