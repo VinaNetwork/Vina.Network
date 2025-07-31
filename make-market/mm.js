@@ -146,6 +146,20 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     };
     log_message(`Form data: processName=${params.processName}, tokenMint=${params.tokenMint}, solAmount=${params.solAmount}, slippage=${params.slippage}, delay=${params.delay}, loopCount=${params.loopCount}`, 'make-market.log', 'make-market', 'DEBUG');
 
+    // Kiểm tra privateKey
+    if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
+        log_message('privateKey is empty or invalid', 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = '<p style="color: red;">Error: privateKey is empty or invalid</p>';
+        resultDiv.classList.add('active');
+        submitButton.disabled = false;
+        setTimeout(() => {
+            resultDiv.classList.remove('active');
+            resultDiv.innerHTML = '';
+        }, 5000);
+        return;
+    }
+    log_message(`privateKey length: ${params.privateKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
+
     // Validate privateKey and derive publicKey
     let transactionPublicKey;
     try {
@@ -153,18 +167,17 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
             throw new Error('bs58 library is not loaded');
         }
-        const keypair = solanaWeb3.Keypair.fromSecretKey(window.bs58.decode(params.privateKey));
+        const decodedKey = window.bs58.decode(params.privateKey);
+        log_message(`Decoded privateKey length: ${decodedKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
+        if (decodedKey.length !== 64) {
+            log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(`Invalid private key length: ${decodedKey.length} bytes, expected 64 bytes`);
+        }
+        const keypair = solanaWeb3.Keypair.fromSecretKey(decodedKey);
         transactionPublicKey = keypair.publicKey.toBase58();
         if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(transactionPublicKey)) {
             log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
-            resultDiv.innerHTML = '<p style="color: red;">Error: Invalid public key format</p>';
-            resultDiv.classList.add('active');
-            submitButton.disabled = false;
-            setTimeout(() => {
-                resultDiv.classList.remove('active');
-                resultDiv.innerHTML = '';
-            }, 5000);
-            return;
+            throw new Error('Invalid public key format');
         }
     } catch (error) {
         log_message(`Invalid private key format: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -236,6 +249,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`bs58 available: ${typeof window.bs58 !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
 
     // Làm mới lịch sử giao dịch khi load trang (trang 1)
     refreshTransactionHistory(1, 10);
