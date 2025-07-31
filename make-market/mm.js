@@ -51,7 +51,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                         <th>Buy Tx</th>
                         <th>Sell Tx</th>
                         <th>Thời gian</th>
-                        <th>Lý do lỗi</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -77,7 +77,9 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
                     <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
                     <td>${tx.created_at}</td>
-                    <td>${errorMessage}</td>
+                    <td>
+                        ${tx.status === 'success' || tx.status === 'failed' ? `<button class="continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
+                    </td>
                 </tr>
             `;
         });
@@ -96,6 +98,49 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             </div>
         `;
         historyDiv.innerHTML = html;
+
+        // Gắn sự kiện cho nút Tiếp tục
+        document.querySelectorAll('.continue-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const transactionId = btn.dataset.id;
+                log_message(`Continue button clicked for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                try {
+                    const response = await fetch(`/make-market/get-transaction.php?id=${transactionId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        document.getElementById('processName').value = data.process_name;
+                        document.getElementById('tokenMint').value = data.token_mint;
+                        document.getElementById('solAmount').value = data.sol_amount;
+                        document.getElementById('slippage').value = data.slippage;
+                        document.getElementById('delay').value = data.delay_seconds;
+                        document.getElementById('loopCount').value = data.loop_count;
+                        document.getElementById('batchSize').value = data.batch_size;
+                        document.querySelector('textarea[name="privateKey"]').value = '';
+                        document.getElementById('transactionPublicKey').value = '';
+                        const resultDiv = document.getElementById('mm-result');
+                        resultDiv.innerHTML = `<p>Form filled with parameters from transaction ID: ${transactionId}. Please enter a new private key.</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+                        resultDiv.classList.add('active');
+                        log_message(`Form filled with transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    log_message(`Error loading transaction ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+                    const resultDiv = document.getElementById('mm-result');
+                    resultDiv.innerHTML = `<p style="color: red;">Error loading transaction: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+                    resultDiv.classList.add('active');
+                }
+            });
+        });
     } catch (err) {
         log_message(`Error refreshing transaction history: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         historyDiv.innerHTML = '<p>Lỗi khi tải lịch sử giao dịch.</p>';
