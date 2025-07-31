@@ -82,41 +82,43 @@ if (!file_exists($header_path)) {
 <html lang="en">
 <?php include $header_path; ?>
 <body>
-    <?php
-    $navbar_path = $root_path . 'include/navbar.php';
-    if (!file_exists($navbar_path)) {
-        log_message("index.php: navbar.php not found at $navbar_path", 'accounts.log', 'accounts', 'ERROR');
-        die('Internal Server Error: Missing navbar.php');
-    }
-    include $navbar_path;
-    ?>
-    
-    <div class="acc-container">
-        <div class="acc-content">
-            <h1>Login with Phantom Wallet</h1>
-            <button class="cta-button" id="connect-wallet">Connect Wallet</button>
-            <div id="wallet-info" style="display: none;">
-                <p><span id="public-key"></span></p>
-                <p><span id="status"></span></p>
-            </div>
-            <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+<?php
+$navbar_path = $root_path . 'include/navbar.php';
+if (!file_exists($navbar_path)) {
+    log_message("index.php: navbar.php not found at $navbar_path", 'accounts.log', 'accounts', 'ERROR');
+    die('Internal Server Error: Missing navbar.php');
+}
+include $navbar_path;
+?>
+
+<div class="acc-container">
+    <div class="acc-content">
+        <h1>Login with Phantom Wallet</h1>
+        <button class="cta-button" id="connect-wallet">Connect Wallet</button>
+        <div id="wallet-info" style="display: none;">
+            <p><span id="public-key"></span></p>
+            <p><span id="status"></span></p>
         </div>
+        <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
     </div>
-    
-    <?php
-    $footer_path = $root_path . 'include/footer.php';
-    if (!file_exists($footer_path)) {
-        log_message("index.php: footer.php not found at $footer_path", 'accounts.log', 'accounts', 'ERROR');
-        die('Internal Server Error: Missing footer.php');
-    }
-    include $footer_path;
-    ?>
-    
-    <script>console.log('Attempting to load JS files...');</script>
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-    <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-    <script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
+</div>
+
+<?php
+$footer_path = $root_path . 'include/footer.php';
+if (!file_exists($footer_path)) {
+    log_message("index.php: footer.php not found at $footer_path", 'accounts.log', 'accounts', 'ERROR');
+    die('Internal Server Error: Missing footer.php');
+}
+include $footer_path;
+?>
+
+<!-- Scripts - Internal library -->
+<script>console.log('Attempting to load JS files...');</script>
+<script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>"></script>
+<!-- Scripts - Source code -->
+<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
