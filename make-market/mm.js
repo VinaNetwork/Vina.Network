@@ -149,7 +149,11 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     // Validate privateKey and derive publicKey
     let transactionPublicKey;
     try {
-        const keypair = solanaWeb3.Keypair.fromSecretKey(bs58.decode(params.privateKey));
+        if (typeof window.bs58 === 'undefined') {
+            log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
+            throw new Error('bs58 library is not loaded');
+        }
+        const keypair = solanaWeb3.Keypair.fromSecretKey(window.bs58.decode(params.privateKey));
         transactionPublicKey = keypair.publicKey.toBase58();
         if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(transactionPublicKey)) {
             log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
@@ -164,7 +168,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         }
     } catch (error) {
         log_message(`Invalid private key format: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: Invalid private key format</p>';
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         setTimeout(() => {
