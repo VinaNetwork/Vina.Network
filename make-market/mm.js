@@ -1,3 +1,4 @@
+```javascript
 // ============================================================================
 // File: make-market/mm.js
 // Description: JavaScript file for UI interactions on Make Market page
@@ -111,6 +112,8 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                 const transactionId = btn.dataset.id;
                 log_message(`Continue button clicked for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
                 try {
+                    // Log request details
+                    log_message(`Fetching transaction data for ID: ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
                     const response = await fetch(`/make-market/get-transaction.php?id=${transactionId}`, {
                         method: 'GET',
                         headers: {
@@ -118,10 +121,14 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
+                    log_message(`Response status for transaction ID ${transactionId}: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
                     if (!response.ok) {
+                        const errorText = await response.text();
+                        log_message(`Error response for transaction ID ${transactionId}: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     }
                     const data = await response.json();
+                    log_message(`Response data for transaction ID ${transactionId}: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
                     if (data.status === 'success') {
                         document.getElementById('processName').value = data.process_name;
                         document.getElementById('tokenMint').value = data.token_mint;
