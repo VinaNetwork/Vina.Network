@@ -113,7 +113,8 @@ form button:disabled {
 
 /* History */
 #transaction-history {
-    margin-top: 20px;
+    overflow-x: auto;
+    max-width: 100%;
 }
 .history-title {
     margin-top: 20px;
@@ -127,7 +128,9 @@ form button:disabled {
 #transaction-history table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin: 20px 0;
+    background: #fff;
+    color: black;
 }
 #transaction-history th,
 #transaction-history td {
@@ -151,12 +154,11 @@ form button:disabled {
 
 #transaction-history th:nth-child(12),
 #transaction-history td:nth-child(12) {
-    min-width: 150px; /* Đảm bảo cột Lý do lỗi đủ rộng */
+    min-width: 150px;
 }
 
 /* Pagination */
 .pagination {
-    margin-top: 20px;
     text-align: center;
 }
 
