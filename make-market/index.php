@@ -77,24 +77,6 @@ try {
     exit;
 }
 
-// Fetch transaction history
-try {
-    $stmt = $pdo->prepare("
-        SELECT id, process_name, token_mint, sol_amount, slippage, delay_seconds, 
-               loop_count, batch_size, status, buy_tx_id, sell_tx_id, created_at
-        FROM make_market 
-        WHERE user_id = ? 
-        ORDER BY created_at DESC 
-        LIMIT 10
-    ");
-    $stmt->execute([$account['id']]);
-    $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    log_message("Fetched " . count($transactions) . " transactions for user_id: {$account['id']}", 'make-market.log', 'make-market', 'INFO');
-} catch (PDOException $e) {
-    log_message("Error fetching transaction history: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    $transactions = [];
-}
-
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -270,19 +252,19 @@ include $navbar_path;
         <h1><i class="fas fa-chart-line"></i> Make Market</h1>
         <div id="account-info">
             <table>
-            <tr>
-            <th>Account:</th>
-            <td>
-            <?php if ($short_public_key !== 'Invalid'): ?>
-                <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
-                    <?php echo htmlspecialchars($short_public_key); ?>
-                </a>
-                <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
-            <?php else: ?>
-                <span>Invalid address</span>
-            <?php endif; ?>
-            </td>
-            </tr>
+                <tr>
+                    <th>Account:</th>
+                    <td>
+                        <?php if ($short_public_key !== 'Invalid'): ?>
+                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
+                                <?php echo htmlspecialchars($short_public_key); ?>
+                            </a>
+                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
+                        <?php else: ?>
+                            <span>Invalid address</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
             </table>
         </div>
 
@@ -323,74 +305,7 @@ include $navbar_path;
         <!-- Transaction History -->
         <h2 class="history-title">Transaction History</h2>
         <div id="transaction-history">
-            <?php if (empty($transactions)): ?>
-                <p>No transactions yet.</p>
-            <?php else: ?>
-                <table>
-                    <tr>
-                        <th>ID</th>
-                        <th>Process Name</th>
-                        <th>Public Key</th>
-                        <th>Token Address</th>
-                        <th>SOL Amount</th>
-                        <th>Slippage (%)</th>
-                        <th>Delay (s)</th>
-                        <th>Loop Count</th>
-                        <th>Batch Size</th>
-                        <th>Status</th>
-                        <th>Buy Tx</th>
-                        <th>Sell Tx</th>
-                        <th>Time</th>
-                        <th>Action</th>
-                    </tr>
-                    <?php foreach ($transactions as $tx): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($tx['id']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
-                            <td>
-                                <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['public_key']); ?>" target="_blank">
-                                    <?php echo htmlspecialchars(substr($tx['public_key'], 0, 4) . '...' . substr($tx['public_key'], -4)); ?>
-                                </a>
-                            </td>
-                            <td>
-                                <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
-                                    <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
-                                </a>
-                            </td>
-                            <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['batch_size']); ?></td>
-                            <td><?php echo htmlspecialchars($tx['status']); ?></td>
-                            <td>
-                                <?php if ($tx['buy_tx_id']): ?>
-                                    <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id']); ?>" target="_blank">
-                                        <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...'); ?>
-                                    </a>
-                                <?php else: ?>
-                                    -
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($tx['sell_tx_id']): ?>
-                                    <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id']); ?>" target="_blank">
-                                        <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...'); ?>
-                                    </a>
-                                <?php else: ?>
-                                    -
-                                <?php endif; ?>
-                            </td>
-                            <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
-                            <td>
-                                <?php if (in_array($tx['status'], ['success', 'failed'])): ?>
-                                    <button class="continue-btn" data-id="<?php echo htmlspecialchars($tx['id']); ?>">Tiếp tục</button>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </table>
-            <?php endif; ?>
+            <p>Loading transaction history...</p>
         </div>
     </div>
 </div>
