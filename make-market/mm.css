@@ -157,6 +157,18 @@ form button:disabled {
     min-width: 150px;
 }
 
+.continue-btn {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.continue-btn:hover {
+    background-color: #0056b3;
+}
+
 /* Pagination */
 .pagination {
     text-align: center;
