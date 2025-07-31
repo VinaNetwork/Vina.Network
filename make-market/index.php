@@ -374,7 +374,7 @@ include $footer_path;
 <script src="/js/libs/bs58.js?t=<?php echo time(); ?>"></script>
 <!-- Scripts - External library -->
 <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js" onerror="console.error('Failed to load spl-token.js'); log_message('Failed to load spl-token.js', 'make-market.log', 'make-market', 'ERROR');"></script>
-<script src="https://unpkg.com/@coral-xyz/anchor@0.30.1/dist/browser/index.js" onerror="console.error('Failed to load anchor.js'); log_message('Failed to load anchor.js', 'make-market.log', 'make-market', 'ERROR');"></script>
+<script src="https://unpkg.com/@project-serum/anchor/dist/umd/index.js"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
