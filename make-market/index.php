@@ -122,10 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
             exit;
         }
-        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64}$/', $privateKey)) {
-            log_message("Invalid private key format", 'make-market.log', 'make-market', 'ERROR');
+        // Kiểm tra privateKey Base58 (độ dài 64-128 ký tự)
+        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/', $privateKey)) {
+            log_message("Invalid private key format: length=" . strlen($privateKey), 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid private key format']);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid private key format, length=' . strlen($privateKey)]);
             exit;
         }
         if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transactionPublicKey)) {
