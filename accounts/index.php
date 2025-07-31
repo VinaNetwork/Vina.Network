@@ -114,7 +114,7 @@ include $footer_path;
 
 <!-- Scripts - Internal library -->
 <script>console.log('Attempting to load JS files...');</script>
-<script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>"></script>
+<script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
