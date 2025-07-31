@@ -222,9 +222,9 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             params.loopCount,
             result.transactionId
         );
-        log_message('makeMarket called successfully', 'make-market.log', 'make-market', 'INFO');
 
-        // Làm mới lịch sử giao dịch (trang 1)
+        // Chỉ log thành công nếu không có lỗi
+        log_message('makeMarket called successfully', 'make-market.log', 'make-market', 'INFO');
         await refreshTransactionHistory(1, 10);
         resultDiv.innerHTML = '<p style="color: green;">Transaction submitted successfully!</p>';
         resultDiv.classList.add('active');
@@ -240,7 +240,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             resultDiv.classList.remove('active');
             resultDiv.innerHTML = '';
         }, 5000);
-    } finally {
         submitButton.disabled = false;
     }
 });
