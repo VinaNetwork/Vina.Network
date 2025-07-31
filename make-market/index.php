@@ -372,7 +372,7 @@ include $footer_path;
 <script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@0.26.0/dist/browser/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bs58@5.0.0/dist/bs58.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bs58@5.0.0/index.js"></script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
