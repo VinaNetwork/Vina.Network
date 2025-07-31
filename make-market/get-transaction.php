@@ -13,18 +13,30 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../config/bootstrap.php';
 require_once __DIR__ . '/../config/config.php';
 
-session_start();
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict'
+]);
 
 try {
+    // Log session info for debugging
+    log_message("Session data: " . json_encode($_SESSION), 'make-market.log', 'make-market', 'DEBUG');
+
+    // Kiểm tra session user_id
     if (!isset($_SESSION['user_id'])) {
+        log_message("No user_id in session", 'make-market.log', 'make-market', 'ERROR');
         throw new Exception('Unauthorized: Please log in');
     }
 
-    $transactionId = $_GET['id'] ?? null;
-    if (!$transactionId || !is_numeric($transactionId)) {
+    // Kiểm tra transactionId
+    $transactionId = isset($_GET['id']) ? trim($_GET['id']) : null;
+    if (!$transactionId || !is_numeric($transactionId) || $transactionId <= 0) {
+        log_message("Invalid transaction ID: " . var_export($transactionId, true), 'make-market.log', 'make-market', 'ERROR');
         throw new Exception('Invalid transaction ID');
     }
 
+    // Kết nối database
     $pdo = get_db_connection();
     $stmt = $pdo->prepare("
         SELECT process_name, token_mint, sol_amount, slippage, delay_seconds, loop_count, batch_size, status
@@ -35,9 +47,11 @@ try {
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$transaction) {
+        log_message("Transaction not found for ID: $transactionId, user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
         throw new Exception('Transaction not found or not accessible');
     }
 
+    log_message("Transaction retrieved for ID: $transactionId", 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
         'status' => 'success',
         'process_name' => $transaction['process_name'],
