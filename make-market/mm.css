@@ -15,7 +15,6 @@
 .mm-content {
     padding: 20px;
     margin: 20px;
-    max-width: 700px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
@@ -238,10 +237,6 @@ form button:disabled {
 @media screen and (max-width: 768px) {
     .mm-container {
         margin-top: 64px;
-    }
-    
-    .mm-content {
-        max-width: 100%;
     }
 
     #transaction-history table {
