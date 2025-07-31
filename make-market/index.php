@@ -382,6 +382,7 @@ include $footer_path;
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script defer src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
 <script defer src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script>window.HELIUS_API_KEY = '<?php echo htmlspecialchars(HELIUS_API_KEY); ?>';</script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
