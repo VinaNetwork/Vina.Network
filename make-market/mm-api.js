@@ -77,6 +77,27 @@ async function getDecryptedPrivateKey(transactionId) {
     }
 }
 
+// Hàm kiểm tra trạng thái private_key
+async function checkPrivateKeyStatus(transactionId) {
+    try {
+        const response = await fetch(`/make-market/check-private-key.php?transactionId=${transactionId}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: Failed to check private_key status`);
+        }
+        const result = await response.json();
+        if (result.status === 'error') {
+            throw new Error(result.message);
+        }
+        return result.isPending;
+    } catch (err) {
+        log_message(`Error checking private_key status for transaction ${transactionId}: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        throw err;
+    }
+}
+
 // Hàm chờ các thư viện cần thiết
 async function waitForLibraries() {
     const maxAttempts = 20; // 10 giây
@@ -218,6 +239,21 @@ async function makeMarket(
             log_message('axios is not defined', 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: 'axios is not defined' });
             throw new Error('axios is not defined');
+        }
+
+        // Kiểm tra trạng thái private_key
+        try {
+            const isPending = await checkPrivateKeyStatus(transactionId);
+            if (isPending) {
+                log_message(`Private key is already running a pending process for transaction ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                updateTransaction(transactionId, { status: 'failed', error: 'Private key is currently running another process' });
+                throw new Error('This private key is currently running another process. Please wait for it to complete or use a different private key.');
+            }
+            log_message(`Private key is not running any pending process for transaction ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        } catch (error) {
+            log_message(`Failed to check private_key status: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: `Failed to check private_key status: ${error.message}` });
+            throw error;
         }
 
         // Lấy và giải mã private_key từ database
