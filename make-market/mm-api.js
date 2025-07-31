@@ -48,8 +48,9 @@ async function makeMarket(
     const resultDiv = document.getElementById('mm-result');
     const submitButton = document.querySelector('#makeMarketForm button');
     log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}, transactionId=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+
     try {
-        // Kiểm tra các thư viện
+        // Kiểm tra các thư viện cần thiết
         if (typeof window.solanaWeb3 === 'undefined') {
             log_message('solanaWeb3 is not defined', 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: 'solanaWeb3 is not defined' });
@@ -69,6 +70,11 @@ async function makeMarket(
             log_message('splToken is not defined', 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: 'splToken is not defined' });
             throw new Error('splToken is not defined');
+        }
+        if (typeof window.axios === 'undefined') {
+            log_message('axios is not defined', 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: 'axios is not defined' });
+            throw new Error('axios is not defined');
         }
 
         // Kiểm tra private key
@@ -176,6 +182,7 @@ async function makeMarket(
         resultDiv.innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p>`;
         log_message(`Market making completed for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
         updateTransaction(transactionId, { status: 'success' });
+        return true; // Trả về true để báo thành công
     } catch (error) {
         resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p>`;
         log_message(`Error in makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -192,7 +199,7 @@ async function swapSOLtoToken(wallet, tokenMint, solAmount, slippage) {
     log_message(`Fetching quote for SOL to token swap: tokenMint=${tokenMint}, amount=${solAmount}, slippage=${slippage}`, 'make-market.log', 'make-market', 'DEBUG');
     try {
         // Lấy quote từ Jupiter
-        const quoteResponse = await axios.get(`${JUPITER_API}/quote`, {
+        const quoteResponse = await window.axios.get(`${JUPITER_API}/quote`, {
             params: {
                 inputMint: 'So11111111111111111111111111111111111111112', // SOL
                 outputMint: tokenMint,
@@ -209,7 +216,7 @@ async function swapSOLtoToken(wallet, tokenMint, solAmount, slippage) {
 
         // Lấy serialized transaction
         log_message(`Requesting swap transaction for SOL to token`, 'make-market.log', 'make-market', 'DEBUG');
-        const swapResponse = await axios.post(`${JUPITER_API}/swap`, {
+        const swapResponse = await window.axios.post(`${JUPITER_API}/swap`, {
             quoteResponse: quoteResponse.data,
             userPublicKey: wallet.publicKey.toBase58(),
             wrapAndUnwrapSol: true
@@ -242,7 +249,7 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
 
         // Lấy quote từ Jupiter
         log_message(`Fetching quote for token to SOL swap: tokenMint=${tokenMint}, amount=${amount}, slippage=${slippage}`, 'make-market.log', 'make-market', 'DEBUG');
-        const quoteResponse = await axios.get(`${JUPITER_API}/quote`, {
+        const quoteResponse = await window.axios.get(`${JUPITER_API}/quote`, {
             params: {
                 inputMint: tokenMint,
                 outputMint: 'So11111111111111111111111111111111111111112', // SOL
@@ -259,7 +266,7 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
 
         // Lấy serialized transaction
         log_message(`Requesting swap transaction for token to SOL`, 'make-market.log', 'make-market', 'DEBUG');
-        const swapResponse = await axios.post(`${JUPITER_API}/swap`, {
+        const swapResponse = await window.axios.post(`${JUPITER_API}/swap`, {
             quoteResponse: quoteResponse.data,
             userPublicKey: wallet.publicKey.toBase58(),
             wrapAndUnwrapSol: true
