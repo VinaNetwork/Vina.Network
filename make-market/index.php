@@ -328,59 +328,65 @@ include $navbar_path;
             <?php else: ?>
                 <table>
                     <tr>
-                    <th>ID</th>
-                    <th>Process Name</th>
-                    <th>Public Key</th>
-                    <th>Token Address</th>
-                    <th>SOL Amount</th>
-                    <th>Slippage (%)</th>
-                    <th>Delay (s)</th>
-                    <th>Loop Count</th>
-                    <th>Batch Size</th>
-                    <th>Status</th>
-                    <th>Buy Tx</th>
-                    <th>Sell Tx</th>
-                    <th>Time</th>
+                        <th>ID</th>
+                        <th>Process Name</th>
+                        <th>Public Key</th>
+                        <th>Token Address</th>
+                        <th>SOL Amount</th>
+                        <th>Slippage (%)</th>
+                        <th>Delay (s)</th>
+                        <th>Loop Count</th>
+                        <th>Batch Size</th>
+                        <th>Status</th>
+                        <th>Buy Tx</th>
+                        <th>Sell Tx</th>
+                        <th>Time</th>
+                        <th>Action</th>
                     </tr>
                     <?php foreach ($transactions as $tx): ?>
                         <tr>
-                        <td><?php echo htmlspecialchars($tx['id']); ?></td>
-                        <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
-                        <td>
-                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['public_key']); ?>" target="_blank">
-                                <?php echo htmlspecialchars(substr($tx['public_key'], 0, 4) . '...' . substr($tx['public_key'], -4)); ?>
-                            </a>
-                        </td>
-                        <td>
-                            <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
-                                <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
-                            </a>
-                        </td>
-                        <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
-                        <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
-                        <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
-                        <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
-                        <td><?php echo htmlspecialchars($tx['batch_size']); ?></td>
-                        <td><?php echo htmlspecialchars($tx['status']); ?></td>
-                        <td>
-                        <?php if ($tx['buy_tx_id']): ?>
-                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id']); ?>" target="_blank">
-                                <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...'); ?>
-                            </a>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
-                        </td>
-                        <td>
-                        <?php if ($tx['sell_tx_id']): ?>
-                            <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id']); ?>" target="_blank">
-                                <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...'); ?>
-                            </a>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
-                        </td>
-                        <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['id']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
+                            <td>
+                                <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['public_key']); ?>" target="_blank">
+                                    <?php echo htmlspecialchars(substr($tx['public_key'], 0, 4) . '...' . substr($tx['public_key'], -4)); ?>
+                                </a>
+                            </td>
+                            <td>
+                                <a href="https://solscan.io/token/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
+                                    <?php echo htmlspecialchars(substr($tx['token_mint'], 0, 4) . '...' . substr($tx['token_mint'], -4)); ?>
+                                </a>
+                            </td>
+                            <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['slippage']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['batch_size']); ?></td>
+                            <td><?php echo htmlspecialchars($tx['status']); ?></td>
+                            <td>
+                                <?php if ($tx['buy_tx_id']): ?>
+                                    <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['buy_tx_id']); ?>" target="_blank">
+                                        <?php echo htmlspecialchars(substr($tx['buy_tx_id'], 0, 4) . '...'); ?>
+                                    </a>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($tx['sell_tx_id']): ?>
+                                    <a href="https://solscan.io/tx/<?php echo htmlspecialchars($tx['sell_tx_id']); ?>" target="_blank">
+                                        <?php echo htmlspecialchars(substr($tx['sell_tx_id'], 0, 4) . '...'); ?>
+                                    </a>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
+                            <td>
+                                <?php if (in_array($tx['status'], ['success', 'failed'])): ?>
+                                    <button class="continue-btn" data-id="<?php echo htmlspecialchars($tx['id']); ?>">Tiếp tục</button>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </table>
