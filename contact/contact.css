@@ -42,15 +42,8 @@
 .contact-item i {
     font-size: 2em;
     color: #ff6f91;
-    margin-bottom: 15px;
 }
 
-.contact-item h2 {color: #4a90e2;}
-.contact-item p {color: #666;}
-.contact-item a {
-    color: #ff6f91;
-    transition: color 0.3s;
-}
 .contact-item a:hover {color: #ff85a1;}
 
 /*  Responsive Design */
