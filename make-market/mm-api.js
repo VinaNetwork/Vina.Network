@@ -6,7 +6,8 @@
 
 // Cấu hình
 const JUPITER_API = 'https://quote-api.jup.ag/v6';
-const RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com';
+const RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com'; // Có thể thay bằng QuickNode nếu cần
+const HELIUS_API = 'https://api.helius.xyz';
 const connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
 
 // Hàm log_message
@@ -34,6 +35,58 @@ function updateTransaction(transactionId, updates) {
     });
 }
 
+// Hàm chờ các thư viện cần thiết
+async function waitForLibraries() {
+    const maxAttempts = 20; // 10 giây
+    let attempts = 0;
+    while (attempts < maxAttempts) {
+        if (
+            typeof window.solanaWeb3 !== 'undefined' &&
+            typeof window.bs58 !== 'undefined' &&
+            typeof window.axios !== 'undefined' &&
+            typeof window.splToken !== 'undefined'
+        ) {
+            log_message('All libraries loaded for makeMarket', 'make-market.log', 'make-market', 'INFO');
+            return true;
+        }
+        log_message(`Waiting for libraries in makeMarket... attempt ${attempts + 1}, solanaWeb3: ${typeof window.solanaWeb3}, bs58: ${typeof window.bs58}, axios: ${typeof window.axios}, splToken: ${typeof window.splToken}`, 'make-market.log', 'make-market', 'DEBUG');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        attempts++;
+    }
+    log_message('Failed to load all libraries for makeMarket after max attempts', 'make-market.log', 'make-market', 'ERROR');
+    return false;
+}
+
+// Hàm lấy số dư SOL qua Helius API
+async function getSolBalance(walletAddress) {
+    if (!window.HELIUS_API_KEY) {
+        log_message('Helius API key not defined', 'make-market.log', 'make-market', 'ERROR');
+        throw new Error('Helius API key not defined');
+    }
+
+    const maxRetries = 3;
+    let retryCount = 0;
+    while (retryCount < maxRetries) {
+        try {
+            const response = await window.axios.get(`${HELIUS_API}/v0/addresses/${walletAddress}/balances?api-key=${window.HELIUS_API_KEY}`);
+            if (response.data && response.data.nativeBalance && response.data.nativeBalance.lamports) {
+                const balance = response.data.nativeBalance.lamports;
+                log_message(`Fetched SOL balance for ${walletAddress}: ${balance / 1_000_000_000} SOL`, 'make-market.log', 'make-market', 'INFO');
+                return balance;
+            } else {
+                throw new Error('Invalid response from Helius API');
+            }
+        } catch (error) {
+            retryCount++;
+            log_message(`Failed to fetch SOL balance, attempt ${retryCount}/${maxRetries}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+            if (retryCount === maxRetries) {
+                throw new Error(`Failed to fetch SOL balance after ${maxRetries} attempts: ${error.message}`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Chờ 1 giây trước khi thử lại
+        }
+    }
+}
+
 // Hàm chính xử lý make market
 async function makeMarket(
     processName,
@@ -48,6 +101,15 @@ async function makeMarket(
     const resultDiv = document.getElementById('mm-result');
     const submitButton = document.querySelector('#makeMarketForm button');
     log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}, transactionId=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+
+    // Chờ các thư viện tải xong
+    if (!(await waitForLibraries())) {
+        log_message('Required libraries not loaded for makeMarket', 'make-market.log', 'make-market', 'ERROR');
+        updateTransaction(transactionId, { status: 'failed', error: 'Required libraries not loaded' });
+        resultDiv.innerHTML = `<p style="color: red;"><strong>[${processName}]</strong> Error: Required libraries not loaded</p>`;
+        submitButton.disabled = false;
+        return false;
+    }
 
     try {
         // Kiểm tra các thư viện cần thiết
@@ -105,8 +167,15 @@ async function makeMarket(
             throw new Error('Invalid token mint');
         }
 
-        // Kiểm tra số dư ví
-        const balance = await connection.getBalance(wallet.publicKey);
+        // Kiểm tra số dư ví bằng Helius API
+        let balance;
+        try {
+            balance = await getSolBalance(wallet.publicKey.toBase58());
+        } catch (error) {
+            log_message(`Failed to get SOL balance: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: `Failed to get SOL balance: ${error.message}` });
+            throw new Error(`Failed to get SOL balance: ${error.message}`);
+        }
         const requiredLamports = solAmount * 1_000_000_000 + 5000; // SOL + phí (~0.005 SOL)
         if (balance < requiredLamports) {
             log_message(`Insufficient balance: ${balance / 1_000_000_000} SOL, required: ${requiredLamports / 1_000_000_000} SOL`, 'make-market.log', 'make-market', 'ERROR');
