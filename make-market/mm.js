@@ -210,7 +210,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         const result = await response.json();
         if (result.status !== 'success') {
             log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
-            throw new Error(result.message);
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+            resultDiv.classList.add('active');
+            submitButton.disabled = false;
+            return;
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
 
