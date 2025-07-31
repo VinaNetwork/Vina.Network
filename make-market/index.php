@@ -369,17 +369,17 @@ include $footer_path;
 ?>
 
 <!-- Scripts - Internal library -->
-<script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>"></script>
-<script src="/js/libs/axios.min.js?t=<?php echo time(); ?>"></script>
-<script src="/js/libs/bs58.js?t=<?php echo time(); ?>"></script>
+<script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>"></script>
+<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>"></script>
+<script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>"></script>
 <!-- Scripts - External library -->
-<script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js" onerror="console.error('Failed to load spl-token.js'); log_message('Failed to load spl-token.js', 'make-market.log', 'make-market', 'ERROR');"></script>
-<script src="https://unpkg.com/@project-serum/anchor/dist/umd/index.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js" onerror="console.error('Failed to load spl-token.js'); log_message('Failed to load spl-token.js', 'make-market.log', 'make-market', 'ERROR');"></script>
+<script defer src="https://unpkg.com/@project-serum/anchor/dist/umd/index.js"></script>
 <!-- Scripts - Source code -->
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
-<script src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
+<script defer src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
+<script defer src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
