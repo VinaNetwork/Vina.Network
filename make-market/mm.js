@@ -270,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     log_message(`bs58 available: ${typeof window.bs58 !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
-    log_message(`anchor available: ${typeof window.anchor !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
     log_message(`solanaWeb3 available: ${typeof window.solanaWeb3 !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
     log_message(`splToken available: ${typeof window.splToken !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
     log_message(`axios available: ${typeof window.axios !== 'undefined' ? 'Yes' : 'No'}`, 'make-market.log', 'make-market', 'DEBUG');
