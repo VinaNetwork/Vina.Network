@@ -375,8 +375,7 @@ include $footer_path;
 <script defer src="/js/libs/anchor.umd.js?t=<?php echo time(); ?>"></script>
 <script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>"></script>
 <!-- Scripts - External library -->
-<script defer src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js" onerror="console.error('Failed to load spl-token.js'); log_message('Failed to load spl-token.js', 'make-market.log', 'make-market', 'ERROR');"></script>
-<script defer src="https://unpkg.com/@project-serum/anchor/dist/umd/index.js"></script>
+
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
