@@ -367,12 +367,14 @@ log_message("Including footer.php", 'make-market.log', 'make-market', 'DEBUG');
 include $footer_path;
 ?>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.95.3/lib/index.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@project-serum/anchor@0.26.0/dist/browser/index.js"></script>
+<!-- Scripts - External library -->
 <script src="https://cdn.jsdelivr.net/npm/@solana/spl-token@0.4.8/lib/index.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+<!-- Scripts - Internal library -->
+<script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>"></script>
+<script src="/js/libs/anchor.browser.js?t=<?php echo time(); ?>"></script>
+<script src="/js/libs/axios.min.js?t=<?php echo time(); ?>"></script>
 <script src="/js/libs/bs58.js?t=<?php echo time(); ?>"></script>
+<!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
