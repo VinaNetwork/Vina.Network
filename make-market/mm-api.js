@@ -61,11 +61,6 @@ async function makeMarket(
             updateTransaction(transactionId, { status: 'failed', error: 'bs58 library is not loaded' });
             throw new Error('bs58 library is not loaded');
         }
-        if (typeof window.anchor === 'undefined') {
-            log_message('anchor is not defined', 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'anchor is not defined' });
-            throw new Error('anchor is not defined');
-        }
         if (typeof window.splToken === 'undefined') {
             log_message('splToken is not defined', 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: 'splToken is not defined' });
@@ -98,7 +93,7 @@ async function makeMarket(
             updateTransaction(transactionId, { status: 'failed', error: 'Invalid private key' });
             throw new Error('Invalid private key');
         }
-        const wallet = new window.anchor.Wallet(keypair);
+        const wallet = { publicKey: keypair.publicKey, payer: keypair };
 
         // Kiểm tra token mint
         try {
