@@ -49,15 +49,38 @@ async function makeMarket(
     const submitButton = document.querySelector('#makeMarketForm button');
     log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}, transactionId=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
     try {
+        // Kiểm tra các thư viện
+        if (typeof window.solanaWeb3 === 'undefined') {
+            log_message('solanaWeb3 is not defined', 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: 'solanaWeb3 is not defined' });
+            throw new Error('solanaWeb3 is not defined');
+        }
+        if (typeof window.bs58 === 'undefined') {
+            log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: 'bs58 library is not loaded' });
+            throw new Error('bs58 library is not loaded');
+        }
+        if (typeof window.anchor === 'undefined') {
+            log_message('anchor is not defined', 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: 'anchor is not defined' });
+            throw new Error('anchor is not defined');
+        }
+        if (typeof window.splToken === 'undefined') {
+            log_message('splToken is not defined', 'make-market.log', 'make-market', 'ERROR');
+            updateTransaction(transactionId, { status: 'failed', error: 'splToken is not defined' });
+            throw new Error('splToken is not defined');
+        }
+
         // Kiểm tra private key
         let keypair;
         try {
-            if (typeof window.bs58 === 'undefined') {
-                log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
-                updateTransaction(transactionId, { status: 'failed', error: 'bs58 library is not loaded' });
-                throw new Error('bs58 library is not loaded');
+            const decodedKey = window.bs58.decode(privateKey);
+            if (decodedKey.length !== 64) {
+                log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
+                updateTransaction(transactionId, { status: 'failed', error: `Invalid private key length: ${decodedKey.length} bytes` });
+                throw new Error(`Invalid private key length: ${decodedKey.length} bytes`);
             }
-            keypair = solanaWeb3.Keypair.fromSecretKey(window.bs58.decode(privateKey));
+            keypair = window.solanaWeb3.Keypair.fromSecretKey(decodedKey);
             const publicKey = keypair.publicKey.toBase58();
             if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
                 log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
@@ -69,11 +92,11 @@ async function makeMarket(
             updateTransaction(transactionId, { status: 'failed', error: 'Invalid private key' });
             throw new Error('Invalid private key');
         }
-        const wallet = new anchor.Wallet(keypair);
+        const wallet = new window.anchor.Wallet(keypair);
 
         // Kiểm tra token mint
         try {
-            await splToken.getMint(connection, new solanaWeb3.PublicKey(tokenMint));
+            await window.splToken.getMint(connection, new window.solanaWeb3.PublicKey(tokenMint));
             log_message(`Token mint validated: ${tokenMint}`, 'make-market.log', 'make-market', 'INFO');
         } catch (error) {
             log_message(`Invalid token mint: ${tokenMint}, error: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -157,6 +180,7 @@ async function makeMarket(
         resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p>`;
         log_message(`Error in makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         updateTransaction(transactionId, { status: 'failed', error: error.message });
+        throw error; // Ném lại lỗi để mm.js xử lý
     } finally {
         submitButton.disabled = false;
         log_message(`makeMarket function ended for process: ${processName}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -193,7 +217,7 @@ async function swapSOLtoToken(wallet, tokenMint, solAmount, slippage) {
 
         // Deserialize transaction
         const swapTransactionBuf = Buffer.from(swapResponse.data.swapTransaction, 'base64');
-        const transaction = solanaWeb3.Transaction.from(swapTransactionBuf);
+        const transaction = window.solanaWeb3.Transaction.from(swapTransactionBuf);
         transaction.partialSign(wallet.payer);
         log_message(`Swap transaction prepared for SOL to token`, 'make-market.log', 'make-market', 'DEBUG');
         return transaction;
@@ -208,8 +232,8 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
     log_message(`Fetching token account for token: ${tokenMint}`, 'make-market.log', 'make-market', 'DEBUG');
     try {
         // Lấy associated token address
-        const tokenAccount = await splToken.getAssociatedTokenAddress(
-            new solanaWeb3.PublicKey(tokenMint),
+        const tokenAccount = await window.splToken.getAssociatedTokenAddress(
+            new window.solanaWeb3.PublicKey(tokenMint),
             wallet.publicKey
         );
         const tokenBalance = await connection.getTokenAccountBalance(tokenAccount);
@@ -243,7 +267,7 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
 
         // Deserialize transaction
         const swapTransactionBuf = Buffer.from(swapResponse.data.swapTransaction, 'base64');
-        const transaction = solanaWeb3.Transaction.from(swapTransactionBuf);
+        const transaction = window.solanaWeb3.Transaction.from(swapTransactionBuf);
         transaction.partialSign(wallet.payer);
         log_message(`Swap transaction prepared for token to SOL`, 'make-market.log', 'make-market', 'DEBUG');
         return transaction;
