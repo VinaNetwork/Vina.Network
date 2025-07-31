@@ -46,6 +46,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                         <th>Slippage (%)</th>
                         <th>Delay (s)</th>
                         <th>Vòng lặp</th>
+                        <th>Batch Size</th>
                         <th>Trạng thái</th>
                         <th>Buy Tx</th>
                         <th>Sell Tx</th>
@@ -71,6 +72,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     <td>${tx.slippage}</td>
                     <td>${tx.delay_seconds}</td>
                     <td>${tx.loop_count}</td>
+                    <td>${tx.batch_size}</td>
                     <td>${tx.status}</td>
                     <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
                     <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
@@ -154,9 +156,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         slippage: parseFloat(formData.get('slippage')),
         delay: parseInt(formData.get('delay')),
         loopCount: parseInt(formData.get('loopCount')),
+        batchSize: parseInt(formData.get('batchSize')),
         csrf_token: formData.get('csrf_token')
     };
-    log_message(`Form data: processName=${params.processName}, tokenMint=${params.tokenMint}, solAmount=${params.solAmount}, slippage=${params.slippage}, delay=${params.delay}, loopCount=${params.loopCount}`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`Form data: processName=${params.processName}, tokenMint=${params.tokenMint}, solAmount=${params.solAmount}, slippage=${params.slippage}, delay=${params.delay}, loopCount=${params.loopCount}, batchSize=${params.batchSize}`, 'make-market.log', 'make-market', 'DEBUG');
 
     // Kiểm tra privateKey
     if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
@@ -220,6 +223,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             params.slippage,
             params.delay,
             params.loopCount,
+            params.batchSize,
             result.transactionId
         );
 
