@@ -1,0 +1,5 @@
+Thêm cột batch_size vào bảng make_market:
+ALTER TABLE make_market ADD batch_size INT NOT NULL DEFAULT 5;
+Kiểm tra schema:
+DESCRIBE make_market;
+Mong đợi: Có cột batch_size kiểu INT, NOT NULL, mặc định 5.
