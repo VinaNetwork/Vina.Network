@@ -1,8 +1,8 @@
-/* ============================================================================
- * File: make-market/mm.css
- * Description: Styles for the Make Market page of Vina Network
- * Created by: Vina Network
- * ========================================================================== */
+/* ============================================================================ */
+/* File: make-market/mm.css */
+/* Description: Styles for the Make Market and Process pages of Vina Network */
+/* Created by: Vina Network */
+/* ============================================================================ */
 
 /* Make Market */
 .mm-container {
@@ -169,7 +169,6 @@ form button:disabled {
     background-color: #0056b3;
 }
 
-/* Style cho nút Hủy */
 .cancel-btn {
     background-color: #dc3545;
     color: white;
@@ -183,7 +182,8 @@ form button:disabled {
 .cancel-btn:hover {
     background-color: #c82333;
 }
-/* Style cho popup xác nhận */
+
+/* Confirmation popup */
 .confirmation-popup {
     display: none;
     position: fixed;
@@ -232,83 +232,95 @@ form button:disabled {
     background-color: #5a6268;
 }
 
-/* Pagination */
-.pagination {
-    text-align: center;
+/* Process page styles */
+.process-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.pagination p {
-    margin: 0 0 10px;
-    font-size: 14px;
-    color: #333;
+.check-list {
+    margin-bottom: 20px;
 }
 
-.pagination-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-}
-
-.pagination-btn {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #f9f9f9;
-    color: #007bff;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.pagination-btn:hover {
-    background-color: #007bff;
-    color: #fff;
-}
-
-.pagination-btn:disabled {
-    background-color: #ccc;
-    color: #666;
-    cursor: not-allowed;
-}
-
-.pagination-btn.active {
-    background-color: #007bff;
-    color: #fff;
-    font-weight: bold;
-}
-
-/* Copy icon */
-.copy-icon {
-    cursor: pointer;
+.check-list p {
+    margin: 5px 0;
     font-size: 16px;
-    color: #007bff;
-    transition: color 0.3s ease;
-    pointer-events: auto;
-    user-select: none;
-    display: inline-block;
-    margin-left: 5px;
 }
-.copy-icon:hover {color: #0056b3;}
-.copy-icon.copied {color: #28a745;}
 
-.copy-tooltip {
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #28a745;
-    color: white;
-    padding: 2px 8px;
+.check-list .done {
+    color: green;
+}
+
+.check-list .error {
+    color: red;
+}
+
+.progress-bar {
+    width: 100%;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress {
+    height: 20px;
+    background-color: #28a745;
+    width: 0%;
+    transition: width 0.5s ease-in-out;
+}
+
+.transaction-details p {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+.transaction-log {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.transaction-log p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.action-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.action-buttons button {
+    padding: 8px 16px;
+    border: none;
     border-radius: 4px;
-    font-size: 12px;
-    z-index: 10;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.action-buttons button:not(.cancel-btn) {
+    background-color: #6c757d;
+    color: white;
+}
+
+.action-buttons button:not(.cancel-btn):hover {
+    background-color: #5a6268;
 }
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
     .mm-container {margin-top: 64px;}
     .mm-content {max-width: 100%;}
+    .process-container {max-width: 100%;}
     table {font-size: 12px;}
-
     .pagination-btn {
         padding: 6px 10px;
         font-size: 12px;
