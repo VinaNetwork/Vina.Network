@@ -1,4 +1,5 @@
 <?php
+ob_start();
 // ============================================================================
 // File: accounts/profile.php
 // Description: Account information page.
@@ -21,7 +22,6 @@ header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 
-ob_start();
 use StephenHill\Base58;
 
 // Error reporting
