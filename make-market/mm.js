@@ -164,7 +164,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                         fields.privateKey.value = '';
                         fields.transactionPublicKey.value = '';
 
-                        resultDiv.innerHTML = `<p>Form filled with parameters from transaction ID: ${transactionId}. Please enter a new private key.</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+                        resultDiv.innerHTML = `<p>Form filled with parameters from transaction ID: ${transactionId}. Please enter a new private key.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
                         resultDiv.classList.add('active');
                         log_message(`Form filled with transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
                     } else {
@@ -172,7 +172,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     }
                 } catch (error) {
                     log_message(`Error loading transaction ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-                    resultDiv.innerHTML = `<p style="color: red;">Error loading transaction: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+                    resultDiv.innerHTML = `<p style="color: red;">Error loading transaction: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
                     resultDiv.classList.add('active');
                 }
             });
@@ -189,7 +189,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
     } catch (err) {
         log_message(`Error refreshing transaction history: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         historyDiv.innerHTML = '<p>Lỗi khi tải lịch sử giao dịch.</p>';
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
     }
 }
@@ -243,12 +243,12 @@ async function confirmCancel(transactionId) {
         }
         closeCancelConfirmation();
         await refreshTransactionHistory(1, 10);
-        resultDiv.innerHTML = `<p style="color: green;">Transaction ${transactionId} canceled successfully!</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.innerHTML = `<p style="color: green;">Transaction ${transactionId} canceled successfully!</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
         log_message(`Transaction ${transactionId} canceled successfully`, 'make-market.log', 'make-market', 'INFO');
     } catch (error) {
         log_message(`Error canceling transaction ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = `<p style="color: red;">Error canceling transaction: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error canceling transaction: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
     }
 }
@@ -283,14 +283,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     // Check libraries
     if (typeof window.solanaWeb3 === 'undefined') {
         log_message('solanaWeb3 is not defined', 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: solanaWeb3 is not defined</p><button onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: solanaWeb3 is not defined</p><button class="cta-button" onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         return;
     }
     if (typeof window.bs58 === 'undefined') {
         log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: bs58 library is not loaded</p><button onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: bs58 library is not loaded</p><button class="cta-button" onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         return;
@@ -313,7 +313,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     // Validate private key
     if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
         log_message('privateKey is empty or invalid', 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = '<p style="color: red;">Error: privateKey is empty or invalid</p><button onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
+        resultDiv.innerHTML = '<p style="color: red;">Error: privateKey is empty or invalid</p><button class="cta-button" onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         return;
@@ -337,7 +337,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         }
     } catch (error) {
         log_message(`Invalid private key format: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
         submitButton.disabled = false;
         return;
@@ -358,7 +358,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         const result = await response.json();
         if (result.status !== 'success') {
             log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
-            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
             resultDiv.classList.add('active');
             submitButton.disabled = false;
             return;
@@ -369,7 +369,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         window.location.href = `/make-market/process/${result.transactionId}`;
     } catch (error) {
         log_message(`Error submitting form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
     } finally {
         submitButton.disabled = false;
