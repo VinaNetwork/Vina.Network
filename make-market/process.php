@@ -93,7 +93,7 @@ $page_og_title = "Track Your Make Market Transaction Progress";
 $page_og_description = "Monitor your automated Solana token trading with Vina Network.";
 $page_og_url = BASE_URL . "make-market/process/$transaction_id";
 $page_canonical = BASE_URL . "make-market/process/$transaction_id";
-$page_css = ['mm.css'];
+$page_css = ['/make-market/mm.css'];
 
 // Header
 $header_path = $root_path . 'include/header.php';
@@ -183,7 +183,7 @@ include $footer_path;
 <script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script defer src="/js/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
+<script defer src="/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
 
 <script>
 // ============================================================================
