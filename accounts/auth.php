@@ -6,7 +6,7 @@
 // ============================================================================
 
 if (!defined('VINANETWORK_ENTRY')) {
-    die("Access denied: Direct access to this file is not allowed.");
+    define('VINANETWORK_ENTRY', true);
 }
 
 $root_path = '../';
