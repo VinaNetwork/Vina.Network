@@ -5,12 +5,13 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Start output buffering and define constants for context
 ob_start();
+// Start output buffering and define constants for context
 define('VINANETWORK', true);
 define('VINANETWORK_ENTRY', true);
-require_once '../config/bootstrap.php';
+
 $root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Set error reporting and logging
 ini_set('log_errors', 1);
