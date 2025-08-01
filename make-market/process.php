@@ -184,240 +184,279 @@ include $footer_path;
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script defer src="/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
+
+// Description: JavaScript for handling transaction progress and pre-transaction checks
 <script>
-  
-    // ============================================================================
-    // Description: JavaScript for handling transaction progress and pre-transaction checks
-    // ============================================================================
+const transactionId = <?php echo $transaction_id; ?>;
+const loopCount = <?php echo $transaction['loop_count']; ?>;
+let currentLoop = 0;
 
-    const transactionId = <?php echo $transaction_id; ?>;
-    const loopCount = <?php echo $transaction['loop_count']; ?>;
-    let currentLoop = 0;
+// Log message function
+function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
+    fetch('/make-market/log.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, log_file, module, log_type })
+    }).catch(err => console.error('Log error:', err));
+}
 
-    // Log message function
-    function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
-        fetch('/make-market/log.php', {
+// Perform pre-transaction checks
+async function performChecks() {
+    const checkBalance = document.getElementById('check-balance').querySelector('span');
+    const checkToken = document.getElementById('check-token').querySelector('span');
+    const checkLiquidity = document.getElementById('check-liquidity').querySelector('span');
+    const checkPrivateKey = document.getElementById('check-private-key').querySelector('span');
+    const checkError = document.getElementById('check-error');
+    let allChecksPassed = true;
+
+    try {
+        // Check wallet balance
+        const balanceResponse = await fetch(`/make-market/get-balance.php?public_key=<?php echo urlencode($transaction['public_key']); ?>`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+        });
+        if (!balanceResponse.ok) {
+            const errorText = await balanceResponse.text();
+            log_message(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(`Balance check failed: HTTP ${balanceResponse.status}`);
+        }
+        const balanceData = await balanceResponse.json();
+        if (balanceData.status === 'success' && typeof balanceData.balance === 'number' && balanceData.balance >= <?php echo $transaction['sol_amount']; ?>) {
+            checkBalance.textContent = `Done (${balanceData.balance} SOL)`;
+            checkBalance.classList.add('done');
+            log_message(`Balance check passed: ${balanceData.balance} SOL available for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        } else {
+            const errorMsg = balanceData.status === 'error' ? balanceData.message : `Insufficient balance: ${balanceData.balance || 'N/A'} SOL`;
+            checkBalance.textContent = 'Insufficient';
+            checkBalance.classList.add('error');
+            checkError.innerHTML = `<p style="color: red;">Process stopped: ${errorMsg}</p>`;
+            checkError.style.display = 'block';
+            log_message(`Balance check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            allChecksPassed = false;
+        }
+
+        // Check token mint
+        const tokenResponse = await fetch(`https://api.mainnet-beta.solana.com`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, log_file, module, log_type })
-        }).catch(err => console.error('Log error:', err));
-    }
-
-    // Perform pre-transaction checks
-    async function performChecks() {
-        const checkBalance = document.getElementById('check-balance').querySelector('span');
-        const checkToken = document.getElementById('check-token').querySelector('span');
-        const checkLiquidity = document.getElementById('check-liquidity').querySelector('span');
-        const checkPrivateKey = document.getElementById('check-private-key').querySelector('span');
-        const checkError = document.getElementById('check-error');
-        let allChecksPassed = true;
-
-        try {
-            // Check wallet balance
-            const balanceResponse = await fetch(`/make-market/get-balance.php?public_key=<?php echo urlencode($transaction['public_key']); ?>`);
-            const balanceData = await balanceResponse.json();
-            if (balanceData.status === 'success' && balanceData.balance >= <?php echo $transaction['sol_amount']; ?>) {
-                checkBalance.textContent = 'Done';
-                checkBalance.classList.add('done');
-            } else {
-                checkBalance.textContent = 'Insufficient';
-                checkBalance.classList.add('error');
-                checkError.innerHTML = '<p style="color: red;">Process stopped: Insufficient wallet balance</p>';
-                checkError.style.display = 'block';
-                allChecksPassed = false;
-            }
-
-            // Check token mint
-            const tokenResponse = await fetch(`https://api.mainnet-beta.solana.com`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    jsonrpc: '2.0',
-                    id: 1,
-                    method: 'getAccountInfo',
-                    params: ['<?php echo $transaction['token_mint']; ?>']
-                })
-            });
-            const tokenData = await tokenResponse.json();
-            if (tokenData.result && tokenData.result.value) {
-                checkToken.textContent = 'Done';
-                checkToken.classList.add('done');
-            } else {
-                checkToken.textContent = 'Does not exist';
-                checkToken.classList.add('error');
-                checkError.innerHTML = '<p style="color: red;">Process stopped: Invalid token mint</p>';
-                checkError.style.display = 'block';
-                allChecksPassed = false;
-            }
-
-            // Check liquidity
-            const liquidityResponse = await fetch(`https://quote-api.jup.ag/v4/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=<?php echo urlencode($transaction['token_mint']); ?>&amount=<?php echo $transaction['sol_amount'] * 1e9; ?>&slippage=<?php echo $transaction['slippage']; ?>`);
-            const liquidityData = await liquidityResponse.json();
-            if (liquidityData.data && liquidityData.data.length > 0) {
-                checkLiquidity.textContent = 'Done';
-                checkLiquidity.classList.add('done');
-            } else {
-                checkLiquidity.textContent = 'Insufficient';
-                checkLiquidity.classList.add('error');
-                checkError.innerHTML = '<p style="color: red;">Process stopped: Insufficient liquidity</p>';
-                checkError.style.display = 'block';
-                allChecksPassed = false;
-            }
-
-            // Check private key
-            const privateKeyResponse = await fetch('/make-market/check-private-key.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transaction_id: transactionId })
-            });
-            const privateKeyData = await privateKeyResponse.json();
-            if (privateKeyData.status === 'success') {
-                checkPrivateKey.textContent = 'Done';
-                checkPrivateKey.classList.add('done');
-            } else {
-                checkPrivateKey.textContent = 'Invalid';
-                checkPrivateKey.classList.add('error');
-                checkError.innerHTML = '<p style="color: red;">Process stopped: Invalid private key</p>';
-                checkError.style.display = 'block';
-                allChecksPassed = false;
-            }
-
-            // If all checks pass, start transaction
-            if (allChecksPassed) {
-                document.getElementById('progress-section').style.display = 'block';
-                startTransaction();
-            }
-        } catch (error) {
-            log_message(`Error performing checks: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-            checkError.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'getAccountInfo',
+                params: ['<?php echo $transaction['token_mint']; ?>']
+            })
+        });
+        if (!tokenResponse.ok) {
+            const errorText = await tokenResponse.text();
+            log_message(`Token mint check failed: HTTP ${tokenResponse.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(`Token mint check failed: HTTP ${tokenResponse.status}`);
+        }
+        const tokenData = await tokenResponse.json();
+        if (tokenData.result && tokenData.result.value) {
+            checkToken.textContent = 'Done';
+            checkToken.classList.add('done');
+            log_message(`Token mint check passed: ${'<?php echo $transaction['token_mint']; ?>'} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        } else {
+            checkToken.textContent = 'Does not exist';
+            checkToken.classList.add('error');
+            checkError.innerHTML = '<p style="color: red;">Process stopped: Invalid token mint</p>';
             checkError.style.display = 'block';
+            log_message(`Token mint check failed: Invalid token mint for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            allChecksPassed = false;
         }
-    }
 
-    // Start transaction
-    async function startTransaction() {
-        const resultDiv = document.getElementById('check-error');
-        try {
-            log_message(`Starting transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
-            const response = await fetch('/make-market/mm-api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transaction_id: transactionId })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            const result = await response.json();
-            if (result.status !== 'success') {
-                throw new Error(result.message || 'Failed to start transaction');
-            }
-            log_message(`Transaction ID ${transactionId} started`, 'make-market.log', 'make-market', 'INFO');
-            pollTransactionStatus();
-        } catch (error) {
-            log_message(`Error starting transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-            resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
-            resultDiv.style.display = 'block';
+        // Check liquidity
+        const liquidityResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=<?php echo urlencode($transaction['token_mint']); ?>&amount=<?php echo $transaction['sol_amount'] * 1e9; ?>&slippageBps=<?php echo $transaction['slippage'] * 100; ?>`);
+        if (!liquidityResponse.ok) {
+            const errorText = await liquidityResponse.text();
+            log_message(`Liquidity check failed: HTTP ${liquidityResponse.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(`Liquidity check failed: HTTP ${liquidityResponse.status}`);
         }
+        const liquidityData = await liquidityResponse.json();
+        if (liquidityData.data && liquidityData.data.length > 0) {
+            checkLiquidity.textContent = 'Done';
+            checkLiquidity.classList.add('done');
+            log_message(`Liquidity check passed for token: <?php echo $transaction['token_mint']; ?> for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        } else {
+            checkLiquidity.textContent = 'Insufficient';
+            checkLiquidity.classList.add('error');
+            checkError.innerHTML = '<p style="color: red;">Process stopped: Insufficient liquidity</p>';
+            checkError.style.display = 'block';
+            log_message(`Liquidity check failed: Insufficient liquidity for token: <?php echo $transaction['token_mint']; ?> for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            allChecksPassed = false;
+        }
+
+        // Check private key
+        const privateKeyResponse = await fetch('/make-market/check-private-key.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ transaction_id: transactionId })
+        });
+        if (!privateKeyResponse.ok) {
+            const errorText = await privateKeyResponse.text();
+            log_message(`Private key check failed: HTTP ${privateKeyResponse.status}, Response: ${errorText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(`Private key check failed: HTTP ${privateKeyResponse.status}`);
+        }
+        const privateKeyData = await privateKeyResponse.json();
+        if (privateKeyData.status === 'success' && !privateKeyData.isPending) {
+            checkPrivateKey.textContent = 'Done';
+            checkPrivateKey.classList.add('done');
+            log_message(`Private key check passed for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        } else {
+            const errorMsg = privateKeyData.status === 'error' ? privateKeyData.message : 'Pending process detected';
+            checkPrivateKey.textContent = 'Invalid';
+            checkPrivateKey.classList.add('error');
+            checkError.innerHTML = `<p style="color: red;">Process stopped: Invalid private key - ${errorMsg}</p>`;
+            checkError.style.display = 'block';
+            log_message(`Private key check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            allChecksPassed = false;
+        }
+
+        // If all checks pass, start transaction
+        if (allChecksPassed) {
+            document.getElementById('progress-section').style.display = 'block';
+            log_message(`All pre-transaction checks passed for transaction ID ${transactionId}, starting transaction`, 'make-market.log', 'make-market', 'INFO');
+            startTransaction();
+        } else {
+            log_message(`One or more pre-transaction checks failed for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+        }
+    } catch (error) {
+        log_message(`Error performing checks for transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        checkError.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        checkError.style.display = 'block';
     }
+}
 
-    // Poll transaction status
-    function pollTransactionStatus() {
-        const transactionLog = document.getElementById('transaction-log');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const currentLoopSpan = document.getElementById('current-loop');
-        const statusSpan = document.getElementById('transaction-status');
-        const cancelBtn = document.getElementById('cancel-btn');
-
-        const interval = setInterval(async () => {
-            try {
-                const response = await fetch(`/make-market/status.php?id=${transactionId}`);
-                const data = await response.json();
-                if (data.status !== 'success') {
-                    throw new Error(data.message || 'Failed to fetch status');
-                }
-
-                // Update status
-                statusSpan.textContent = data.transaction.status;
-                currentLoop = data.transaction.current_loop || 0;
-                currentLoopSpan.textContent = currentLoop;
-
-                // Update progress bar
-                const progressPercent = (currentLoop / loopCount) * 100;
-                progressBar.style.width = `${progressPercent}%`;
-                progressText.textContent = `${Math.round(progressPercent)}%`;
-
-                // Update transaction log
-                if (data.transaction.logs && data.transaction.logs.length > 0) {
-                    transactionLog.innerHTML = data.transaction.logs.map(log => 
-                        `<p>${log.timestamp} ${log.message} ${log.tx_id ? `<a href="https://solscan.io/tx/${log.tx_id}" target="_blank">${log.tx_id.substring(0, 4)}...</a>` : ''}</p>`
-                    ).join('');
-                }
-
-                // Show/hide cancel button
-                cancelBtn.style.display = ['pending', 'processing'].includes(data.transaction.status.toLowerCase()) ? 'inline-block' : 'none';
-
-                // Stop polling if transaction is complete or canceled
-                if (['success', 'failed', 'canceled'].includes(data.transaction.status.toLowerCase())) {
-                    clearInterval(interval);
-                    const resultDiv = document.getElementById('check-error');
-                    resultDiv.innerHTML = `<p style="color: ${data.transaction.status.toLowerCase() === 'success' ? 'green' : 'red'};">Process ${data.transaction.status.toLowerCase() === 'success' ? 'completed successfully!' : data.transaction.status.toLowerCase() === 'failed' ? 'failed: ' + (data.transaction.error || 'Unknown error') : 'canceled.'}</p>`;
-                    resultDiv.style.display = 'block';
-                }
-            } catch (error) {
-                log_message(`Error polling status for transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-                transactionLog.innerHTML += `<p style="color: red;">Error polling status: ${error.message}</p>`;
-            }
-        }, 5000); // Poll every 5 seconds
+// Start transaction
+async function startTransaction() {
+    const resultDiv = document.getElementById('check-error');
+    try {
+        log_message(`Starting transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        const response = await fetch('/make-market/mm-api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transaction_id: transactionId })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+        }
+        const result = await response.json();
+        if (result.status !== 'success') {
+            throw new Error(result.message || 'Failed to start transaction');
+        }
+        log_message(`Transaction ID ${transactionId} started`, 'make-market.log', 'make-market', 'INFO');
+        pollTransactionStatus();
+    } catch (error) {
+        log_message(`Error starting transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        resultDiv.style.display = 'block';
     }
+}
 
-    // Show cancel confirmation popup
-    function showCancelConfirmation(transactionId) {
-        const popup = document.getElementById('cancel-confirmation');
-        popup.style.display = 'flex';
-        log_message(`Displayed cancel confirmation popup for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
-    }
+// Poll transaction status
+function pollTransactionStatus() {
+    const transactionLog = document.getElementById('transaction-log');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const currentLoopSpan = document.getElementById('current-loop');
+    const statusSpan = document.getElementById('transaction-status');
+    const cancelBtn = document.getElementById('cancel-btn');
 
-    // Close cancel confirmation popup
-    function closeCancelConfirmation() {
-        const popup = document.getElementById('cancel-confirmation');
-        popup.style.display = 'none';
-        log_message('Cancel confirmation popup closed', 'make-market.log', 'make-market', 'DEBUG');
-    }
-
-    // Confirm cancel action
-    async function confirmCancel(transactionId) {
-        const resultDiv = document.getElementById('check-error');
+    const interval = setInterval(async () => {
         try {
-            log_message(`Sending cancel request for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
-            const response = await fetch('/make-market/cancel-transaction.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ id: transactionId })
-            });
+            const response = await fetch(`/make-market/status.php?id=${transactionId}`);
             if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
             }
             const data = await response.json();
             if (data.status !== 'success') {
-                throw new Error(data.message || 'Failed to cancel transaction');
+                throw new Error(data.message || 'Failed to fetch status');
             }
-            closeCancelConfirmation();
-            resultDiv.innerHTML = `<p style="color: green;">Transaction ${transactionId} canceled successfully!</p>`;
-            resultDiv.style.display = 'block';
-            log_message(`Transaction ${transactionId} canceled successfully`, 'make-market.log', 'make-market', 'INFO');
-        } catch (error) {
-            log_message(`Error canceling transaction ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-            resultDiv.innerHTML = `<p style="color: red;">Error canceling transaction: ${error.message}</p>`;
-            resultDiv.style.display = 'block';
-        }
-    }
 
-    // Initialize checks on page load
-    document.addEventListener('DOMContentLoaded', () => {
-        log_message(`process.php loaded for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
-        performChecks();
-    });
+            // Update status
+            statusSpan.textContent = data.transaction.status;
+            currentLoop = data.transaction.current_loop || 0;
+            currentLoopSpan.textContent = currentLoop;
+
+            // Update progress bar
+            const progressPercent = (currentLoop / loopCount) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            progressText.textContent = `${Math.round(progressPercent)}%`;
+
+            // Update transaction log
+            if (data.transaction.logs && data.transaction.logs.length > 0) {
+                transactionLog.innerHTML = data.transaction.logs.map(log => 
+                    `<p>${log.timestamp} ${log.message} ${log.tx_id ? `<a href="https://solscan.io/tx/${log.tx_id}" target="_blank">${log.tx_id.substring(0, 4)}...</a>` : ''}</p>`
+                ).join('');
+            }
+
+            // Show/hide cancel button
+            cancelBtn.style.display = ['pending', 'processing'].includes(data.transaction.status.toLowerCase()) ? 'inline-block' : 'none';
+
+            // Stop polling if transaction is complete or canceled
+            if (['success', 'failed', 'canceled'].includes(data.transaction.status.toLowerCase())) {
+                clearInterval(interval);
+                const resultDiv = document.getElementById('check-error');
+                resultDiv.innerHTML = `<p style="color: ${data.transaction.status.toLowerCase() === 'success' ? 'green' : 'red'};">Process ${data.transaction.status.toLowerCase() === 'success' ? 'completed successfully!' : data.transaction.status.toLowerCase() === 'failed' ? 'failed: ' + (data.transaction.error || 'Unknown error') : 'canceled.'}</p>`;
+                resultDiv.style.display = 'block';
+            }
+        } catch (error) {
+            log_message(`Error polling status for transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+            transactionLog.innerHTML += `<p style="color: red;">Error polling status: ${error.message}</p>`;
+        }
+    }, 5000); // Poll every 5 seconds
+}
+
+// Show cancel confirmation popup
+function showCancelConfirmation(transactionId) {
+    const popup = document.getElementById('cancel-confirmation');
+    popup.style.display = 'flex';
+    log_message(`Displayed cancel confirmation popup for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
+}
+
+// Close cancel confirmation popup
+function closeCancelConfirmation() {
+    const popup = document.getElementById('cancel-confirmation');
+    popup.style.display = 'none';
+    log_message('Cancel confirmation popup closed', 'make-market.log', 'make-market', 'DEBUG');
+}
+
+// Confirm cancel action
+async function confirmCancel(transactionId) {
+    const resultDiv = document.getElementById('check-error');
+    try {
+        log_message(`Sending cancel request for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        const response = await fetch('/make-market/cancel-transaction.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ id: transactionId })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+        }
+        const data = await response.json();
+        if (data.status !== 'success') {
+            throw new Error(data.message || 'Failed to cancel transaction');
+        }
+        closeCancelConfirmation();
+        resultDiv.innerHTML = `<p style="color: green;">Transaction ${transactionId} canceled successfully!</p>`;
+        resultDiv.style.display = 'block';
+        log_message(`Transaction ${transactionId} canceled successfully`, 'make-market.log', 'make-market', 'INFO');
+    } catch (error) {
+        log_message(`Error canceling transaction ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = `<p style="color: red;">Error canceling transaction: ${error.message}</p>`;
+        resultDiv.style.display = 'block';
+    }
+}
+
+// Initialize checks on page load
+document.addEventListener('DOMContentLoaded', () => {
+    log_message(`process.php loaded for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
+    performChecks();
+});
 </script>
 </body>
 </html>
