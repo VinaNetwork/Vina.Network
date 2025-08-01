@@ -4,10 +4,13 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
-require_once dirname(__DIR__) . '/config/config.php';
-require_once dirname(__DIR__) . '/config/bootstrap.php';
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/config.php';
 require_once __DIR__ . '/mm-api.php';
 
 header('Content-Type: application/json');
