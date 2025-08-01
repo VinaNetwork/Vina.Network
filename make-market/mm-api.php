@@ -8,8 +8,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once dirname(__DIR__) . '/config/config.php';
-require_once dirname(__DIR__) . '/config/bootstrap.php';
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/config.php';
 
 function callMarketAPI($endpoint, $params = []) {
     $helius_api_key = HELIUS_API_KEY;
