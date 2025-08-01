@@ -22,19 +22,25 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
     const resultDiv = document.getElementById('mm-result');
     const historyDiv = document.getElementById('transaction-history');
     try {
+        log_message(`Fetching transaction history for page: ${page}, per_page: ${per_page}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/make-market/history.php?page=${page}&per_page=${per_page}`);
+        log_message(`Response status for history.php: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
+            const errorText = await response.text();
+            log_message(`Error fetching transaction history: HTTP ${response.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        log_message(`Fetched transaction history: ${data.transactions.length} records, page: ${page}, per_page: ${per_page}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Response data: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
 
         if (data.status !== 'success') {
+            log_message(`Failed to fetch transaction history: ${data.message || 'No message provided'}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(data.message || 'Failed to fetch transaction history');
         }
 
         if (data.transactions.length === 0) {
             historyDiv.innerHTML = '<p>Chưa có giao dịch nào.</p>';
+            log_message('No transactions found', 'make-market.log', 'make-market', 'INFO');
             return;
         }
 
@@ -104,6 +110,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             </div>
         `;
         historyDiv.innerHTML = html;
+        log_message(`Rendered ${data.transactions.length} transactions for page ${page}`, 'make-market.log', 'make-market', 'INFO');
 
         // Gắn sự kiện cho nút Tiếp tục
         document.querySelectorAll('.continue-btn').forEach(btn => {
@@ -111,6 +118,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                 const transactionId = btn.dataset.id;
                 log_message(`Continue button clicked for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
                 try {
+                    log_message(`Fetching transaction data for ID: ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
                     const response = await fetch(`/make-market/get-transaction.php?id=${transactionId}`, {
                         method: 'GET',
                         headers: {
@@ -118,10 +126,14 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
+                    log_message(`Response status for get-transaction.php: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
                     if (!response.ok) {
+                        const errorText = await response.text();
+                        log_message(`Error fetching transaction ID ${transactionId}: HTTP ${response.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     }
                     const data = await response.json();
+                    log_message(`Response data for transaction ID ${transactionId}: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
                     if (data.status === 'success') {
                         document.getElementById('processName').value = data.process_name;
                         document.getElementById('tokenMint').value = data.token_mint;
