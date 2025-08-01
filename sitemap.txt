@@ -1,0 +1,102 @@
+Sitemap: Vina Network
+/root/
+├── index.php
+├── robots.txt
+├── .htaccess
+├── LICENSE
+├── README.md
+├── sitemap.xml
+├── fonts/
+├── webfonts/
+├── img/
+│
+├── css/
+│   ├── all.css
+│   ├── poppins.css
+│   ├── home.css
+│   ├── navbar.css
+│   └── vina.css
+│
+├── js/
+│   ├── home.js
+│   └── vina.js
+│   ├── libs/
+│   │   ├── anchor.umd.js         # Module Make Market
+│   │   ├── axios.min.js          # Module Make Market
+│   │   ├── bs58.js               # Module Make Market
+│   │   ├── solana.web3.iife.js   # Module Make Market + Accounts
+│   └── └── spl-token.iife.js     # Module Make Market
+│
+├── include/
+│   ├── header.php
+│   ├── community.php
+│   ├── footer.php
+│   └── navbar.php
+│
+├── contact/
+│   ├── index.php
+│   └── contact.css
+│
+├── notification/
+│   ├── index.php
+│   └── notification.css
+│
+├── config/                         # Directory containing system configuration files
+│   ├── .htaccess                   # Apache configuration for security and request routing
+│   ├── config.php                  # General configuration: constants, paths, secret keys
+│   ├── db.php                      # Database connection setup, PDO configuration
+│   └── bootstrap.php               # Application initialization, loads configuration files and core functions
+│
+├── accounts/
+│   ├── index.php
+│   ├── acc.css
+│   ├── acc.js
+│   ├── auth.php
+│   ├── client-log.php
+│   └── profile.php
+│
+├── tools/
+│   ├── index.php
+│   ├── tools-load.php
+│   ├── tools-api.php
+│   ├── tools.css
+│   ├── tools.js
+│   ├── nft-holders/
+│   │   ├── nft-holders.php
+│   │   ├── nft-holders-export.php
+│   │   ├── nft-holders-helper.php
+│   │   └── nft-holders.css
+│   ├── nft-info/
+│   │   ├── nft-info.php
+│   │   └── nft-info.css
+│   ├── nft-transactions/
+│   │   ├── nft-transactions.php
+│   │   └── nft-transactions.css
+│   ├── nft-creator/
+│   │   ├── nft-creator.php
+│   │   └── nft-creator.css
+│   └── wallet-analysis/
+│       ├── wallet-analysis.php
+│       └── wallet-analysis.css
+│
+├── make-market/                    # Directory containing files related to the Make Market feature
+│   ├── index.php                   # Main Make Market page, contains user interface (HTML, form, transaction history)
+│   ├── mm.css                      # CSS file for styling the Make Market interface
+│   ├── mm.js                       # JavaScript file handling UI interactions (form submission, history, Continue/Cancel buttons)
+│   ├── mm-api.js                   # JavaScript file handling transaction logic (calls Jupiter API, token buy/sell)
+│   ├── mm-api.php                  # Server-side API for transaction logic (storage, data validation)
+│   ├── history.php                 # API to retrieve transaction history with pagination
+│   ├── get-transaction.php         # API to fetch transaction details by ID for form population
+│   ├── cancel-transaction.php      # API to cancel pending transactions, updates status to Canceled
+│   ├── status.php                  # API to check transaction status (success, failed, pending, canceled)
+│   ├── log.php                     # API to log actions and errors in the system
+│   ├── get-balance.php             # API to retrieve wallet balance (SOL or token) based on public key
+│   ├── check-private-key.php       # API to verify the validity of a private key
+│   └── get-private-key.php         # API to retrieve encrypted private key from database (if needed)
+│
+├── logs/
+│   ├── accounts/
+│   ├── make-market/
+│   └── tools/
+│       └── cache/
+└──
