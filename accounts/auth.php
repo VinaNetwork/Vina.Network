@@ -9,8 +9,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     die("Access denied: Direct access to this file is not allowed.");
 }
 
-require_once __DIR__ . '/../config/bootstrap.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
 session_start([
