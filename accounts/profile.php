@@ -9,6 +9,10 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
+
 // Add Security Headers
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
@@ -18,9 +22,6 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 
 ob_start();
-require_once __DIR__ . '/../config/bootstrap.php';
-require_once __DIR__ . '/../../vendor/autoload.php'; // Load composer for stephenhill/base58
-
 use StephenHill\Base58;
 
 // Error reporting
