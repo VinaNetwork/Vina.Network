@@ -69,7 +69,9 @@ try {
         header('Location: /accounts');
         exit;
     }
-    log_message("Make Market accessed for session public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
+    // Lưu user_id vào session
+    $_SESSION['user_id'] = $account['id'];
+    log_message("Session updated with user_id: {$account['id']}, public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
@@ -184,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
         ");
         $stmt->execute([
-            $account['id'],
+            $_SESSION['user_id'], // Sử dụng user_id từ session
             $transactionPublicKey,
             $processName,
             $encryptedPrivateKey,
