@@ -117,9 +117,8 @@ $page_description = "View your Vina Network account information";
 $page_keywords = "Vina Network, account, profile";
 $page_og_title = "Vina Network - Profile";
 $page_og_description = "View your Vina Network account information";
-$page_og_image = "https://www.vina.network/assets/images/og-profile.jpg";
-$page_og_url = "https://www.vina.network/accounts/profile.php";
-$page_canonical = "https://www.vina.network/accounts/profile.php";
+$page_og_url = BASE_URL . "accounts/profile.php";
+$page_canonical = BASE_URL . "accounts/profile.php";
 $page_css = ['/accounts/acc.css'];
 
 // Header
