@@ -48,21 +48,21 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             <table>
                 <thead>
                     <tr>
-                        <th>Tiến trình</th>
-                        <th>ID</th>
-                        <th>Public Key</th>
-                        <th>Token Address</th>
-                        <th>Amount</th>
-                        <th>Slippage (%)</th>
-                        <th>Delay (s)</th>
-                        <th>Vòng lặp</th>
-                        <th>Batch Size</th>
-                        <th>Trạng thái</th>
-                        <th>Buy Tx</th>
-                        <th>Sell Tx</th>
-                        <th>Thời gian</th>
-                        <th>Lý do lỗi</th>
-                        <th>Action</th>
+                    <th>Tiến trình</th>
+                    <th>ID</th>
+                    <th>Public Key</th>
+                    <th>Token Address</th>
+                    <th>Amount</th>
+                    <th>Slippage (%)</th>
+                    <th>Delay (s)</th>
+                    <th>Vòng lặp</th>
+                    <th>Batch Size</th>
+                    <th>Trạng thái</th>
+                    <th>Buy Tx</th>
+                    <th>Sell Tx</th>
+                    <th>Thời gian</th>
+                    <th>Lý do lỗi</th>
+                    <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,24 +75,24 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             const errorMessage = tx.error || '-';
             html += `
                 <tr>
-                    <td><a href="/make-market/process/${tx.id}">${tx.id}</a></td>
-                    <td>${tx.process_name}</td>
-                    <td>${tx.public_key ? `<a href="https://solscan.io/address/${tx.public_key}" target="_blank">${shortPublicKey}</a>` : '-'}</td>
-                    <td>${tx.token_mint ? `<a href="https://solscan.io/token/${tx.token_mint}" target="_blank">${shortTokenMint}</a>` : '-'}</td>
-                    <td>${tx.sol_amount}</td>
-                    <td>${tx.slippage}</td>
-                    <td>${tx.delay_seconds}</td>
-                    <td>${tx.loop_count}</td>
-                    <td>${tx.batch_size}</td>
-                    <td>${tx.status}</td>
-                    <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
-                    <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
-                    <td>${tx.created_at}</td>
-                    <td>${errorMessage}</td>
-                    <td>
-                        ${tx.status === 'success' || tx.status === 'failed' ? `<button class="cta-button continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
-                        ${tx.status === 'pending' ? `<button class="cta-button cancel-btn" data-id="${tx.id}">Hủy</button>` : ''}
-                    </td>
+                <td>${tx.process_name}</td>
+                <td><a href="/make-market/process/${tx.id}">${tx.id}</a></td>
+                <td>${tx.public_key ? `<a href="https://solscan.io/address/${tx.public_key}" target="_blank">${shortPublicKey}</a>` : '-'}</td>
+                <td>${tx.token_mint ? `<a href="https://solscan.io/token/${tx.token_mint}" target="_blank">${shortTokenMint}</a>` : '-'}</td>
+                <td>${tx.sol_amount}</td>
+                <td>${tx.slippage}</td>
+                <td>${tx.delay_seconds}</td>
+                <td>${tx.loop_count}</td>
+                <td>${tx.batch_size}</td>
+                <td>${tx.status}</td>
+                <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
+                <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
+                <td>${tx.created_at}</td>
+                <td>${errorMessage}</td>
+                <td>
+                    ${tx.status === 'success' || tx.status === 'failed' ? `<button class="cta-button continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
+                    ${tx.status === 'pending' ? `<button class="cta-button cancel-btn" data-id="${tx.id}">Hủy</button>` : ''}
+                </td>
                 </tr>
             `;
         });
