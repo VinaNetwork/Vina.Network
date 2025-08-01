@@ -1,4 +1,3 @@
-```php
 <?php
 // ============================================================================
 // File: make-market/index.php
@@ -239,72 +238,6 @@ log_message("Including header.php", 'make-market.log', 'make-market', 'DEBUG');
 <!DOCTYPE html>
 <html lang="en">
 <?php include $header_path; ?>
-<head>
-    <style>
-        /* Style cho nút Hủy */
-        .cancel-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 5px;
-        }
-        .cancel-btn:hover {
-            background-color: #c82333;
-        }
-        /* Style cho popup xác nhận */
-        .confirmation-popup {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .confirmation-popup-content {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        .confirmation-popup-content p {
-            margin: 0 0 20px;
-            font-size: 16px;
-        }
-        .confirmation-popup-content button {
-            padding: 8px 16px;
-            margin: 0 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .confirmation-popup-content .confirm-btn {
-            background-color: #dc3545;
-            color: white;
-        }
-        .confirmation-popup-content .confirm-btn:hover {
-            background-color: #c82333;
-        }
-        .confirmation-popup-content .cancel-popup-btn {
-            background-color: #6c757d;
-            color: white;
-        }
-        .confirmation-popup-content .cancel-popup-btn:hover {
-            background-color: #5a6268;
-        }
-    </style>
-</head>
 <body>
 <?php
 $navbar_path = $root_path . 'include/navbar.php';
