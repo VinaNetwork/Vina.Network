@@ -48,20 +48,20 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             <table>
                 <thead>
                     <tr>
-                    <th>Tiến trình</th>
+                    <th>Process</th>
                     <th>ID</th>
                     <th>Public Key</th>
                     <th>Token Address</th>
                     <th>Amount</th>
                     <th>Slippage (%)</th>
                     <th>Delay (s)</th>
-                    <th>Vòng lặp</th>
+                    <th>Loop</th>
                     <th>Batch Size</th>
-                    <th>Trạng thái</th>
+                    <th>Status</th>
                     <th>Buy Tx</th>
                     <th>Sell Tx</th>
-                    <th>Thời gian</th>
-                    <th>Lý do lỗi</th>
+                    <th>Time</th>
+                    <th>Error reason</th>
                     <th>Action</th>
                     </tr>
                 </thead>
