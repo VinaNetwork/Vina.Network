@@ -1,3 +1,4 @@
+```javascript
 // ============================================================================
 // File: make-market/mm.js
 // Description: JavaScript file for UI interactions on Make Market page
@@ -91,6 +92,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     <td>${errorMessage}</td>
                     <td>
                         ${tx.status === 'success' || tx.status === 'failed' ? `<button class="continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
+                        ${tx.status === 'pending' ? `<button class="cancel-btn" data-id="${tx.id}">Hủy</button>` : ''}
                     </td>
                 </tr>
             `;
@@ -184,10 +186,81 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                 }
             });
         });
+
+        // Gắn sự kiện cho nút Hủy
+        document.querySelectorAll('.cancel-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const transactionId = btn.dataset.id;
+                log_message(`Cancel button clicked for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                showCancelConfirmation(transactionId);
+            });
+        });
     } catch (err) {
         log_message(`Error refreshing transaction history: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         historyDiv.innerHTML = '<p>Lỗi khi tải lịch sử giao dịch.</p>';
         resultDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.classList.add('active');
+    }
+}
+
+// Hàm hiển thị popup xác nhận hủy
+function showCancelConfirmation(transactionId) {
+    const popup = document.createElement('div');
+    popup.className = 'confirmation-popup';
+    popup.id = 'cancel-confirmation';
+    popup.innerHTML = `
+        <div class="confirmation-popup-content">
+            <p>Bạn có chắc chắn muốn hủy tiến trình ${transactionId}?</p>
+            <button class="confirm-btn" onclick="confirmCancel(${transactionId})">Xác nhận</button>
+            <button class="cancel-popup-btn" onclick="closeCancelConfirmation()">Hủy bỏ</button>
+        </div>
+    `;
+    document.body.appendChild(popup);
+    popup.style.display = 'flex';
+    log_message(`Displayed cancel confirmation popup for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
+}
+
+// Hàm đóng popup xác nhận
+function closeCancelConfirmation() {
+    const popup = document.getElementById('cancel-confirmation');
+    if (popup) {
+        popup.remove();
+        log_message('Cancel confirmation popup closed', 'make-market.log', 'make-market', 'DEBUG');
+    }
+}
+
+// Hàm xác nhận hủy tiến trình
+async function confirmCancel(transactionId) {
+    const resultDiv = document.getElementById('mm-result');
+    try {
+        log_message(`Sending cancel request for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        const response = await fetch('/make-market/cancel-transaction.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ id: transactionId })
+        });
+        log_message(`Response status for cancel-transaction.php: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
+        if (!response.ok) {
+            const errorText = await response.text();
+            log_message(`Error canceling transaction ID ${transactionId}: HTTP ${response.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        log_message(`Response data for cancel transaction ID ${transactionId}: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
+        if (data.status !== 'success') {
+            throw new Error(data.message || 'Failed to cancel transaction');
+        }
+        closeCancelConfirmation();
+        await refreshTransactionHistory(1, 10);
+        resultDiv.innerHTML = `<p style="color: green;">Transaction ${transactionId} canceled successfully!</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+        resultDiv.classList.add('active');
+        log_message(`Transaction ${transactionId} canceled successfully`, 'make-market.log', 'make-market', 'INFO');
+    } catch (error) {
+        log_message(`Error canceling transaction ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        resultDiv.innerHTML = `<p style="color: red;">Error canceling transaction: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
     }
 }
