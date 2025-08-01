@@ -157,20 +157,6 @@ form button:disabled {
     min-width: 150px;
 }
 
-.cancel-btn {
-    background-color: #dc3545;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-left: 5px;
-}
-.cancel-btn:hover {
-    background-color: #c82333;
-}
-
 /* Confirmation popup */
 .confirmation-popup {
     display: none;
@@ -204,20 +190,6 @@ form button:disabled {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-}
-.confirmation-popup-content .confirm-btn {
-    background-color: #dc3545;
-    color: white;
-}
-.confirmation-popup-content .confirm-btn:hover {
-    background-color: #c82333;
-}
-.confirmation-popup-content .cancel-popup-btn {
-    background-color: #6c757d;
-    color: white;
-}
-.confirmation-popup-content .cancel-popup-btn:hover {
-    background-color: #5a6268;
 }
 
 /* Process page styles */
@@ -309,8 +281,4 @@ form button:disabled {
     .mm-content {max-width: 100%;}
     .process-container {max-width: 100%;}
     table {font-size: 12px;}
-    .pagination-btn {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
 }
