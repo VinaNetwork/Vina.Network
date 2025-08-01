@@ -185,8 +185,11 @@ include $footer_path;
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script defer src="/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
 
-// Description: JavaScript for handling transaction progress and pre-transaction checks
 <script>
+// ============================================================================
+// Description: JavaScript for handling transaction progress and pre-transaction checks
+// ============================================================================
+
 const transactionId = <?php echo $transaction_id; ?>;
 const loopCount = <?php echo $transaction['loop_count']; ?>;
 let currentLoop = 0;
@@ -217,17 +220,27 @@ async function performChecks() {
         });
         if (!balanceResponse.ok) {
             const errorText = await balanceResponse.text();
-            log_message(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${errorText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`Balance check failed: HTTP ${balanceResponse.status}`);
         }
         const balanceData = await balanceResponse.json();
-        if (balanceData.status === 'success' && typeof balanceData.balance === 'number' && balanceData.balance >= <?php echo $transaction['sol_amount']; ?>) {
-            checkBalance.textContent = `Done (${balanceData.balance} SOL)`;
-            checkBalance.classList.add('done');
-            log_message(`Balance check passed: ${balanceData.balance} SOL available for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        if (balanceData.status === 'success' && typeof balanceData.balance === 'number') {
+            const requiredSol = <?php echo $transaction['sol_amount']; ?>;
+            if (balanceData.balance >= requiredSol) {
+                checkBalance.textContent = `Done (${balanceData.balance} SOL)`;
+                checkBalance.classList.add('done');
+                log_message(`Balance check passed: ${balanceData.balance} SOL available, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+            } else {
+                checkBalance.textContent = `Insufficient (${balanceData.balance} SOL)`;
+                checkBalance.classList.add('error');
+                checkError.innerHTML = `<p style="color: red;">Process stopped: Insufficient balance: ${balanceData.balance} SOL, required: ${requiredSol} SOL</p>`;
+                checkError.style.display = 'block';
+                log_message(`Balance check failed: Insufficient balance: ${balanceData.balance} SOL, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                allChecksPassed = false;
+            }
         } else {
-            const errorMsg = balanceData.status === 'error' ? balanceData.message : `Insufficient balance: ${balanceData.balance || 'N/A'} SOL`;
-            checkBalance.textContent = 'Insufficient';
+            const errorMsg = balanceData.status === 'error' ? balanceData.message : 'Invalid balance response';
+            checkBalance.textContent = 'Failed';
             checkBalance.classList.add('error');
             checkError.innerHTML = `<p style="color: red;">Process stopped: ${errorMsg}</p>`;
             checkError.style.display = 'block';
@@ -235,41 +248,46 @@ async function performChecks() {
             allChecksPassed = false;
         }
 
-        // Check token mint
-        const tokenResponse = await fetch(`https://api.mainnet-beta.solana.com`, {
+        // Check token mint using Helius RPC
+        const tokenResponse = await fetch(`https://mainnet.helius-rpc.com/?api-key=<?php echo HELIUS_API_KEY; ?>`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 jsonrpc: '2.0',
                 id: 1,
                 method: 'getAccountInfo',
-                params: ['<?php echo $transaction['token_mint']; ?>']
+                params: ['<?php echo $transaction['token_mint']; ?>', { encoding: 'jsonParsed' }]
             })
         });
         if (!tokenResponse.ok) {
             const errorText = await tokenResponse.text();
-            log_message(`Token mint check failed: HTTP ${tokenResponse.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
-            throw new Error(`Token mint check failed: HTTP ${tokenResponse.status}`);
-        }
-        const tokenData = await tokenResponse.json();
-        if (tokenData.result && tokenData.result.value) {
-            checkToken.textContent = 'Done';
-            checkToken.classList.add('done');
-            log_message(`Token mint check passed: ${'<?php echo $transaction['token_mint']; ?>'} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
-        } else {
-            checkToken.textContent = 'Does not exist';
+            log_message(`Token mint check failed: HTTP ${tokenResponse.status}, Response: ${errorText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            checkToken.textContent = 'Failed';
             checkToken.classList.add('error');
-            checkError.innerHTML = '<p style="color: red;">Process stopped: Invalid token mint</p>';
+            checkError.innerHTML = `<p style="color: red;">Process stopped: Token mint check failed - ${errorText.includes('403') ? 'Access forbidden, check Helius API key or rate limits' : 'HTTP ' + tokenResponse.status}</p>`;
             checkError.style.display = 'block';
-            log_message(`Token mint check failed: Invalid token mint for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
             allChecksPassed = false;
+        } else {
+            const tokenData = await tokenResponse.json();
+            if (tokenData.result && tokenData.result.value) {
+                checkToken.textContent = 'Done';
+                checkToken.classList.add('done');
+                log_message(`Token mint check passed: ${'<?php echo $transaction['token_mint']; ?>'} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+            } else {
+                checkToken.textContent = 'Does not exist';
+                checkToken.classList.add('error');
+                checkError.innerHTML = '<p style="color: red;">Process stopped: Invalid token mint</p>';
+                checkError.style.display = 'block';
+                log_message(`Token mint check failed: Invalid token mint for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                allChecksPassed = false;
+            }
         }
 
         // Check liquidity
         const liquidityResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=<?php echo urlencode($transaction['token_mint']); ?>&amount=<?php echo $transaction['sol_amount'] * 1e9; ?>&slippageBps=<?php echo $transaction['slippage'] * 100; ?>`);
         if (!liquidityResponse.ok) {
             const errorText = await liquidityResponse.text();
-            log_message(`Liquidity check failed: HTTP ${liquidityResponse.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Liquidity check failed: HTTP ${liquidityResponse.status}, Response: ${errorText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`Liquidity check failed: HTTP ${liquidityResponse.status}`);
         }
         const liquidityData = await liquidityResponse.json();
