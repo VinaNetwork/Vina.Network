@@ -48,11 +48,11 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             <table>
                 <thead>
                     <tr>
+                        <th>Tiến trình</th>
                         <th>ID</th>
-                        <th>Tên tiến trình</th>
                         <th>Public Key</th>
                         <th>Token Address</th>
-                        <th>SOL Amount</th>
+                        <th>Amount</th>
                         <th>Slippage (%)</th>
                         <th>Delay (s)</th>
                         <th>Vòng lặp</th>
