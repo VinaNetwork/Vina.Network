@@ -14,7 +14,7 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://api.helius.xyz; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://quote-api.jup.ag https://mainnet.helius-rpc.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
@@ -183,8 +183,7 @@ include $footer_path;
 <script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script defer src="/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
-
+<script defer src="/js/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
 <script>
 // ============================================================================
 // Description: JavaScript for handling transaction progress and pre-transaction checks
@@ -249,7 +248,7 @@ async function performChecks() {
         }
 
         // Check token mint using Helius RPC
-        const tokenResponse = await fetch(`https://mainnet.helius-rpc.com/?api-key=<?php echo HELIUS_API_KEY; ?>`, {
+        const tokenResponse = await fetch(`https://mainnet.helius-rpc.com/?api-key=<?php echo defined('HELIUS_API_KEY') ? HELIUS_API_KEY : ''; ?>`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -266,19 +265,20 @@ async function performChecks() {
             checkToken.classList.add('error');
             checkError.innerHTML = `<p style="color: red;">Process stopped: Token mint check failed - ${errorText.includes('403') ? 'Access forbidden, check Helius API key or rate limits' : 'HTTP ' + tokenResponse.status}</p>`;
             checkError.style.display = 'block';
+            log_message(`Token mint check failed: ${errorText.includes('403') ? 'Access forbidden, check Helius API key or rate limits' : 'HTTP ' + tokenResponse.status} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
             allChecksPassed = false;
         } else {
             const tokenData = await tokenResponse.json();
-            if (tokenData.result && tokenData.result.value) {
+            if (tokenData.result && tokenData.result.value && tokenData.result.value.data.program === 'spl-token') {
                 checkToken.textContent = 'Done';
                 checkToken.classList.add('done');
-                log_message(`Token mint check passed: ${'<?php echo $transaction['token_mint']; ?>'} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                log_message(`Token mint check passed: ${'<?php echo $transaction['token_mint']; ?>'} is a valid SPL token for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
                 checkToken.textContent = 'Does not exist';
                 checkToken.classList.add('error');
-                checkError.innerHTML = '<p style="color: red;">Process stopped: Invalid token mint</p>';
+                checkError.innerHTML = '<p style="color: red;">Process stopped: Invalid token mint (not an SPL token)</p>';
                 checkError.style.display = 'block';
-                log_message(`Token mint check failed: Invalid token mint for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                log_message(`Token mint check failed: Invalid token mint (not an SPL token) for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                 allChecksPassed = false;
             }
         }
