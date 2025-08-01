@@ -332,8 +332,8 @@ include $footer_path;
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script defer src="/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
-<script defer src="/make-market/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script defer src="mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
+<script defer src="mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
