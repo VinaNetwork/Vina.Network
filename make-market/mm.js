@@ -90,7 +90,7 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     <td>${tx.created_at}</td>
                     <td>${errorMessage}</td>
                     <td>
-                        ${tx.status === 'success' || tx.status === 'failed' ? `<button class="continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
+                        ${tx.status === 'success' || tx.status === 'failed' ? `<button class="cta-button continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
                         ${tx.status === 'pending' ? `<button class="cancel-btn" data-id="${tx.id}">Hủy</button>` : ''}
                     </td>
                 </tr>
