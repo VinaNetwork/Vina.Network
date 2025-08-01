@@ -135,15 +135,37 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                     const data = await response.json();
                     log_message(`Response data for transaction ID ${transactionId}: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
                     if (data.status === 'success') {
-                        document.getElementById('processName').value = data.process_name;
-                        document.getElementById('tokenMint').value = data.token_mint;
-                        document.getElementById('solAmount').value = data.sol_amount;
-                        document.getElementById('slippage').value = data.slippage;
-                        document.getElementById('delay').value = data.delay_seconds;
-                        document.getElementById('loopCount').value = data.loop_count;
-                        document.getElementById('batchSize').value = data.batch_size;
-                        document.querySelector('textarea[name="privateKey"]').value = '';
-                        document.getElementById('transactionPublicKey').value = '';
+                        // Kiểm tra và gán giá trị cho các phần tử form
+                        const fields = {
+                            processName: document.getElementById('processName'),
+                            tokenMint: document.getElementById('tokenMint'),
+                            solAmount: document.getElementById('solAmount'),
+                            slippage: document.getElementById('slippage'),
+                            delay: document.getElementById('delay'),
+                            loopCount: document.getElementById('loopCount'),
+                            batchSize: document.getElementById('batchSize'),
+                            privateKey: document.getElementById('privateKey'),
+                            transactionPublicKey: document.getElementById('transactionPublicKey')
+                        };
+
+                        // Log lỗi nếu phần tử không tồn tại
+                        for (const [key, element] of Object.entries(fields)) {
+                            if (!element) {
+                                log_message(`Form element ${key} not found in DOM`, 'make-market.log', 'make-market', 'ERROR');
+                                throw new Error(`Form element ${key} not found`);
+                            }
+                        }
+
+                        fields.processName.value = data.process_name;
+                        fields.tokenMint.value = data.token_mint;
+                        fields.solAmount.value = data.sol_amount;
+                        fields.slippage.value = data.slippage;
+                        fields.delay.value = data.delay_seconds;
+                        fields.loopCount.value = data.loop_count;
+                        fields.batchSize.value = data.batch_size;
+                        fields.privateKey.value = ''; // Private key được xóa tự động, gán rỗng
+                        fields.transactionPublicKey.value = '';
+
                         const resultDiv = document.getElementById('mm-result');
                         resultDiv.innerHTML = `<p>Form filled with parameters from transaction ID: ${transactionId}. Please enter a new private key.</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
                         resultDiv.classList.add('active');
