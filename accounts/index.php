@@ -9,8 +9,9 @@ ob_start();
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
-require_once __DIR__ . '/../config/bootstrap.php';
+
 $root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Add Security Headers
 header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
