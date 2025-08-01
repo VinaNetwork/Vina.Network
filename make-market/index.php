@@ -277,27 +277,27 @@ include $navbar_path;
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
 
-            <label>🔑 Private Key (Base58):</label>
-            <textarea name="privateKey" required placeholder="Enter private key..."></textarea>
+            <label for="privateKey">🔑 Private Key (Base58):</label>
+            <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
             <p class="note-warning">⚠️ Warning: Entering a private key carries security risks. Ensure you understand before proceeding!</p>
 
-            <label>🎯 Token Address:</label>
-            <input type="text" name="tokenMint" required placeholder="E.g., So111... or any SPL token">
+            <label for="tokenMint">🎯 Token Address:</label>
+            <input type="text" name="tokenMint" id="tokenMint" required placeholder="E.g., So111... or any SPL token">
 
-            <label>💰 SOL Amount to Buy:</label>
-            <input type="number" step="0.01" name="solAmount" required placeholder="E.g., 0.1">
+            <label for="solAmount">💰 SOL Amount to Buy:</label>
+            <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="E.g., 0.1">
 
-            <label>📉 Slippage (%):</label>
-            <input type="number" name="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
+            <label for="slippage">📉 Slippage (%):</label>
+            <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
 
-            <label>⏱️ Delay between Buy and Sell (seconds):</label>
-            <input type="number" name="delay" value="0" min="0">
+            <label for="delay">⏱️ Delay between Buy and Sell (seconds):</label>
+            <input type="number" name="delay" id="delay" value="0" min="0">
 
-            <label>🔁 Loop Count:</label>
-            <input type="number" name="loopCount" min="1" value="1">
+            <label for="loopCount">🔁 Loop Count:</label>
+            <input type="number" name="loopCount" id="loopCount" min="1" value="1">
 
-            <label>📦 Batch Size (1-10):</label>
-            <input type="number" name="batchSize" min="1" max="10" value="5" required>
+            <label for="batchSize">📦 Batch Size (1-10):</label>
+            <input type="number" name="batchSize" id="batchSize" min="1" max="10" value="5" required>
 
             <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
