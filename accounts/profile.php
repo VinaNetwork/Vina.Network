@@ -150,7 +150,7 @@ include $navbar_path;
             <table>
                 <tr><th>ID</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr>
-		    <th>Public Key</th>
+		    <th>Wallet address:</th>
 		    <td>
 			<?php if ($short_public_key !== 'Invalid address'): ?>
 			<a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
