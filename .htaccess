@@ -9,10 +9,15 @@
 # ✅ Enable caching for static assets
 # ✅ Block dangerous HTTP methods
 # ✅ Prevent image hotlinking
+# ✅ Rewrite /make-market/process/[id] to /make-market/process.php?id=[id]
 # ============================================================================
 
 # Enable URL rewriting
 RewriteEngine On
+RewriteBase /
+
+# Rewrite rule for /make-market/process/[id_process]
+RewriteRule ^make-market/process/([0-9]+)/?$ make-market/process.php?id=$1 [L,NC]
 
 # ----------------------------------------------------------------------------
 # 🔐 SECURITY
