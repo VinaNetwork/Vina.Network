@@ -117,6 +117,9 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             btn.addEventListener('click', async () => {
                 const transactionId = btn.dataset.id;
                 log_message(`Continue button clicked for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                // Cuộn về đầu trang
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                log_message('Scrolled to top of page', 'make-market.log', 'make-market', 'DEBUG');
                 try {
                     log_message(`Fetching transaction data for ID: ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
                     const response = await fetch(`/make-market/get-transaction.php?id=${transactionId}`, {
