@@ -9,9 +9,11 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/config.php';
+
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/bootstrap.php';
-require_once __DIR__ . '/../config/config.php';
 
 try {
     $transactionId = $_GET['transactionId'] ?? null;
