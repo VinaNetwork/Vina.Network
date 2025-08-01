@@ -104,9 +104,9 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             <div class="pagination">
                 <p>Trang ${current_page}/${total_pages} (${total_transactions} giao dịch)</p>
                 <div class="pagination-buttons">
-                    <button class="pagination-btn" ${current_page === 1 ? 'disabled' : ''} onclick="refreshTransactionHistory(${current_page - 1}, ${per_page})">Previous</button>
+                    <button class="cta-button pagination-btn" ${current_page === 1 ? 'disabled' : ''} onclick="refreshTransactionHistory(${current_page - 1}, ${per_page})">Previous</button>
                     ${generatePageNumbers(current_page, total_pages, per_page)}
-                    <button class="pagination-btn" ${current_page === total_pages ? 'disabled' : ''} onclick="refreshTransactionHistory(${current_page + 1}, ${per_page})">Next</button>
+                    <button class="cta-button pagination-btn" ${current_page === total_pages ? 'disabled' : ''} onclick="refreshTransactionHistory(${current_page + 1}, ${per_page})">Next</button>
                 </div>
             </div>
         `;
@@ -202,8 +202,8 @@ function showCancelConfirmation(transactionId) {
     popup.innerHTML = `
         <div class="confirmation-popup-content">
             <p>Bạn có chắc chắn muốn hủy tiến trình ${transactionId}?</p>
-            <button class="confirm-btn" onclick="confirmCancel(${transactionId})">Xác nhận</button>
-            <button class="cancel-popup-btn" onclick="closeCancelConfirmation()">Hủy bỏ</button>
+            <button class="cta-button confirm-btn" onclick="confirmCancel(${transactionId})">Xác nhận</button>
+            <button class="cta-button cancel-popup-btn" onclick="closeCancelConfirmation()">Hủy bỏ</button>
         </div>
     `;
     document.body.appendChild(popup);
