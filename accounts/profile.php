@@ -148,7 +148,7 @@ include $navbar_path;
         <h1>Your Profile</h1>
         <div id="account-info">
             <table>
-                <tr><th>ID</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
+                <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr>
 		    <th>Wallet address:</th>
 		    <td>
@@ -162,8 +162,8 @@ include $navbar_path;
 			<?php endif; ?>
 		    </td>
                 </tr>
-                <tr><th>Created at</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
-                <tr><th>Last Login</th><td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td></tr>
+                <tr><th>Created at:</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
+                <tr><th>Last Login:</th><td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td></tr>
             </table>
         </div>
 		
