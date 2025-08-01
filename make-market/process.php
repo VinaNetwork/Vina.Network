@@ -93,8 +93,6 @@ $page_og_title = "Track Your Make Market Transaction Progress";
 $page_og_description = "Monitor your automated Solana token trading with Vina Network.";
 $page_og_url = BASE_URL . "make-market/process/$transaction_id";
 $page_canonical = BASE_URL . "make-market/process/$transaction_id";
-
-// CSS for Make Market
 $page_css = ['mm.css'];
 
 // Header
