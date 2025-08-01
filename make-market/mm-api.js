@@ -80,9 +80,10 @@ async function getDecryptedPrivateKey(transactionId) {
 // Hàm kiểm tra trạng thái private_key
 async function checkPrivateKeyStatus(transactionId) {
     try {
-        const response = await fetch(`/make-market/check-private-key.php?transactionId=${transactionId}`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
+        const response = await fetch('/make-market/check-private-key.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ transaction_id: transactionId })
         });
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: Failed to check private_key status`);
@@ -121,22 +122,22 @@ async function waitForLibraries() {
 }
 
 // Hàm lấy số dư SOL qua endpoint get-balance.php
-async function getSolBalance(walletAddress) {
+async function getSolBalance(publicKey) {
     const maxRetries = 3;
     let retryCount = 0;
     while (retryCount < maxRetries) {
         try {
-            const response = await window.axios.get(`/make-market/get-balance.php?walletAddress=${walletAddress}`, {
+            const response = await window.axios.get(`/make-market/get-balance.php?public_key=${publicKey}`, {
                 timeout: 30000,
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 }
             });
-            log_message(`Balance endpoint response for ${walletAddress}: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
-            if (response.data && response.data.nativeBalance && typeof response.data.nativeBalance.lamports === 'number') {
-                const balance = response.data.nativeBalance.lamports;
-                log_message(`Fetched SOL balance for ${walletAddress}: ${balance / 1_000_000_000} SOL`, 'make-market.log', 'make-market', 'INFO');
+            log_message(`Balance endpoint response for ${publicKey}: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
+            if (response.data && response.data.status === 'success' && typeof response.data.balance === 'number') {
+                const balance = response.data.balance * 1_000_000_000; // Convert SOL to lamports
+                log_message(`Fetched SOL balance for ${publicKey}: ${response.data.balance} SOL`, 'make-market.log', 'make-market', 'INFO');
                 return balance;
             } else {
                 throw new Error(`Invalid response structure: ${JSON.stringify(response.data)}`);
