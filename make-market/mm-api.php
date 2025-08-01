@@ -4,8 +4,10 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
 require_once dirname(__DIR__) . '/config/config.php';
 require_once dirname(__DIR__) . '/config/bootstrap.php';
 
