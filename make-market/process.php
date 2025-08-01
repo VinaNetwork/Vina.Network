@@ -123,10 +123,10 @@ include $navbar_path;
     <!-- Pre-transaction checks -->
     <div class="check-list">
         <h3>Pre-transaction Checks</h3>
+        <p id="check-private-key">Checking private key: <span>Loading...</span></p>
         <p id="check-balance">Checking wallet balance: <span>Loading...</span></p>
         <p id="check-token">Checking token mint: <span>Loading...</span></p>
         <p id="check-liquidity">Checking liquidity: <span>Loading...</span></p>
-        <p id="check-private-key">Checking private key: <span>Loading...</span></p>
     </div>
 
     <!-- Error message (if checks fail) -->
@@ -153,7 +153,7 @@ include $navbar_path;
             <p>Loading transaction log...</p>
         </div>
         <div class="action-buttons">
-            <button id="cancel-btn" class="cancel-btn" style="display: none;" onclick="showCancelConfirmation(<?php echo $transaction_id; ?>)">Cancel</button>
+            <button id="cancel-btn" class="cta-button cancel-btn" style="display: none;" onclick="showCancelConfirmation(<?php echo $transaction_id; ?>)">Cancel</button>
             <button onclick="window.location.href='/make-market/'">Back</button>
         </div>
     </div>
@@ -162,8 +162,8 @@ include $navbar_path;
     <div class="confirmation-popup" id="cancel-confirmation" style="display: none;">
         <div class="confirmation-popup-content">
             <p>Are you sure you want to cancel process <?php echo $transaction_id; ?>?</p>
-            <button class="confirm-btn" onclick="confirmCancel(<?php echo $transaction_id; ?>)">Confirm</button>
-            <button class="cancel-popup-btn" onclick="closeCancelConfirmation()">Cancel</button>
+            <button class="cta-button confirm-btn" onclick="confirmCancel(<?php echo $transaction_id; ?>)">Confirm</button>
+            <button class="cta-button cancel-popup-btn" onclick="closeCancelConfirmation()">Cancel</button>
         </div>
     </div>
 </div>
@@ -195,7 +195,6 @@ include $footer_path;
     const HELIUS_API_KEY = <?php echo defined('HELIUS_API_KEY') ? json_encode(HELIUS_API_KEY) : "''"; ?>;
 </script>
 <script defer src="/make-market/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
-
 </body>
 </html>
 <?php ob_end_flush(); ?>
