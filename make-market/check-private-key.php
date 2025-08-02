@@ -14,7 +14,8 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 require_once $root_path . '../vendor/autoload.php';
 
-use SolanaPhpSdk\Keypair;
+use Attestto\SolanaPhpSdk\Keypair;
+use StephenHill\Base58;
 
 header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
@@ -77,7 +78,14 @@ try {
 
     // Validate private key
     try {
-        $keypair = Keypair::fromSecretKey(base58_decode($private_key));
+        $base58 = new Base58();
+        $decoded_key = $base58->decode($private_key);
+        if (strlen($decoded_key) !== 64) {
+            log_message("Invalid private key length for transaction ID $transaction_id: " . strlen($decoded_key) . " bytes, expected 64 bytes", 'make-market.log', 'make-market', 'ERROR');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid private key length: ' . strlen($decoded_key) . ' bytes, expected 64 bytes']);
+            exit;
+        }
+        $keypair = Keypair::fromSecretKey($decoded_key);
         $derived_public_key = $keypair->getPublicKey()->toBase58();
         if ($derived_public_key !== $transaction['public_key']) {
             log_message("Private key does not match public key for transaction ID $transaction_id", 'make-market.log', 'make-market', 'ERROR');
