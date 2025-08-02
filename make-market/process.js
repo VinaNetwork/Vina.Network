@@ -1,5 +1,5 @@
 // ============================================================================
-// File: make-market/process.php
+// File: make-market/process.js
 // Description: Process page for displaying transaction progress and validation results
 // Created by: Vina Network
 // ============================================================================
