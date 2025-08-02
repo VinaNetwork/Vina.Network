@@ -70,7 +70,11 @@ async function performChecks() {
         const balanceResponse = await fetch('/make-market/get-balance.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ public_key: PUBLIC_KEY })
+            body: JSON.stringify({ 
+                public_key: PUBLIC_KEY,
+                endpoint: 'getAssetsByOwner',
+                transaction_id: transactionId
+            })
         });
         const responseText = await balanceResponse.text();
         log_message(`Balance check response: HTTP ${balanceResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
