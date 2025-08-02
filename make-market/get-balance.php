@@ -30,6 +30,8 @@ session_start([
     'cookie_samesite' => 'Strict'
 ]);
 
+log_message("get-balance: File accessed, processing request, session user_id: " . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
+
 if (!isset($_SESSION['user_id'])) {
     log_message('Unauthorized access to get-balance.php', 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
@@ -38,6 +40,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
+log_message("get-balance: Input received: " . json_encode($input), 'make-market.log', 'make-market', 'DEBUG');
 $public_key = $input['public_key'] ?? '';
 
 if (empty($public_key)) {
@@ -67,6 +70,8 @@ try {
     ];
     log_message("get-balance: Calling callMarketAPI for public_key $public_key with params: " . json_encode($params), 'make-market.log', 'make-market', 'DEBUG');
     $result = callMarketAPI('getAssetsByOwner', $params);
+    
+    log_message("get-balance: API response for public_key $public_key: " . json_encode($result), 'make-market.log', 'make-market', 'DEBUG');
     
     if (isset($result['error'])) {
         log_message("get-balance: API error for public_key $public_key: {$result['error']}", 'make-market.log', 'make-market', 'ERROR');
