@@ -15,8 +15,10 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 require_once $root_path . '../vendor/autoload.php';
 
+use SolanaPhpSdk\Keypair;
+
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://api.helius.xyz; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
@@ -71,7 +73,6 @@ try {
         header('Location: /accounts');
         exit;
     }
-    // Lưu user_id vào session
     $_SESSION['user_id'] = $account['id'];
     log_message("Session updated with user_id: {$account['id']}, public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
@@ -153,7 +154,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Encrypt private key for checking
+        // Validate private key using SolanaPhpSdk
+        try {
+            $keypair = Keypair::fromSecretKey(base58_decode($privateKey));
+            $derivedPublicKey = $keypair->getPublicKey()->toBase58();
+            if ($derivedPublicKey !== $transactionPublicKey) {
+                log_message("Private key does not match transaction public key: derived=$derivedPublicKey, provided=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Private key does not match transaction public key']);
+                exit;
+            }
+            log_message("Private key validated: public_key=$derivedPublicKey", 'make-market.log', 'make-market', 'INFO');
+        } catch (Exception $e) {
+            log_message("Invalid private key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid private key: ' . $e->getMessage()]);
+            exit;
+        }
+
+        // Encrypt private key
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
         if ($encryptedPrivateKey === false) {
             log_message("Failed to encrypt private key", 'make-market.log', 'make-market', 'ERROR');
@@ -162,33 +181,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Check if private_key is already running a pending process
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*) as count 
-            FROM make_market 
-            WHERE private_key = ? AND status = 'pending'
-        ");
-        $stmt->execute([$encryptedPrivateKey]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($result['count'] > 0) {
-            log_message("Private key is already running a pending process", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'This private key is currently running another process. Please wait for it to complete or use a different private key.'
-            ]);
-            exit;
-        }
-
-        // Insert transaction into database
+        // Insert transaction into database with status 'new'
         $stmt = $pdo->prepare("
             INSERT INTO make_market (
                 user_id, public_key, process_name, private_key, token_mint, 
                 sol_amount, slippage, delay_seconds, loop_count, batch_size, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
         ");
         $stmt->execute([
-            $_SESSION['user_id'], // Sử dụng user_id từ session
+            $_SESSION['user_id'],
             $transactionPublicKey,
             $processName,
             $encryptedPrivateKey,
