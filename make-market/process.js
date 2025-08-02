@@ -29,6 +29,7 @@ async function performChecks() {
 
     // 1. Check private key
     try {
+        log_message(`Checking private key for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const privateKeyResponse = await fetch('/make-market/check-private-key.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -65,20 +66,22 @@ async function performChecks() {
 
     // 2. Check wallet balance
     try {
+        log_message(`Sending balance check request for public_key ${PUBLIC_KEY} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const balanceResponse = await fetch('/make-market/get-balance.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ public_key: PUBLIC_KEY })
         });
+        const responseText = await balanceResponse.text();
+        log_message(`Balance check response: HTTP ${balanceResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!balanceResponse.ok) {
-            const errorText = await balanceResponse.text();
-            log_message(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${errorText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
             checkBalance.textContent = 'Failed';
             checkBalance.classList.add('error');
             errorMessages.push(`Balance check failed: HTTP ${balanceResponse.status}`);
             allChecksPassed = false;
         } else {
-            const balanceData = await balanceResponse.json();
+            const balanceData = JSON.parse(responseText);
             if (balanceData.status === 'success' && typeof balanceData.balance === 'number') {
                 const requiredSol = SOL_AMOUNT;
                 if (balanceData.balance >= requiredSol) {
@@ -111,6 +114,7 @@ async function performChecks() {
 
     // 3. Check token mint using mm-api.php
     try {
+        log_message(`Checking token mint ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const tokenResponse = await fetch('/make-market/mm-api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -160,6 +164,7 @@ async function performChecks() {
 
     // 4. Check liquidity
     try {
+        log_message(`Checking liquidity for token ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const liquidityResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${encodeURIComponent(TOKEN_MINT)}&amount=${SOL_AMOUNT * 1e9}&slippageBps=${SLIPPAGE * 100}`, {
             headers: { 'Accept': 'application/json' }
         });
@@ -215,7 +220,7 @@ async function startTransaction() {
     const resultDiv = document.getElementById('check-error');
     try {
         log_message(`Starting transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
-        const response = await fetch('/make-market/mm-api.php', {
+        const response = await fetch('/make-market/start-transaction.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ transaction_id: transactionId })
