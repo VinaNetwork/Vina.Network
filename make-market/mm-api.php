@@ -23,13 +23,16 @@ ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
+// Log ngay đầu file
+log_message("mm-api: Script started", 'make-market.log', 'make-market', 'DEBUG');
+
 session_start([
     'cookie_secure' => true,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict'
 ]);
 
-log_message("mm-api: File accessed, processing request, session user_id: " . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
+log_message("mm-api: File accessed, session user_id: " . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 
 if (!isset($_SESSION['user_id'])) {
     log_message('Unauthorized access to mm-api.php', 'make-market.log', 'make-market', 'ERROR');
@@ -65,6 +68,7 @@ function callMarketAPI($endpoint, $params = []) {
     $helius_rpc_url = "https://mainnet.helius-rpc.com/?api-key=$helius_api_key";
     $log_url = "https://mainnet.helius-rpc.com/?api-key=****";
 
+    log_message("make-market-api: Preparing cURL for endpoint: $endpoint", 'make-market.log', 'make-market', 'DEBUG');
     log_message("make-market-api: PHP version: " . phpversion() . ", cURL version: " . curl_version()['version'], 'make-market.log', 'make-market', 'DEBUG');
 
     $max_retries = 3;
@@ -80,7 +84,7 @@ function callMarketAPI($endpoint, $params = []) {
 
         curl_setopt($ch, CURLOPT_URL, $helius_rpc_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: 'application/json']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
@@ -161,7 +165,7 @@ function callMarketAPI($endpoint, $params = []) {
 // Handle API request
 try {
     $pdo = get_db_connection();
-    log_message("Database connection established for mm-api.php", 'make-market.log', 'make-market', 'INFO');
+    log_message("mm-api: Database connection established", 'make-market.log', 'make-market', 'INFO');
 
     if ($endpoint === 'getAccountInfo' && !empty($params[0])) {
         // Validate token mint address format
@@ -189,6 +193,7 @@ try {
     // Call Helius API
     $result = callMarketAPI($endpoint, $params);
     if (isset($result['error'])) {
+        log_message("mm-api: API call failed: {$result['error']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => $result['error']]);
         exit;
@@ -196,7 +201,7 @@ try {
 
     echo json_encode(['status' => 'success', 'result' => $result]);
 } catch (Exception $e) {
-    log_message("Error in mm-api.php: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("mm-api: Error in script: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Server error: ' . $e->getMessage()]);
 }
