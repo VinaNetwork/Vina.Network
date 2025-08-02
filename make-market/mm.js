@@ -27,13 +27,13 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         });
         log_message(`Response status for history.php: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
-        const responseText = await response.text();
-        log_message(`Response data: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
+            const responseText = await response.text();
             log_message(`Error fetching transaction history: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
+        log_message(`Response data: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
         if (data.status !== 'success') {
             log_message(`Failed to fetch transaction history: ${data.message || 'No message provided'}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(data.message || 'Failed to fetch transaction history');
@@ -280,6 +280,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     resultDiv.innerHTML = '<div class="spinner">Loading...</div>';
     resultDiv.classList.add('active');
     log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
+    console.log('Form submitted');
 
     // Check libraries
     if (typeof window.solanaWeb3 === 'undefined') {
@@ -287,6 +288,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         resultDiv.innerHTML = '<p style="color: red;">Error: solanaWeb3 is not defined</p><button class="cta-button" onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
+        console.error('solanaWeb3 is not defined');
         return;
     }
     if (typeof window.bs58 === 'undefined') {
@@ -294,6 +296,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         resultDiv.innerHTML = '<p style="color: red;">Error: bs58 library is not loaded</p><button class="cta-button" onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
+        console.error('bs58 library is not loaded');
         return;
     }
 
@@ -311,6 +314,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         csrf_token: formData.get('csrf_token')
     };
     log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
+    console.log('Form data:', params);
 
     // Validate private key
     if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
@@ -318,29 +322,37 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         resultDiv.innerHTML = '<p style="color: red;">Error: privateKey is empty or invalid</p><button class="cta-button" onclick="document.getElementById(\'mm-result\').innerHTML=\'\';document.getElementById(\'mm-result\').classList.remove(\'active\');">Xóa thông báo</button>';
         resultDiv.classList.add('active');
         submitButton.disabled = false;
+        console.error('privateKey is empty or invalid');
         return;
     }
     log_message(`privateKey length: ${params.privateKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
+    console.log('privateKey length:', params.privateKey.length);
 
     // Derive public key
     let transactionPublicKey;
     try {
         const decodedKey = window.bs58.decode(params.privateKey);
         log_message(`Decoded privateKey length: ${decodedKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Decoded privateKey length:', decodedKey.length);
         if (decodedKey.length !== 64) {
             log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
+            console.error(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`);
             throw new Error(`Invalid private key length: ${decodedKey.length} bytes, expected 64 bytes`);
         }
         const keypair = window.solanaWeb3.Keypair.fromSecretKey(decodedKey);
         transactionPublicKey = keypair.publicKey.toBase58();
         if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(transactionPublicKey)) {
             log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Invalid public key format derived from private key');
             throw new Error('Invalid public key format');
         }
         formData.set('transactionPublicKey', transactionPublicKey);
         document.getElementById('transactionPublicKey').value = transactionPublicKey;
+        log_message(`Derived transactionPublicKey: ${transactionPublicKey}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Derived transactionPublicKey:', transactionPublicKey);
     } catch (error) {
         log_message(`Invalid private key format: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Invalid private key format:', error.message);
         resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
         submitButton.disabled = false;
@@ -356,8 +368,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         });
         const responseText = await response.text();
         log_message(`Form submission response: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Form submission response: HTTP', response.status, 'Response:', responseText);
         if (!response.ok) {
             log_message(`Form submission failed: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Form submission failed: HTTP', response.status, 'Response:', responseText);
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         let result;
@@ -365,22 +379,30 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             result = JSON.parse(responseText);
         } catch (error) {
             log_message(`Error parsing response JSON: ${error.message}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Error parsing response JSON:', error.message, 'Response:', responseText);
             throw new Error('Invalid JSON response');
         }
         if (result.status !== 'success') {
             log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Form submission failed:', result.message);
             resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
             resultDiv.classList.add('active');
             submitButton.disabled = false;
             return;
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Form saved to database: transactionId=', result.transactionId);
         // Redirect to process page
         const redirectUrl = result.redirect || `/make-market/process/${result.transactionId}`;
         log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
-        window.location.href = redirectUrl;
+        console.log('Redirecting to', redirectUrl);
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+            console.log('Executing redirect to', redirectUrl);
+        }, 100);
     } catch (error) {
         log_message(`Error submitting form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Error submitting form:', error.message);
         resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
         submitButton.disabled = false;
@@ -409,9 +431,11 @@ document.addEventListener('DOMContentLoaded', () => {
         log_message('Attaching click event to copy icon', 'make-market.log', 'make-market', 'DEBUG');
         icon.addEventListener('click', (e) => {
             log_message('Copy icon clicked', 'make-market.log', 'make-market', 'INFO');
+            console.log('Copy icon clicked');
 
             if (!window.isSecureContext) {
                 log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
+                console.error('Copy blocked: Not in secure context');
                 alert('Unable to copy: This feature requires HTTPS');
                 return;
             }
@@ -419,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const fullAddress = icon.getAttribute('data-full');
             if (!fullAddress) {
                 log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
+                console.error('Copy failed: data-full attribute not found or empty');
                 resultDiv.innerHTML = '<p style="color: red;">Error: Unable to copy address: Invalid address</p>';
                 resultDiv.classList.add('active');
                 setTimeout(() => {
@@ -431,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
             if (!base58Regex.test(fullAddress)) {
                 log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
+                console.error(`Invalid address format: ${fullAddress}`);
                 resultDiv.innerHTML = '<p style="color: red;">Error: Unable to copy: Invalid address format</p>';
                 resultDiv.classList.add('active');
                 setTimeout(() => {
@@ -442,17 +468,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' + fullAddress.substring(fullAddress.length - 4) : 'Invalid';
             log_message(`Attempting to copy address: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
+            console.log(`Attempting to copy address: ${shortAddress}`);
 
             if (navigator.clipboard && window.isSecureContext) {
                 log_message('Using Clipboard API', 'make-market.log', 'make-market', 'DEBUG');
+                console.log('Using Clipboard API');
                 navigator.clipboard.writeText(fullAddress).then(() => {
                     showCopyFeedback(icon);
                 }).catch(err => {
                     log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+                    console.error('Clipboard API failed:', err.message);
                     fallbackCopy(fullAddress, icon);
                 });
             } else {
                 log_message('Clipboard API unavailable, using fallback', 'make-market.log', 'make-market', 'DEBUG');
+                console.log('Clipboard API unavailable, using fallback');
                 fallbackCopy(fullAddress, icon);
             }
         });
@@ -461,6 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function fallbackCopy(text, icon) {
         const shortText = text.length >= 8 ? text.substring(0, 4) + '...' + text.substring(text.length - 4) : 'Invalid';
         log_message(`Using fallback copy for: ${shortText}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log(`Using fallback copy for: ${shortText}`);
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -473,10 +504,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const success = document.execCommand('copy');
             log_message(`Fallback copy result: ${success}`, 'make-market.log', 'make-market', 'DEBUG');
+            console.log('Fallback copy result:', success);
             if (success) {
                 showCopyFeedback(icon);
             } else {
                 log_message('Fallback copy failed', 'make-market.log', 'make-market', 'ERROR');
+                console.error('Fallback copy failed');
                 resultDiv.innerHTML = '<p style="color: red;">Error: Unable to copy address: Copy error</p>';
                 resultDiv.classList.add('active');
                 setTimeout(() => {
@@ -486,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             log_message(`Fallback copy error: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Fallback copy error:', err.message);
             resultDiv.innerHTML = `<p style="color: red;">Error: Unable to copy address: ${err.message}</p>`;
             resultDiv.classList.add('active');
             setTimeout(() => {
@@ -499,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showCopyFeedback(icon) {
         log_message('Showing copy feedback', 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Showing copy feedback');
         icon.classList.add('copied');
         const tooltip = document.createElement('span');
         tooltip.className = 'copy-tooltip';
@@ -510,7 +545,9 @@ document.addEventListener('DOMContentLoaded', () => {
             icon.classList.remove('copied');
             tooltip.remove();
             log_message('Copy feedback removed', 'make-market.log', 'make-market', 'DEBUG');
+            console.log('Copy feedback removed');
         }, 2000);
         log_message('Copy successful', 'make-market.log', 'make-market', 'INFO');
+        console.log('Copy successful');
     }
 });
