@@ -17,6 +17,8 @@ header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
@@ -47,28 +49,49 @@ $endpoint = $input['endpoint'] ?? '';
 $params = $input['params'] ?? [];
 $transaction_id = $input['transaction_id'] ?? null;
 
-if (empty($endpoint) && !$transaction_id) {
-    log_message("Missing endpoint and transaction_id in mm-api.php request", 'make-market.log', 'make-market', 'ERROR');
+if (empty($endpoint)) {
+    log_message("Missing endpoint in mm-api.php request", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Missing endpoint or transaction_id']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing endpoint']);
     exit;
 }
 
-// Validate endpoint for non-transaction requests
+// Validate endpoint
 $allowed_endpoints = ['getAccountInfo', 'getAssetsByOwner', 'getTransaction', 'getBalance'];
-if ($endpoint && !in_array($endpoint, $allowed_endpoints)) {
+if (!in_array($endpoint, $allowed_endpoints)) {
     log_message("Invalid endpoint: $endpoint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid endpoint']);
     exit;
 }
 
-function callMarketAPI($endpoint, $params = []) {
+// Validate transaction_id if provided
+if ($transaction_id) {
+    try {
+        $pdo = get_db_connection();
+        log_message("mm-api: Database connection established", 'make-market.log', 'make-market', 'INFO');
+        $stmt = $pdo->prepare("SELECT id FROM make_market WHERE id = ? AND user_id = ?");
+        $stmt->execute([$transaction_id, $_SESSION['user_id']]);
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            log_message("mm-api: Invalid or unauthorized transaction_id: $transaction_id for user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid or unauthorized transaction_id']);
+            http_response_code(403);
+            exit;
+        }
+    } catch (PDOException $e) {
+        log_message("mm-api: Database error checking transaction_id $transaction_id: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Database error']);
+        http_response_code(500);
+        exit;
+    }
+}
+
+function callMarketAPI($endpoint, $params = [], $transaction_id = null) {
     $helius_api_key = HELIUS_API_KEY;
     $helius_rpc_url = "https://mainnet.helius-rpc.com/?api-key=$helius_api_key";
     $log_url = "https://mainnet.helius-rpc.com/?api-key=****";
 
-    log_message("make-market-api: Preparing cURL for endpoint: $endpoint", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("make-market-api: Preparing cURL for endpoint: $endpoint, transaction_id: " . ($transaction_id ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
     log_message("make-market-api: PHP version: " . phpversion() . ", cURL version: " . curl_version()['version'], 'make-market.log', 'make-market', 'DEBUG');
 
     $max_retries = 3;
@@ -164,9 +187,6 @@ function callMarketAPI($endpoint, $params = []) {
 
 // Handle API request
 try {
-    $pdo = get_db_connection();
-    log_message("mm-api: Database connection established", 'make-market.log', 'make-market', 'INFO');
-
     if ($endpoint === 'getAccountInfo' && !empty($params[0])) {
         // Validate token mint address format
         if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $params[0])) {
@@ -183,6 +203,14 @@ try {
             echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
             exit;
         }
+    } elseif ($endpoint === 'getAssetsByOwner' && !empty($params['ownerAddress'])) {
+        // Validate public key format
+        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $params['ownerAddress'])) {
+            log_message("Invalid owner address format: {$params['ownerAddress']}", 'make-market.log', 'make-market', 'ERROR');
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid owner address format']);
+            exit;
+        }
     } elseif ($transaction_id) {
         log_message("mm-api: Transaction processing not implemented for transaction_id: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(501);
@@ -191,7 +219,7 @@ try {
     }
 
     // Call Helius API
-    $result = callMarketAPI($endpoint, $params);
+    $result = callMarketAPI($endpoint, $params, $transaction_id);
     if (isset($result['error'])) {
         log_message("mm-api: API call failed: {$result['error']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
