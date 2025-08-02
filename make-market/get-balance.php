@@ -18,6 +18,8 @@ header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
@@ -45,11 +47,13 @@ if (!isset($_SESSION['user_id'])) {
 $input = json_decode(file_get_contents('php://input'), true);
 log_message("get-balance: Input received: " . json_encode($input), 'make-market.log', 'make-market', 'DEBUG');
 $public_key = $input['public_key'] ?? '';
+$endpoint = $input['endpoint'] ?? 'getAssetsByOwner';
+$transaction_id = $input['transaction_id'] ?? null;
 
-if (empty($public_key)) {
-    log_message("Missing public_key in get-balance.php request", 'make-market.log', 'make-market', 'ERROR');
+if (empty($public_key) || empty($transaction_id)) {
+    log_message("Missing public_key or transaction_id in get-balance.php request", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Missing public_key']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing public_key or transaction_id']);
     exit;
 }
 
@@ -58,6 +62,24 @@ if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{
     log_message("Invalid public key format: $public_key", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
+    exit;
+}
+
+// Validate transaction_id
+try {
+    $pdo = get_db_connection();
+    $stmt = $pdo->prepare("SELECT id FROM make_market WHERE id = ? AND user_id = ?");
+    $stmt->execute([$transaction_id, $_SESSION['user_id']]);
+    if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+        log_message("Invalid or unauthorized transaction_id: $transaction_id for user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid or unauthorized transaction_id']);
+        http_response_code(403);
+        exit;
+    }
+} catch (PDOException $e) {
+    log_message("Database error checking transaction_id $transaction_id: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    echo json_encode(['status' => 'error', 'message' => 'Database error']);
+    http_response_code(500);
     exit;
 }
 
@@ -72,8 +94,8 @@ try {
             'showNativeBalance' => true
         ]
     ];
-    log_message("get-balance: Calling callMarketAPI with params: " . json_encode($params), 'make-market.log', 'make-market', 'DEBUG');
-    $result = callMarketAPI('getAssetsByOwner', $params);
+    log_message("get-balance: Calling callMarketAPI with endpoint: $endpoint, params: " . json_encode($params) . ", transaction_id: $transaction_id", 'make-market.log', 'make-market', 'DEBUG');
+    $result = callMarketAPI($endpoint, $params, $transaction_id);
     
     log_message("get-balance: API response for public_key $public_key: " . json_encode($result), 'make-market.log', 'make-market', 'DEBUG');
     
