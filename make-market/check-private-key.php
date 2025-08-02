@@ -12,6 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
+require_once $root_path . '../vendor/autoload.php';
 
 header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
