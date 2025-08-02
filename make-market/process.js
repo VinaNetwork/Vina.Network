@@ -71,9 +71,16 @@ async function performChecks() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ 
-                public_key: PUBLIC_KEY,
                 endpoint: 'getAssetsByOwner',
-                transaction_id: transactionId
+                transaction_id: transactionId,
+                params: {
+                    ownerAddress: PUBLIC_KEY,
+                    page: 1,
+                    limit: 1000,
+                    displayOptions: {
+                        showNativeBalance: true
+                    }
+                }
             })
         });
         const responseText = await balanceResponse.text();
@@ -124,7 +131,8 @@ async function performChecks() {
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({
                 endpoint: 'getAccountInfo',
-                params: [TOKEN_MINT, { encoding: 'jsonParsed' }]
+                params: [TOKEN_MINT, { encoding: 'jsonParsed' }],
+                transaction_id: transactionId
             })
         });
         const responseText = await tokenResponse.text();
