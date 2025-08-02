@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/check-private-key.php
-// Description: Endpoint to check if a private key is running a pending process
+// Description: Endpoint to validate private key for a transaction
 // Created by: Vina Network
 // ============================================================================
 
@@ -13,6 +13,8 @@ $root_path = '../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 require_once $root_path . '../vendor/autoload.php';
+
+use SolanaPhpSdk\Keypair;
 
 header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
@@ -50,7 +52,7 @@ if (!$transaction_id || !is_numeric($transaction_id)) {
 try {
     $pdo = get_db_connection();
     $stmt = $pdo->prepare("
-        SELECT private_key 
+        SELECT private_key, public_key 
         FROM make_market 
         WHERE id = ? AND user_id = ?
     ");
@@ -64,19 +66,32 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM make_market 
-        WHERE private_key = ? AND status = 'pending'
-    ");
-    $stmt->execute([$transaction['private_key']]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Decrypt private key
+    $private_key = openssl_decrypt($transaction['private_key'], 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
+    if ($private_key === false) {
+        log_message("Failed to decrypt private key for transaction ID $transaction_id", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to decrypt private key']);
+        exit;
+    }
 
-    log_message("Private key check for transaction ID $transaction_id: isPending=" . ($result['count'] > 0 ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
-    echo json_encode([
-        'status' => 'success',
-        'isPending' => $result['count'] > 0
-    ]);
+    // Validate private key
+    try {
+        $keypair = Keypair::fromSecretKey(base58_decode($private_key));
+        $derived_public_key = $keypair->getPublicKey()->toBase58();
+        if ($derived_public_key !== $transaction['public_key']) {
+            log_message("Private key does not match public key for transaction ID $transaction_id", 'make-market.log', 'make-market', 'ERROR');
+            echo json_encode(['status' => 'error', 'message' => 'Private key does not match public key']);
+            exit;
+        }
+    } catch (Exception $e) {
+        log_message("Invalid private key for transaction ID $transaction_id: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid private key: ' . $e->getMessage()]);
+        exit;
+    }
+
+    log_message("Private key check passed for transaction ID $transaction_id", 'make-market.log', 'make-market', 'INFO');
+    echo json_encode(['status' => 'success', 'isPending' => false]);
 } catch (Exception $e) {
     log_message("Error checking private key for transaction ID $transaction_id: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
