@@ -15,7 +15,8 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 require_once $root_path . '../vendor/autoload.php';
 
-use SolanaPhpSdk\Keypair;
+use Attestto\SolanaPhpSdk\Keypair;
+use StephenHill\Base58;
 
 // Add Security Headers
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
@@ -158,9 +159,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Check if SolanaPhpSdk\Keypair is available
-        if (!class_exists('SolanaPhpSdk\Keypair')) {
-            log_message("SolanaPhpSdk\Keypair class not found. Ensure bloock/solana-php-sdk is installed.", 'make-market.log', 'make-market', 'ERROR');
+        // Check if required classes are available
+        if (!class_exists('StephenHill\Base58')) {
+            log_message("StephenHill\Base58 class not found. Ensure stephenhill/base58 is installed.", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Server error: Base58 library not installed']);
+            exit;
+        }
+        if (!class_exists('Attestto\SolanaPhpSdk\Keypair')) {
+            log_message("Attestto\SolanaPhpSdk\Keypair class not found. Ensure attestto/solana-php-sdk is installed.", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Server error: Solana PHP SDK not installed']);
             exit;
@@ -168,9 +175,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Validate private key using SolanaPhpSdk
         try {
+            $base58 = new Base58();
             log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
-            $decodedKey = base58_decode($privateKey);
+            $decodedKey = $base58->decode($privateKey);
             log_message("Decoded privateKey length: " . strlen($decodedKey), 'make-market.log', 'make-market', 'DEBUG');
+            if (strlen($decodedKey) !== 64) {
+                log_message("Invalid private key length: " . strlen($decodedKey) . ", expected 64 bytes", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Invalid private key length: ' . strlen($decodedKey) . ' bytes, expected 64 bytes']);
+                exit;
+            }
             $keypair = Keypair::fromSecretKey($decodedKey);
             $derivedPublicKey = $keypair->getPublicKey()->toBase58();
             log_message("Derived public key: $derivedPublicKey", 'make-market.log', 'make-market', 'DEBUG');
