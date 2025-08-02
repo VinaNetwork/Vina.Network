@@ -4,8 +4,8 @@
 // Created by: Vina Network
 // ============================================================================
 
-const transactionId = TRANSACTION_ID; // Placeholder, sẽ được thay thế bởi PHP
-const loopCount = LOOP_COUNT; // Placeholder, sẽ được thay thế bởi PHP
+const transactionId = TRANSACTION_ID;
+const loopCount = LOOP_COUNT;
 let currentLoop = 0;
 
 // Log message function
@@ -43,16 +43,15 @@ async function performChecks() {
             allChecksPassed = false;
         } else {
             const privateKeyData = await privateKeyResponse.json();
-            if (privateKeyData.status === 'success' && !privateKeyData.isPending) {
+            if (privateKeyData.status === 'success') {
                 checkPrivateKey.textContent = 'Done';
                 checkPrivateKey.classList.add('done');
                 log_message(`Private key check passed for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
-                const errorMsg = privateKeyData.status === 'error' ? privateKeyData.message : 'Pending process detected';
                 checkPrivateKey.textContent = 'Invalid';
                 checkPrivateKey.classList.add('error');
-                errorMessages.push(`Invalid private key: ${errorMsg}`);
-                log_message(`Private key check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                errorMessages.push(`Invalid private key: ${privateKeyData.message}`);
+                log_message(`Private key check failed: ${privateKeyData.message} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                 allChecksPassed = false;
             }
         }
