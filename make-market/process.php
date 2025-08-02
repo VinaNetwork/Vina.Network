@@ -177,15 +177,18 @@ if (!file_exists($footer_path)) {
 include $footer_path;
 ?>
 
-<!-- Scripts -->
+<!-- Scripts - Internal library -->
 <script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
 <script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
+<script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/spl-token.iife.js')"></script>
+<!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script defer src="/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
+<script defer src="/make-market/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
+<!-- Define PHP variables for process.js -->
 <script defer>
-    // Define PHP variables for process.js
     const TRANSACTION_ID = <?php echo json_encode($transaction_id); ?>;
     const LOOP_COUNT = <?php echo json_encode($transaction['loop_count']); ?>;
     const PUBLIC_KEY = <?php echo json_encode($transaction['public_key']); ?>;
@@ -194,7 +197,6 @@ include $footer_path;
     const SLIPPAGE = <?php echo json_encode($transaction['slippage']); ?>;
     const HELIUS_API_KEY = <?php echo defined('HELIUS_API_KEY') ? json_encode(HELIUS_API_KEY) : "''"; ?>;
 </script>
-<script defer src="/make-market/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
