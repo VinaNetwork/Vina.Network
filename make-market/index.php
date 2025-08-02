@@ -158,6 +158,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Check if SolanaPhpSdk\Keypair is available
+        if (!class_exists('SolanaPhpSdk\Keypair')) {
+            log_message("SolanaPhpSdk\Keypair class not found. Ensure bloock/solana-php-sdk is installed.", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Server error: Solana PHP SDK not installed']);
+            exit;
+        }
+
         // Validate private key using SolanaPhpSdk
         try {
             log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
