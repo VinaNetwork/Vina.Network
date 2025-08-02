@@ -76,9 +76,9 @@ async function performChecks() {
         log_message(`Balance check response: HTTP ${balanceResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!balanceResponse.ok) {
             log_message(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-            checkBalance.textContent = 'Failed';
+            checkBalance.textContent = `Failed (HTTP ${balanceResponse.status})`;
             checkBalance.classList.add('error');
-            errorMessages.push(`Balance check failed: HTTP ${balanceResponse.status}`);
+            errorMessages.push(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${responseText}`);
             allChecksPassed = false;
         } else {
             const balanceData = JSON.parse(responseText);
@@ -123,19 +123,19 @@ async function performChecks() {
                 params: [TOKEN_MINT, { encoding: 'jsonParsed' }]
             })
         });
+        const responseText = await tokenResponse.text();
+        log_message(`Token mint check response: HTTP ${tokenResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!tokenResponse.ok) {
-            const errorText = await tokenResponse.text();
             const errorMsg = tokenResponse.status === 401 
                 ? 'Unauthorized: Invalid or expired Helius API key'
-                : `HTTP ${tokenResponse.status}, Response: ${errorText}`;
+                : `HTTP ${tokenResponse.status}, Response: ${responseText}`;
             log_message(`Token mint check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-            checkToken.textContent = 'Failed';
+            checkToken.textContent = `Failed (HTTP ${tokenResponse.status})`;
             checkToken.classList.add('error');
             errorMessages.push(`Token mint check failed: ${errorMsg}`);
             allChecksPassed = false;
         } else {
-            const tokenData = await tokenResponse.json();
-            log_message(`Token mint check response: ${JSON.stringify(tokenData)} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
+            const tokenData = JSON.parse(responseText);
             if (tokenData.status === 'error') {
                 log_message(`Token mint check failed: ${tokenData.message} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                 checkToken.textContent = 'Failed';
@@ -168,18 +168,19 @@ async function performChecks() {
         const liquidityResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${encodeURIComponent(TOKEN_MINT)}&amount=${SOL_AMOUNT * 1e9}&slippageBps=${SLIPPAGE * 100}`, {
             headers: { 'Accept': 'application/json' }
         });
+        const responseText = await liquidityResponse.text();
+        log_message(`Liquidity check response: HTTP ${liquidityResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!liquidityResponse.ok) {
-            const errorText = await liquidityResponse.text();
             const errorMsg = liquidityResponse.status === 400 
                 ? 'Invalid request or insufficient liquidity'
-                : `HTTP ${liquidityResponse.status}, Response: ${errorText}`;
+                : `HTTP ${liquidityResponse.status}, Response: ${responseText}`;
             log_message(`Liquidity check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-            checkLiquidity.textContent = 'Failed';
+            checkLiquidity.textContent = `Failed (HTTP ${liquidityResponse.status})`;
             checkLiquidity.classList.add('error');
             errorMessages.push(`Liquidity check failed: ${errorMsg}`);
             allChecksPassed = false;
         } else {
-            const liquidityData = await liquidityResponse.json();
+            const liquidityData = JSON.parse(responseText);
             if (liquidityData.data && liquidityData.data.length > 0) {
                 checkLiquidity.textContent = 'Done';
                 checkLiquidity.classList.add('done');
@@ -222,14 +223,15 @@ async function startTransaction() {
         log_message(`Starting transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
         const response = await fetch('/make-market/start-transaction.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ transaction_id: transactionId })
         });
+        const responseText = await response.text();
+        log_message(`Start transaction response: HTTP ${response.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+            throw new Error(`HTTP error! Status: ${response.status}, Response: ${responseText}`);
         }
-        const result = await response.json();
+        const result = JSON.parse(responseText);
         if (result.status !== 'success') {
             throw new Error(result.message || 'Failed to start transaction');
         }
@@ -254,11 +256,12 @@ function pollTransactionStatus() {
     const interval = setInterval(async () => {
         try {
             const response = await fetch(`/make-market/status.php?id=${transactionId}`);
+            const responseText = await response.text();
+            log_message(`Status check response: HTTP ${response.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+                throw new Error(`HTTP error! Status: ${response.status}, Response: ${responseText}`);
             }
-            const data = await response.json();
+            const data = JSON.parse(responseText);
             if (data.status !== 'success') {
                 throw new Error(data.message || 'Failed to fetch status');
             }
@@ -321,11 +324,12 @@ async function confirmCancel(transactionId) {
             headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ id: transactionId })
         });
+        const responseText = await response.text();
+        log_message(`Cancel transaction response: HTTP ${response.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! Status: ${response.status}, Response: ${errorText}`);
+            throw new Error(`HTTP error! Status: ${response.status}, Response: ${responseText}`);
         }
-        const data = await response.json();
+        const data = JSON.parse(responseText);
         if (data.status !== 'success') {
             throw new Error(data.message || 'Failed to cancel transaction');
         }
