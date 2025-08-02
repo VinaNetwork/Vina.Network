@@ -39,17 +39,18 @@ if (!isset($_SESSION['user_id'])) {
 $input = json_decode(file_get_contents('php://input'), true);
 $endpoint = $input['endpoint'] ?? '';
 $params = $input['params'] ?? [];
+$transaction_id = $input['transaction_id'] ?? null;
 
-if (empty($endpoint)) {
-    log_message("Missing endpoint in mm-api.php request", 'make-market.log', 'make-market', 'ERROR');
+if (empty($endpoint) && !$transaction_id) {
+    log_message("Missing endpoint and transaction_id in mm-api.php request", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Missing endpoint']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing endpoint or transaction_id']);
     exit;
 }
 
-// Validate endpoint
-$allowed_endpoints = ['getAccountInfo', 'getAssetsByOwner', 'getTransaction'];
-if (!in_array($endpoint, $allowed_endpoints)) {
+// Validate endpoint for non-transaction requests
+$allowed_endpoints = ['getAccountInfo', 'getAssetsByOwner', 'getTransaction', 'getBalance'];
+if ($endpoint && !in_array($endpoint, $allowed_endpoints)) {
     log_message("Invalid endpoint: $endpoint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid endpoint']);
@@ -168,6 +169,18 @@ try {
             echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address format']);
             exit;
         }
+    } elseif ($endpoint === 'getBalance' && !empty($params[0])) {
+        // Validate public key format
+        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $params[0])) {
+            log_message("Invalid public key format: {$params[0]}", 'make-market.log', 'make-market', 'ERROR');
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
+            exit;
+        }
+    } elseif ($transaction_id) {
+        // Placeholder for transaction processing
+        echo json_encode(['status' => 'success', 'message' => 'Transaction processing not implemented']);
+        exit;
     }
 
     // Call Helius API
