@@ -12,6 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
+require_once $root_path . 'make-market/mm-api.php'; // Include mm-api.php for callMarketAPI
 
 header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
@@ -54,49 +55,32 @@ if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{
     exit;
 }
 
-// Call mm-api.php to get balance using getAssetsByOwner
+// Call Helius API using callMarketAPI from mm-api.php
 try {
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'POST',
-            'header' => "Content-Type: application/json\r\n",
-            'content' => json_encode([
-                'endpoint' => 'getAssetsByOwner',
-                'params' => [
-                    'ownerAddress' => $public_key,
-                    'page' => 1,
-                    'limit' => 1000,
-                    'displayOptions' => [
-                        'showNativeBalance' => true
-                    ]
-                ]
-            ])
+    $params = [
+        'ownerAddress' => $public_key,
+        'page' => 1,
+        'limit' => 1000,
+        'displayOptions' => [
+            'showNativeBalance' => true
         ]
-    ]);
-    $response = file_get_contents($root_path . 'make-market/mm-api.php', false, $context);
-    log_message("get-balance: API response for public_key $public_key: $response", 'make-market.log', 'make-market', 'DEBUG');
-    $data = json_decode($response, true);
-
-    if ($data === null) {
-        log_message("get-balance: Failed to parse API response for public_key $public_key: $response", 'make-market.log', 'make-market', 'ERROR');
+    ];
+    log_message("get-balance: Calling callMarketAPI for public_key $public_key with params: " . json_encode($params), 'make-market.log', 'make-market', 'DEBUG');
+    $result = callMarketAPI('getAssetsByOwner', $params);
+    
+    if (isset($result['error'])) {
+        log_message("get-balance: API error for public_key $public_key: {$result['error']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Failed to parse API response']);
+        echo json_encode(['status' => 'error', 'message' => $result['error']]);
         exit;
     }
 
-    if ($data['status'] === 'error') {
-        log_message("get-balance: API error for public_key $public_key: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $data['message']]);
-        exit;
-    }
-
-    if (isset($data['result']['result']['nativeBalance']['lamports'])) {
-        $balance = $data['result']['result']['nativeBalance']['lamports'] / 1e9; // Convert lamports to SOL
+    if (isset($result['result']['nativeBalance']['lamports'])) {
+        $balance = $result['result']['nativeBalance']['lamports'] / 1e9; // Convert lamports to SOL
         log_message("get-balance: Balance check passed for public_key $public_key: $balance SOL", 'make-market.log', 'make-market', 'INFO');
         echo json_encode(['status' => 'success', 'balance' => $balance]);
     } else {
-        log_message("get-balance: Invalid response structure for public_key $public_key: " . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
+        log_message("get-balance: Invalid response structure for public_key $public_key: " . json_encode($result), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Invalid response structure']);
         exit;
