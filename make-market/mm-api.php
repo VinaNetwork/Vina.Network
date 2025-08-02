@@ -211,10 +211,10 @@ try {
             echo json_encode(['status' => 'error', 'message' => 'Invalid owner address format']);
             exit;
         }
-    } elseif ($transaction_id) {
-        log_message("mm-api: Transaction processing not implemented for transaction_id: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(501);
-        echo json_encode(['status' => 'error', 'message' => 'Transaction processing not implemented']);
+    } else {
+        log_message("mm-api: Invalid or missing parameters for endpoint: $endpoint", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid or missing parameters']);
         exit;
     }
 
