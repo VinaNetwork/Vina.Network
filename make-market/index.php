@@ -85,6 +85,7 @@ try {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        log_message("Form submitted", 'make-market.log', 'make-market', 'INFO');
         // Validate CSRF token
         if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
             log_message("Invalid CSRF token", 'make-market.log', 'make-market', 'ERROR');
@@ -95,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Get form data
         $processName = $_POST['processName'] ?? '';
-        $privateKey = $_POST['privateKey'] ?? '';
+        $privateKey = trim($_POST['privateKey'] ?? '');
         $tokenMint = $_POST['tokenMint'] ?? '';
         $solAmount = floatval($_POST['solAmount'] ?? 0);
         $slippage = floatval($_POST['slippage'] ?? 0.5);
@@ -103,6 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $loopCount = intval($_POST['loopCount'] ?? 1);
         $batchSize = intval($_POST['batchSize'] ?? 5);
         $transactionPublicKey = $_POST['transactionPublicKey'] ?? '';
+
+        // Log form data for debugging
+        log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
 
         // Validate inputs
         if (empty($processName) || empty($privateKey) || empty($tokenMint) || empty($transactionPublicKey)) {
@@ -156,8 +160,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Validate private key using SolanaPhpSdk
         try {
-            $keypair = Keypair::fromSecretKey(base58_decode($privateKey));
+            log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+            $decodedKey = base58_decode($privateKey);
+            log_message("Decoded privateKey length: " . strlen($decodedKey), 'make-market.log', 'make-market', 'DEBUG');
+            $keypair = Keypair::fromSecretKey($decodedKey);
             $derivedPublicKey = $keypair->getPublicKey()->toBase58();
+            log_message("Derived public key: $derivedPublicKey", 'make-market.log', 'make-market', 'DEBUG');
             if ($derivedPublicKey !== $transactionPublicKey) {
                 log_message("Private key does not match transaction public key: derived=$derivedPublicKey, provided=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
@@ -172,36 +180,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Check JWT_SECRET
+        if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
+            log_message("JWT_SECRET is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Server configuration error: JWT_SECRET missing']);
+            exit;
+        }
+
         // Encrypt private key
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
         if ($encryptedPrivateKey === false) {
-            log_message("Failed to encrypt private key", 'make-market.log', 'make-market', 'ERROR');
+            log_message("Failed to encrypt private key: OpenSSL error", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Encryption failed']);
             exit;
         }
 
         // Insert transaction into database with status 'new'
-        $stmt = $pdo->prepare("
-            INSERT INTO make_market (
-                user_id, public_key, process_name, private_key, token_mint, 
-                sol_amount, slippage, delay_seconds, loop_count, batch_size, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
-        ");
-        $stmt->execute([
-            $_SESSION['user_id'],
-            $transactionPublicKey,
-            $processName,
-            $encryptedPrivateKey,
-            $tokenMint,
-            $solAmount,
-            $slippage,
-            $delay,
-            $loopCount,
-            $batchSize
-        ]);
-        $transactionId = $pdo->lastInsertId();
-        log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO make_market (
+                    user_id, public_key, process_name, private_key, token_mint, 
+                    sol_amount, slippage, delay_seconds, loop_count, batch_size, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
+            ");
+            $stmt->execute([
+                $_SESSION['user_id'],
+                $transactionPublicKey,
+                $processName,
+                $encryptedPrivateKey,
+                $tokenMint,
+                $solAmount,
+                $slippage,
+                $delay,
+                $loopCount,
+                $batchSize
+            ]);
+            $transactionId = $pdo->lastInsertId();
+            log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
+        } catch (PDOException $e) {
+            log_message("Database insert failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Database insert failed: ' . $e->getMessage()]);
+            exit;
+        }
 
         // Return transaction ID for JavaScript to process
         header('Content-Type: application/json');
@@ -210,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         log_message("Error saving transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Error saving transaction']);
+        echo json_encode(['status' => 'error', 'message' => 'Error saving transaction: ' . $e->getMessage()]);
         exit;
     }
 }
