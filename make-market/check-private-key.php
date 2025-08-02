@@ -53,7 +53,7 @@ if (!$transaction_id || !is_numeric($transaction_id)) {
 try {
     $pdo = get_db_connection();
     $stmt = $pdo->prepare("
-        SELECT private_key, public_key 
+        SELECT private_key, public_key, status 
         FROM make_market 
         WHERE id = ? AND user_id = ?
     ");
@@ -64,6 +64,14 @@ try {
         log_message("Transaction ID $transaction_id not found or unauthorized for user_id {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(404);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found']);
+        exit;
+    }
+
+    // Check if transaction is in a valid state
+    if (!in_array($transaction['status'], ['new', 'pending', 'processing'])) {
+        log_message("Transaction ID $transaction_id is in invalid state: {$transaction['status']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction is not in a valid state for key validation']);
         exit;
     }
 
@@ -98,8 +106,8 @@ try {
         exit;
     }
 
-    log_message("Private key check passed for transaction ID $transaction_id", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'isPending' => false]);
+    log_message("Private key check passed for transaction ID $transaction_id, status: {$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
+    echo json_encode(['status' => 'success', 'isPending' => $transaction['status'] === 'pending']);
 } catch (Exception $e) {
     log_message("Error checking private key for transaction ID $transaction_id: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
