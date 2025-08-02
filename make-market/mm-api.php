@@ -29,6 +29,8 @@ session_start([
     'cookie_samesite' => 'Strict'
 ]);
 
+log_message("mm-api: File accessed, processing request, session user_id: " . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
+
 if (!isset($_SESSION['user_id'])) {
     log_message('Unauthorized access to mm-api.php', 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
@@ -37,6 +39,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
+log_message("mm-api: Input received: " . json_encode($input), 'make-market.log', 'make-market', 'DEBUG');
 $endpoint = $input['endpoint'] ?? '';
 $params = $input['params'] ?? [];
 $transaction_id = $input['transaction_id'] ?? null;
@@ -77,7 +80,7 @@ function callMarketAPI($endpoint, $params = []) {
 
         curl_setopt($ch, CURLOPT_URL, $helius_rpc_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: 'application/json']);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
@@ -150,7 +153,6 @@ function callMarketAPI($endpoint, $params = []) {
 
         log_message("make-market-api: API success - Endpoint: $endpoint, URL: $log_url, Response: " . substr(json_encode($data), 0, 100) . "...", 'make-market.log', 'make-market', 'INFO');
         return $data;
-
     } while ($retry_count < $max_retries);
 
     return ['error' => 'Max retries reached'];
@@ -178,8 +180,9 @@ try {
             exit;
         }
     } elseif ($transaction_id) {
-        // Placeholder for transaction processing
-        echo json_encode(['status' => 'success', 'message' => 'Transaction processing not implemented']);
+        log_message("mm-api: Transaction processing not implemented for transaction_id: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(501);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction processing not implemented']);
         exit;
     }
 
