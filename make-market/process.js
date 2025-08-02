@@ -95,15 +95,16 @@ async function performChecks() {
             const balanceData = JSON.parse(responseText);
             if (balanceData.status === 'success' && typeof balanceData.balance === 'number') {
                 const requiredSol = SOL_AMOUNT;
+                const balanceFormatted = balanceData.balance.toFixed(3); // Format to 3 decimal places
                 if (balanceData.balance >= requiredSol) {
-                    checkBalance.textContent = `Done (${balanceData.balance.toFixed(6)} SOL)`;
+                    checkBalance.textContent = `Done (${balanceFormatted} SOL)`;
                     checkBalance.classList.add('done');
-                    log_message(`Balance check passed: ${balanceData.balance.toFixed(6)} SOL available, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                    log_message(`Balance check passed: ${balanceFormatted} SOL available, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
                 } else {
-                    checkBalance.textContent = `Insufficient (${balanceData.balance.toFixed(6)} SOL)`;
+                    checkBalance.textContent = `Failed (${balanceFormatted} SOL)`;
                     checkBalance.classList.add('error');
-                    errorMessages.push(`Insufficient balance: ${balanceData.balance.toFixed(6)} SOL, required: ${requiredSol} SOL`);
-                    log_message(`Balance check failed: Insufficient balance: ${balanceData.balance.toFixed(6)} SOL, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                    errorMessages.push(`Balance check failed: SOL balance is not enough to make the transaction`);
+                    log_message(`Balance check failed: SOL balance is not enough to make the transaction (${balanceFormatted} SOL available, required: ${requiredSol} SOL) for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                     allChecksPassed = false;
                 }
             } else {
