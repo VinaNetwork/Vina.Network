@@ -96,14 +96,14 @@ async function performChecks() {
             if (balanceData.status === 'success' && typeof balanceData.balance === 'number') {
                 const requiredSol = SOL_AMOUNT;
                 if (balanceData.balance >= requiredSol) {
-                    checkBalance.textContent = `Done (${balanceData.balance} SOL)`;
+                    checkBalance.textContent = `Done (${balanceData.balance.toFixed(6)} SOL)`;
                     checkBalance.classList.add('done');
-                    log_message(`Balance check passed: ${balanceData.balance} SOL available, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                    log_message(`Balance check passed: ${balanceData.balance.toFixed(6)} SOL available, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
                 } else {
-                    checkBalance.textContent = `Insufficient (${balanceData.balance} SOL)`;
+                    checkBalance.textContent = `Insufficient (${balanceData.balance.toFixed(6)} SOL)`;
                     checkBalance.classList.add('error');
-                    errorMessages.push(`Insufficient balance: ${balanceData.balance} SOL, required: ${requiredSol} SOL`);
-                    log_message(`Balance check failed: Insufficient balance: ${balanceData.balance} SOL, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                    errorMessages.push(`Insufficient balance: ${balanceData.balance.toFixed(6)} SOL, required: ${requiredSol} SOL`);
+                    log_message(`Balance check failed: Insufficient balance: ${balanceData.balance.toFixed(6)} SOL, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                     allChecksPassed = false;
                 }
             } else {
