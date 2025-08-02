@@ -23,16 +23,17 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
     const historyDiv = document.getElementById('transaction-history');
     try {
         log_message(`Fetching transaction history for page: ${page}, per_page: ${per_page}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await fetch(`/make-market/history.php?page=${page}&per_page=${per_page}`);
+        const response = await fetch(`/make-market/history.php?page=${page}&per_page=${per_page}`, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
         log_message(`Response status for history.php: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseText = await response.text();
+        log_message(`Response data: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const errorText = await response.text();
-            log_message(`Error fetching transaction history: HTTP ${response.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Error fetching transaction history: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        log_message(`Response data: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
-
         if (data.status !== 'success') {
             log_message(`Failed to fetch transaction history: ${data.message || 'No message provided'}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(data.message || 'Failed to fetch transaction history');
@@ -48,21 +49,21 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             <table>
                 <thead>
                     <tr>
-                    <th>Process</th>
-                    <th>ID</th>
-                    <th>Public Key</th>
-                    <th>Token Address</th>
-                    <th>Amount</th>
-                    <th>Slippage (%)</th>
-                    <th>Delay (s)</th>
-                    <th>Loop</th>
-                    <th>Batch Size</th>
-                    <th>Status</th>
-                    <th>Buy Tx</th>
-                    <th>Sell Tx</th>
-                    <th>Time</th>
-                    <th>Error reason</th>
-                    <th>Action</th>
+                        <th>Process</th>
+                        <th>ID</th>
+                        <th>Public Key</th>
+                        <th>Token Address</th>
+                        <th>Amount</th>
+                        <th>Slippage (%)</th>
+                        <th>Delay (s)</th>
+                        <th>Loop</th>
+                        <th>Batch Size</th>
+                        <th>Status</th>
+                        <th>Buy Tx</th>
+                        <th>Sell Tx</th>
+                        <th>Time</th>
+                        <th>Error reason</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,24 +76,24 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
             const errorMessage = tx.error || '-';
             html += `
                 <tr>
-                <td>${tx.process_name}</td>
-                <td><a href="/make-market/process/${tx.id}">${tx.id}</a></td>
-                <td>${tx.public_key ? `<a href="https://solscan.io/address/${tx.public_key}" target="_blank">${shortPublicKey}</a>` : '-'}</td>
-                <td>${tx.token_mint ? `<a href="https://solscan.io/token/${tx.token_mint}" target="_blank">${shortTokenMint}</a>` : '-'}</td>
-                <td>${tx.sol_amount}</td>
-                <td>${tx.slippage}</td>
-                <td>${tx.delay_seconds}</td>
-                <td>${tx.loop_count}</td>
-                <td>${tx.batch_size}</td>
-                <td>${tx.status}</td>
-                <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
-                <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
-                <td>${tx.created_at}</td>
-                <td>${errorMessage}</td>
-                <td>
-                    ${tx.status === 'success' || tx.status === 'failed' ? `<button class="cta-button continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
-                    ${tx.status === 'pending' ? `<button class="cta-button cancel-btn" data-id="${tx.id}">Hủy</button>` : ''}
-                </td>
+                    <td>${tx.process_name}</td>
+                    <td><a href="/make-market/process/${tx.id}">${tx.id}</a></td>
+                    <td>${tx.public_key ? `<a href="https://solscan.io/address/${tx.public_key}" target="_blank">${shortPublicKey}</a>` : '-'}</td>
+                    <td>${tx.token_mint ? `<a href="https://solscan.io/token/${tx.token_mint}" target="_blank">${shortTokenMint}</a>` : '-'}</td>
+                    <td>${tx.sol_amount}</td>
+                    <td>${tx.slippage}</td>
+                    <td>${tx.delay_seconds}</td>
+                    <td>${tx.loop_count}</td>
+                    <td>${tx.batch_size}</td>
+                    <td>${tx.status}</td>
+                    <td>${tx.buy_tx_id ? `<a href="https://solscan.io/tx/${tx.buy_tx_id}" target="_blank">${shortBuyTx}</a>` : '-'}</td>
+                    <td>${tx.sell_tx_id ? `<a href="https://solscan.io/tx/${tx.sell_tx_id}" target="_blank">${shortSellTx}</a>` : '-'}</td>
+                    <td>${tx.created_at}</td>
+                    <td>${errorMessage}</td>
+                    <td>
+                        ${tx.status === 'success' || tx.status === 'failed' ? `<button class="cta-button continue-btn" data-id="${tx.id}">Tiếp tục</button>` : ''}
+                        ${tx.status === 'pending' ? `<button class="cta-button cancel-btn" data-id="${tx.id}">Hủy</button>` : ''}
+                    </td>
                 </tr>
             `;
         });
@@ -127,13 +128,13 @@ async function refreshTransactionHistory(page = 1, per_page = 10) {
                         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     log_message(`Response status for get-transaction.php: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
+                    const responseText = await response.text();
+                    log_message(`Response data for transaction ID ${transactionId}: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
                     if (!response.ok) {
-                        const errorText = await response.text();
-                        log_message(`Error fetching transaction ID ${transactionId}: HTTP ${response.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+                        log_message(`Error fetching transaction ID ${transactionId}: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     }
                     const data = await response.json();
-                    log_message(`Response data for transaction ID ${transactionId}: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
                     if (data.status === 'success') {
                         const fields = {
                             processName: document.getElementById('processName'),
@@ -231,13 +232,13 @@ async function confirmCancel(transactionId) {
             body: JSON.stringify({ id: transactionId })
         });
         log_message(`Response status for cancel-transaction.php: ${response.status}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseText = await response.text();
+        log_message(`Response data for cancel transaction ID ${transactionId}: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const errorText = await response.text();
-            log_message(`Error canceling transaction ID ${transactionId}: HTTP ${response.status}, Response: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Error canceling transaction ID ${transactionId}: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const data = await response.json();
-        log_message(`Response data for cancel transaction ID ${transactionId}: ${JSON.stringify(data)}`, 'make-market.log', 'make-market', 'DEBUG');
         if (data.status !== 'success') {
             throw new Error(data.message || 'Failed to cancel transaction');
         }
@@ -306,9 +307,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         delay: parseInt(formData.get('delay')),
         loopCount: parseInt(formData.get('loopCount')),
         batchSize: parseInt(formData.get('batchSize')),
+        transactionPublicKey: formData.get('transactionPublicKey'),
         csrf_token: formData.get('csrf_token')
     };
-    log_message(`Form data: processName=${params.processName}, tokenMint=${params.tokenMint}, solAmount=${params.solAmount}, slippage=${params.slippage}, delay=${params.delay}, loopCount=${params.loopCount}, batchSize=${params.batchSize}`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
 
     // Validate private key
     if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
@@ -335,6 +337,8 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error('Invalid public key format');
         }
+        formData.set('transactionPublicKey', transactionPublicKey);
+        document.getElementById('transactionPublicKey').value = transactionPublicKey;
     } catch (error) {
         log_message(`Invalid private key format: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
@@ -343,19 +347,26 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         return;
     }
 
-    formData.set('transactionPublicKey', transactionPublicKey);
-    document.getElementById('transactionPublicKey').value = transactionPublicKey;
-
     try {
         // Submit form data
         const response = await fetch('/make-market/', {
             method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
         });
+        const responseText = await response.text();
+        log_message(`Form submission response: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
+            log_message(`Form submission failed: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        const result = await response.json();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (error) {
+            log_message(`Error parsing response JSON: ${error.message}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error('Invalid JSON response');
+        }
         if (result.status !== 'success') {
             log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
             resultDiv.innerHTML = `<p style="color: red;">Error: ${result.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
@@ -364,14 +375,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             return;
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
-
         // Redirect to process page
-        window.location.href = `/make-market/process/${result.transactionId}`;
+        const redirectUrl = result.redirect || `/make-market/process/${result.transactionId}`;
+        log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
+        window.location.href = redirectUrl;
     } catch (error) {
         log_message(`Error submitting form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
-    } finally {
         submitButton.disabled = false;
     }
 });
