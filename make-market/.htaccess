@@ -6,6 +6,11 @@
     RewriteCond %{REQUEST_FILENAME} \.(js|css|png|jpg|jpeg|gif|ico|html|php)$ [NC]
     RewriteRule ^ - [L]
 
+    # Route /process/[id] to process.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^process/([0-9]+)$ process.php?id=$1 [QSA,L]
+
     # Redirect all other requests to index.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
