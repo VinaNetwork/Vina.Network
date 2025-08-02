@@ -24,13 +24,16 @@ ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
+// Log ngay đầu file
+log_message("get-balance: Script started", 'make-market.log', 'make-market', 'DEBUG');
+
 session_start([
     'cookie_secure' => true,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict'
 ]);
 
-log_message("get-balance: File accessed, processing request, session user_id: " . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
+log_message("get-balance: File accessed, session user_id: " . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 
 if (!isset($_SESSION['user_id'])) {
     log_message('Unauthorized access to get-balance.php', 'make-market.log', 'make-market', 'ERROR');
@@ -60,6 +63,7 @@ if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{
 
 // Call Helius API using callMarketAPI from mm-api.php
 try {
+    log_message("get-balance: Preparing to call callMarketAPI for public_key $public_key", 'make-market.log', 'make-market', 'DEBUG');
     $params = [
         'ownerAddress' => $public_key,
         'page' => 1,
@@ -68,7 +72,7 @@ try {
             'showNativeBalance' => true
         ]
     ];
-    log_message("get-balance: Calling callMarketAPI for public_key $public_key with params: " . json_encode($params), 'make-market.log', 'make-market', 'DEBUG');
+    log_message("get-balance: Calling callMarketAPI with params: " . json_encode($params), 'make-market.log', 'make-market', 'DEBUG');
     $result = callMarketAPI('getAssetsByOwner', $params);
     
     log_message("get-balance: API response for public_key $public_key: " . json_encode($result), 'make-market.log', 'make-market', 'DEBUG');
