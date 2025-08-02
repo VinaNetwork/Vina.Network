@@ -29,6 +29,8 @@ header("Access-Control-Allow-Origin: https://www.vina.network");
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST, GET");
 header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 
 // Error reporting
 ini_set('log_errors', 1);
