@@ -25,6 +25,10 @@ header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+header("Access-Control-Allow-Origin: https://www.vina.network");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Methods: POST, GET");
+header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
 
 // Error reporting
 ini_set('log_errors', 1);
@@ -37,6 +41,9 @@ session_start([
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict'
 ]);
+
+// Log request info
+log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
 
 // Database connection
 $start_time = microtime(true);
@@ -86,9 +93,12 @@ try {
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        log_message("Form submitted", 'make-market.log', 'make-market', 'INFO');
+        log_message("Form submitted, is AJAX: " . (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? 'Yes' : 'No'), 'make-market.log', 'make-market', 'INFO');
+        $form_data = $_POST;
+        log_message("Form data: " . json_encode($form_data), 'make-market.log', 'make-market', 'DEBUG');
+
         // Validate CSRF token
-        if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        if (!validate_csrf_token($form_data['csrf_token'] ?? '')) {
             log_message("Invalid CSRF token", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
@@ -96,15 +106,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Get form data
-        $processName = $_POST['processName'] ?? '';
-        $privateKey = trim($_POST['privateKey'] ?? '');
-        $tokenMint = $_POST['tokenMint'] ?? '';
-        $solAmount = floatval($_POST['solAmount'] ?? 0);
-        $slippage = floatval($_POST['slippage'] ?? 0.5);
-        $delay = intval($_POST['delay'] ?? 0);
-        $loopCount = intval($_POST['loopCount'] ?? 1);
-        $batchSize = intval($_POST['batchSize'] ?? 5);
-        $transactionPublicKey = $_POST['transactionPublicKey'] ?? '';
+        $processName = $form_data['processName'] ?? '';
+        $privateKey = trim($form_data['privateKey'] ?? '');
+        $tokenMint = $form_data['tokenMint'] ?? '';
+        $solAmount = floatval($form_data['solAmount'] ?? 0);
+        $slippage = floatval($form_data['slippage'] ?? 0.5);
+        $delay = intval($form_data['delay'] ?? 0);
+        $loopCount = intval($form_data['loopCount'] ?? 1);
+        $batchSize = intval($form_data['batchSize'] ?? 5);
+        $transactionPublicKey = $form_data['transactionPublicKey'] ?? '';
 
         // Log form data for debugging
         log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
@@ -263,6 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
+            log_message("Form saved to database: transactionId=$transactionId", 'make-market.log', 'make-market', 'INFO');
         } catch (PDOException $e) {
             log_message("Database insert failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
@@ -270,9 +281,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Return transaction ID for JavaScript to process
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'success', 'transactionId' => $transactionId]);
+        // Send redirect
+        $redirect_url = "/make-market/process/$transactionId";
+        log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            // AJAX request
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]);
+        } else {
+            // Traditional POST
+            header("Location: $redirect_url");
+        }
         exit;
     } catch (Exception $e) {
         log_message("Error saving transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
