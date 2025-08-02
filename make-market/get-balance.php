@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/get-balance.php
-// Description: Endpoint to fetch SOL balance using callMarketAPI for Make Market
+// Description: Endpoint to fetch SOL balance using Helius RPC for Make Market
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,7 +12,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
-require_once __DIR__ . '/mm-api.php';
 
 header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
@@ -37,55 +36,58 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['public_key'])) {
-    $public_key = trim($_GET['public_key']);
-    if (!preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $public_key)) {
-        log_message("get-balance: Invalid public key: $public_key", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid public key']);
-        exit;
-    }
+$input = json_decode(file_get_contents('php://input'), true);
+$public_key = $input['public_key'] ?? '';
 
-    $params = [
-        'ownerAddress' => $public_key,
-        'page' => 1,
-        'limit' => 1000,
-        'displayOptions' => [
-            'showFungible' => true,
-            'showNativeBalance' => true
+if (empty($public_key)) {
+    log_message("Missing public_key in get-balance.php request", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Missing public_key']);
+    exit;
+}
+
+// Validate public key format
+if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
+    log_message("Invalid public key format: $public_key", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
+    exit;
+}
+
+// Call mm-api.php to get balance
+try {
+    $response = file_get_contents($root_path . 'make-market/mm-api.php', false, stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/json\r\n",
+            'content' => json_encode([
+                'endpoint' => 'getBalance',
+                'params' => [$public_key]
+            ])
         ]
-    ];
-    $data = callMarketAPI('getAssetsByOwner', $params);
+    ]));
+    $data = json_decode($response, true);
 
-    if (isset($data['error'])) {
-        log_message("get-balance: Failed to fetch balance for $public_key: {$data['error']}", 'make-market.log', 'make-market', 'ERROR');
+    if ($data['status'] === 'error') {
+        log_message("Balance check failed for public_key $public_key: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $data['error']]);
+        echo json_encode(['status' => 'error', 'message' => $data['message']]);
         exit;
     }
 
-    if (isset($data['result']['nativeBalance']['lamports'])) {
-        $balance = $data['result']['nativeBalance']['lamports'] / 1e9; // Convert lamports to SOL
-        $response = [
-            'status' => 'success',
-            'balance' => $balance,
-            'nativeBalance' => [
-                'lamports' => $data['result']['nativeBalance']['lamports'],
-                'total_price' => $data['result']['nativeBalance']['total_price'] ?? 0
-            ],
-            'tokens' => $data['result']['items'] ?? []
-        ];
-        log_message("get-balance: Success for $public_key: $balance SOL", 'make-market.log', 'make-market', 'INFO');
-        echo json_encode($response);
+    if (isset($data['result']['result']['value'])) {
+        $balance = $data['result']['result']['value'] / 1e9; // Convert lamports to SOL
+        log_message("Balance check passed for public_key $public_key: $balance SOL", 'make-market.log', 'make-market', 'INFO');
+        echo json_encode(['status' => 'success', 'balance' => $balance]);
     } else {
-        log_message("get-balance: Invalid response structure for $public_key: " . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Invalid response structure for public_key $public_key: " . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Invalid response structure']);
     }
-} else {
-    log_message("get-balance: Invalid request, expected GET with public_key", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+} catch (Exception $e) {
+    log_message("Error checking balance for public_key $public_key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Server error: ' . $e->getMessage()]);
 }
 exit;
 ?>
