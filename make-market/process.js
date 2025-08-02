@@ -32,15 +32,15 @@ async function performChecks() {
         log_message(`Checking private key for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const privateKeyResponse = await fetch('/make-market/check-private-key.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ transaction_id: transactionId })
         });
         if (!privateKeyResponse.ok) {
             const errorText = await privateKeyResponse.text();
             log_message(`Private key check failed: HTTP ${privateKeyResponse.status}, Response: ${errorText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-            checkPrivateKey.textContent = 'Failed';
+            checkPrivateKey.textContent = `Failed (HTTP ${privateKeyResponse.status})`;
             checkPrivateKey.classList.add('error');
-            errorMessages.push(`Private key check failed: HTTP ${privateKeyResponse.status}`);
+            errorMessages.push(`Private key check failed: HTTP ${privateKeyResponse.status}, Response: ${errorText}`);
             allChecksPassed = false;
         } else {
             const privateKeyData = await privateKeyResponse.json();
@@ -66,10 +66,10 @@ async function performChecks() {
 
     // 2. Check wallet balance
     try {
-        log_message(`Sending balance check request for public_key ${PUBLIC_KEY} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
+        log_message(`Sending balance check request to /make-market/get-balance.php for public_key ${PUBLIC_KEY} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const balanceResponse = await fetch('/make-market/get-balance.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ public_key: PUBLIC_KEY })
         });
         const responseText = await balanceResponse.text();
@@ -117,7 +117,7 @@ async function performChecks() {
         log_message(`Checking token mint ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const tokenResponse = await fetch('/make-market/mm-api.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({
                 endpoint: 'getAccountInfo',
                 params: [TOKEN_MINT, { encoding: 'jsonParsed' }]
@@ -142,14 +142,14 @@ async function performChecks() {
                 checkToken.classList.add('error');
                 errorMessages.push(`Token mint check failed: ${tokenData.message}`);
                 allChecksPassed = false;
-            } else if (tokenData.result && tokenData.result.value && tokenData.result.value.data.program === 'spl-token' && tokenData.result.value.data.parsed.type === 'mint') {
+            } else if (tokenData.result && tokenData.result.result && tokenData.result.result.value && tokenData.result.result.value.data && tokenData.result.result.value.data.program === 'spl-token' && tokenData.result.result.value.data.parsed.type === 'mint') {
                 checkToken.textContent = 'Done';
                 checkToken.classList.add('done');
                 log_message(`Token mint check passed: ${TOKEN_MINT} is a valid SPL token mint for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
                 checkToken.textContent = 'Does not exist';
                 checkToken.classList.add('error');
-                errorMessages.push('Invalid token mint: Not a valid SPL token mint');
+                errorMessages.push(`Invalid token mint: Not a valid SPL token mint, Response: ${responseText}`);
                 log_message(`Token mint check failed: Invalid token mint ${TOKEN_MINT} (not an SPL token mint) for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                 allChecksPassed = false;
             }
@@ -181,14 +181,14 @@ async function performChecks() {
             allChecksPassed = false;
         } else {
             const liquidityData = JSON.parse(responseText);
-            if (liquidityData.data && liquidityData.data.length > 0) {
+            if (liquidityData.outAmount && parseInt(liquidityData.outAmount) > 0) {
                 checkLiquidity.textContent = 'Done';
                 checkLiquidity.classList.add('done');
-                log_message(`Liquidity check passed for token: ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                log_message(`Liquidity check passed for token: ${TOKEN_MINT}, outAmount: ${liquidityData.outAmount} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
                 checkLiquidity.textContent = 'Insufficient';
                 checkLiquidity.classList.add('error');
-                errorMessages.push(`Insufficient liquidity for token: ${TOKEN_MINT}`);
+                errorMessages.push(`Insufficient liquidity for token: ${TOKEN_MINT}, Response: ${responseText}`);
                 log_message(`Liquidity check failed: Insufficient liquidity for token: ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                 allChecksPassed = false;
             }
@@ -223,7 +223,7 @@ async function startTransaction() {
         log_message(`Starting transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
         const response = await fetch('/make-market/start-transaction.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ transaction_id: transactionId })
         });
         const responseText = await response.text();
@@ -255,7 +255,9 @@ function pollTransactionStatus() {
 
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`/make-market/status.php?id=${transactionId}`);
+            const response = await fetch(`/make-market/status.php?id=${transactionId}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
             const responseText = await response.text();
             log_message(`Status check response: HTTP ${response.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
             if (!response.ok) {
@@ -321,7 +323,7 @@ async function confirmCancel(transactionId) {
         log_message(`Sending cancel request for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
         const response = await fetch('/make-market/cancel-transaction.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ id: transactionId })
         });
         const responseText = await response.text();
