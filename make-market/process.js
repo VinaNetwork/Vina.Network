@@ -65,9 +65,10 @@ async function performChecks() {
 
     // 2. Check wallet balance
     try {
-        const balanceResponse = await fetch(`/make-market/get-balance.php?public_key=${encodeURIComponent(PUBLIC_KEY)}`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+        const balanceResponse = await fetch('/make-market/get-balance.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ public_key: PUBLIC_KEY })
         });
         if (!balanceResponse.ok) {
             const errorText = await balanceResponse.text();
@@ -130,16 +131,17 @@ async function performChecks() {
             allChecksPassed = false;
         } else {
             const tokenData = await tokenResponse.json();
-            if (tokenData.error) {
-                log_message(`Token mint check failed: ${tokenData.error} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Token mint check response: ${JSON.stringify(tokenData)} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
+            if (tokenData.status === 'error') {
+                log_message(`Token mint check failed: ${tokenData.message} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                 checkToken.textContent = 'Failed';
                 checkToken.classList.add('error');
-                errorMessages.push(`Token mint check failed: ${tokenData.error}`);
+                errorMessages.push(`Token mint check failed: ${tokenData.message}`);
                 allChecksPassed = false;
-            } else if (tokenData.result && tokenData.result.value && tokenData.result.value.data.program === 'spl-token' && tokenData.result.value.data.parsed.info.mint === TOKEN_MINT) {
+            } else if (tokenData.result && tokenData.result.value && tokenData.result.value.data.program === 'spl-token' && tokenData.result.value.data.parsed.type === 'mint') {
                 checkToken.textContent = 'Done';
                 checkToken.classList.add('done');
-                log_message(`Token mint check passed: ${TOKEN_MINT} is a valid SPL token for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+                log_message(`Token mint check passed: ${TOKEN_MINT} is a valid SPL token mint for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
                 checkToken.textContent = 'Does not exist';
                 checkToken.classList.add('error');
@@ -158,18 +160,23 @@ async function performChecks() {
 
     // 4. Check liquidity
     try {
-        const liquidityResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${encodeURIComponent(TOKEN_MINT)}&amount=${SOL_AMOUNT * 1e9}&slippageBps=${SLIPPAGE * 100}`);
+        const liquidityResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${encodeURIComponent(TOKEN_MINT)}&amount=${SOL_AMOUNT * 1e9}&slippageBps=${SLIPPAGE * 100}`, {
+            headers: { 'Accept': 'application/json' }
+        });
         if (!liquidityResponse.ok) {
             const errorText = await liquidityResponse.text();
-            log_message(`Liquidity check failed: HTTP ${liquidityResponse.status}, Response: ${errorText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+            const errorMsg = liquidityResponse.status === 400 
+                ? 'Invalid request or insufficient liquidity'
+                : `HTTP ${liquidityResponse.status}, Response: ${errorText}`;
+            log_message(`Liquidity check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
             checkLiquidity.textContent = 'Failed';
             checkLiquidity.classList.add('error');
-            errorMessages.push(`Liquidity check failed: HTTP ${liquidityResponse.status}`);
+            errorMessages.push(`Liquidity check failed: ${errorMsg}`);
             allChecksPassed = false;
         } else {
             const liquidityData = await liquidityResponse.json();
             if (liquidityData.data && liquidityData.data.length > 0) {
-                checkToken.textContent = 'Done';
+                checkLiquidity.textContent = 'Done';
                 checkLiquidity.classList.add('done');
                 log_message(`Liquidity check passed for token: ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
