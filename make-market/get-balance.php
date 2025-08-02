@@ -46,16 +46,18 @@ if (!isset($_SESSION['user_id'])) {
 
 $input = json_decode(file_get_contents('php://input'), true);
 log_message("get-balance: Input received: " . json_encode($input), 'make-market.log', 'make-market', 'DEBUG');
-$public_key = $input['public_key'] ?? '';
 $endpoint = $input['endpoint'] ?? 'getAssetsByOwner';
 $transaction_id = $input['transaction_id'] ?? null;
+$params = $input['params'] ?? [];
 
-if (empty($public_key) || empty($transaction_id)) {
-    log_message("Missing public_key or transaction_id in get-balance.php request", 'make-market.log', 'make-market', 'ERROR');
+if (empty($params['ownerAddress']) || empty($transaction_id)) {
+    log_message("Missing ownerAddress or transaction_id in get-balance.php request", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Missing public_key or transaction_id']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing ownerAddress or transaction_id']);
     exit;
 }
+
+$public_key = $params['ownerAddress'];
 
 // Validate public key format
 if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
@@ -86,14 +88,6 @@ try {
 // Call Helius API using callMarketAPI from mm-api.php
 try {
     log_message("get-balance: Preparing to call callMarketAPI for public_key $public_key", 'make-market.log', 'make-market', 'DEBUG');
-    $params = [
-        'ownerAddress' => $public_key,
-        'page' => 1,
-        'limit' => 1000,
-        'displayOptions' => [
-            'showNativeBalance' => true
-        ]
-    ];
     log_message("get-balance: Calling callMarketAPI with endpoint: $endpoint, params: " . json_encode($params) . ", transaction_id: $transaction_id", 'make-market.log', 'make-market', 'DEBUG');
     $result = callMarketAPI($endpoint, $params, $transaction_id);
     
