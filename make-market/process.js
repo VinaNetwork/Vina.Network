@@ -108,22 +108,20 @@ async function performChecks() {
         allChecksPassed = false;
     }
 
-    // 3. Check token mint using Helius RPC
+    // 3. Check token mint using mm-api.php
     try {
-        const tokenResponse = await fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
+        const tokenResponse = await fetch('/make-market/mm-api.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
-                jsonrpc: '2.0',
-                id: 1,
-                method: 'getAccountInfo',
+                endpoint: 'getAccountInfo',
                 params: [TOKEN_MINT, { encoding: 'jsonParsed' }]
             })
         });
         if (!tokenResponse.ok) {
             const errorText = await tokenResponse.text();
             const errorMsg = tokenResponse.status === 401 
-                ? 'Unauthorized: Invalid or expired Helius API key. Please update API key in config.php'
+                ? 'Unauthorized: Invalid or expired Helius API key'
                 : `HTTP ${tokenResponse.status}, Response: ${errorText}`;
             log_message(`Token mint check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
             checkToken.textContent = 'Failed';
@@ -132,15 +130,21 @@ async function performChecks() {
             allChecksPassed = false;
         } else {
             const tokenData = await tokenResponse.json();
-            if (tokenData.result && tokenData.result.value && tokenData.result.value.data.program === 'spl-token') {
+            if (tokenData.error) {
+                log_message(`Token mint check failed: ${tokenData.error} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                checkToken.textContent = 'Failed';
+                checkToken.classList.add('error');
+                errorMessages.push(`Token mint check failed: ${tokenData.error}`);
+                allChecksPassed = false;
+            } else if (tokenData.result && tokenData.result.value && tokenData.result.value.data.program === 'spl-token' && tokenData.result.value.data.parsed.info.mint === TOKEN_MINT) {
                 checkToken.textContent = 'Done';
                 checkToken.classList.add('done');
                 log_message(`Token mint check passed: ${TOKEN_MINT} is a valid SPL token for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
                 checkToken.textContent = 'Does not exist';
                 checkToken.classList.add('error');
-                errorMessages.push(`Invalid token mint: Not an SPL token`);
-                log_message(`Token mint check failed: Invalid token mint (not an SPL token) for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
+                errorMessages.push('Invalid token mint: Not a valid SPL token mint');
+                log_message(`Token mint check failed: Invalid token mint ${TOKEN_MINT} (not an SPL token mint) for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
                 allChecksPassed = false;
             }
         }
@@ -165,7 +169,7 @@ async function performChecks() {
         } else {
             const liquidityData = await liquidityResponse.json();
             if (liquidityData.data && liquidityData.data.length > 0) {
-                checkLiquidity.textContent = 'Done';
+                checkToken.textContent = 'Done';
                 checkLiquidity.classList.add('done');
                 log_message(`Liquidity check passed for token: ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             } else {
