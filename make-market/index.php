@@ -219,6 +219,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Verify status column supports 'new'
+        try {
+            $stmt = $pdo->prepare("SHOW COLUMNS FROM make_market LIKE 'status'");
+            $stmt->execute();
+            $column = $stmt->fetch(PDO::FETCH_ASSOC);
+            $enum_values = [];
+            if (preg_match("/^enum\((.+)\)$/", $column['Type'], $matches)) {
+                $enum_values = array_map(function($v) { return trim($v, "'"); }, explode(',', $matches[1]));
+            }
+            if (!in_array('new', $enum_values)) {
+                log_message("Status column does not support 'new'. Available values: " . implode(',', $enum_values), 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Server error: Invalid status configuration']);
+                exit;
+            }
+        } catch (PDOException $e) {
+            log_message("Failed to verify status column: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Database error: Unable to verify status column']);
+            exit;
+        }
+
         // Insert transaction into database with status 'new'
         try {
             $stmt = $pdo->prepare("
