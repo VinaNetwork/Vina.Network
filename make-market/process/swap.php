@@ -1,4 +1,3 @@
-```php
 <?php
 // ============================================================================
 // File: make-market/process/swap.php
@@ -61,7 +60,7 @@ try {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT user_id, public_key, token_mint, sol_amount FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT user_id, public_key, token_mint, sol_amount, private_key FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != $_SESSION['user_id']) {
@@ -72,6 +71,26 @@ try {
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction']);
+    exit;
+}
+
+// Decrypt private key
+try {
+    if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
+        log_message("JWT_SECRET is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error: JWT_SECRET missing']);
+        exit;
+    }
+    $private_key = openssl_decrypt($transaction['private_key'], 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
+    if ($private_key === false) {
+        log_message("Failed to decrypt private key", 'make-market.log', 'make-market', 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Failed to decrypt private key']);
+        exit;
+    }
+    log_message("Private key decrypted successfully", 'make-market.log', 'make-market', 'INFO');
+} catch (Exception $e) {
+    log_message("Private key decryption failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    echo json_encode(['status' => 'error', 'message' => 'Private key decryption failed: ' . $e->getMessage()]);
     exit;
 }
 
@@ -94,9 +113,7 @@ try {
     exit;
 }
 
-// Retrieve private key securely
-// TODO: Replace with secure retrieval (e.g., from encrypted database or vault)
-$private_key = 'YOUR_PRIVATE_KEY'; // Replace with secure retrieval method
+// Sign and send transaction
 try {
     $keypair = Keypair::fromSecretKey(base58_decode($private_key));
     $connection = new Connection('https://api.mainnet-beta.solana.com');
