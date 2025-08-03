@@ -9,6 +9,17 @@ require_once '../../config/bootstrap.php';
 require_once '../../config/config.php';
 
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: https://vina.network');
+header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+
+// Check AJAX request
+if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
+    log_message("Non-AJAX request rejected", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Non-AJAX request']);
+    exit;
+}
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
