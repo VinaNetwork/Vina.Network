@@ -34,7 +34,7 @@ function showError(message) {
 async function updateTransactionStatus(status, error = null) {
     const transactionId = new URLSearchParams(window.location.search).get('id');
     try {
-        const response = await fetch('/make-market/process/update_status.php', {
+        const response = await fetch('/make-market/process/get-status.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch transaction details
     let transaction;
     try {
-        const response = await fetch(`/make-market/process/get_transaction.php?id=${transactionId}`, {
+        const response = await fetch(`/make-market/process/get-tx.php?id=${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         if (!response.ok) {
