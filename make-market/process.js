@@ -63,7 +63,7 @@ async function performChecks() {
         allChecksPassed = false;
     }
 
-    // 2. Check token mint using mm-api.php
+    // 2. Check token mint
     try {
         log_message(`Checking token mint ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const tokenResponse = await fetch('/make-market/mm-api.php', {
@@ -181,13 +181,30 @@ async function startTransaction() {
         const responseText = await response.text();
         log_message(`Start transaction response: HTTP ${response.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}, Response: ${responseText}`);
+            const errorData = JSON.parse(responseText);
+            throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
         }
         const result = JSON.parse(responseText);
         if (result.status !== 'success') {
             throw new Error(result.message || 'Failed to start transaction');
         }
-        log_message(`Transaction ID ${transactionId} started`, 'make-market.log', 'make-market', 'INFO');
+
+        // Call makeMarket from mm-api.js
+        const { token_mint, sol_amount, slippage, delay, loop_count, batch_size } = result.transaction;
+        log_message(`Calling makeMarket for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        await makeMarket(
+            `Transaction_${transactionId}`,
+            null, // privateKey not passed directly
+            token_mint,
+            sol_amount,
+            slippage,
+            delay,
+            loop_count,
+            batch_size,
+            transactionId
+        );
+
+        // Poll status to update UI
         pollTransactionStatus();
     } catch (error) {
         log_message(`Error starting transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -240,16 +257,25 @@ function pollTransactionStatus() {
             // Show/hide cancel button
             cancelBtn.style.display = ['pending', 'processing'].includes(data.transaction.status.toLowerCase()) ? 'inline-block' : 'none';
 
-            // Stop polling if transaction is complete or canceled
+            // Stop polling if transaction is complete or failed
             if (['success', 'failed', 'canceled'].includes(data.transaction.status.toLowerCase())) {
                 clearInterval(interval);
                 const resultDiv = document.getElementById('check-error');
-                resultDiv.innerHTML = `<p style="color: ${data.transaction.status.toLowerCase() === 'success' ? 'green' : 'red'};">Process ${data.transaction.status.toLowerCase() === 'success' ? 'completed successfully!' : data.transaction.status.toLowerCase() === 'failed' ? 'failed: ' + (data.transaction.error || 'Unknown error') : 'canceled.'}</p>`;
+                let message;
+                if (data.transaction.status.toLowerCase() === 'success') {
+                    message = `<p style="color: green;">Process completed successfully!</p>`;
+                } else if (data.transaction.status.toLowerCase() === 'failed') {
+                    message = `<p style="color: red;">Process failed: ${data.transaction.error || 'Unknown error'}</p>`;
+                } else {
+                    message = `<p style="color: red;">Process canceled.</p>`;
+                }
+                resultDiv.innerHTML = message;
                 resultDiv.style.display = 'block';
             }
         } catch (error) {
             log_message(`Error polling status for transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
             transactionLog.innerHTML += `<p style="color: red;">Error polling status: ${error.message}</p>`;
+            clearInterval(interval);
         }
     }, 5000); // Poll every 5 seconds
 }
