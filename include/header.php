@@ -8,7 +8,9 @@
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
-require_once __DIR__ . '/../config/bootstrap.php';
+
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Default meta values (can be overridden from each page)
 $page_title = isset($page_title) ? $page_title : 'Vina Network - Leading Web3 Blockchain Ecosystem';
