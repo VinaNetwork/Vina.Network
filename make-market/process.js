@@ -19,7 +19,6 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
 
 // Perform pre-transaction checks
 async function performChecks() {
-    const checkBalance = document.getElementById('check-balance').querySelector('span');
     const checkToken = document.getElementById('check-token').querySelector('span');
     const checkLiquidity = document.getElementById('check-liquidity').querySelector('span');
     const checkPrivateKey = document.getElementById('check-private-key').querySelector('span');
@@ -64,67 +63,7 @@ async function performChecks() {
         allChecksPassed = false;
     }
 
-    // 2. Check wallet balance
-    try {
-        log_message(`Sending balance check request to /make-market/get-balance.php for public_key ${PUBLIC_KEY} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
-        const balanceResponse = await fetch('/make-market/get-balance.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ 
-                endpoint: 'getAssetsByOwner',
-                transaction_id: transactionId,
-                params: {
-                    ownerAddress: PUBLIC_KEY,
-                    page: 1,
-                    limit: 1000,
-                    displayOptions: {
-                        showNativeBalance: true
-                    }
-                }
-            })
-        });
-        const responseText = await balanceResponse.text();
-        log_message(`Balance check response: HTTP ${balanceResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
-        if (!balanceResponse.ok) {
-            log_message(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${responseText} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-            checkBalance.textContent = `Failed (HTTP ${balanceResponse.status})`;
-            checkBalance.classList.add('error');
-            errorMessages.push(`Balance check failed: HTTP ${balanceResponse.status}, Response: ${responseText}`);
-            allChecksPassed = false;
-        } else {
-            const balanceData = JSON.parse(responseText);
-            if (balanceData.status === 'success' && typeof balanceData.balance === 'number') {
-                const requiredSol = SOL_AMOUNT;
-                const balanceFormatted = balanceData.balance.toFixed(3); // Format to 3 decimal places
-                if (balanceData.balance >= requiredSol) {
-                    checkBalance.textContent = `Done (${balanceFormatted} SOL)`;
-                    checkBalance.classList.add('done');
-                    log_message(`Balance check passed: ${balanceFormatted} SOL available, required: ${requiredSol} SOL for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
-                } else {
-                    checkBalance.textContent = `Failed (${balanceFormatted} SOL)`;
-                    checkBalance.classList.add('error');
-                    errorMessages.push(`Balance check failed: SOL balance is not enough to make the transaction`);
-                    log_message(`Balance check failed: SOL balance is not enough to make the transaction (${balanceFormatted} SOL available, required: ${requiredSol} SOL) for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-                    allChecksPassed = false;
-                }
-            } else {
-                const errorMsg = balanceData.status === 'error' ? balanceData.message : 'Invalid balance response';
-                checkBalance.textContent = 'Failed';
-                checkBalance.classList.add('error');
-                errorMessages.push(`Balance check failed: ${errorMsg}`);
-                log_message(`Balance check failed: ${errorMsg} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-                allChecksPassed = false;
-            }
-        }
-    } catch (error) {
-        log_message(`Error checking balance for transaction ID ${transactionId}: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        checkBalance.textContent = 'Failed';
-        checkBalance.classList.add('error');
-        errorMessages.push(`Balance check error: ${error.message}`);
-        allChecksPassed = false;
-    }
-
-    // 3. Check token mint using mm-api.php
+    // 2. Check token mint using mm-api.php
     try {
         log_message(`Checking token mint ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const tokenResponse = await fetch('/make-market/mm-api.php', {
@@ -175,7 +114,7 @@ async function performChecks() {
         allChecksPassed = false;
     }
 
-    // 4. Check liquidity
+    // 3. Check liquidity
     try {
         log_message(`Checking liquidity for token ${TOKEN_MINT} for transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'DEBUG');
         const liquidityResponse = await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${encodeURIComponent(TOKEN_MINT)}&amount=${SOL_AMOUNT * 1e9}&slippageBps=${SLIPPAGE * 100}`, {
