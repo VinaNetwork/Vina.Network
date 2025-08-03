@@ -127,11 +127,21 @@ async function getSolBalance(publicKey) {
     let retryCount = 0;
     while (retryCount < maxRetries) {
         try {
-            const response = await window.axios.get(`/make-market/get-balance.php?public_key=${publicKey}`, {
+            const response = await window.axios.post('/make-market/get-balance.php', {
+                endpoint: 'getAssetsByOwner',
+                transaction_id: TRANSACTION_ID,
+                params: {
+                    ownerAddress: publicKey,
+                    page: 1,
+                    limit: 1000,
+                    displayOptions: { showNativeBalance: true }
+                }
+            }, {
                 timeout: 30000,
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             });
             log_message(`Balance endpoint response for ${publicKey}: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
