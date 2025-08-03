@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/start-transaction.php
+// File: make-market/process/start-transaction.php
 // Description: Start a transaction by marking as pending and returning transaction details
 // Created by: Vina Network
 // ============================================================================
@@ -9,7 +9,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = '../';
+$root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
