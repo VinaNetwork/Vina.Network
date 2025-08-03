@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             exit;
         }
 
-        // Mock transaction logs (replace with actual logs from database or worker)
+        // Build transaction logs
         $logs = [];
         if ($transaction['current_loop']) {
             $logs[] = [
@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($transaction['buy_tx_id']) {
             $logs[] = [
                 'timestamp' => date('Y-m-d H:i:s'),
-                'message' => 'Buy transaction completed',
+                'message' => 'Buy transaction ' . ($transaction['status'] === 'failed' ? 'failed' : 'completed'),
                 'tx_id' => $transaction['buy_tx_id']
             ];
         }
@@ -179,6 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'timestamp' => date('Y-m-d H:i:s'),
                 'message' => 'Sell transaction completed',
                 'tx_id' => $transaction['sell_tx_id']
+            ];
+        }
+        if ($transaction['error']) {
+            $logs[] = [
+                'timestamp' => date('Y-m-d H:i:s'),
+                'message' => 'Error: ' . $transaction['error'],
+                'tx_id' => null
             ];
         }
 
