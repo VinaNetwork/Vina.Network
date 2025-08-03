@@ -1,0 +1,128 @@
+/* ============================================================================ */
+/* File: make-market/process/process.css */
+/* Description: Styles for the Make Market Process page of Vina Network */
+/* Created by: Vina Network */
+/* ============================================================================ */
+
+/* Process Container */
+.process-container {
+    margin-top: 72px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.process-content {
+    max-width: 800px;
+    padding: var(--padding);
+    margin: var(--margin-top);
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+    color: #fff;
+}
+
+h1 {
+    text-align: center;
+}
+
+/* Account Info */
+#account-info {
+    margin: var(--margin-top) auto;
+}
+
+#account-info table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--padding);
+}
+
+#account-info th, #account-info td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    background: #a3a3a3;
+}
+
+/* Copy Tooltip */
+.copy-tooltip {
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Transaction Details */
+.transaction-details {
+    margin-top: var(--margin-top);
+}
+
+.transaction-details p {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+.transaction-details p strong {
+    color: #00d4ff;
+}
+
+/* Check List */
+.check-list {
+    margin-top: var(--margin-top);
+}
+
+.check-list p {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+.check-list .done {
+    color: #28a745;
+}
+
+.check-list .error {
+    color: #dc3545;
+}
+
+/* Status Box */
+.status-box {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+    padding: var(--padding);
+    margin-top: var(--margin-top);
+    background-color: #f9f9f9;
+    font-size: 15px;
+    color: #333;
+    display: none;
+}
+
+.status-box.active {
+    display: block;
+}
+
+/* Action Buttons */
+.action-buttons {
+    margin-top: var(--margin-top);
+    display: flex;
+    gap: 10px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .process-container {
+        margin-top: 64px;
+    }
+    .process-content {
+        max-width: 100%;
+    }
+    table {
+        font-size: 12px;
+    }
+}
