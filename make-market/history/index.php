@@ -121,6 +121,7 @@ $page_og_url = BASE_URL . "make-market/history/";
 $page_canonical = BASE_URL . "make-market/history/";
 
 // CSS for History page
+$page_css = ['/make-market/mm.css'];
 $page_css = ['/make-market/history/history.css'];
 
 // Header
