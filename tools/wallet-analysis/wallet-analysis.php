@@ -5,9 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) {
-    define('VINANETWORK', true);
-}
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
