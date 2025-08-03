@@ -9,9 +9,6 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = '../';
-require_once $root_path . 'config/bootstrap.php';
-
 // Default meta values (can be overridden from each page)
 $page_title = isset($page_title) ? $page_title : 'Vina Network - Leading Web3 Blockchain Ecosystem';
 $page_description = isset($page_description) ? $page_description : 'Vina Network is a leading Web3 ecosystem focused on blockchain technology, cryptocurrencies ($VINA), stablecoins, and DeFi solutions. Join us!';
