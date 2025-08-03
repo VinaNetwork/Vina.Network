@@ -173,7 +173,7 @@ async function startTransaction() {
     const resultDiv = document.getElementById('check-error');
     try {
         log_message(`Starting transaction ID ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
-        const response = await fetch('/make-market/start-transaction.php', {
+        const response = await fetch('/make-market/start.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ transaction_id: transactionId })
