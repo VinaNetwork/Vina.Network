@@ -10,21 +10,21 @@
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
-require_once __DIR__ . '/../config/bootstrap.php';
+
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Set path and SEO metadata for this page
 $page_title = "Notification - Vina Network";
 $page_og_url = BASE_URL . "notification/";
 $page_canonical = BASE_URL . "notification/";
 $page_css = ['notification.css'];
-
-// Include shared <head> content (meta, title, styles, etc.)
-include '../include/header.php';
+include $root_path . 'include/header.php';
 ?>
 
 <body>
 <!-- Include shared top navigation bar -->
-<?php include '../include/navbar.php'; ?>
+<?php include $root_path . 'include/navbar.php'; ?>
 
 <!-- Notification section showing under-construction message -->
 <section class="notification">
@@ -37,9 +37,9 @@ include '../include/header.php';
 </section>
 
 <!-- Include community -->
-<?php include '../include/community.php'; ?>
+<?php include $root_path . 'include/community.php'; ?>
 <!-- Include footer -->
-<?php include '../include/footer.php'; ?>
+<?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Shared JavaScript files -->
 <script src="../js/vina.js"></script>
