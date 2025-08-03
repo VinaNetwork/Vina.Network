@@ -10,7 +10,9 @@
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
-require_once __DIR__ . '/../config/bootstrap.php';
+
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Head Section (Meta, Styles, Title) is included via header.php
 $page_title = "Contact Us - Vina Network";
@@ -22,12 +24,12 @@ $page_og_url = BASE_URL . "contact/";
 $page_canonical = BASE_URL . "contact/";
 
 $page_css = ['contact.css'];
-include '../include/header.php';
+include $root_path . 'include/header.php';
 ?>
 
 <body>
 	<!-- Navigation Bar -->
-	<?php include '../include/navbar.php'; ?>
+	<?php include $root_path . 'include/navbar.php'; ?>
 	
 	<!-- Contact Info -->
 	<div class="contact">
@@ -66,7 +68,7 @@ include '../include/header.php';
 	</div>
 	
 	<!-- Footer -->
-	<?php include '../include/footer.php'; ?>
+	<?php include $root_path . 'include/footer.php'; ?>
 	<!-- Scripts -->
 	<script src="../js/vina.js"></script>
 	<script src="../js/navbar.js"></script>
