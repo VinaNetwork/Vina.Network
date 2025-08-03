@@ -4,12 +4,12 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Cấu hình
+// Configuration
 const JUPITER_API = 'https://quote-api.jup.ag/v6';
 const RPC_ENDPOINT = 'https://api.mainnet-beta.solana.com';
 const connection = new solanaWeb3.Connection(RPC_ENDPOINT, 'confirmed');
 
-// Hàm log_message
+// Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     fetch('/make-market/log.php', {
         method: 'POST',
@@ -22,7 +22,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     }).catch(err => console.error('Log error:', err));
 }
 
-// Hàm cập nhật trạng thái giao dịch
+// Update transaction status
 function updateTransaction(transactionId, updates) {
     fetch('/make-market/status.php', {
         method: 'POST',
@@ -34,7 +34,7 @@ function updateTransaction(transactionId, updates) {
     });
 }
 
-// Hàm xóa private_key khỏi database
+// Delete private_key from database
 async function deletePrivateKey(transactionId) {
     try {
         const response = await fetch('/make-market/status.php', {
@@ -56,7 +56,7 @@ async function deletePrivateKey(transactionId) {
     }
 }
 
-// Hàm lấy và giải mã private_key từ database
+// Fetch and decode private_key from database
 async function getDecryptedPrivateKey(transactionId) {
     try {
         const response = await fetch(`/make-market/get-private-key.php?transactionId=${transactionId}`, {
@@ -77,7 +77,7 @@ async function getDecryptedPrivateKey(transactionId) {
     }
 }
 
-// Hàm kiểm tra trạng thái private_key
+// Check private_key status
 async function checkPrivateKeyStatus(transactionId) {
     try {
         const response = await fetch('/make-market/check-private-key.php', {
@@ -99,9 +99,9 @@ async function checkPrivateKeyStatus(transactionId) {
     }
 }
 
-// Hàm chờ các thư viện cần thiết
+// Wait for required libraries
 async function waitForLibraries() {
-    const maxAttempts = 20; // 10 giây
+    const maxAttempts = 20; // 10 seconds
     let attempts = 0;
     while (attempts < maxAttempts) {
         if (
@@ -121,57 +121,22 @@ async function waitForLibraries() {
     return false;
 }
 
-// Hàm lấy số dư SOL qua endpoint get-balance.php
-async function getSolBalance(publicKey) {
-    const maxRetries = 3;
-    let retryCount = 0;
-    while (retryCount < maxRetries) {
-        try {
-            const response = await window.axios.post('/make-market/get-balance.php', {
-                endpoint: 'getAssetsByOwner',
-                transaction_id: TRANSACTION_ID,
-                params: {
-                    ownerAddress: publicKey,
-                    page: 1,
-                    limit: 1000,
-                    displayOptions: { showNativeBalance: true }
-                }
-            }, {
-                timeout: 30000,
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            log_message(`Balance endpoint response for ${publicKey}: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
-            if (response.data && response.data.status === 'success' && typeof response.data.balance === 'number') {
-                const balance = response.data.balance * 1_000_000_000; // Convert SOL to lamports
-                log_message(`Fetched SOL balance for ${publicKey}: ${response.data.balance} SOL`, 'make-market.log', 'make-market', 'INFO');
-                return balance;
-            } else {
-                throw new Error(`Invalid response structure: ${JSON.stringify(response.data)}`);
-            }
-        } catch (error) {
-            retryCount++;
-            const errorMessage = error.response 
-                ? `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`
-                : error.message;
-            log_message(`Failed to fetch SOL balance, attempt ${retryCount}/${maxRetries}: ${errorMessage}`, 'make-market.log', 'make-market', 'ERROR');
-            if (retryCount === maxRetries) {
-                throw new Error(`Failed to fetch SOL balance after ${maxRetries} attempts: ${errorMessage}`);
-            }
-            await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-    }
-}
-
-// Hàm xử lý một cặp giao dịch (mua + bán) trong lô
+// Process a single transaction pair (buy + sell)
 async function processTransactionPair(wallet, tokenMint, solAmount, slippage, delay, processName, transactionId, loopIndex) {
     try {
-        // Thực hiện mua token
+        // Perform buy transaction
         log_message(`Initiating buy transaction ${loopIndex + 1} for token: ${tokenMint}, amount: ${solAmount} SOL`, 'make-market.log', 'make-market', 'DEBUG');
-        const buyTx = await swapSOLtoToken(wallet, tokenMint, solAmount, slippage);
+        let buyTx;
+        try {
+            buyTx = await swapSOLtoToken(wallet, tokenMint, solAmount, slippage);
+        } catch (error) {
+            let errorMessage = error.message;
+            if (errorMessage.includes('insufficient funds') || errorMessage.includes('NotEnoughBalance')) {
+                errorMessage = 'Insufficient SOL balance to complete the transaction';
+            }
+            log_message(`Buy transaction ${loopIndex + 1} failed: ${errorMessage}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(errorMessage);
+        }
         const buyTxId = await connection.sendRawTransaction(buyTx.serialize(), {
             skipPreflight: true
         });
@@ -179,15 +144,25 @@ async function processTransactionPair(wallet, tokenMint, solAmount, slippage, de
         log_message(`Buy transaction ${loopIndex + 1} completed: ${buyTxId}`, 'make-market.log', 'make-market', 'INFO');
         updateTransaction(transactionId, { buy_tx_id: buyTxId });
 
-        // Delay giữa mua và bán
+        // Delay between buy and sell
         if (delay > 0) {
             log_message(`Waiting ${delay} seconds before sell for transaction ${loopIndex + 1}`, 'make-market.log', 'make-market', 'DEBUG');
             await new Promise(resolve => setTimeout(resolve, delay * 1000));
         }
 
-        // Thực hiện bán token
+        // Perform sell transaction
         log_message(`Initiating sell transaction ${loopIndex + 1} for token: ${tokenMint}`, 'make-market.log', 'make-market', 'DEBUG');
-        const sellTx = await swapTokentoSOL(wallet, tokenMint, slippage);
+        let sellTx;
+        try {
+            sellTx = await swapTokentoSOL(wallet, tokenMint, slippage);
+        } catch (error) {
+            let errorMessage = error.message;
+            if (errorMessage.includes('insufficient funds') || errorMessage.includes('NotEnoughBalance')) {
+                errorMessage = 'Insufficient token balance to complete the transaction';
+            }
+            log_message(`Sell transaction ${loopIndex + 1} failed: ${errorMessage}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(errorMessage);
+        }
         const sellTxId = await connection.sendRawTransaction(sellTx.serialize(), {
             skipPreflight: true
         });
@@ -202,10 +177,10 @@ async function processTransactionPair(wallet, tokenMint, solAmount, slippage, de
     }
 }
 
-// Hàm chính xử lý make market
+// Main function to handle market making
 async function makeMarket(
     processName,
-    privateKey, // Không sử dụng privateKey trực tiếp từ tham số
+    privateKey, // Not used directly, fetched from database
     tokenMint,
     solAmount,
     slippage,
@@ -218,90 +193,74 @@ async function makeMarket(
     const submitButton = document.querySelector('#makeMarketForm button');
     log_message(`Starting makeMarket: process=${processName}, tokenMint=${tokenMint}, solAmount=${solAmount}, slippage=${slippage}, loopCount=${loopCount}, batchSize=${batchSize}, transactionId=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
 
-    // Chờ các thư viện tải xong
+    // Wait for libraries
     if (!(await waitForLibraries())) {
         log_message('Required libraries not loaded for makeMarket', 'make-market.log', 'make-market', 'ERROR');
         updateTransaction(transactionId, { status: 'failed', error: 'Required libraries not loaded' });
         resultDiv.innerHTML = `<p style="color: red;"><strong>[${processName}]</strong> Error: Required libraries not loaded</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         resultDiv.classList.add('active');
         submitButton.disabled = false;
-        await deletePrivateKey(transactionId); // Xóa private_key ngay cả khi lỗi
+        await deletePrivateKey(transactionId);
         return false;
     }
 
     try {
-        // Kiểm tra các thư viện cần thiết
+        // Check required libraries
         if (typeof window.solanaWeb3 === 'undefined') {
-            log_message('solanaWeb3 is not defined', 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'solanaWeb3 is not defined' });
             throw new Error('solanaWeb3 is not defined');
         }
         if (typeof window.bs58 === 'undefined') {
-            log_message('bs58 library is not loaded', 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'bs58 library is not loaded' });
             throw new Error('bs58 library is not loaded');
         }
         if (typeof window.splToken === 'undefined') {
-            log_message('splToken is not defined', 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'splToken is not defined' });
             throw new Error('splToken is not defined');
         }
         if (typeof window.axios === 'undefined') {
-            log_message('axios is not defined', 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'axios is not defined' });
             throw new Error('axios is not defined');
         }
 
-        // Kiểm tra trạng thái private_key
+        // Check private_key status
         try {
             const isPending = await checkPrivateKeyStatus(transactionId);
             if (isPending) {
-                log_message(`Private key is already running a pending process for transaction ${transactionId}`, 'make-market.log', 'make-market', 'ERROR');
-                updateTransaction(transactionId, { status: 'failed', error: 'Private key is currently running another process' });
                 throw new Error('This private key is currently running another process. Please wait for it to complete or use a different private key.');
             }
             log_message(`Private key is not running any pending process for transaction ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
         } catch (error) {
-            log_message(`Failed to check private_key status: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: `Failed to check private_key status: ${error.message}` });
             throw error;
         }
 
-        // Lấy và giải mã private_key từ database
+        // Fetch and decode private_key
         let decodedPrivateKey;
         try {
             decodedPrivateKey = await getDecryptedPrivateKey(transactionId);
             log_message(`Successfully fetched and decrypted private_key for transaction ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
         } catch (error) {
-            log_message(`Failed to fetch or decrypt private_key: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
             updateTransaction(transactionId, { status: 'failed', error: `Failed to fetch or decrypt private_key: ${error.message}` });
-            throw new Error(`Failed to fetch or decrypt private_key: ${error.message}`);
+            throw error;
         }
 
-        // Kiểm tra private key
+        // Validate private key
         let keypair;
         try {
             const decodedKey = window.bs58.decode(decodedPrivateKey);
             if (decodedKey.length !== 64) {
-                log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
-                updateTransaction(transactionId, { status: 'failed', error: `Invalid private key length: ${decodedKey.length} bytes` });
                 throw new Error(`Invalid private key length: ${decodedKey.length} bytes`);
             }
             keypair = window.solanaWeb3.Keypair.fromSecretKey(decodedKey);
             const publicKey = keypair.publicKey.toBase58();
             if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(publicKey)) {
-                log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
-                updateTransaction(transactionId, { status: 'failed', error: 'Invalid public key format' });
                 throw new Error('Invalid public key format');
             }
         } catch (error) {
             log_message(`Invalid private key: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'Invalid private key' });
-            throw new Error('Invalid private key');
+            updateTransaction(transactionId, { status: 'failed', error: `Invalid private key: ${error.message}` });
+            throw error;
         }
         const wallet = { publicKey: keypair.publicKey, payer: keypair };
 
-        // Kiểm tra token mint
+        // Validate token mint
         try {
             await window.splToken.getMint(connection, new window.solanaWeb3.PublicKey(tokenMint));
             log_message(`Token mint validated: ${tokenMint}`, 'make-market.log', 'make-market', 'INFO');
@@ -311,54 +270,28 @@ async function makeMarket(
             throw new Error('Invalid token mint');
         }
 
-        // Kiểm tra số dư ví bằng get-balance.php
-        let balance;
-        try {
-            balance = await getSolBalance(wallet.publicKey.toBase58());
-        } catch (error) {
-            log_message(`Failed to get SOL balance: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: `Failed to get SOL balance: ${error.message}` });
-            throw new Error(`Failed to get SOL balance: ${error.message}`);
-        }
-        const requiredLamports = solAmount * 1_000_000_000 + 5000; // SOL + phí (~0.005 SOL)
-        if (balance < requiredLamports) {
-            log_message(`Insufficient balance: ${balance / 1_000_000_000} SOL, required: ${requiredLamports / 1_000_000_000} SOL`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: `Insufficient balance: ${balance / 1_000_000_000} SOL available, ${requiredLamports / 1_000_000_000} SOL required` });
-            throw new Error('Insufficient balance');
-        }
-        log_message(`Balance validated: ${balance / 1_000_000_000} SOL available`, 'make-market.log', 'make-market', 'INFO');
-
-        // Kiểm tra input
+        // Validate inputs
         if (!tokenMint.match(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/)) {
-            log_message(`Invalid token address: ${tokenMint}`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'Invalid token address' });
             throw new Error('Invalid token address');
         }
         if (solAmount <= 0) {
-            log_message(`Invalid SOL amount: ${solAmount}`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'SOL amount must be positive' });
             throw new Error('SOL amount must be positive');
         }
         if (slippage < 0) {
-            log_message(`Invalid slippage: ${slippage}`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'Slippage must be non-negative' });
             throw new Error('Slippage must be non-negative');
         }
         if (loopCount < 1) {
-            log_message(`Invalid loop count: ${loopCount}`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'Loop count must be at least 1' });
             throw new Error('Loop count must be at least 1');
         }
         if (batchSize < 1 || batchSize > 10) {
-            log_message(`Invalid batch size: ${batchSize}`, 'make-market.log', 'make-market', 'ERROR');
-            updateTransaction(transactionId, { status: 'failed', error: 'Batch size must be between 1 and 10' });
             throw new Error('Batch size must be between 1 and 10');
         }
 
+        updateTransaction(transactionId, { status: 'pending', current_loop: 1 });
         resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Starting market making with ${loopCount} loops in batches of ${batchSize}...</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         log_message(`Market making started for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
 
-        // Chia loopCount thành các lô
+        // Process batches
         const totalBatches = Math.ceil(loopCount / batchSize);
         for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
             const startLoop = batchIndex * batchSize;
@@ -368,7 +301,7 @@ async function makeMarket(
             resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Processing batch ${batchIndex + 1}/${totalBatches} (loops ${startLoop + 1} to ${endLoop})</p>`;
             log_message(`Processing batch ${batchIndex + 1}/${totalBatches} with ${batchLoops} loops for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
 
-            // Xử lý song song các giao dịch trong lô
+            // Process transactions in parallel
             const batchPromises = [];
             for (let i = startLoop; i < endLoop; i++) {
                 batchPromises.push(processTransactionPair(wallet, tokenMint, solAmount, slippage, delay, processName, transactionId, i));
@@ -388,32 +321,33 @@ async function makeMarket(
                 }
                 resultDiv.innerHTML += `<p><strong>[${processName}]</strong> Batch ${batchIndex + 1}/${totalBatches} completed</p>`;
                 log_message(`Batch ${batchIndex + 1}/${totalBatches} completed for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
+                updateTransaction(transactionId, { current_loop: endLoop });
             } catch (error) {
-                throw error; // Ném lỗi để dừng tiến trình
+                throw error;
             }
         }
 
         resultDiv.innerHTML += `<p style="color: green;"><strong>[${processName}]</strong> Market making completed</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         log_message(`Market making completed for process: ${processName}`, 'make-market.log', 'make-market', 'INFO');
         updateTransaction(transactionId, { status: 'success' });
-        return true; // Trả về true để báo thành công
+        return true;
     } catch (error) {
         resultDiv.innerHTML += `<p style="color: red;"><strong>[${processName}]</strong> Error: ${error.message}</p><button onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
         log_message(`Error in makeMarket: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         updateTransaction(transactionId, { status: 'failed', error: error.message });
-        throw error; // Ném lại lỗi để mm.js xử lý
+        throw error;
     } finally {
         submitButton.disabled = false;
         log_message(`makeMarket function ended for process: ${processName}`, 'make-market.log', 'make-market', 'DEBUG');
-        await deletePrivateKey(transactionId); // Xóa private_key sau khi tiến trình hoàn tất
+        await deletePrivateKey(transactionId);
     }
 }
 
-// Hàm swap SOL sang token
+// Swap SOL to token
 async function swapSOLtoToken(wallet, tokenMint, solAmount, slippage) {
     log_message(`Fetching quote for SOL to token swap: tokenMint=${tokenMint}, amount=${solAmount}, slippage=${slippage}`, 'make-market.log', 'make-market', 'DEBUG');
     try {
-        // Lấy quote từ Jupiter
+        // Fetch quote from Jupiter
         const quoteResponse = await window.axios.get(`${JUPITER_API}/quote`, {
             params: {
                 inputMint: 'So11111111111111111111111111111111111111112', // SOL
@@ -422,14 +356,13 @@ async function swapSOLtoToken(wallet, tokenMint, solAmount, slippage) {
                 slippageBps: Math.floor(slippage * 100)
             }
         });
-        // Kiểm tra thanh khoản
         if (!quoteResponse.data || !quoteResponse.data.outAmount) {
             log_message(`Insufficient liquidity for SOL to token swap: tokenMint=${tokenMint}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error('Insufficient liquidity for swap');
         }
         log_message(`Quote fetched for SOL to token swap: tokenMint=${tokenMint}, outAmount=${quoteResponse.data.outAmount}`, 'make-market.log', 'make-market', 'INFO');
 
-        // Lấy serialized transaction
+        // Fetch serialized transaction
         log_message(`Requesting swap transaction for SOL to token`, 'make-market.log', 'make-market', 'DEBUG');
         const swapResponse = await window.axios.post(`${JUPITER_API}/swap`, {
             quoteResponse: quoteResponse.data,
@@ -444,16 +377,20 @@ async function swapSOLtoToken(wallet, tokenMint, solAmount, slippage) {
         log_message(`Swap transaction prepared for SOL to token`, 'make-market.log', 'make-market', 'DEBUG');
         return transaction;
     } catch (error) {
-        log_message(`Failed to get swap quote for SOL to token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        throw new Error(`Failed to get swap quote: ${error.message}`);
+        let errorMessage = error.message;
+        if (errorMessage.includes('insufficient funds') || errorMessage.includes('NotEnoughBalance')) {
+            errorMessage = 'Insufficient SOL balance to complete the transaction';
+        }
+        log_message(`Failed to get swap quote for SOL to token: ${errorMessage}`, 'make-market.log', 'make-market', 'ERROR');
+        throw new Error(`Failed to get swap quote: ${errorMessage}`);
     }
 }
 
-// Hàm swap token sang SOL
+// Swap token to SOL
 async function swapTokentoSOL(wallet, tokenMint, slippage) {
     log_message(`Fetching token account for token: ${tokenMint}`, 'make-market.log', 'make-market', 'DEBUG');
     try {
-        // Lấy associated token address
+        // Get associated token address
         const tokenAccount = await window.splToken.getAssociatedTokenAddress(
             new window.solanaWeb3.PublicKey(tokenMint),
             wallet.publicKey
@@ -462,7 +399,7 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
         const amount = tokenBalance.value.amount;
         log_message(`Token balance fetched: ${amount} for token: ${tokenMint}`, 'make-market.log', 'make-market', 'INFO');
 
-        // Lấy quote từ Jupiter
+        // Fetch quote from Jupiter
         log_message(`Fetching quote for token to SOL swap: tokenMint=${tokenMint}, amount=${amount}, slippage=${slippage}`, 'make-market.log', 'make-market', 'DEBUG');
         const quoteResponse = await window.axios.get(`${JUPITER_API}/quote`, {
             params: {
@@ -472,14 +409,13 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
                 slippageBps: Math.floor(slippage * 100)
             }
         });
-        // Kiểm tra thanh khoản
         if (!quoteResponse.data || !quoteResponse.data.outAmount) {
             log_message(`Insufficient liquidity for token to SOL swap: tokenMint=${tokenMint}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error('Insufficient liquidity for swap');
         }
         log_message(`Quote fetched for token to SOL swap: tokenMint=${tokenMint}, outAmount=${quoteResponse.data.outAmount}`, 'make-market.log', 'make-market', 'INFO');
 
-        // Lấy serialized transaction
+        // Fetch serialized transaction
         log_message(`Requesting swap transaction for token to SOL`, 'make-market.log', 'make-market', 'DEBUG');
         const swapResponse = await window.axios.post(`${JUPITER_API}/swap`, {
             quoteResponse: quoteResponse.data,
@@ -494,7 +430,11 @@ async function swapTokentoSOL(wallet, tokenMint, slippage) {
         log_message(`Swap transaction prepared for token to SOL`, 'make-market.log', 'make-market', 'DEBUG');
         return transaction;
     } catch (error) {
-        log_message(`Failed to get swap quote for token to SOL: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        throw new Error(`Failed to get swap quote: ${error.message}`);
+        let errorMessage = error.message;
+        if (errorMessage.includes('insufficient funds') || errorMessage.includes('NotEnoughBalance')) {
+            errorMessage = 'Insufficient token balance to complete the transaction';
+        }
+        log_message(`Failed to get swap quote for token to SOL: ${errorMessage}`, 'make-market.log', 'make-market', 'ERROR');
+        throw new Error(`Failed to get swap quote: ${errorMessage}`);
     }
 }
