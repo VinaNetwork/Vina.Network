@@ -111,52 +111,6 @@ form button:disabled {
     color: #28a745;
 }
 
-/* History */
-#transaction-history {
-    overflow-x: auto;
-    max-width: 100%;
-}
-.history-title {
-    margin-top: 20px;
-    background-color: #f9f9f9;
-    border-left: 4px solid #007acc;
-    padding: 6px 10px;
-    font-size: 20px;
-    color: #000000;
-}
-
-#transaction-history table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-    background: #fff;
-    color: black;
-}
-#transaction-history th,
-#transaction-history td {
-    padding: 8px;
-    border: 1px solid #ddd;
-    text-align: left;
-    font-size: 14px;
-}
-#transaction-history th {
-    background-color: rgba(0, 0, 0, 0.05);
-    font-weight: bold;
-}
-#transaction-history td a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-#transaction-history td a:hover {
-    text-decoration: underline;
-}
-
-#transaction-history th:nth-child(12),
-#transaction-history td:nth-child(12) {
-    min-width: 150px;
-}
-
 /* Confirmation popup */
 .confirmation-popup {
     display: none;
