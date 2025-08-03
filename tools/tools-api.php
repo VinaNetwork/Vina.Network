@@ -4,9 +4,12 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
-require_once '../config/bootstrap.php';
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
     $helius_api_key = HELIUS_API_KEY;
