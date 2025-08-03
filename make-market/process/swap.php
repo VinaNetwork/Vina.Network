@@ -9,10 +9,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = '../../';
-require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/config.php';
-require_once $root_path . '../vendor/autoload.php';
+require_once '../../config/bootstrap.php';
+require_once '../../config/config.php';
+require_once '../../vendor/autoload.php';
 
 use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\Keypair;
@@ -96,12 +95,12 @@ try {
 
 // Check balance server-side
 try {
-    $connection = new Connection('https://api.mainnet-beta.solana.com');
+    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY');
     $publicKey = new PublicKey($transaction['public_key']);
     $balance = $connection->getBalance($publicKey);
     $balanceInSol = $balance / 1e9; // Convert lamports to SOL
     $requiredAmount = $transaction['sol_amount'] + 0.005; // Add 0.005 SOL for transaction fees
-    if ($balanceInSol < $requiredAmount) {
+    if ($balanceInSol < requiredAmount) {
         throw new Exception("Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required");
     }
     log_message("Balance check passed: $balanceInSol SOL available", 'make-market.log', 'make-market', 'INFO');
@@ -116,7 +115,15 @@ try {
 // Sign and send transaction
 try {
     $keypair = Keypair::fromSecretKey(base58_decode($private_key));
-    $connection = new Connection('https://api.mainnet-beta.solana.com');
+    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY');
+
+    // Verify public key matches
+    $derivedPublicKey = $keypair->getPublicKey()->toBase58();
+    if ($derivedPublicKey !== $transaction['public_key']) {
+        log_message("Public key mismatch: derived=$derivedPublicKey, stored={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        echo json_encode(['status' => 'error', 'message' => 'Public key mismatch']);
+        exit;
+    }
 
     // Decode and sign transaction
     $transactionObj = Transaction::from($swap_transaction);
