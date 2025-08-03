@@ -1,3 +1,4 @@
+```javascript
 // ============================================================================
 // File: make-market/process/process.js
 // Description: JavaScript for processing Solana token swap using Jupiter Aggregator API
@@ -58,6 +59,26 @@ async function updateTransactionStatus(status, error = null) {
     }
 }
 
+// Check wallet balance
+async function checkBalance(publicKey, solAmount) {
+    try {
+        const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+        const publicKeyObj = new window.solanaWeb3.PublicKey(publicKey);
+        const balance = await connection.getBalance(publicKeyObj);
+        const balanceInSol = balance / 1e9; // Convert lamports to SOL
+        if (balanceInSol < solAmount) {
+            throw new Error(`Insufficient balance: ${balanceInSol} SOL available, ${solAmount} SOL required`);
+        }
+        log_message(`Balance check passed: ${balanceInSol} SOL available`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Balance check passed:', balanceInSol);
+        return true;
+    } catch (err) {
+        log_message(`Balance check failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Balance check failed:', err.message);
+        throw err;
+    }
+}
+
 // Get quote from Jupiter API
 async function getQuote(tokenMint, solAmount) {
     try {
@@ -83,7 +104,7 @@ async function getQuote(tokenMint, solAmount) {
 }
 
 // Execute swap using Jupiter API
-async function executeSwap(quote, publicKey) {
+async function executeSwap(quote, publicKey, transactionId) {
     try {
         const response = await axios.post('https://quote-api.jup.ag/v6/swap', {
             quoteResponse: quote,
@@ -99,12 +120,28 @@ async function executeSwap(quote, publicKey) {
         log_message(`Swap transaction prepared: ${swapTransaction}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Swap transaction prepared:', swapTransaction);
 
-        // Decode and sign transaction (requires server-side signing with private key)
-        // This part should ideally be handled server-side for security
-        // For now, log that signing is needed
-        log_message('Swap requires server-side signing', 'make-market.log', 'make-market', 'INFO');
-        console.log('Swap requires server-side signing');
-        return swapTransaction;
+        // Send to server for signing
+        const swapResponse = await fetch('/make-market/process/swap.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ id: transactionId, swap_transaction: swapTransaction })
+        });
+        if (!swapResponse.ok) {
+            if (swapResponse.status === 404) {
+                throw new Error('Server error: swap.php not found');
+            }
+            throw new Error(`Server error: HTTP ${swapResponse.status}`);
+        }
+        const swapResult = await swapResponse.json();
+        if (swapResult.status !== 'success') {
+            throw new Error(swapResult.message);
+        }
+        log_message(`Swap executed: txid=${swapResult.txid}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Swap executed:', swapResult.txid);
+        return swapResult.txid;
     } catch (err) {
         log_message(`Swap failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Swap failed:', err.message);
@@ -147,24 +184,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update status to pending
     await updateTransactionStatus('pending');
 
+    // Get public key from page
+    const publicKey = document.querySelector('.copy-icon').getAttribute('data-full');
+
+    // Check balance
+    try {
+        document.getElementById('swap-status').textContent = 'Checking balance...';
+        await checkBalance(publicKey, transaction.sol_amount);
+    } catch (err) {
+        showError(err.message);
+        return;
+    }
+
     // Get quote and execute swap
     try {
         document.getElementById('swap-status').textContent = 'Getting quote...';
         const quote = await getQuote(transaction.token_mint, transaction.sol_amount);
         document.getElementById('swap-status').textContent = 'Preparing swap...';
         
-        // Note: Swap execution requires server-side signing with private key
-        // For now, we log the swap transaction and update status to processing
-        const swapTransaction = await executeSwap(quote, '<?php echo htmlspecialchars($_SESSION['public_key']); ?>');
-        await updateTransactionStatus('processing');
-        document.getElementById('swap-status').textContent = 'Swap prepared, awaiting confirmation...';
-        log_message('Swap prepared, ready for trading', 'make-market.log', 'make-market', 'INFO');
-        console.log('Swap prepared, ready for trading');
-        document.getElementById('process-result').innerHTML = '<p style="color: green;">Swap prepared. Ready for trading.</p>';
+        const txid = await executeSwap(quote, publicKey, transactionId);
+        await updateTransactionStatus('success');
+        document.getElementById('swap-status').textContent = `Swap completed: txid=${txid}`;
+        log_message('Swap completed, ready for trading', 'make-market.log', 'make-market', 'INFO');
+        console.log('Swap completed, ready for trading');
+        document.getElementById('process-result').innerHTML = `<p style="color: green;">Swap completed. Transaction ID: <a href="https://solscan.io/tx/${txid}" target="_blank">${txid}</a></p>`;
         document.getElementById('process-result').classList.add('active');
-
-        // TODO: Implement server-side signing and transaction submission
-        // Update status to 'success' or 'failed' based on transaction result
     } catch (err) {
         showError('Swap failed: ' + err.message);
     }
