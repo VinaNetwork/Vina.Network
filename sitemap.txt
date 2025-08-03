@@ -79,20 +79,20 @@ Sitemap: Vina Network
 │       ├── wallet-analysis.php
 │       └── wallet-analysis.css
 │
-├── make-market/                    # Directory containing files related to the Make Market feature
-│   ├── index.php                   # Main Make Market page, contains user interface (HTML, form, transaction history)
-│   ├── mm.css                      # CSS file for styling the Make Market interface
-│   ├── mm.js                       # JavaScript file handling UI interactions (form submission, history, Continue/Cancel buttons)
-│   ├── mm-api.js                   # JavaScript file handling transaction logic (calls Jupiter API, token buy/sell)
-│   ├── mm-api.php                  # Server-side API for transaction logic (storage, data validation)
-│   ├── history.php                 # API to retrieve transaction history with pagination
-│   ├── get-transaction.php         # API to fetch transaction details by ID for form population
-│   ├── cancel-transaction.php      # API to cancel pending transactions, updates status to Canceled
-│   ├── status.php                  # API to check transaction status (success, failed, pending, canceled)
-│   ├── log.php                     # API to log actions and errors in the system
-│   ├── get-balance.php             # API to retrieve wallet balance (SOL or token) based on public key
-│   ├── check-private-key.php       # API to verify the validity of a private key
-│   └── get-private-key.php         # API to retrieve encrypted private key from database (if needed)
+├── make-market/                    
+│   ├── index.php
+│   ├── mm.css
+│   ├── mm.js
+│   ├── log.php
+│   └── process/
+│       ├── process.php
+│       ├── process.js
+│       ├── api.js
+│       ├── status.php
+│       ├── start.php
+│       ├── cancel.php
+│       ├── check-private-key.php
+│       └── get-private-key.php
 │
 ├── logs/
 │   ├── accounts/
