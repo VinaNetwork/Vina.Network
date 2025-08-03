@@ -25,6 +25,7 @@ function showError(message) {
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `<p style="color: red;">Error: ${message}</p>`;
     resultDiv.classList.add('active');
+    document.getElementById('swap-status').textContent = ''; // Clear swap-status
     log_message(`Process stopped: ${message}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}`);
     updateTransactionStatus('failed', message);
@@ -61,12 +62,13 @@ async function updateTransactionStatus(status, error = null) {
 // Check wallet balance
 async function checkBalance(publicKey, solAmount) {
     try {
-        const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
+        const connection = new window.solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY');
         const publicKeyObj = new window.solanaWeb3.PublicKey(publicKey);
         const balance = await connection.getBalance(publicKeyObj);
         const balanceInSol = balance / 1e9; // Convert lamports to SOL
-        if (balanceInSol < solAmount) {
-            throw new Error(`Insufficient balance: ${balanceInSol} SOL available, ${solAmount} SOL required`);
+        const requiredAmount = solAmount + 0.005; // Add 0.005 SOL for fees
+        if (balanceInSol < requiredAmount) {
+            throw new Error(`Insufficient balance: ${balanceInSol} SOL available, ${requiredAmount} SOL required`);
         }
         log_message(`Balance check passed: ${balanceInSol} SOL available`, 'make-market.log', 'make-market', 'INFO');
         console.log('Balance check passed:', balanceInSol);
@@ -173,18 +175,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error(result.message);
         }
         transaction = result.data;
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to fetch transaction: ' + err.message);
         return;
     }
 
+    // Fetch public key from private key
+    let publicKey;
+    try {
+        const response = await fetch(`/make-market/process/get-public-key.php?id=${transactionId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.status !== 'success') {
+            throw new Error(result.message);
+        }
+        publicKey = result.public_key;
+        log_message(`Public key fetched: ${publicKey}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Public key fetched:', publicKey);
+    } catch (err) {
+        showError('Failed to fetch public key: ' + err.message);
+        return;
+    }
+
     // Update status to pending
     await updateTransactionStatus('pending');
-
-    // Get public key from page
-    const publicKey = document.querySelector('.copy-icon').getAttribute('data-full');
 
     // Check balance
     try {
