@@ -44,6 +44,19 @@ h1 {
     background: #a3a3a3;
 }
 
+/* Copy Tooltip */
+.copy-tooltip {
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
 /* Form Styles */
 form label {
     display: block;
@@ -60,37 +73,9 @@ form textarea {
     border-radius: 6px;
 }
 
-.cta-button {
-    margin-top: var(--margin-top);
-    width: 100%;
-    padding: var(--padding);
-    font-size: 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.cta-button:hover {
-    background: #1e7e66;
-}
-
 .cta-button:disabled {
     background: #cccccc;
     cursor: not-allowed;
-}
-
-/* History Link */
-.history-link {
-    margin-top: var(--margin-top);
-    float: right;
-}
-
-.history-link a {
-    color: #fff;
-}
-
-.history-link a:hover {
-    color: #00d4ff;
 }
 
 /* Status Box */
@@ -125,17 +110,18 @@ form textarea {
     100% { transform: rotate(360deg); }
 }
 
-/* Copy Tooltip */
-.copy-tooltip {
-    position: absolute;
-    background-color: #333;
+/* History Link */
+.history-link {
+    margin-top: var(--margin-top);
+    float: right;
+}
+
+.history-link a {
     color: #fff;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
+}
+
+.history-link a:hover {
+    color: #00d4ff;
 }
 
 /* Responsive Design */
