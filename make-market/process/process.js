@@ -299,7 +299,7 @@ async function confirmCancel(transactionId) {
     const resultDiv = document.getElementById('check-error');
     try {
         log_message(`Sending cancel request for transaction ID: ${transactionId}`, 'make-market.log', 'make-market', 'INFO');
-        const response = await fetch('/make-market/cancel-transaction.php', {
+        const response = await fetch('/make-market/process/cancel.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             body: JSON.stringify({ id: transactionId })
