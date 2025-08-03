@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/start-transaction.php
-// Description: Placeholder for starting transaction processing
+// Description: Start a transaction by marking as pending and returning transaction details
 // Created by: Vina Network
 // ============================================================================
 
@@ -17,6 +17,8 @@ header('Content-Type: application/json');
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
 
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
@@ -53,12 +55,38 @@ try {
     $pdo = get_db_connection();
     log_message("start-transaction: Database connection established for transaction_id: $transaction_id", 'make-market.log', 'make-market', 'INFO');
 
-    // Placeholder: Update transaction status to pending
-    $stmt = $pdo->prepare("UPDATE make_market SET status = 'pending' WHERE id = ? AND user_id = ?");
+    // Fetch transaction details
+    $stmt = $pdo->prepare("
+        SELECT token_mint, sol_amount, slippage, delay, loop_count, batch_size
+        FROM make_market
+        WHERE id = ? AND user_id = ?
+    ");
+    $stmt->execute([$transaction_id, $_SESSION['user_id']]);
+    $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$transaction) {
+        log_message("Invalid or unauthorized transaction_id: $transaction_id for user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid or unauthorized transaction_id']);
+        exit;
+    }
+
+    // Mark transaction as pending
+    $stmt = $pdo->prepare("UPDATE make_market SET status = 'pending', current_loop = 1 WHERE id = ? AND user_id = ?");
     $stmt->execute([$transaction_id, $_SESSION['user_id']]);
     
     log_message("start-transaction: Transaction ID $transaction_id marked as pending", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'message' => 'Transaction processing started']);
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Transaction processing started',
+        'transaction' => [
+            'token_mint' => $transaction['token_mint'],
+            'sol_amount' => $transaction['sol_amount'],
+            'slippage' => $transaction['slippage'],
+            'delay' => $transaction['delay'],
+            'loop_count' => $transaction['loop_count'],
+            'batch_size' => $transaction['batch_size']
+        ]
+    ]);
 } catch (Exception $e) {
     log_message("start-transaction: Error for transaction_id $transaction_id: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
