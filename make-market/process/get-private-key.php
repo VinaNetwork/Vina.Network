@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/get-private-key.php
+// File: make-market/process/get-private-key.php
 // Description: Endpoint to fetch and decrypt private_key for a transaction
 // Created by: Vina Network
 // ============================================================================
@@ -8,7 +8,9 @@
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
-require_once __DIR__ . '/../config/bootstrap.php';
+
+$root_path = '../../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Chỉ chấp nhận GET request
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
