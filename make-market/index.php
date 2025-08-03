@@ -286,7 +286,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Send redirect
         $redirect_url = "/make-market/process/$transactionId";
         log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === '
+
+xmlhttprequest') {
             // AJAX request
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]);
@@ -395,10 +397,9 @@ include $navbar_path;
 
         <div id="mm-result" class="status-box"></div>
 
-        <!-- Transaction History -->
-        <h2 class="history-title">Transaction History</h2>
-        <div id="transaction-history">
-            <p>Loading transaction history...</p>
+        <!-- Link to Transaction History -->
+        <div class="history-link">
+            <a href="/make-market/history/" class="cta-button">View Transaction History</a>
         </div>
     </div>
 </div>
@@ -422,7 +423,6 @@ include $footer_path;
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script defer src="/make-market/mm-api.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm-api.js')"></script>
 <script defer src="/make-market/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 </body>
 </html>
