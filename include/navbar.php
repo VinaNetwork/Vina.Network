@@ -4,8 +4,9 @@
 // Description: Fixed top navigation bar shared across the Vina Network website.
 // Created by: Vina Network
 // ============================================================================
+?>
 
-// Main Navigation Bar
+<!-- Main Navigation Bar -->
 <nav class="navbar" role="navigation" aria-label="Main navigation">
     <div class="logo">
         <a href="/" aria-label="Vina Network Home">
@@ -14,6 +15,7 @@
         </a>
     </div>
 
+    <!-- Navigation Links -->
     <ul class="navbar-content">
         <li class="navbar-item">
             <a href="/" class="navbar-link">
@@ -21,6 +23,7 @@
             </a>
         </li>
 
+        <!-- Accounts -->
         <li class="navbar-item dropdown">
             <a href="#" class="navbar-link dropdown-toggle">
                 <i class="fas fa-user"></i> Accounts <i class="dropdown-icon fas fa-caret-down"></i>
@@ -31,6 +34,7 @@
             </ul>
         </li>
 
+        <!-- Product Dropdown -->
         <li class="navbar-item dropdown">
             <a href="#" class="navbar-link dropdown-toggle">
                 <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
@@ -46,6 +50,7 @@
             </ul>
         </li>
 
+        <!-- Tools Dropdown -->
         <li class="navbar-item dropdown">
             <a href="#" class="navbar-link dropdown-toggle">
                 <i class="fas fa-screwdriver-wrench"></i> Tools <i class="dropdown-icon fas fa-caret-down"></i>
@@ -59,6 +64,7 @@
             </ul>
         </li>
 
+        <!-- Meme Coin Dropdown -->
         <li class="navbar-item dropdown">
             <a href="#" class="navbar-link dropdown-toggle">
                 <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
@@ -82,4 +88,3 @@
         <div class="line3"></div>
     </div>
 </nav>
-?>
