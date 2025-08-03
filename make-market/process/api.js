@@ -1,5 +1,5 @@
 // ============================================================================
-// File: make-market/process/mm-api.js
+// File: make-market/process/api.js
 // Description: JavaScript file for automated token trading on Solana using Jupiter API
 // Created by: Vina Network
 // ============================================================================
