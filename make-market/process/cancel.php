@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/cancel-transaction.php
+// File: make-market/process/cancel.php
 // Description: API endpoint to cancel a pending transaction in make_market table
 // Created by: Vina Network
 // ============================================================================
@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = '../';
+$root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
