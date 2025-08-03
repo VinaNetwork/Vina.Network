@@ -102,7 +102,7 @@ function callMarketAPI($endpoint, $params = [], $transaction_id = null) {
         $ch = curl_init();
         if (!$ch) {
             log_message("make-market-api: cURL initialization failed.", 'make-market.log', 'make-market', 'ERROR');
-            return ['error' => 'Failed to initialize cURL'];
+            return ['status' => 'error', 'message' => 'Failed to initialize cURL'];
         }
 
         curl_setopt($ch, CURLOPT_URL, $helius_rpc_url);
@@ -114,7 +114,7 @@ function callMarketAPI($endpoint, $params = [], $transaction_id = null) {
 
         $postData = json_encode([
             'jsonrpc' => '2.0',
-            'id' => '1',
+            'id' => $transaction_id ?? '1',
             'method' => $endpoint,
             'params' => $params
         ]);
@@ -132,7 +132,7 @@ function callMarketAPI($endpoint, $params = [], $transaction_id = null) {
                 $retry_count++;
                 continue;
             }
-            return ['error' => 'cURL error: ' . $curlError];
+            return ['status' => 'error', 'message' => 'cURL error: ' . $curlError];
         }
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -145,7 +145,7 @@ function callMarketAPI($endpoint, $params = [], $transaction_id = null) {
 
         if ($response_size > 10485760) { // 10MB limit
             log_message("make-market-api: Response too large: $response_size bytes, URL: $log_url", 'make-market.log', 'make-market', 'ERROR');
-            return ['error' => 'Response too large, please try again later'];
+            return ['status' => 'error', 'message' => 'Response too large, please try again later'];
         }
 
         if (in_array($httpCode, [429, 504])) {
@@ -155,19 +155,19 @@ function callMarketAPI($endpoint, $params = [], $transaction_id = null) {
                 $retry_count++;
                 continue;
             }
-            return ['error' => "Failed to fetch data from API after $max_retries retries. HTTP Code: $httpCode"];
+            return ['status' => 'error', 'message' => "Failed to fetch data from API after $max_retries retries. HTTP Code: $httpCode"];
         }
 
         if ($httpCode !== 200) {
             $errorMsg = $httpCode === 401 ? 'Unauthorized: Invalid or expired Helius API key' : "HTTP $httpCode: Failed to fetch data from API";
             log_message("make-market-api: API request failed - HTTP: $httpCode, URL: $log_url, Response: $body", 'make-market.log', 'make-market', 'ERROR');
-            return ['error' => $errorMsg];
+            return ['status' => 'error', 'message' => $errorMsg];
         }
 
         $data = json_decode($body, true);
         if ($data === null) {
             log_message("make-market-api: Failed to parse API response as JSON. URL: $log_url, Response: $body", 'make-market.log', 'make-market', 'ERROR');
-            return ['error' => 'Failed to parse API response as JSON'];
+            return ['status' => 'error', 'message' => 'Failed to parse API response as JSON'];
         }
 
         log_message("make-market-api: Full response - Endpoint: $endpoint, URL: $log_url, Response: " . json_encode($data), 'make-market.log', 'make-market', 'DEBUG');
@@ -175,14 +175,14 @@ function callMarketAPI($endpoint, $params = [], $transaction_id = null) {
         if (isset($data['error'])) {
             $errorMessage = is_array($data['error']) && isset($data['error']['message']) ? $data['error']['message'] : json_encode($data['error']);
             log_message("make-market-api: API error - Code: " . ($data['error']['code'] ?? 'N/A') . ", Message: $errorMessage, URL: $log_url", 'make-market.log', 'make-market', 'ERROR');
-            return ['error' => $errorMessage];
+            return ['status' => 'error', 'message' => $errorMessage];
         }
 
         log_message("make-market-api: API success - Endpoint: $endpoint, URL: $log_url, Response: " . substr(json_encode($data), 0, 100) . "...", 'make-market.log', 'make-market', 'INFO');
-        return $data;
+        return ['status' => 'success', 'result' => $data];
     } while ($retry_count < $max_retries);
 
-    return ['error' => 'Max retries reached'];
+    return ['status' => 'error', 'message' => 'Max retries reached'];
 }
 
 // Handle API request
@@ -220,14 +220,14 @@ try {
 
     // Call Helius API
     $result = callMarketAPI($endpoint, $params, $transaction_id);
-    if (isset($result['error'])) {
-        log_message("mm-api: API call failed: {$result['error']}", 'make-market.log', 'make-market', 'ERROR');
+    if (isset($result['status']) && $result['status'] === 'error') {
+        log_message("mm-api: API call failed: {$result['message']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => $result['error']]);
+        echo json_encode(['status' => 'error', 'message' => $result['message']]);
         exit;
     }
 
-    echo json_encode(['status' => 'success', 'result' => $result]);
+    echo json_encode(['status' => 'success', 'result' => $result['result']]);
 } catch (Exception $e) {
     log_message("mm-api: Error in script: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
