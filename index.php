@@ -15,8 +15,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = '/';
-require_once $root_path . 'config/bootstrap.php';
+require_once __DIR__ . '/config/bootstrap.php';
 
 // Head Section (Meta, Styles, Title) is included via header.php
 $page_css = ['css/home.css'];
