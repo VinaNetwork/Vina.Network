@@ -124,7 +124,6 @@ include $navbar_path;
     <div class="check-list">
         <h3>Pre-transaction Checks</h3>
         <p id="check-private-key">Checking private key: <span>Loading...</span></p>
-        <p id="check-balance">Checking wallet balance: <span>Loading...</span></p>
         <p id="check-token">Checking token mint: <span>Loading...</span></p>
         <p id="check-liquidity">Checking liquidity: <span>Loading...</span></p>
     </div>
