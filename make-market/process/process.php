@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/process.php
-// Description: Process page for Make Market to check token mint and liquidity
+// Description: Process page for Make Market to execute Solana token swap
 // Created by: Vina Network
 // ============================================================================
 
@@ -19,7 +19,7 @@ use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\PublicKey;
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://vina.network; connect-src 'self' https://vina.network https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://vina.network; connect-src 'self' https://vina.network https://quote-api.jup.ag; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
@@ -106,10 +106,10 @@ try {
 
 // SEO meta
 $page_title = "Make Market Process - Vina Network";
-$page_description = "Process your automated Solana token trading with Vina Network's Make Market tool.";
+$page_description = "Execute your automated Solana token trading with Vina Network's Make Market tool.";
 $page_keywords = "Solana trading, automated trading, Jupiter API, make market, Vina Network";
 $page_og_title = "Make Market Process: Automate Solana Token Trading";
-$page_og_description = "Check token mint and liquidity for your automated trading process.";
+$page_og_description = "Execute Solana token swaps using Jupiter Aggregator.";
 $page_og_url = BASE_URL . "make-market/process/";
 $page_canonical = BASE_URL . "make-market/process/";
 
@@ -149,10 +149,7 @@ $page_css = ['/make-market/process/process.css'];
             <p><strong>Loop Count:</strong> <?php echo htmlspecialchars($transaction['loop_count']); ?></p>
             <p><strong>Batch Size:</strong> <?php echo htmlspecialchars($transaction['batch_size']); ?></p>
             <p><strong>Status:</strong> <span id="transaction-status"><?php echo htmlspecialchars($transaction['status']); ?></span></p>
-        </div>
-        <div class="check-list">
-            <p id="token-mint-check">Checking token mint...</p>
-            <p id="liquidity-check">Checking liquidity...</p>
+            <p id="swap-status">Preparing swap...</p>
         </div>
         <div id="process-result" class="status-box"></div>
         <div class="action-buttons">
