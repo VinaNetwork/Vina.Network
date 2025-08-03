@@ -15,6 +15,13 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
+$root_path = __DIR__ . '/';
+$bootstrap_file = $root_path . 'config/bootstrap.php';
+if (!file_exists($bootstrap_file)) {
+    die("Missing bootstrap.php");
+}
+require_once $bootstrap_file;
+
 // Head Section (Meta, Styles, Title) is included via header.php
 $page_css = ['css/home.css'];
 include __DIR__ . '/include/header.php';
