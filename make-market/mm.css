@@ -1,10 +1,17 @@
 /* ============================================================================ */
 /* File: make-market/mm.css */
-/* Description: Styles for the Make Market and Process pages of Vina Network */
+/* Description: Styles for the Make Market page of Vina Network */
 /* Created by: Vina Network */
 /* ============================================================================ */
 
-/* Make Market */
+/* Root variables for consistent styling */
+:root {
+    --margin-top: 20px;
+    --border-radius: 8px;
+    --padding: 10px;
+}
+
+/* Make Market Container */
 .mm-container {
     margin-top: 72px;
     display: flex;
@@ -14,10 +21,10 @@
 
 .mm-content {
     max-width: 700px;
-    padding: 20px;
-    margin: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    padding: var(--padding);
+    margin: var(--margin-top);
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     color: #fff;
 }
@@ -28,13 +35,13 @@ h1 {
 
 /* Account Info */
 #account-info {
-    margin: 20px auto;
+    margin: var(--margin-top) auto;
 }
 
 #account-info table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: var(--padding);
 }
 
 #account-info th, #account-info td {
@@ -44,7 +51,7 @@ h1 {
     background: #a3a3a3;
 }
 
-/* Form */
+/* Form Styles */
 form label {
     display: block;
     margin-top: 15px;
@@ -54,54 +61,62 @@ form label {
 form input,
 form textarea {
     width: 100%;
-    padding: 10px;
+    padding: var(--padding);
     margin-top: 5px;
     border: 1px solid #ccc;
     border-radius: 6px;
 }
 
-form button {
-    margin-top: 20px;
+.cta-button {
+    margin-top: var(--margin-top);
     width: 100%;
+    padding: var(--padding);
     font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
-form button:hover {
+.cta-button:hover {
     background: #1e7e66;
 }
 
-form button:disabled {
+.cta-button:disabled {
     background: #cccccc;
     cursor: not-allowed;
 }
 
-/* History link */
+/* History Link */
 .history-link {
-    margin-top: 20px;
+    margin-top: var(--margin-top);
     float: right;
 }
-.history-link a: {
+
+.history-link a {
     color: #fff;
 }
+
 .history-link a:hover {
     color: #00d4ff;
 }
 
-/* Status box */
+/* Status Box */
 .status-box {
     max-height: 300px;
     overflow-y: auto;
     border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 10px;
-    margin-top: 20px;
+    border-radius: var(--border-radius);
+    padding: var(--padding);
+    margin-top: var(--margin-top);
     background-color: #f9f9f9;
     font-size: 15px;
     display: none;
 }
+
 .status-box.active {
     display: block;
 }
+
 .spinner {
     border: 4px solid #f3f3f3;
     border-top: 4px solid #3498db;
@@ -111,140 +126,34 @@ form button:disabled {
     animation: spin 1s linear infinite;
     display: inline-block;
 }
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-.status-box p strong {
-    color: #28a745;
-}
-.status-box p::before {
-    content: "• ";
-    color: #28a745;
-}
 
-/* Confirmation popup */
-.confirmation-popup {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    justify-content: center;
-    align-items: center;
-}
-.confirmation-popup-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.confirmation-popup-content p {
-    margin: 0 0 20px;
-    font-size: 16px;
-}
-.confirmation-popup-content button {
-    padding: 8px 16px;
-    margin: 0 10px;
-    border: none;
+/* Copy Tooltip */
+.copy-tooltip {
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px 10px;
     border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-/* Process page styles */
-.process-container {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.check-list {
-    margin-bottom: 20px;
-}
-
-.check-list p {
-    margin: 5px 0;
-    font-size: 16px;
-}
-
-.check-list .done {
-    color: green;
-}
-
-.check-list .error {
-    color: red;
-}
-
-.progress-bar {
-    width: 100%;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    overflow: hidden;
-    margin-bottom: 10px;
-}
-
-.progress {
-    height: 20px;
-    background-color: #28a745;
-    width: 0%;
-    transition: width 0.5s ease-in-out;
-}
-
-.transaction-details p {
-    margin: 5px 0;
-    font-size: 16px;
-}
-
-.transaction-log {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin-top: 10px;
-}
-
-.transaction-log p {
-    margin: 5px 0;
-    font-size: 14px;
-}
-
-.action-buttons {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-}
-
-.action-buttons button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.action-buttons button:not(.cancel-btn) {
-    background-color: #6c757d;
-    color: white;
-}
-
-.action-buttons button:not(.cancel-btn):hover {
-    background-color: #5a6268;
+    font-size: 12px;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-    .mm-container {margin-top: 64px;}
-    .mm-content {max-width: 100%;}
-    .process-container {max-width: 100%;}
-    table {font-size: 12px;}
+    .mm-container {
+        margin-top: 64px;
+    }
+    .mm-content {
+        max-width: 100%;
+    }
+    table {
+        font-size: 12px;
+    }
 }
