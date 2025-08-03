@@ -57,7 +57,7 @@ if (empty($endpoint)) {
 }
 
 // Validate endpoint
-$allowed_endpoints = ['getAccountInfo', 'getAssetsByOwner', 'getTransaction', 'getBalance'];
+$allowed_endpoints = ['getAccountInfo', 'getTransaction', 'getBalance'];
 if (!in_array($endpoint, $allowed_endpoints)) {
     log_message("Invalid endpoint: $endpoint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
@@ -201,14 +201,6 @@ try {
             log_message("Invalid public key format: {$params[0]}", 'make-market.log', 'make-market', 'ERROR');
             http_response_code(400);
             echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
-            exit;
-        }
-    } elseif ($endpoint === 'getAssetsByOwner' && !empty($params['ownerAddress'])) {
-        // Validate public key format
-        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $params['ownerAddress'])) {
-            log_message("Invalid owner address format: {$params['ownerAddress']}", 'make-market.log', 'make-market', 'ERROR');
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid owner address format']);
             exit;
         }
     } else {
