@@ -1,1 +1,173 @@
+<?php
+// ============================================================================
+// File: make-market/process/process.php
+// Description: Process page for Make Market to check token mint and liquidity
+// Created by: Vina Network
+// ============================================================================
 
+ob_start();
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+$root_path = '../../';
+require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/config.php';
+require_once $root_path . '../vendor/autoload.php';
+
+use Attestto\SolanaPhpSdk\Connection;
+use Attestto\SolanaPhpSdk\PublicKey;
+
+// Add Security Headers
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("X-Frame-Options: DENY");
+header("X-Content-Type-Options: nosniff");
+header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+header("Access-Control-Allow-Origin: https://www.vina.network");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Methods: POST, GET");
+header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+
+// Error reporting
+ini_set('log_errors', 1);
+ini_set('error_log', ERROR_LOG_PATH);
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict'
+]);
+
+// Log request info
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message("process.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+}
+
+// Database connection
+$start_time = microtime(true);
+try {
+    $pdo = get_db_connection();
+    $duration = (microtime(true) - $start_time) * 1000;
+    log_message("Database connection retrieved (took {$duration}ms)", 'make-market.log', 'make-market', 'INFO');
+} catch (Exception $e) {
+    $duration = (microtime(true) - $start_time) * 1000;
+    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'make-market.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    exit;
+}
+
+// Check session for authentication
+$public_key = $_SESSION['public_key'] ?? null;
+$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
+}
+if (!$public_key) {
+    log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
+    $_SESSION['redirect_url'] = '/make-market/process';
+    header('Location: /accounts');
+    exit;
+}
+
+// Get transaction ID from query string
+$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($transaction_id <= 0) {
+    log_message("Invalid or missing transaction ID", 'make-market.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
+    exit;
+}
+
+// Fetch transaction details
+try {
+    $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, slippage, delay_seconds, loop_count, batch_size, status FROM make_market WHERE id = ?");
+    $stmt->execute([$transaction_id]);
+    $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$transaction || $transaction['user_id'] != $_SESSION['user_id']) {
+        log_message("Transaction not found or unauthorized: ID=$transaction_id, user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
+        exit;
+    }
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}", 'make-market.log', 'make-market', 'INFO');
+} catch (PDOException $e) {
+    log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction']);
+    exit;
+}
+
+// SEO meta
+$page_title = "Make Market Process - Vina Network";
+$page_description = "Process your automated Solana token trading with Vina Network's Make Market tool.";
+$page_keywords = "Solana trading, automated trading, Jupiter API, make market, Vina Network";
+$page_og_title = "Make Market Process: Automate Solana Token Trading";
+$page_og_description = "Check token mint and liquidity for your automated trading process.";
+$page_og_url = BASE_URL . "make-market/process/";
+$page_canonical = BASE_URL . "make-market/process/";
+
+// CSS for Process page
+$page_css = ['/make-market/process/process.css'];
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<?php include $root_path . 'include/header.php'; ?>
+<body>
+<?php include $root_path . 'include/navbar.php'; ?>
+
+<div class="process-container">
+    <div class="process-content">
+        <h1><i class="fas fa-cogs"></i> Make Market Process</h1>
+        <div id="account-info">
+            <table>
+                <tr>
+                    <th>Account:</th>
+                    <td>
+                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
+                            <?php echo htmlspecialchars($short_public_key); ?>
+                        </a>
+                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="transaction-details">
+            <p><strong>Transaction ID:</strong> <?php echo htmlspecialchars($transaction_id); ?></p>
+            <p><strong>Process Name:</strong> <?php echo htmlspecialchars($transaction['process_name']); ?></p>
+            <p><strong>Token Address:</strong> <?php echo htmlspecialchars($transaction['token_mint']); ?></p>
+            <p><strong>SOL Amount:</strong> <?php echo htmlspecialchars($transaction['sol_amount']); ?></p>
+            <p><strong>Slippage:</strong> <?php echo htmlspecialchars($transaction['slippage']); ?>%</p>
+            <p><strong>Delay:</strong> <?php echo htmlspecialchars($transaction['delay_seconds']); ?> seconds</p>
+            <p><strong>Loop Count:</strong> <?php echo htmlspecialchars($transaction['loop_count']); ?></p>
+            <p><strong>Batch Size:</strong> <?php echo htmlspecialchars($transaction['batch_size']); ?></p>
+            <p><strong>Status:</strong> <span id="transaction-status"><?php echo htmlspecialchars($transaction['status']); ?></span></p>
+        </div>
+        <div class="check-list">
+            <p id="token-mint-check">Checking token mint...</p>
+            <p id="liquidity-check">Checking liquidity...</p>
+        </div>
+        <div id="process-result" class="status-box"></div>
+        <div class="action-buttons">
+            <button class="cta-button cancel-btn" onclick="window.location.href='/make-market'">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<?php include $root_path . 'include/footer.php'; ?>
+
+<!-- Scripts -->
+<script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
+<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
+<script defer src="/make-market/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
+</body>
+</html>
+<?php ob_end_flush(); ?>
