@@ -7,8 +7,9 @@
 
 ob_start();
 // Start output buffering and define constants for context
-define('VINANETWORK', true);
-define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
 
 $root_path = '../';
 require_once $root_path . 'config/bootstrap.php';
