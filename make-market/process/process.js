@@ -224,7 +224,7 @@ function pollTransactionStatus() {
 
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`/make-market/status.php?id=${transactionId}`, {
+            const response = await fetch(`/make-market/process/status.php?id=${transactionId}`, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             });
             const responseText = await response.text();
