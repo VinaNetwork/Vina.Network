@@ -75,6 +75,18 @@ form button:disabled {
     cursor: not-allowed;
 }
 
+/* History link */
+.history-link {
+    margin-top: 20px;
+    float: right;
+}
+.history-link a: {
+    color: #fff;
+}
+.history-link a:hover {
+    color: #00d4ff;
+}
+
 /* Status box */
 .status-box {
     max-height: 300px;
