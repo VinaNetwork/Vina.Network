@@ -1,6 +1,6 @@
 // ============================================================================
 // File: make-market/process/process.js
-// Description: JavaScript for processing token mint and liquidity checks
+// Description: JavaScript for processing Solana token swap using Jupiter Aggregator API
 // Created by: Vina Network
 // ============================================================================
 
@@ -58,39 +58,8 @@ async function updateTransactionStatus(status, error = null) {
     }
 }
 
-// Check token mint existence
-async function checkTokenMint(tokenMint) {
-    const tokenMintCheck = document.getElementById('token-mint-check');
-    tokenMintCheck.textContent = 'Checking token mint...';
-    try {
-        const connection = new window.solanaWeb3.Connection('https://api.mainnet-beta.solana.com');
-        const publicKey = new window.solanaWeb3.PublicKey(tokenMint);
-        const accountInfo = await connection.getAccountInfo(publicKey);
-        if (!accountInfo) {
-            tokenMintCheck.textContent = 'Address does not exist';
-            tokenMintCheck.classList.add('error');
-            showError('Address does not exist');
-            return false;
-        }
-        tokenMintCheck.textContent = 'Done';
-        tokenMintCheck.classList.add('done');
-        log_message(`Token mint check passed: ${tokenMint}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Token mint check passed:', tokenMint);
-        return true;
-    } catch (err) {
-        tokenMintCheck.textContent = 'Address does not exist';
-        tokenMintCheck.classList.add('error');
-        showError('Address does not exist');
-        log_message(`Token mint check failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Token mint check failed:', err.message);
-        return false;
-    }
-}
-
-// Check liquidity on Jupiter API
-async function checkLiquidity(tokenMint, solAmount) {
-    const liquidityCheck = document.getElementById('liquidity-check');
-    liquidityCheck.textContent = 'Checking liquidity...';
+// Get quote from Jupiter API
+async function getQuote(tokenMint, solAmount) {
     try {
         const response = await axios.get('https://quote-api.jup.ag/v6/quote', {
             params: {
@@ -103,19 +72,43 @@ async function checkLiquidity(tokenMint, solAmount) {
         if (response.status !== 200 || !response.data) {
             throw new Error('Invalid response from Jupiter API');
         }
-        const liquidityValue = response.data.outAmount / 1e9; // Convert to tokens
-        liquidityCheck.textContent = `Done (${liquidityValue.toFixed(6)})`;
-        liquidityCheck.classList.add('done');
-        log_message(`Liquidity check passed: ${liquidityValue} tokens`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Liquidity check passed:', liquidityValue);
-        return true;
+        log_message(`Quote retrieved: ${response.data.outAmount / 1e9} tokens`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Quote retrieved:', response.data);
+        return response.data;
     } catch (err) {
-        liquidityCheck.textContent = 'Insufficient liquidity';
-        liquidityCheck.classList.add('error');
-        showError('Insufficient liquidity');
-        log_message(`Liquidity check failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Liquidity check failed:', err.message);
-        return false;
+        log_message(`Failed to get quote: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to get quote:', err.message);
+        throw err;
+    }
+}
+
+// Execute swap using Jupiter API
+async function executeSwap(quote, publicKey) {
+    try {
+        const response = await axios.post('https://quote-api.jup.ag/v6/swap', {
+            quoteResponse: quote,
+            userPublicKey: publicKey,
+            wrapAndUnwrapSol: true,
+            dynamicComputeUnitLimit: true,
+            prioritizationFeeLamports: 10000
+        });
+        if (response.status !== 200 || !response.data) {
+            throw new Error('Invalid response from Jupiter swap API');
+        }
+        const { swapTransaction } = response.data;
+        log_message(`Swap transaction prepared: ${swapTransaction}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Swap transaction prepared:', swapTransaction);
+
+        // Decode and sign transaction (requires server-side signing with private key)
+        // This part should ideally be handled server-side for security
+        // For now, log that signing is needed
+        log_message('Swap requires server-side signing', 'make-market.log', 'make-market', 'INFO');
+        console.log('Swap requires server-side signing');
+        return swapTransaction;
+    } catch (err) {
+        log_message(`Swap failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Swap failed:', err.message);
+        throw err;
     }
 }
 
@@ -154,27 +147,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update status to pending
     await updateTransactionStatus('pending');
 
-    // Step 1: Check token mint
-    const tokenMintValid = await checkTokenMint(transaction.token_mint);
-    if (!tokenMintValid) {
-        return;
-    }
+    // Get quote and execute swap
+    try {
+        document.getElementById('swap-status').textContent = 'Getting quote...';
+        const quote = await getQuote(transaction.token_mint, transaction.sol_amount);
+        document.getElementById('swap-status').textContent = 'Preparing swap...';
+        
+        // Note: Swap execution requires server-side signing with private key
+        // For now, we log the swap transaction and update status to processing
+        const swapTransaction = await executeSwap(quote, '<?php echo htmlspecialchars($_SESSION['public_key']); ?>');
+        await updateTransactionStatus('processing');
+        document.getElementById('swap-status').textContent = 'Swap prepared, awaiting confirmation...';
+        log_message('Swap prepared, ready for trading', 'make-market.log', 'make-market', 'INFO');
+        console.log('Swap prepared, ready for trading');
+        document.getElementById('process-result').innerHTML = '<p style="color: green;">Swap prepared. Ready for trading.</p>';
+        document.getElementById('process-result').classList.add('active');
 
-    // Step 2: Check liquidity
-    const liquidityValid = await checkLiquidity(transaction.token_mint, transaction.sol_amount);
-    if (!liquidityValid) {
-        return;
+        // TODO: Implement server-side signing and transaction submission
+        // Update status to 'success' or 'failed' based on transaction result
+    } catch (err) {
+        showError('Swap failed: ' + err.message);
     }
-
-    // If both checks pass, update status to processing
-    await updateTransactionStatus('processing');
-    log_message('All checks passed, ready for trading', 'make-market.log', 'make-market', 'INFO');
-    console.log('All checks passed, ready for trading');
-    document.getElementById('process-result').innerHTML = '<p style="color: green;">All checks passed. Ready for trading.</p>';
-    document.getElementById('process-result').classList.add('active');
 });
 
-// Copy functionality (same as mm.js)
+// Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
     const copyIcons = document.querySelectorAll('.copy-icon');
     log_message(`Found ${copyIcons.length} copy icons`, 'make-market.log', 'make-market', 'DEBUG');
