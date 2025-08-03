@@ -4,13 +4,6 @@
 /* Created by: Vina Network */
 /* ============================================================================ */
 
-/* Root variables for consistent styling */
-:root {
-    --margin-top: 20px;
-    --border-radius: 8px;
-    --padding: 10px;
-}
-
 /* Make Market Container */
 .mm-container {
     margin-top: 72px;
