@@ -1,4 +1,3 @@
-```javascript
 // ============================================================================
 // File: make-market/process/process.js
 // Description: JavaScript for processing Solana token swap using Jupiter Aggregator API
