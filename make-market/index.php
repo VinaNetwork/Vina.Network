@@ -45,7 +45,9 @@ session_start([
 ]);
 
 // Log request info
-log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+}
 
 // Database connection
 $start_time = microtime(true);
@@ -63,8 +65,10 @@ try {
 
 // Check session for authentication
 $public_key = $_SESSION['public_key'] ?? null;
-$short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-log_message("Session public_key: " . ($short_public_key ?? 'Not set'), 'make-market.log', 'make-market', 'DEBUG');
+$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
+}
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/make-market';
@@ -97,7 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         log_message("Form submitted, is AJAX: " . (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? 'Yes' : 'No'), 'make-market.log', 'make-market', 'INFO');
         $form_data = $_POST;
-        log_message("Form data: " . json_encode($form_data), 'make-market.log', 'make-market', 'DEBUG');
+        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+            log_message("Form data: " . json_encode($form_data), 'make-market.log', 'make-market', 'DEBUG');
+        }
 
         // Validate CSRF token
         if (!validate_csrf_token($form_data['csrf_token'] ?? '')) {
@@ -119,7 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $transactionPublicKey = $form_data['transactionPublicKey'] ?? '';
 
         // Log form data for debugging
-        log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+        }
 
         // Validate inputs
         if (empty($processName) || empty($privateKey) || empty($tokenMint) || empty($transactionPublicKey)) {
@@ -131,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/', $privateKey)) {
             log_message("Invalid private key format: length=" . strlen($privateKey), 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid private key format, length=' . strlen($privateKey)]);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid private key format']);
             exit;
         }
         if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transactionPublicKey)) {
@@ -171,35 +179,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Check if required classes are available
-        if (!class_exists('StephenHill\Base58')) {
-            log_message("StephenHill\Base58 class not found. Ensure stephenhill/base58 is installed.", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Server error: Base58 library not installed']);
-            exit;
-        }
-        if (!class_exists('Attestto\SolanaPhpSdk\Keypair')) {
-            log_message("Attestto\SolanaPhpSdk\Keypair class not found. Ensure attestto/solana-php-sdk is installed.", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Server error: Solana PHP SDK not installed']);
-            exit;
-        }
-
         // Validate private key using SolanaPhpSdk
         try {
             $base58 = new Base58();
-            log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+                log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+            }
             $decodedKey = $base58->decode($privateKey);
-            log_message("Decoded privateKey length: " . strlen($decodedKey), 'make-market.log', 'make-market', 'DEBUG');
+            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+                log_message("Decoded privateKey length: " . strlen($decodedKey), 'make-market.log', 'make-market', 'DEBUG');
+            }
             if (strlen($decodedKey) !== 64) {
                 log_message("Invalid private key length: " . strlen($decodedKey) . ", expected 64 bytes", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Invalid private key length: ' . strlen($decodedKey) . ' bytes, expected 64 bytes']);
+                echo json_encode(['status' => 'error', 'message' => 'Invalid private key length']);
                 exit;
             }
             $keypair = Keypair::fromSecretKey($decodedKey);
             $derivedPublicKey = $keypair->getPublicKey()->toBase58();
-            log_message("Derived public key: $derivedPublicKey", 'make-market.log', 'make-market', 'DEBUG');
+            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+                log_message("Derived public key: $derivedPublicKey", 'make-market.log', 'make-market', 'DEBUG');
+            }
             if ($derivedPublicKey !== $transactionPublicKey) {
                 log_message("Private key does not match transaction public key: derived=$derivedPublicKey, provided=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
@@ -231,28 +231,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Verify status column supports 'new'
-        try {
-            $stmt = $pdo->prepare("SHOW COLUMNS FROM make_market LIKE 'status'");
-            $stmt->execute();
-            $column = $stmt->fetch(PDO::FETCH_ASSOC);
-            $enum_values = [];
-            if (preg_match("/^enum\((.+)\)$/", $column['Type'], $matches)) {
-                $enum_values = array_map(function($v) { return trim($v, "'"); }, explode(',', $matches[1]));
-            }
-            if (!in_array('new', $enum_values)) {
-                log_message("Status column does not support 'new'. Available values: " . implode(',', $enum_values), 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Server error: Invalid status configuration']);
-                exit;
-            }
-        } catch (PDOException $e) {
-            log_message("Failed to verify status column: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Database error: Unable to verify status column']);
-            exit;
-        }
-
         // Insert transaction into database with status 'new'
         try {
             $stmt = $pdo->prepare("
@@ -279,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (PDOException $e) {
             log_message("Database insert failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Database insert failed: ' . $e->getMessage()]);
+            echo json_encode(['status' => 'error', 'message' => 'Database insert failed']);
             exit;
         }
 
@@ -287,11 +265,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $redirect_url = "/make-market/process/process.php?id=$transactionId";
         log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-            // AJAX request
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]);
         } else {
-            // Traditional POST
             header("Location: $redirect_url");
         }
         exit;
@@ -316,29 +292,13 @@ $page_canonical = BASE_URL . "make-market/";
 $page_css = ['/make-market/mm.css'];
 // Slippage
 $defaultSlippage = 0.5;
-
-// Header
-$header_path = $root_path . 'include/header.php';
-if (!file_exists($header_path)) {
-    log_message("header.php not found at $header_path", 'make-market.log', 'make-market', 'ERROR');
-    die('Internal Server Error: Missing header.php');
-}
-log_message("Including header.php", 'make-market.log', 'make-market', 'DEBUG');
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<?php include $header_path; ?>
+<?php include $root_path . 'include/header.php'; ?>
 <body>
-<?php
-$navbar_path = $root_path . 'include/navbar.php';
-if (!file_exists($navbar_path)) {
-    log_message("navbar.php not found at $navbar_path", 'make-market.log', 'make-market', 'ERROR');
-    die('Internal Server Error: Missing navbar.php');
-}
-log_message("Including navbar.php", 'make-market.log', 'make-market', 'DEBUG');
-include $navbar_path;
-?>
+<?php include $root_path . 'include/navbar.php'; ?>
 
 <div class="mm-container">
     <div class="mm-content">
@@ -402,15 +362,7 @@ include $navbar_path;
     </div>
 </div>
 
-<?php
-$footer_path = $root_path . 'include/footer.php';
-if (!file_exists($footer_path)) {
-    log_message("footer.php not found at $footer_path", 'make-market.log', 'make-market', 'ERROR');
-    die('Internal Server Error: Missing footer.php');
-}
-log_message("Including footer.php", 'make-market.log', 'make-market', 'DEBUG');
-include $footer_path;
-?>
+<?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
 <script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
