@@ -399,7 +399,7 @@ include $navbar_path;
 
         <!-- Link to Transaction History -->
         <div class="history-link">
-            <a href="/make-market/history/" class="cta-button">View Transaction History</a>
+            <a href="/make-market/history/">View Transaction History</a>
         </div>
     </div>
 </div>
