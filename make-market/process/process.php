@@ -21,6 +21,7 @@ use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\PublicKey;
 
 // Add Security Headers
+$csp_base = rtrim(BASE_URL, '/');
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base https://quote-api.jup.ag; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("Access-Control-Allow-Origin: $csp_base");
 header("X-Frame-Options: DENY");
@@ -108,9 +109,9 @@ try {
 
 // Shorten public_key and token_mint for display
 $public_key = $transaction['public_key'];
-$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'N/A';
 $token_mint = $transaction['token_mint'];
-$short_token_mint = $token_mint ? substr($token_mint, 0, 4) . '...' . substr($token_mint, -4) : 'Invalid';
+$short_token_mint = $token_mint ? substr($token_mint, 0, 4) . '...' . substr($token_mint, -4) : 'N/A';
 
 // SEO meta
 $page_title = "Make Market Process - Vina Network";
@@ -148,21 +149,59 @@ $page_css = ['/make-market/process/process.css'];
             </table>
         </div>
         <div class="transaction-details">
-            <p><strong>Transaction ID:</strong> <?php echo htmlspecialchars($transaction_id); ?></p>
-            <p><strong>Process Name:</strong> <?php echo htmlspecialchars($transaction['process_name']); ?></p>
-            <p><strong>Token Address:</strong> 
-                <a href="https://solscan.io/address/<?php echo htmlspecialchars($token_mint); ?>" target="_blank">
-                    <?php echo htmlspecialchars($short_token_mint); ?>
-                </a>
-                <i class="fas fa-copy copy-icon" title="Copy full token address" data-full="<?php echo htmlspecialchars($token_mint); ?>"></i>
-            </p>
-            <p><strong>SOL Amount:</strong> <?php echo htmlspecialchars($transaction['sol_amount']); ?></p>
-            <p><strong>Slippage:</strong> <?php echo htmlspecialchars($transaction['slippage']); ?>%</p>
-            <p><strong>Delay:</strong> <?php echo htmlspecialchars($transaction['delay_seconds']); ?> seconds</p>
-            <p><strong>Loop Count:</strong> <?php echo htmlspecialchars($transaction['loop_count']); ?></p>
-            <p><strong>Batch Size:</strong> <?php echo htmlspecialchars($transaction['batch_size']); ?></p>
-            <p><strong>Total Transactions:</strong> <?php echo htmlspecialchars($transaction['loop_count'] * $transaction['batch_size']); ?></p>
-            <p><strong>Status:</strong> <span id="transaction-status"><?php echo htmlspecialchars($transaction['status']); ?></span></p>
+            <h2>Transaction Details</h2>
+            <table class="details-table">
+                <tr>
+                    <th>Transaction ID:</th>
+                    <td><?php echo htmlspecialchars($transaction_id); ?></td>
+                </tr>
+                <tr>
+                    <th>Process Name:</th>
+                    <td><?php echo htmlspecialchars($transaction['process_name']); ?></td>
+                </tr>
+                <tr>
+                    <th>Token Address:</th>
+                    <td>
+                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($token_mint); ?>" target="_blank">
+                            <?php echo htmlspecialchars($short_token_mint); ?>
+                        </a>
+                        <i class="fas fa-copy copy-icon" title="Copy full token address" data-full="<?php echo htmlspecialchars($token_mint); ?>"></i>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <td><span id="transaction-status" class="<?php echo $transaction['status'] === 'success' ? 'text-success' : ($transaction['status'] === 'partial' ? 'text-warning' : 'text-danger'); ?>">
+                        <?php echo htmlspecialchars($transaction['status']); ?>
+                    </span></td>
+                </tr>
+            </table>
+            <h2>Configuration</h2>
+            <table class="details-table">
+                <tr>
+                    <th>SOL Amount:</th>
+                    <td><?php echo htmlspecialchars($transaction['sol_amount']); ?></td>
+                </tr>
+                <tr>
+                    <th>Slippage:</th>
+                    <td><?php echo htmlspecialchars($transaction['slippage']); ?>%</td>
+                </tr>
+                <tr>
+                    <th>Delay:</th>
+                    <td><?php echo htmlspecialchars($transaction['delay_seconds']); ?> seconds</td>
+                </tr>
+                <tr>
+                    <th>Loop Count:</th>
+                    <td><?php echo htmlspecialchars($transaction['loop_count']); ?></td>
+                </tr>
+                <tr>
+                    <th>Batch Size:</th>
+                    <td><?php echo htmlspecialchars($transaction['batch_size']); ?></td>
+                </tr>
+                <tr>
+                    <th>Total Transactions:</th>
+                    <td><?php echo htmlspecialchars($transaction['loop_count'] * $transaction['batch_size']); ?></td>
+                </tr>
+            </table>
             <p id="swap-status">Preparing swap...</p>
         </div>
         <div id="process-result" class="status-box"></div>
