@@ -13,7 +13,7 @@ $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: https://vina.network');
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
@@ -116,9 +116,9 @@ try {
                     'showNativeBalance' => true
                 ]
             ]
-        ]),
+        ], JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => [
-            "Content-Type: application/json"
+            "Content-Type: application/json; charset=utf-8"
         ],
     ]);
 
@@ -171,7 +171,7 @@ try {
         echo json_encode([
             'status' => 'error', 
             'message' => "Số dư ví không đủ để thực hiện giao dịch. Vui lòng gửi thêm SOL vào ví {$transaction['public_key']} để tiếp tục."
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         try {
             $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
             $stmt->execute(['failed', "Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", $transaction_id]);
@@ -183,18 +183,18 @@ try {
     }
 
     log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'message' => 'Số dư ví đủ để thực hiện giao dịch', 'balance' => $balanceInSol]);
+    echo json_encode(['status' => 'success', 'message' => 'Số dư ví đủ để thực hiện giao dịch', 'balance' => $balanceInSol], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     try {
         $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
         $stmt->execute(['failed', $e->getMessage(), $transaction_id]);
-        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMessage()}", 'make-market.log', 'make-market', 'INFO');
+        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMSage()}", 'make-market.log', 'make-market', 'INFO');
     } catch (PDOException $e2) {
         log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     }
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
