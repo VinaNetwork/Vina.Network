@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/history/history.php
+// File: make-market/history/index.php
 // Description: History page for Make Market to display transaction history
 // Created by: Vina Network
 // ============================================================================
