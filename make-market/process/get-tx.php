@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/get-tx.php
-// Description: Retrieve transaction details from make_market table
+// Description: Retrieve transaction details from database
 // Created by: Vina Network
 // ============================================================================
 
@@ -28,7 +28,16 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("get-tx.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("get-tx.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
+}
+
+// Get transaction ID
+$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($transaction_id <= 0) {
+    log_message("Invalid or missing transaction ID: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
+    exit;
 }
 
 // Database connection
@@ -37,33 +46,40 @@ try {
     log_message("Database connection retrieved", 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
     log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
-    exit;
-}
-
-// Get transaction ID
-$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID", 'make-market.log', 'make-market', 'ERROR');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
 }
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT token_mint, sol_amount, slippage, delay_seconds, loop_count, batch_size FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, user_id, public_key, token_mint, sol_amount, process_name FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$transaction) {
-        log_message("Transaction not found: ID=$transaction_id", 'make-market.log', 'make-market', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Transaction not found']);
+    if (!$transaction || $transaction['user_id'] != ($_SESSION['user_id'] ?? 0)) {
+        log_message("Transaction not found or unauthorized: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, token_mint={$transaction['token_mint']}", 'make-market.log', 'make-market', 'INFO');
+    if (empty($transaction['public_key']) || $transaction['public_key'] === 'undefined') {
+        log_message("Invalid public key in database: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key in transaction']);
+        exit;
+    }
+    if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transaction['public_key'])) {
+        log_message("Invalid public key format: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
+        exit;
+    }
+    log_message("Transaction fetched: ID=$transaction_id, token_mint={$transaction['token_mint']}, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}", 'make-market.log', 'make-market', 'INFO');
     echo json_encode(['status' => 'success', 'data' => $transaction]);
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction']);
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction: ' . $e->getMessage()]);
     exit;
 }
 ?>
