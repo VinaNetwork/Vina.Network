@@ -23,7 +23,7 @@ header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
     log_message("Non-AJAX request rejected", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Yêu cầu không hợp lệ']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
     exit;
 }
 
@@ -37,7 +37,7 @@ $transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($transaction_id <= 0) {
     log_message("Invalid or missing transaction ID: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'ID giao dịch không hợp lệ']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
     exit;
 }
 
@@ -48,7 +48,7 @@ try {
 } catch (Exception $e) {
     log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cơ sở dữ liệu']);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection error']);
     exit;
 }
 
@@ -60,26 +60,26 @@ try {
     if (!$transaction) {
         log_message("Transaction not found: ID=$transaction_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(404);
-        echo json_encode(['status' => 'error', 'message' => 'Không tìm thấy giao dịch']);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found']);
         exit;
     }
     if (empty($transaction['public_key']) || $transaction['public_key'] === 'undefined') {
         log_message("Invalid public key: {$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Địa chỉ ví không hợp lệ']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid wallet address']);
         exit;
     }
     if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transaction['public_key'])) {
         log_message("Invalid public key format: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Địa chỉ ví không đúng định dạng']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid wallet address format']);
         exit;
     }
     log_message("Transaction fetched: ID=$transaction_id, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi truy xuất giao dịch']);
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction']);
     exit;
 }
 
@@ -88,7 +88,7 @@ try {
     if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
         log_message("HELIUS_API_KEY is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi cấu hình server: Thiếu HELIUS_API_KEY']);
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing HELIUS_API_KEY']);
         exit;
     }
 
@@ -131,14 +131,14 @@ try {
     if ($err) {
         log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
     if ($http_code !== 200) {
         log_message("Helius RPC failed: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
@@ -146,21 +146,21 @@ try {
     if (json_last_error() !== JSON_ERROR_NONE) {
         log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
     if (isset($data['error'])) {
         log_message("Helius RPC failed: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
     if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
         log_message("Helius RPC failed: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
@@ -171,7 +171,7 @@ try {
         http_response_code(400);
         echo json_encode([
             'status' => 'error', 
-            'message' => "Số dư ví không đủ để thực hiện giao dịch. Vui lòng gửi thêm SOL vào ví {$transaction['public_key']} để tiếp tục."
+            'message' => "Insufficient wallet balance to perform the transaction. Please send more SOL to wallet {$transaction['public_key']} to continue."
         ], JSON_UNESCAPED_UNICODE);
         try {
             $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
@@ -184,18 +184,18 @@ try {
     }
 
     log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'message' => 'Số dư ví đủ để thực hiện giao dịch', 'balance' => $balanceInSol], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'success', 'message' => 'Wallet balance sufficient to perform the transaction', 'balance' => $balanceInSol], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     try {
         $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
         $stmt->execute(['failed', $e->getMessage(), $transaction_id]);
-        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMSage()}", 'make-market.log', 'make-market', 'INFO');
+        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMessage()}", 'make-market.log', 'make-market', 'INFO');
     } catch (PDOException $e2) {
         log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     }
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
