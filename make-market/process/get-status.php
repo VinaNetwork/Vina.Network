@@ -13,8 +13,9 @@ $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
+$csp_base = rtrim(BASE_URL, '/');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: https://vina.network');
+header("Access-Control-Allow-Origin: $csp_base");
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 
