@@ -27,7 +27,7 @@ header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
-header("Access-Control-Allow-Origin: https://vina.network");
+header("Access-Control-Allow-Origin: " . rtrim(BASE_URL, '/'));
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST, GET");
 header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
