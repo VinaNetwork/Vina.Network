@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/get-balance.php
-// Description: Check wallet balance server-side using Helius RPC
+// Description: Check wallet balance server-side using Helius RPC getAssetsByOwner
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,10 +12,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
-require_once $root_path . '../vendor/autoload.php';
-
-use Attestto\SolanaPhpSdk\Connection;
-use Attestto\SolanaPhpSdk\PublicKey;
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: https://vina.network');
@@ -72,6 +68,12 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Invalid public key in transaction']);
         exit;
     }
+    if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transaction['public_key'])) {
+        log_message("Invalid public key format: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
+        exit;
+    }
     log_message("Transaction fetched: ID=$transaction_id, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
@@ -80,7 +82,7 @@ try {
     exit;
 }
 
-// Check balance
+// Check balance using Helius getAssetsByOwner
 try {
     if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
         log_message("HELIUS_API_KEY is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
@@ -88,14 +90,77 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Server configuration error: HELIUS_API_KEY missing']);
         exit;
     }
-    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
-    $publicKey = new PublicKey($transaction['public_key']);
-    $balance = $connection->getBalance($publicKey);
-    $balanceInSol = $balance / 1e9; // Convert lamports to SOL
+
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+        CURLOPT_URL => "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS => json_encode([
+            'jsonrpc' => '2.0',
+            'id' => '1',
+            'method' => 'getAssetsByOwner',
+            'params' => [
+                'ownerAddress' => $transaction['public_key'],
+                'page' => 1,
+                'limit' => 50,
+                'sortBy' => [
+                    'sortBy' => 'created',
+                    'sortDirection' => 'asc'
+                ],
+                'options' => [
+                    'showNativeBalance' => true
+                ]
+            ]
+        ]),
+        CURLOPT_HTTPHEADER => [
+            "Content-Type: application/json"
+        ],
+    ]);
+
+    $response = curl_exec($curl);
+    $err = curl_error($curl);
+    curl_close($curl);
+
+    if ($err) {
+        log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Balance check failed: cURL error: ' . $err]);
+        exit;
+    }
+
+    $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Balance check failed: Invalid JSON response']);
+        exit;
+    }
+
+    if (isset($data['error'])) {
+        log_message("Helius RPC failed: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Balance check failed: ' . $data['error']['message']]);
+        exit;
+    }
+
+    if (!isset($data['result']['nativeBalance'])) {
+        log_message("Helius RPC failed: No nativeBalance in response", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Balance check failed: No native balance found']);
+        exit;
+    }
+
+    $balanceInSol = $data['result']['nativeBalance'];
     $requiredAmount = $transaction['sol_amount'] + 0.005; // Add 0.005 SOL for fees
     if ($balanceInSol < $requiredAmount) {
         throw new Exception("Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required");
     }
+
     log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
     echo json_encode(['status' => 'success', 'message' => 'Balance check passed', 'balance' => $balanceInSol]);
 } catch (Exception $e) {
