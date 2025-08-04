@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/swap.php
-// Description: Execute Solana token swap using Jupiter Aggregator API
+// Description: Execute Solana token swap using Jupiter Aggregator API with looping
 // Created by: Vina Network
 // ============================================================================
 
@@ -18,6 +18,7 @@ use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\Keypair;
 use Attestto\SolanaPhpSdk\PublicKey;
 use Attestto\SolanaPhpSdk\Transaction;
+use StephenHill\Base58;
 
 $csp_base = rtrim(BASE_URL, '/');
 header('Content-Type: application/json; charset=utf-8');
@@ -41,10 +42,10 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
 // Get input data
 $input = json_decode(file_get_contents('php://input'), true);
 $transaction_id = isset($input['id']) ? intval($input['id']) : 0;
-$swap_transaction = $input['swap_transaction'] ?? null;
+$swap_transactions = $input['swap_transactions'] ?? null;
 
-if ($transaction_id <= 0 || !$swap_transaction) {
-    log_message("Invalid or missing transaction ID or swap transaction", 'make-market.log', 'make-market', 'ERROR');
+if ($transaction_id <= 0 || !is_array($swap_transactions)) {
+    log_message("Invalid or missing transaction ID or swap transactions", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction data'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -63,13 +64,21 @@ try {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT user_id, public_key, token_mint, sol_amount, private_key FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT user_id, public_key, token_mint, sol_amount, private_key, loop_count, batch_size FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != ($_SESSION['user_id'] ?? 0)) {
         log_message("Transaction not found or unauthorized: ID=$transaction_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $loop_count = intval($transaction['loop_count'] ?? 1);
+    $batch_size = intval($transaction['batch_size'] ?? 1);
+    if ($loop_count <= 0 || $batch_size <= 0) {
+        log_message("Invalid loop_count or batch_size: loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid loop count or batch size'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 } catch (PDOException $e) {
@@ -102,199 +111,287 @@ try {
     exit;
 }
 
-// Check balance server-side using getAssetsByOwner
-try {
-    $curl = curl_init();
-    curl_setopt_array($curl, [
-        CURLOPT_URL => "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => "POST",
-        CURLOPT_POSTFIELDS => json_encode([
-            'jsonrpc' => '2.0',
-            'id' => '1',
-            'method' => 'getAssetsByOwner',
-            'params' => [
-                'ownerAddress' => $transaction['public_key'],
-                'page' => 1,
-                'limit' => 50,
-                'sortBy' => [
-                    'sortBy' => 'created',
-                    'sortDirection' => 'asc'
-                ],
-                'options' => [
-                    'showNativeBalance' => true
-                ]
-            ]
-        ], JSON_UNESCAPED_UNICODE),
-        CURLOPT_HTTPHEADER => [
-            "Content-Type: application/json; charset=utf-8"
-        ],
-    ]);
+// Initialize results and connection
+$results = [];
+$connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
 
-    $response = curl_exec($curl);
-    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    $err = curl_error($curl);
-    curl_close($curl);
-
-    if ($err) {
-        log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
-        exit;
+// Loop through loop_count
+for ($loop = 1; $loop <= $loop_count; $loop++) {
+    log_message("Starting loop $loop of $loop_count", 'make-market.log', 'make-market', 'INFO');
+    
+    $batch_transactions = array_slice($swap_transactions, ($loop - 1) * $batch_size * 2, $batch_size * 2); // Buy + Sell
+    if (empty($batch_transactions)) {
+        log_message("No transactions provided for loop $loop", 'make-market.log', 'make-market', 'ERROR');
+        $results[] = ['loop' => $loop, 'status' => 'error', 'message' => 'No transactions provided for loop'];
+        continue;
     }
 
-    if ($http_code !== 200) {
-        log_message("Helius RPC failed: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    $data = json_decode($response, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    if (isset($data['error'])) {
-        log_message("Helius RPC failed: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
-        log_message("Helius RPC failed: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert lamports to SOL
-    $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // Add 0.005 SOL for fees
-    if ($balanceInSol < $requiredAmount) {
-        log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(400);
-        echo json_encode([
-            'status' => 'error', 
-            'message' => "Insufficient wallet balance to perform the transaction. Please send more SOL to wallet {$transaction['public_key']} to continue."
-        ], JSON_UNESCAPED_UNICODE);
-        try {
-            $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
-            $stmt->execute(['failed', "Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", $transaction_id]);
-            log_message("Transaction status updated: ID=$transaction_id, status=failed, error=Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
-        } catch (PDOException $e) {
-            log_message("Failed to update transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    // Create sub-transaction records
+    try {
+        $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, status, created_at) VALUES (?, ?, ?, 'pending', NOW())");
+        for ($batch_index = 0; $batch_index < count($batch_transactions); $batch_index++) {
+            $stmt->execute([$transaction_id, $loop, $batch_index]);
         }
-        exit;
-    }
-    log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
-} catch (Exception $e) {
-    log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    try {
-        $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
-        $stmt->execute(['failed', $e->getMessage(), $transaction_id]);
-        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMessage()}", 'make-market.log', 'make-market', 'INFO');
-    } catch (PDOException $e2) {
-        log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    }
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// Sign and send transaction
-try {
-    // Decode private key
-    try {
-        $decoded_private_key = base58_decode($private_key);
-    } catch (Exception $e) {
-        log_message("Failed to decode private key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error processing private key'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    // Create keypair
-    try {
-        $keypair = Keypair::fromSecretKey($decoded_private_key);
-    } catch (Exception $e) {
-        log_message("Failed to create keypair: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error creating keypair'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
-
-    // Verify public key matches
-    $derivedPublicKey = $keypair->getPublicKey()->toBase58();
-    if ($derivedPublicKey !== $transaction['public_key']) {
-        log_message("Public key mismatch: derived=$derivedPublicKey, stored={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Wallet address mismatch'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    // Decode and sign transaction
-    try {
-        $transactionObj = Transaction::from($swap_transaction);
-    } catch (Exception $e) {
-        log_message("Failed to decode transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error decoding transaction'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    try {
-        $transactionObj->sign($keypair);
-    } catch (Exception $e) {
-        log_message("Failed to sign transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error signing transaction'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    // Send transaction
-    try {
-        $txid = $connection->sendRawTransaction($transactionObj->serialize());
-        log_message("Swap transaction sent: txid=$txid", 'make-market.log', 'make-market', 'INFO');
-    } catch (Exception $e) {
-        log_message("Failed to send transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error sending transaction'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    // Update transaction status
-    try {
-        $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ?, txid = ? WHERE id = ?");
-        $stmt->execute(['success', null, $txid, $transaction_id]);
-        log_message("Transaction status updated: ID=$transaction_id, status=success, txid=$txid", 'make-market.log', 'make-market', 'INFO');
-        echo json_encode(['status' => 'success', 'message' => 'Swap transaction completed successfully', 'txid' => $txid], JSON_UNESCAPED_UNICODE);
+        $sub_transaction_ids = [];
+        $stmt = $pdo->query("SELECT LAST_INSERT_ID() as id");
+        for ($batch_index = 0; $batch_index < count($batch_transactions); $batch_index++) {
+            $sub_transaction_ids[] = $stmt->fetch(PDO::FETCH_ASSOC)['id'] + $batch_index;
+        }
+        log_message("Created sub-transactions for loop $loop, IDs: " . implode(',', $sub_transaction_ids), 'make-market.log', 'make-market', 'INFO');
     } catch (PDOException $e) {
-        log_message("Failed to update transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error updating transaction status'], JSON_UNESCAPED_UNICODE);
-        exit;
+        log_message("Failed to create sub-transactions for loop $loop: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        $results[] = ['loop' => $loop, 'status' => 'error', 'message' => 'Failed to create sub-transactions'];
+        continue;
     }
-} catch (Exception $e) {
-    log_message("Swap execution failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    try {
-        $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
-        $stmt->execute(['failed', $e->getMessage(), $transaction_id]);
-        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMessage()}", 'make-market.log', 'make-market', 'INFO');
-    } catch (PDOException $e2) {
-        log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+
+    // Process each transaction in batch
+    foreach ($batch_transactions as $batch_index => $swap_transaction) {
+        $sub_transaction_id = $sub_transaction_ids[$batch_index];
+
+        // Check balance for this transaction
+        try {
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => json_encode([
+                    'jsonrpc' => '2.0',
+                    'id' => '1',
+                    'method' => 'getAssetsByOwner',
+                    'params' => [
+                        'ownerAddress' => $transaction['public_key'],
+                        'page' => 1,
+                        'limit' => 50,
+                        'sortBy' => [
+                            'sortBy' => 'created',
+                            'sortDirection' => 'asc'
+                        ],
+                        'options' => [
+                            'showNativeBalance' => true
+                        ]
+                    ]
+                ], JSON_UNESCAPED_UNICODE),
+                CURLOPT_HTTPHEADER => [
+                    "Content-Type: application/json; charset=utf-8"
+                ],
+            ]);
+
+            $response = curl_exec($curl);
+            $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $err = curl_error($curl);
+            curl_close($curl);
+
+            if ($err) {
+                log_message("Helius RPC failed for loop $loop, batch $batch_index: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "Helius RPC failed: cURL error: $err", $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                }
+                $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
+                continue;
+            }
+
+            if ($http_code !== 200) {
+                log_message("Helius RPC failed for loop $loop, batch $batch_index: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "Helius RPC failed: HTTP $http_code", $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                }
+                $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
+                continue;
+            }
+
+            $data = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                log_message("Helius RPC failed for loop $loop, batch $batch_index: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "Invalid JSON response: " . json_last_error_msg(), $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                }
+                $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
+                continue;
+            }
+
+            if (isset($data['error'])) {
+                log_message("Helius RPC failed for loop $loop, batch $batch_index: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', $data['error']['message'], $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                }
+                $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
+                continue;
+            }
+
+            if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
+                log_message("Helius RPC failed for loop $loop, batch $batch_index: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "No nativeBalance or lamports in response", $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                }
+                $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
+                continue;
+            }
+
+            $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9;
+            $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // SOL + phí cho 1 giao dịch
+            if ($balanceInSol < $requiredAmount) {
+                log_message("Insufficient balance for loop $loop, batch $batch_index: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                }
+                $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => "Insufficient wallet balance to perform transaction. Please send more SOL to wallet {$transaction['public_key']} to continue."];
+                continue;
+            }
+            log_message("Balance check passed for loop $loop, batch $batch_index: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
+        } catch (Exception $e) {
+            log_message("Balance check failed for loop $loop, batch $batch_index: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                $stmt->execute(['failed', $e->getMessage(), $sub_transaction_id]);
+            } catch (PDOException $e2) {
+                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
+            continue;
+        }
+
+        // Decode private key
+        try {
+            $base58 = new Base58();
+            $decoded_private_key = $base58->decode($private_key);
+        } catch (Exception $e) {
+            log_message("Failed to decode private key for loop $loop, batch $batch_index: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                $stmt->execute(['failed', "Failed to decode private key: {$e->getMessage()}", $sub_transaction_id]);
+            } catch (PDOException $e2) {
+                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error processing private key'];
+            continue;
+        }
+
+        // Create keypair
+        try {
+            $keypair = Keypair::fromSecretKey($decoded_private_key);
+        } catch (Exception $e) {
+            log_message("Failed to create keypair for loop $loop, batch $batch_index: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                $stmt->execute(['failed', "Failed to create keypair: {$e->getMessage()}", $sub_transaction_id]);
+            } catch (PDOException $e2) {
+                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error creating keypair'];
+            continue;
+        }
+
+        // Verify public key matches
+        $derivedPublicKey = $keypair->getPublicKey()->toBase58();
+        if ($derivedPublicKey !== $transaction['public_key']) {
+            log_message("Public key mismatch for loop $loop, batch $batch_index: derived=$derivedPublicKey, stored={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                $stmt->execute(['failed', "Public key mismatch: derived=$derivedPublicKey, stored={$transaction['public_key']}", $sub_transaction_id]);
+            } catch (PDOException $e2) {
+                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Wallet address mismatch'];
+            continue;
+        }
+
+        // Decode and sign transaction
+        try {
+            $transactionObj = Transaction::from($swap_transaction);
+        } catch (Exception $e) {
+            log_message("Failed to decode transaction for loop $loop, batch $batch_index: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                $stmt->execute(['failed', "Failed to decode transaction: {$e->getMessage()}", $sub_transaction_id]);
+            } catch (PDOException $e2) {
+                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error decoding transaction'];
+            continue;
+        }
+
+        try {
+            $transactionObj->sign($keypair);
+        } catch (Exception $e) {
+            log_message("Failed to sign transaction for loop $loop, batch $batch_index: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                $stmt->execute(['failed', "Failed to sign transaction: {$e->getMessage()}", $sub_transaction_id]);
+            } catch (PDOException $e2) {
+                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error signing transaction'];
+            continue;
+        }
+
+        // Send transaction
+        try {
+            $txid = $connection->sendRawTransaction($transactionObj->serialize());
+            log_message("Swap transaction sent for loop $loop, batch $batch_index: txid=$txid", 'make-market.log', 'make-market', 'INFO');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
+                $stmt->execute(['success', null, $txid, $sub_transaction_id]);
+                log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=success, txid=$txid", 'make-market.log', 'make-market', 'INFO');
+            } catch (PDOException $e) {
+                log_message("Failed to update sub-transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'success', 'txid' => $txid];
+        } catch (Exception $e) {
+            log_message("Failed to send transaction for loop $loop, batch $batch_index: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                $stmt->execute(['failed', "Failed to send transaction: {$e->getMessage()}", $sub_transaction_id]);
+            } catch (PDOException $e2) {
+                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error sending transaction'];
+            continue;
+        }
     }
+}
+
+// Update main transaction status
+try {
+    $success_count = count(array_filter($results, fn($r) => $r['status'] === 'success'));
+    $overall_status = $success_count === $loop_count * $batch_size * 2 ? 'success' : 'partial';
+    $error_message = $success_count < $loop_count * $batch_size * 2 ? "Completed $success_count of " . ($loop_count * $batch_size * 2) . " transactions" : null;
+    $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
+    $stmt->execute([$overall_status, $error_message, $transaction_id]);
+    log_message("Main transaction status updated: ID=$transaction_id, status=$overall_status, success_count=$success_count", 'make-market.log', 'make-market', 'INFO');
+} catch (PDOException $e) {
+    log_message("Failed to update main transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error executing swap transaction'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Error updating main transaction status'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+// Return results
+echo json_encode([
+    'status' => $success_count === $loop_count * $batch_size * 2 ? 'success' : 'partial',
+    'message' => $success_count === $loop_count * $batch_size * 2 ? 'All swap transactions completed successfully' : "Completed $success_count of " . ($loop_count * $batch_size * 2) . " transactions",
+    'results' => $results
+], JSON_UNESCAPED_UNICODE);
 ?>
