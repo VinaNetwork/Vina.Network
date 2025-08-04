@@ -19,7 +19,6 @@ use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
 // Add Security Headers
-$csp_base = rtrim(BASE_URL, '/');
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
