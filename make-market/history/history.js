@@ -61,17 +61,18 @@ function displaySubTransactions(subTransactions, transactionId) {
 
     let html = `
         <h3>Sub-Transactions for Transaction ID ${transactionId}</h3>
-        <table class="sub-transaction-table">
-            <thead>
-                <tr>
-                    <th>Loop</th>
-                    <th>Batch</th>
-                    <th>Status</th>
-                    <th>Transaction ID</th>
-                    <th>Error</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div style="overflow-x: auto;">
+            <table class="sub-transaction-table">
+                <thead>
+                    <tr>
+                        <th>Loop</th>
+                        <th>Batch</th>
+                        <th>Status</th>
+                        <th>Transaction ID</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
     subTransactions.forEach(tx => {
         const statusClass = tx.status === 'success' ? 'text-success' : (tx.status === 'partial' ? 'text-warning' : 'text-danger');
@@ -90,14 +91,74 @@ function displaySubTransactions(subTransactions, transactionId) {
             </tr>
         `;
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     detailsDiv.innerHTML = html;
     detailsDiv.classList.add('active');
+}
+
+// Create card view for mobile
+function createCardView() {
+    const transactions = document.querySelectorAll('.transaction-row');
+    const transactionHistory = document.querySelector('.transaction-history');
+    const existingCards = document.querySelectorAll('.transaction-card');
+    existingCards.forEach(card => card.remove()); // Remove old cards
+
+    if (window.innerWidth > 768) return; // Only create cards on mobile
+
+    transactions.forEach(row => {
+        const id = row.getAttribute('data-id');
+        const cells = row.querySelectorAll('td');
+        const processName = cells[1].textContent;
+        const publicKey = cells[2].textContent === 'N/A' ? 'N/A' : cells[2].querySelector('a').textContent;
+        const tokenAddress = cells[3].querySelector('a').textContent;
+        const totalTx = cells[9].textContent;
+        const status = cells[10].textContent;
+        const statusClass = cells[10].className;
+
+        const card = document.createElement('div');
+        card.className = 'transaction-card';
+        card.setAttribute('data-id', id);
+        card.innerHTML = `
+            <p><strong>Process:</strong> ${processName}</p>
+            <p><strong>Public Key:</strong> ${publicKey}</p>
+            <p><strong>Token:</strong> ${tokenAddress}</p>
+            <p><strong>Total Tx:</strong> ${totalTx}</p>
+            <p><strong>Status:</strong> <span class="${statusClass}">${status}</span></p>
+            <button class="details-btn" data-id="${id}">View Details</button>
+        `;
+        transactionHistory.appendChild(card);
+    });
 }
 
 // Main process
 document.addEventListener('DOMContentLoaded', () => {
     log_message('history.js loaded', 'make-market.log', 'make-market', 'DEBUG');
+
+    // Create card view for mobile
+    createCardView();
+    window.addEventListener('resize', createCardView);
+
+    // Attach event listeners to table rows and cards
+    const rowsAndCards = document.querySelectorAll('.transaction-row, .transaction-card');
+    rowsAndCards.forEach(item => {
+        item.addEventListener('click', (e) => {
+            if (e.target.classList.contains('details-btn') || e.target.classList.contains('copy-icon')) return;
+            const transactionId = item.getAttribute('data-id');
+            log_message(`Row/card clicked for transaction ID=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+            if (window.innerWidth <= 768) {
+                const detailsRow = item.nextElementSibling;
+                if (detailsRow && detailsRow.classList.contains('mobile-details')) {
+                    detailsRow.style.display = detailsRow.style.display === 'table-row' ? 'none' : 'table-row';
+                }
+            } else {
+                document.getElementById('sub-transaction-details').innerHTML = '<p>Loading...</p>';
+                document.getElementById('sub-transaction-details').classList.add('active');
+                fetchSubTransactions(transactionId).then(subTransactions => {
+                    displaySubTransactions(subTransactions, transactionId);
+                });
+            }
+        });
+    });
 
     // Attach event listeners to details buttons
     const detailButtons = document.querySelectorAll('.details-btn');
