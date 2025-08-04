@@ -62,7 +62,7 @@ async function updateTransactionStatus(status, error = null) {
 // Check wallet balance
 async function checkBalance(publicKey, solAmount) {
     try {
-        const connection = new window.solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY');
+        const connection = new window.solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=8eb75cd9-015a-4e24-9de2-5be9ee0f1c63');
         const publicKeyObj = new window.solanaWeb3.PublicKey(publicKey);
         const balance = await connection.getBalance(publicKeyObj);
         const balanceInSol = balance / 1e9; // Convert lamports to SOL
