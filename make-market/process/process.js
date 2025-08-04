@@ -21,7 +21,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
 }
 
 // Show error message with styled alert
-function showError(message) {
+function showError(message, detailedError = null) {
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
@@ -34,7 +34,7 @@ function showError(message) {
     document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}`);
-    updateTransactionStatus('failed', message);
+    updateTransactionStatus('failed', detailedError || message);
 }
 
 // Show success message with styled alert
@@ -219,12 +219,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const balanceResult = await balanceResponse.json();
         if (balanceResult.status !== 'success') {
-            throw new Error(balanceResult.message);
+            // Parse message from JSON response
+            let errorMessage = balanceResult.message;
+            try {
+                const parsedError = JSON.parse(balanceResult.message);
+                errorMessage = parsedError.message || balanceResult.message;
+            } catch (e) {
+                // If not JSON, use raw message
+            }
+            throw new Error(errorMessage);
         }
         log_message(`Balance check passed: ${balanceResult.balance} SOL available`, 'make-market.log', 'make-market', 'INFO');
         console.log('Balance check passed:', balanceResult.balance);
     } catch (err) {
-        showError(err.message);
+        showError(err.message, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
         return;
     }
 
