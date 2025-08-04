@@ -27,7 +27,7 @@ header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
     log_message("Non-AJAX request rejected", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Non-AJAX request']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
     exit;
 }
 
