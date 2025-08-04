@@ -65,17 +65,35 @@ h1 {
 }
 
 /* Transaction Details */
-.transaction-details {
-    margin-top: var(--margin-top);
+.details-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
 }
 
-.transaction-details p {
-    margin: 5px 0;
-    font-size: 16px;
+.details-table th, .details-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    text-align: left;
 }
 
-.transaction-details p strong {
-    color: #00d4ff;
+.details-table th {
+    background: #f4f4f4;
+    font-weight: bold;
+    width: 30%;
+}
+
+.details-table td {
+    background: #fff;
+}
+
+.details-table tr:nth-child(even) td {
+    background: #f9f9f9;
+}
+
+.details-table tr:hover td {
+    background: #f1f1f1;
 }
 
 /* Check List */
@@ -155,5 +173,15 @@ h1 {
     }
     table {
         font-size: 12px;
+    }
+
+    .details-table th,
+    .details-table td {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    .details-table th {
+        width: 40%;
     }
 }
