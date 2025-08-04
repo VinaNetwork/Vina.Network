@@ -135,6 +135,7 @@ try {
     ]);
 
     $response = curl_exec($curl);
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     $err = curl_error($curl);
     curl_close($curl);
 
@@ -142,6 +143,13 @@ try {
         log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Balance check failed: cURL error: ' . $err]);
+        exit;
+    }
+
+    if ($http_code !== 200) {
+        log_message("Helius RPC failed: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => "Balance check failed: HTTP $http_code"]);
         exit;
     }
 
@@ -170,7 +178,10 @@ try {
     $balanceInSol = floatval($data['result']['nativeBalance']);
     $requiredAmount = floatval($transaction['sol_amount']) + 0.005;
     if ($balanceInSol < $requiredAmount) {
-        throw new Exception("Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required");
+        log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => "Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required"]);
+        exit;
     }
     log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
@@ -189,7 +200,26 @@ try {
 
 // Sign and send transaction
 try {
-    $keypair = Keypair::fromSecretKey(base58_decode($private_key));
+    // Decode private key
+    try {
+        $decoded_private_key = base58_decode($private_key);
+    } catch (Exception $e) {
+        log_message("Failed to decode private key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to decode private key: ' . $e->getMessage()]);
+        exit;
+    }
+
+    // Create keypair
+    try {
+        $keypair = Keypair::fromSecretKey($decoded_private_key);
+    } catch (Exception $e) {
+        log_message("Failed to create keypair: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to create keypair: ' . $e->getMessage()]);
+        exit;
+    }
+
     $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
 
     // Verify public key matches
