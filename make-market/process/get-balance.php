@@ -66,7 +66,13 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id", 'make-market.log', 'make-market', 'INFO');
+    if (empty($transaction['public_key']) || $transaction['public_key'] === 'undefined') {
+        log_message("Invalid public key: {$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key in transaction']);
+        exit;
+    }
+    log_message("Transaction fetched: ID=$transaction_id, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
@@ -76,6 +82,12 @@ try {
 
 // Check balance
 try {
+    if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
+        log_message("HELIUS_API_KEY is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error: HELIUS_API_KEY missing']);
+        exit;
+    }
     $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
     $publicKey = new PublicKey($transaction['public_key']);
     $balance = $connection->getBalance($publicKey);
@@ -84,12 +96,18 @@ try {
     if ($balanceInSol < $requiredAmount) {
         throw new Exception("Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required");
     }
-    log_message("Balance check passed: $balanceInSol SOL available", 'make-market.log', 'make-market', 'INFO');
+    log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
     echo json_encode(['status' => 'success', 'message' => 'Balance check passed', 'balance' => $balanceInSol]);
 } catch (Exception $e) {
     log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
-    $stmt->execute(['failed', $e->getMessage(), $transaction_id]);
+    try {
+        $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
+        $stmt->execute(['failed', $e->getMessage(), $transaction_id]);
+        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMessage()}", 'make-market.log', 'make-market', 'INFO');
+    } catch (PDOException $e2) {
+        log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    }
+    http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Balance check failed: ' . $e->getMessage()]);
     exit;
 }
