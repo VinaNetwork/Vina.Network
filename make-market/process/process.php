@@ -107,6 +107,10 @@ try {
     exit;
 }
 
+// Shorten token_mint for display
+$token_mint = $transaction['token_mint'];
+$short_token_mint = $token_mint ? substr($token_mint, 0, 4) . '...' . substr($token_mint, -4) : 'Invalid';
+
 // SEO meta
 $page_title = "Make Market Process - Vina Network";
 $page_description = "Execute your automated Solana token trading with Vina Network's Make Market tool.";
@@ -145,7 +149,12 @@ $page_css = ['/make-market/process/process.css'];
         <div class="transaction-details">
             <p><strong>Transaction ID:</strong> <?php echo htmlspecialchars($transaction_id); ?></p>
             <p><strong>Process Name:</strong> <?php echo htmlspecialchars($transaction['process_name']); ?></p>
-            <p><strong>Token Address:</strong> <?php echo htmlspecialchars($transaction['token_mint']); ?></p>
+            <p><strong>Token Address:</strong> 
+                <a href="https://solscan.io/address/<?php echo htmlspecialchars($token_mint); ?>" target="_blank">
+                    <?php echo htmlspecialchars($short_token_mint); ?>
+                </a>
+                <i class="fas fa-copy copy-icon" title="Copy full token address" data-full="<?php echo htmlspecialchars($token_mint); ?>"></i>
+            </p>
             <p><strong>SOL Amount:</strong> <?php echo htmlspecialchars($transaction['sol_amount']); ?></p>
             <p><strong>Slippage:</strong> <?php echo htmlspecialchars($transaction['slippage']); ?>%</p>
             <p><strong>Delay:</strong> <?php echo htmlspecialchars($transaction['delay_seconds']); ?> seconds</p>
