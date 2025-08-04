@@ -17,8 +17,9 @@ require_once $root_path . '../vendor/autoload.php';
 use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
+$csp_base = rtrim(BASE_URL, '/');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: https://vina.network');
+header("Access-Control-Allow-Origin: $csp_base");
 header('Access-Control-Allow-Methods: GET');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 
