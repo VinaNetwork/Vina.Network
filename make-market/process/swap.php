@@ -168,15 +168,15 @@ try {
         exit;
     }
 
-    if (!isset($data['result']['nativeBalance'])) {
-        log_message("Helius RPC failed: No nativeBalance in response", 'make-market.log', 'make-market', 'ERROR');
+    if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
+        log_message("Helius RPC failed: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Balance check failed: No native balance found']);
         exit;
     }
 
-    $balanceInSol = floatval($data['result']['nativeBalance']);
-    $requiredAmount = floatval($transaction['sol_amount']) + 0.005;
+    $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert lamports to SOL
+    $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // Add 0.005 SOL for fees
     if ($balanceInSol < $requiredAmount) {
         log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
