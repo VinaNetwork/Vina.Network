@@ -25,12 +25,12 @@ function showError(message, detailedError = null) {
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
-            <strong>Lỗi:</strong> ${message}
+            <strong>Error:</strong> ${message}
         </div>
     `;
     resultDiv.classList.add('active');
     document.getElementById('swap-status').textContent = ''; // Clear swap-status
-    document.getElementById('transaction-status').textContent = 'Thất bại';
+    document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}`);
@@ -42,13 +42,13 @@ function showSuccess(message, txid = null) {
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-success">
-            <strong>Thành công:</strong> ${message}
-            ${txid ? `<br><a href="https://solscan.io/tx/${txid}" target="_blank">Xem giao dịch trên Solscan</a>` : ''}
+            <strong>Success:</strong> ${message}
+            ${txid ? `<br><a href="https://solscan.io/tx/${txid}" target="_blank">View transaction on Solscan</a>` : ''}
         </div>
     `;
     resultDiv.classList.add('active');
     document.getElementById('swap-status').textContent = ''; // Clear swap-status
-    document.getElementById('transaction-status').textContent = 'Thành công';
+    document.getElementById('transaction-status').textContent = 'Success';
     document.getElementById('transaction-status').classList.add('text-success');
     log_message(`Process completed: ${message}${txid ? `, txid=${txid}` : ''}`, 'make-market.log', 'make-market', 'INFO');
     console.log(`Process completed: ${message}${txid ? `, txid=${txid}` : ''}`);
@@ -93,7 +93,7 @@ async function getQuote(tokenMint, solAmount) {
             }
         });
         if (response.status !== 200 || !response.data) {
-            throw new Error('Không thể lấy báo giá từ Jupiter API');
+            throw new Error('Failed to retrieve quote from Jupiter API');
         }
         log_message(`Quote retrieved: ${response.data.outAmount / 1e9} tokens`, 'make-market.log', 'make-market', 'INFO');
         console.log('Quote retrieved:', response.data);
@@ -116,7 +116,7 @@ async function executeSwap(quote, publicKey, transactionId) {
             prioritizationFeeLamports: 10000
         });
         if (response.status !== 200 || !response.data) {
-            throw new Error('Không thể chuẩn bị giao dịch swap từ Jupiter API');
+            throw new Error('Failed to prepare swap transaction from Jupiter API');
         }
         const { swapTransaction } = response.data;
         log_message(`Swap transaction prepared: ${swapTransaction}`, 'make-market.log', 'make-market', 'INFO');
@@ -133,9 +133,9 @@ async function executeSwap(quote, publicKey, transactionId) {
         });
         if (!swapResponse.ok) {
             if (swapResponse.status === 404) {
-                throw new Error('Lỗi server: Không tìm thấy swap.php');
+                throw new Error('Server error: swap.php not found');
             }
-            throw new Error(`Lỗi server: HTTP ${swapResponse.status}`);
+            throw new Error(`Server error: HTTP ${swapResponse.status}`);
         }
         const swapResult = await swapResponse.json();
         if (swapResult.status !== 'success') {
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const transactionId = new URLSearchParams(window.location.search).get('id');
     if (!transactionId) {
-        showError('ID giao dịch không hợp lệ');
+        showError('Invalid transaction ID');
         return;
     }
 
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
-        showError('Không thể lấy thông tin giao dịch: ' + err.message);
+        showError('Failed to retrieve transaction info: ' + err.message);
         return;
     }
 
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         log_message(`Public key fetched: ${publicKey}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Public key fetched:', publicKey);
     } catch (err) {
-        showError('Không thể lấy địa chỉ ví: ' + err.message);
+        showError('Failed to retrieve wallet address: ' + err.message);
         return;
     }
 
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Check balance server-side
     try {
-        document.getElementById('swap-status').textContent = 'Đang kiểm tra số dư ví...';
+        document.getElementById('swap-status').textContent = 'Checking wallet balance...';
         const balanceResponse = await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
@@ -218,39 +218,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             balanceResult = await balanceResponse.json();
         } catch (e) {
             log_message(`Balance check JSON parse error: ${e.message}`, 'make-market.log', 'make-market', 'ERROR');
-            throw new Error('Lỗi server khi kiểm tra số dư');
+            throw new Error('Server error while checking balance');
         }
         if (balanceResponse.status === 400 && balanceResult.status === 'error') {
-            const errorMessage = balanceResult.message || 'Số dư ví không đủ để thực hiện giao dịch';
+            const errorMessage = balanceResult.message || 'Insufficient wallet balance to perform the transaction';
             showError(errorMessage, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
             return;
         }
         if (!balanceResponse.ok) {
             const errorText = await balanceResponse.text();
             log_message(`Balance check HTTP error: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
-            throw new Error('Lỗi server khi kiểm tra số dư');
+            throw new Error('Server error while checking balance');
         }
         if (balanceResult.status !== 'success') {
-            const errorMessage = balanceResult.message || 'Số dư ví không đủ để thực hiện giao dịch';
+            const errorMessage = balanceResult.message || 'Insufficient wallet balance to perform the transaction';
             showError(errorMessage, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
             return;
         }
         log_message(`Balance check passed: ${balanceResult.balance} SOL available`, 'make-market.log', 'make-market', 'INFO');
         console.log('Balance check passed:', balanceResult.balance);
     } catch (err) {
-        showError(err.message, `Lỗi kiểm tra số dư: ${err.message}`);
+        showError(err.message, `Balance check error: ${err.message}`);
         return;
     }
 
     // Get quote and execute swap
     try {
-        document.getElementById('swap-status').textContent = 'Đang lấy báo giá...';
+        document.getElementById('swap-status').textContent = 'Retrieving quote...';
         const quote = await getQuote(transaction.token_mint, transaction.sol_amount);
-        document.getElementById('swap-status').textContent = 'Đang chuẩn bị giao dịch swap...';
+        document.getElementById('swap-status').textContent = 'Preparing swap transaction...';
         
         const txid = await executeSwap(quote, publicKey, transactionId);
         await updateTransactionStatus('success');
-        showSuccess(`Giao dịch swap hoàn tất thành công`, txid);
+        showSuccess(`Swap transaction completed successfully`, txid);
     } catch (err) {
         showError(err.message);
     }
@@ -273,21 +273,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!window.isSecureContext) {
                 log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
-                showError('Không thể sao chép: Tính năng này yêu cầu HTTPS');
+                showError('Cannot copy: This feature requires HTTPS');
                 return;
             }
 
             const fullAddress = icon.getAttribute('data-full');
             if (!fullAddress) {
                 log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
-                showError('Không thể sao chép: Địa chỉ không hợp lệ');
+                showError('Cannot copy: Invalid address');
                 return;
             }
 
             const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
             if (!base58Regex.test(fullAddress)) {
                 log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
-                showError('Không thể sao chép: Định dạng địa chỉ không hợp lệ');
+                showError('Cannot copy: Invalid address format');
                 return;
             }
 
@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon.classList.add('copied');
                 const tooltip = document.createElement('span');
                 tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Đã sao chép!';
+                tooltip.textContent = 'Copied!';
                 const parent = icon.parentNode;
                 parent.style.position = 'relative';
                 parent.appendChild(tooltip);
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2000);
             }).catch(err => {
                 log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-                showError(`Không thể sao chép: ${err.message}`);
+                showError(`Cannot copy: ${err.message}`);
             });
         });
     });
