@@ -213,12 +213,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const balanceResponse = await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
+        let balanceResult;
+        try {
+            balanceResult = await balanceResponse.json();
+        } catch (e) {
+            log_message(`Balance check JSON parse error: ${e.message}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error('Lỗi server khi kiểm tra số dư');
+        }
+        if (balanceResponse.status === 400 && balanceResult.status === 'error') {
+            const errorMessage = balanceResult.message || 'Số dư ví không đủ để thực hiện giao dịch';
+            showError(errorMessage, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
+            return;
+        }
         if (!balanceResponse.ok) {
             const errorText = await balanceResponse.text();
             log_message(`Balance check HTTP error: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error('Lỗi server khi kiểm tra số dư');
         }
-        const balanceResult = await balanceResponse.json();
         if (balanceResult.status !== 'success') {
             const errorMessage = balanceResult.message || 'Số dư ví không đủ để thực hiện giao dịch';
             showError(errorMessage, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
