@@ -17,6 +17,7 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https:
 $domain = $_SERVER['HTTP_HOST'];
 // Combine to form the base URL and define it as a constant
 define('BASE_URL', $protocol . $domain . '/');
+$csp_base = rtrim(BASE_URL, '/');
 
 // ---------------------------------------------------
 // Define core path constants
