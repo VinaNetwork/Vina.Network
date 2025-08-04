@@ -95,12 +95,12 @@ try {
 
 // Check balance server-side
 try {
-    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY');
+    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
     $publicKey = new PublicKey($transaction['public_key']);
     $balance = $connection->getBalance($publicKey);
     $balanceInSol = $balance / 1e9; // Convert lamports to SOL
     $requiredAmount = $transaction['sol_amount'] + 0.005; // Add 0.005 SOL for transaction fees
-    if ($balanceInSol < requiredAmount) {
+    if ($balanceInSol < $requiredAmount) {
         throw new Exception("Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required");
     }
     log_message("Balance check passed: $balanceInSol SOL available", 'make-market.log', 'make-market', 'INFO');
@@ -115,7 +115,7 @@ try {
 // Sign and send transaction
 try {
     $keypair = Keypair::fromSecretKey(base58_decode($private_key));
-    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY');
+    $connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
 
     // Verify public key matches
     $derivedPublicKey = $keypair->getPublicKey()->toBase58();
