@@ -134,17 +134,17 @@ $page_css = ['/make-market/history/history.css'];
                 <table class="transaction-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th class="desktop-only">ID</th>
                             <th>Process Name</th>
                             <th>Token Address</th>
-                            <th>SOL Amount</th>
-                            <th>Slippage</th>
-                            <th>Delay (s)</th>
-                            <th>Loops</th>
-                            <th>Batches</th>
+                            <th class="desktop-only">SOL Amount</th>
+                            <th class="desktop-only">Slippage</th>
+                            <th class="desktop-only">Delay (s)</th>
+                            <th class="desktop-only">Loops</th>
+                            <th class="desktop-only">Batches</th>
                             <th>Total Tx</th>
                             <th>Status</th>
-                            <th>Created At</th>
+                            <th class="desktop-only">Created At</th>
                             <th>Details</th>
                         </tr>
                     </thead>
@@ -155,8 +155,8 @@ $page_css = ['/make-market/history/history.css'];
                             $total_tx = $tx['loop_count'] * $tx['batch_size'];
                             $status_class = $tx['status'] === 'success' ? 'text-success' : ($tx['status'] === 'partial' ? 'text-warning' : 'text-danger');
                             ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($tx['id']); ?></td>
+                            <tr class="transaction-row" data-id="<?php echo $tx['id']; ?>">
+                                <td class="desktop-only"><?php echo htmlspecialchars($tx['id']); ?></td>
                                 <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
                                 <td>
                                     <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
@@ -164,16 +164,29 @@ $page_css = ['/make-market/history/history.css'];
                                     </a>
                                     <i class="fas fa-copy copy-icon" title="Copy full token address" data-full="<?php echo htmlspecialchars($tx['token_mint']); ?>"></i>
                                 </td>
-                                <td><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['slippage']); ?>%</td>
-                                <td><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['loop_count']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['batch_size']); ?></td>
+                                <td class="desktop-only"><?php echo htmlspecialchars($tx['sol_amount']); ?></td>
+                                <td class="desktop-only"><?php echo htmlspecialchars($tx['slippage']); ?>%</td>
+                                <td class="desktop-only"><?php echo htmlspecialchars($tx['delay_seconds']); ?></td>
+                                <td class="desktop-only"><?php echo htmlspecialchars($tx['loop_count']); ?></td>
+                                <td class="desktop-only"><?php echo htmlspecialchars($tx['batch_size']); ?></td>
                                 <td><?php echo htmlspecialchars($total_tx); ?></td>
                                 <td class="<?php echo $status_class; ?>"><?php echo htmlspecialchars($tx['status']); ?></td>
-                                <td><?php echo htmlspecialchars($tx['created_at']); ?></td>
+                                <td class="desktop-only"><?php echo htmlspecialchars($tx['created_at']); ?></td>
                                 <td>
                                     <button class="details-btn" data-id="<?php echo $tx['id']; ?>">View Details</button>
+                                </td>
+                            </tr>
+                            <tr class="mobile-details" style="display: none;">
+                                <td colspan="12">
+                                    <div class="mobile-details-content">
+                                        <p><strong>ID:</strong> <?php echo htmlspecialchars($tx['id']); ?></p>
+                                        <p><strong>SOL Amount:</strong> <?php echo htmlspecialchars($tx['sol_amount']); ?></p>
+                                        <p><strong>Slippage:</strong> <?php echo htmlspecialchars($tx['slippage']); ?>%</p>
+                                        <p><strong>Delay:</strong> <?php echo htmlspecialchars($tx['delay_seconds']); ?>s</p>
+                                        <p><strong>Loops:</strong> <?php echo htmlspecialchars($tx['loop_count']); ?></p>
+                                        <p><strong>Batches:</strong> <?php echo htmlspecialchars($tx['batch_size']); ?></p>
+                                        <p><strong>Created At:</strong> <?php echo htmlspecialchars($tx['created_at']); ?></p>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
