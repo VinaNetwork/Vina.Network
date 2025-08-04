@@ -21,13 +21,14 @@ use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\PublicKey;
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://vina.network; connect-src 'self' https://vina.network https://quote-api.jup.ag; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+$csp_base = rtrim(BASE_URL, '/');
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base https://quote-api.jup.ag; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Access-Control-Allow-Origin: $csp_base");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
-header("Access-Control-Allow-Origin: " . rtrim(BASE_URL, '/'));
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST, GET");
 header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
