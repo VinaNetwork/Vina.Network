@@ -238,31 +238,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const batchSize = parseInt(transaction.batch_size);
         const delaySeconds = parseInt(transaction.delay_seconds) * 1000; // Convert to milliseconds
         const swapTransactions = [];
-        let tokenAmount = 0;
 
-        // Generate swap transactions
+        // Generate swap transactions (buy only)
         for (let loop = 1; loop <= loopCount; loop++) {
             document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount}...`;
-            
-            // Buy transactions
             for (let i = 0; i < batchSize; i++) {
                 document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1}...`;
                 const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps);
-                tokenAmount = buyQuote.outAmount; // Store for sell transaction
                 const buyTx = await getSwapTransaction(buyQuote, publicKey);
                 swapTransactions.push(buyTx);
-            }
-
-            // Sell transactions (after delay)
-            if (tokenAmount > 0) {
-                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before sell for loop ${loop}...`;
-                await delay(delaySeconds);
-                for (let i = 0; i < batchSize; i++) {
-                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1}...`;
-                    const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps);
-                    const sellTx = await getSwapTransaction(sellQuote, publicKey);
-                    swapTransactions.push(sellTx);
+                if (i < batchSize - 1) {
+                    document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
+                    await delay(delaySeconds);
                 }
+            }
+            if (loop < loopCount) {
+                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop...`;
+                await delay(delaySeconds);
             }
         }
 
@@ -270,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('swap-status').textContent = 'Executing swap transactions...';
         const swapResult = await executeSwapTransactions(transactionId, swapTransactions);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
-        const totalTransactions = loopCount * batchSize * 2; // Buy + Sell
+        const totalTransactions = loopCount * batchSize;
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions`);
         showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
     } catch (err) {
