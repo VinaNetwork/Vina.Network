@@ -215,11 +215,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         if (!balanceResponse.ok) {
             const errorText = await balanceResponse.text();
-            throw new Error(errorText);
+            log_message(`Balance check HTTP error: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error('Lỗi server khi kiểm tra số dư');
         }
         const balanceResult = await balanceResponse.json();
         if (balanceResult.status !== 'success') {
-            showError(balanceResult.message, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
+            const errorMessage = balanceResult.message || 'Số dư ví không đủ để thực hiện giao dịch';
+            showError(errorMessage, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
             return;
         }
         log_message(`Balance check passed: ${balanceResult.balance} SOL available`, 'make-market.log', 'make-market', 'INFO');
