@@ -36,6 +36,11 @@ function showError(message, detailedError = null) {
     log_message(`Process stopped: ${message}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}`);
     updateTransactionStatus('failed', detailedError || message);
+    // Hide Cancel button
+    const cancelBtn = document.getElementById('cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+    }
 }
 
 // Show success message with styled alert
@@ -64,6 +69,11 @@ function showSuccess(message, results = []) {
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
     log_message(`Process completed: ${message}`, 'make-market.log', 'make-market', 'INFO');
     console.log(`Process completed: ${message}`);
+    // Hide Cancel button
+    const cancelBtn = document.getElementById('cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+    }
 }
 
 // Update transaction status and error in database
@@ -90,6 +100,46 @@ async function updateTransactionStatus(status, error = null) {
     } catch (err) {
         log_message(`Failed to update transaction status: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to update transaction status:', err.message);
+    }
+}
+
+// Cancel transaction
+async function cancelTransaction(transactionId) {
+    try {
+        const response = await fetch('/make-market/process/get-status.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user' })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.status !== 'success') {
+            throw new Error(result.message);
+        }
+        log_message(`Transaction canceled: ID=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`Transaction canceled: ID=${transactionId}`);
+        document.getElementById('transaction-status').textContent = 'Canceled';
+        document.getElementById('transaction-status').classList.add('text-danger');
+        document.getElementById('swap-status').textContent = '';
+        document.getElementById('process-result').innerHTML = `
+            <div class="alert alert-danger">
+                <strong>Canceled:</strong> Transaction canceled by user
+            </div>
+        `;
+        document.getElementById('process-result').classList.add('active');
+        // Hide Cancel button
+        const cancelBtn = document.getElementById('cancel-btn');
+        if (cancelBtn) {
+            cancelBtn.style.display = 'none';
+        }
+    } catch (err) {
+        log_message(`Failed to cancel transaction: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Failed to cancel transaction: ' + err.message);
     }
 }
 
@@ -225,6 +275,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Check initial status and hide Cancel button if not new/pending/processing
+    if (!['new', 'pending', 'processing'].includes(transaction.status)) {
+        const cancelBtn = document.getElementById('cancel-btn');
+        if (cancelBtn) {
+            cancelBtn.style.display = 'none';
+        }
+    }
+
+    // Handle Cancel button click
+    const cancelBtn = document.getElementById('cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', async () => {
+            log_message(`Cancel button clicked for transaction ID=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+            console.log(`Cancel button clicked for transaction ID=${transactionId}`);
+            await cancelTransaction(transactionId);
+        });
+    }
+
     // Update status to pending
     await updateTransactionStatus('pending');
 
@@ -276,7 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
     log_message(`Found ${copyIcons.length} copy icons`, 'make-market.log', 'make-market', 'DEBUG');
     if (copyIcons.length === 0) {
         log_message('No .copy-icon elements found in DOM', 'make-market.log', 'make-market', 'ERROR');
-        return;
     }
 
     copyIcons.forEach(icon => {
