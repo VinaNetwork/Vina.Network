@@ -122,7 +122,7 @@ $page_css = ['/make-market/history/history.css'];
         <div id="account-info">
             <table>
                 <tr>
-                    <th>Wallet Address:</th>
+                    <th>Account transaction history::</th>
                     <td>
                         <a href="https://solscan.io/address/<?php echo htmlspecialchars($user_public_key); ?>" target="_blank">
                             <?php echo htmlspecialchars(substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4)); ?>
