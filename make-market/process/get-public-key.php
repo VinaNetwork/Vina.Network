@@ -38,7 +38,8 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
 // Get transaction ID
 $transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid or missing transaction ID: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
     exit;
 }
@@ -49,7 +50,8 @@ try {
     log_message("Database connection retrieved", 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
     log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
 }
 
@@ -59,13 +61,16 @@ try {
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != $_SESSION['user_id']) {
-        log_message("Transaction not found or unauthorized: ID=$transaction_id", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Transaction not found or unauthorized: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
+    log_message("Transaction fetched: ID=$transaction_id", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction']);
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction: ' . $e->getMessage()]);
     exit;
 }
 
@@ -73,18 +78,21 @@ try {
 try {
     if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
         log_message("JWT_SECRET is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Server configuration error: JWT_SECRET missing']);
         exit;
     }
     $private_key = openssl_decrypt($transaction['private_key'], 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
     if ($private_key === false) {
-        log_message("Failed to decrypt private key", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Failed to decrypt private key: openssl_decrypt returned false", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Failed to decrypt private key']);
         exit;
     }
     log_message("Private key decrypted successfully", 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
     log_message("Private key decryption failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Private key decryption failed: ' . $e->getMessage()]);
     exit;
 }
@@ -95,7 +103,8 @@ try {
     $decodedKey = $base58->decode($private_key);
     if (strlen($decodedKey) !== 64) {
         log_message("Invalid private key length: " . strlen($decodedKey), 'make-market.log', 'make-market', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid private key length']);
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid private key length: ' . strlen($decodedKey)]);
         exit;
     }
     $keypair = Keypair::fromSecretKey($decodedKey);
@@ -104,6 +113,7 @@ try {
     echo json_encode(['status' => 'success', 'public_key' => $public_key]);
 } catch (Exception $e) {
     log_message("Failed to derive public key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Failed to derive public key: ' . $e->getMessage()]);
     exit;
 }
