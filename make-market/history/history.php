@@ -84,6 +84,11 @@ try {
     ");
     $stmt->execute([$user_id]);
     $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Format public key for display
+    foreach ($transactions as &$tx) {
+        $tx['short_public_key'] = $tx['public_key'] ? substr($tx['public_key'], 0, 4) . '...' . substr($tx['public_key'], -4) : 'N/A';
+    }
     log_message("Fetched " . count($transactions) . " transactions for user_id=$user_id", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
@@ -136,6 +141,7 @@ $page_css = ['/make-market/history/history.css'];
                         <tr>
                             <th class="desktop-only">ID</th>
                             <th>Process Name</th>
+                            <th class="desktop-only">Public Key</th>
                             <th>Token Address</th>
                             <th class="desktop-only">SOL Amount</th>
                             <th class="desktop-only">Slippage</th>
@@ -158,6 +164,16 @@ $page_css = ['/make-market/history/history.css'];
                             <tr class="transaction-row" data-id="<?php echo $tx['id']; ?>">
                                 <td class="desktop-only"><?php echo htmlspecialchars($tx['id']); ?></td>
                                 <td><?php echo htmlspecialchars($tx['process_name']); ?></td>
+                                <td class="desktop-only">
+                                    <?php if ($tx['public_key']): ?>
+                                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['public_key']); ?>" target="_blank">
+                                            <?php echo htmlspecialchars($tx['short_public_key']); ?>
+                                        </a>
+                                        <i class="fas fa-copy copy-icon" title="Copy full public key" data-full="<?php echo htmlspecialchars($tx['public_key']); ?>"></i>
+                                    <?php else: ?>
+                                        N/A
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['token_mint']); ?>" target="_blank">
                                         <?php echo htmlspecialchars($short_token_mint); ?>
@@ -177,9 +193,19 @@ $page_css = ['/make-market/history/history.css'];
                                 </td>
                             </tr>
                             <tr class="mobile-details" style="display: none;">
-                                <td colspan="12">
+                                <td colspan="13">
                                     <div class="mobile-details-content">
                                         <p><strong>ID:</strong> <?php echo htmlspecialchars($tx['id']); ?></p>
+                                        <p><strong>Public Key:</strong> 
+                                            <?php if ($tx['public_key']): ?>
+                                                <a href="https://solscan.io/address/<?php echo htmlspecialchars($tx['public_key']); ?>" target="_blank">
+                                                    <?php echo htmlspecialchars($tx['short_public_key']); ?>
+                                                </a>
+                                                <i class="fas fa-copy copy-icon" title="Copy full public key" data-full="<?php echo htmlspecialchars($tx['public_key']); ?>"></i>
+                                            <?php else: ?>
+                                                N/A
+                                            <?php endif; ?>
+                                        </p>
                                         <p><strong>SOL Amount:</strong> <?php echo htmlspecialchars($tx['sol_amount']); ?></p>
                                         <p><strong>Slippage:</strong> <?php echo htmlspecialchars($tx['slippage']); ?>%</p>
                                         <p><strong>Delay:</strong> <?php echo htmlspecialchars($tx['delay_seconds']); ?>s</p>
