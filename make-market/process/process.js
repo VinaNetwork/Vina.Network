@@ -150,7 +150,8 @@ async function checkSolBalance(transactionId, requiredSol) {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const result = await response.json();
+            throw new Error(result.message || `HTTP ${response.status}`);
         }
         const result = await response.json();
         if (result.status !== 'success') {
@@ -229,7 +230,6 @@ async function executeSwapTransactions(transactionId, swapTransactions) {
         if (!response.ok) {
             const result = await response.json();
             if (result.message && result.message.includes('Insufficient wallet balance')) {
-                // Sử dụng message từ swap.php để đảm bảo đồng bộ với log
                 throw new Error(`${result.message}`);
             }
             throw new Error(result.message || `Server error: HTTP ${response.status}`);
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
     } catch (err) {
-        showError('Failed to check SOL balance: ' + err.message, err.message.includes('Insufficient SOL balance') ? err.message : null);
+        showError('Failed to check SOL balance: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
         return;
     }
 
