@@ -155,8 +155,8 @@ try {
         exit;
     }
 
-    $balanceInSol = $data['result']['nativeBalance'];
-    $requiredAmount = $transaction['sol_amount'] + 0.005; // Add 0.005 SOL for fees
+    $balanceInSol = floatval($data['result']['nativeBalance']); // Convert to float
+    $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // Convert to float and add 0.005 SOL for fees
     if ($balanceInSol < $requiredAmount) {
         throw new Exception("Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required");
     }
