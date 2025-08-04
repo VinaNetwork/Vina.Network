@@ -123,6 +123,7 @@ try {
     ]);
 
     $response = curl_exec($curl);
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     $err = curl_error($curl);
     curl_close($curl);
 
@@ -130,6 +131,13 @@ try {
         log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Balance check failed: cURL error: ' . $err]);
+        exit;
+    }
+
+    if ($http_code !== 200) {
+        log_message("Helius RPC failed: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => "Balance check failed: HTTP $http_code"]);
         exit;
     }
 
@@ -148,17 +156,20 @@ try {
         exit;
     }
 
-    if (!isset($data['result']['nativeBalance'])) {
-        log_message("Helius RPC failed: No nativeBalance in response", 'make-market.log', 'make-market', 'ERROR');
+    if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
+        log_message("Helius RPC failed: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Balance check failed: No native balance found']);
         exit;
     }
 
-    $balanceInSol = floatval($data['result']['nativeBalance']); // Convert to float
-    $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // Convert to float and add 0.005 SOL for fees
+    $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert lamports to SOL
+    $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // Add 0.005 SOL for fees
     if ($balanceInSol < $requiredAmount) {
-        throw new Exception("Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required");
+        log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => "Insufficient balance: $balanceInSol SOL available, $requiredAmount SOL required"]);
+        exit;
     }
 
     log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
