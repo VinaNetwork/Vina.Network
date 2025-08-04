@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/process.php
-// Description: Process page for Make Market to execute Solana token swap
+// Description: Process page for Make Market to execute Solana token swap with looping
 // Created by: Vina Network
 // ============================================================================
 
@@ -162,6 +162,7 @@ $page_css = ['/make-market/process/process.css'];
             <p><strong>Delay:</strong> <?php echo htmlspecialchars($transaction['delay_seconds']); ?> seconds</p>
             <p><strong>Loop Count:</strong> <?php echo htmlspecialchars($transaction['loop_count']); ?></p>
             <p><strong>Batch Size:</strong> <?php echo htmlspecialchars($transaction['batch_size']); ?></p>
+            <p><strong>Total Transactions:</strong> <?php echo htmlspecialchars($transaction['loop_count'] * $transaction['batch_size'] * 2); ?> (Buy + Sell)</p>
             <p><strong>Status:</strong> <span id="transaction-status"><?php echo htmlspecialchars($transaction['status']); ?></span></p>
             <p id="swap-status">Preparing swap...</p>
         </div>
