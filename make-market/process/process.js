@@ -251,11 +251,68 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Main process
+// Main process and copy functionality
 document.addEventListener('DOMContentLoaded', async () => {
     log_message('process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
+    // Copy functionality
+    const copyIcons = document.querySelectorAll('.copy-icon');
+    log_message(`Found ${copyIcons.length} copy icons`, 'make-market.log', 'make-market', 'DEBUG');
+    if (copyIcons.length === 0) {
+        log_message('No .copy-icon elements found in DOM', 'make-market.log', 'make-market', 'ERROR');
+    }
+
+    copyIcons.forEach(icon => {
+        log_message('Attaching click event to copy icon', 'make-market.log', 'make-market', 'DEBUG');
+        icon.addEventListener('click', (e) => {
+            log_message('Copy icon clicked', 'make-market.log', 'make-market', 'INFO');
+            console.log('Copy icon clicked');
+
+            if (!window.isSecureContext) {
+                log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
+                showError('Cannot copy: This feature requires HTTPS');
+                return;
+            }
+
+            const fullAddress = icon.getAttribute('data-full');
+            if (!fullAddress) {
+                log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
+                showError('Cannot copy: Invalid address');
+                return;
+            }
+
+            const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
+            if (!base58Regex.test(fullAddress)) {
+                log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
+                showError('Cannot copy: Invalid address format');
+                return;
+            }
+
+            navigator.clipboard.writeText(fullAddress).then(() => {
+                log_message('Copy successful', 'make-market.log', 'make-market', 'INFO');
+                console.log('Copy successful');
+                icon.classList.add('copied');
+                const tooltip = document.createElement('span');
+                tooltip.className = 'copy-tooltip';
+                tooltip.textContent = 'Copied!';
+                const parent = icon.parentNode;
+                parent.style.position = 'relative';
+                parent.appendChild(tooltip);
+                setTimeout(() => {
+                    icon.classList.remove('copied');
+                    tooltip.remove();
+                    log_message('Copy feedback removed', 'make-market.log', 'make-market', 'DEBUG');
+                    console.log('Copy feedback removed');
+                }, 2000);
+            }).catch(err => {
+                log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+                showError(`Cannot copy: ${err.message}`);
+            });
+        });
+    });
+
+    // Main process
     const transactionId = new URLSearchParams(window.location.search).get('id');
     if (!transactionId) {
         showError('Invalid transaction ID');
@@ -389,62 +446,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         showError('Error during swap process: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
     }
-});
-
-// Copy functionality
-document.addEventListener('DOMContentLoaded', () => {
-    const copyIcons = document.querySelectorAll('.copy-icon');
-    log_message(`Found ${copyIcons.length} copy icons`, 'make-market.log', 'make-market', 'DEBUG');
-    if (copyIcons.length === 0) {
-        log_message('No .copy-icon elements found in DOM', 'make-market.log', 'make-market', 'ERROR');
-    }
-
-    copyIcons.forEach(icon => {
-        log_message('Attaching click event to copy icon', 'make-market.log', 'make-market', 'DEBUG');
-        icon.addEventListener('click', (e) => {
-            log_message('Copy icon clicked', 'make-market.log', 'make-market', 'INFO');
-            console.log('Copy icon clicked');
-
-            if (!window.isSecureContext) {
-                log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
-                showError('Cannot copy: This feature requires HTTPS');
-                return;
-            }
-
-            const fullAddress = icon.getAttribute('data-full');
-            if (!fullAddress) {
-                log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
-                showError('Cannot copy: Invalid address');
-                return;
-            }
-
-            const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
-            if (!base58Regex.test(fullAddress)) {
-                log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
-                showError('Cannot copy: Invalid address format');
-                return;
-            }
-
-            navigator.clipboard.writeText(fullAddress).then(() => {
-                log_message('Copy successful', 'make-market.log', 'make-market', 'INFO');
-                console.log('Copy successful');
-                icon.classList.add('copied');
-                const tooltip = document.createElement('span');
-                tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
-                const parent = icon.parentNode;
-                parent.style.position = 'relative';
-                parent.appendChild(tooltip);
-                setTimeout(() => {
-                    icon.classList.remove('copied');
-                    tooltip.remove();
-                    log_message('Copy feedback removed', 'make-market.log', 'make-market', 'DEBUG');
-                    console.log('Copy feedback removed');
-                }, 2000);
-            }).catch(err => {
-                log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-                showError(`Cannot copy: ${err.message}`);
-            });
-        });
-    });
 });
