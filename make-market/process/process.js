@@ -20,15 +20,38 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     }).catch(err => console.error('Log error:', err));
 }
 
-// Show error message and stop process
+// Show error message with styled alert
 function showError(message) {
     const resultDiv = document.getElementById('process-result');
-    resultDiv.innerHTML = `<p style="color: red;">Error: ${message}</p>`;
+    resultDiv.innerHTML = `
+        <div class="alert alert-danger">
+            <strong>Lỗi:</strong> ${message}
+        </div>
+    `;
     resultDiv.classList.add('active');
     document.getElementById('swap-status').textContent = ''; // Clear swap-status
+    document.getElementById('transaction-status').textContent = 'Thất bại';
+    document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}`);
     updateTransactionStatus('failed', message);
+}
+
+// Show success message with styled alert
+function showSuccess(message, txid = null) {
+    const resultDiv = document.getElementById('process-result');
+    resultDiv.innerHTML = `
+        <div class="alert alert-success">
+            <strong>Thành công:</strong> ${message}
+            ${txid ? `<br><a href="https://solscan.io/tx/${txid}" target="_blank">Xem giao dịch trên Solscan</a>` : ''}
+        </div>
+    `;
+    resultDiv.classList.add('active');
+    document.getElementById('swap-status').textContent = ''; // Clear swap-status
+    document.getElementById('transaction-status').textContent = 'Thành công';
+    document.getElementById('transaction-status').classList.add('text-success');
+    log_message(`Process completed: ${message}${txid ? `, txid=${txid}` : ''}`, 'make-market.log', 'make-market', 'INFO');
+    console.log(`Process completed: ${message}${txid ? `, txid=${txid}` : ''}`);
 }
 
 // Update transaction status and error in database
@@ -52,7 +75,6 @@ async function updateTransactionStatus(status, error = null) {
         }
         log_message(`Transaction status updated: ID=${transactionId}, status=${status}, error=${error || 'none'}`, 'make-market.log', 'make-market', 'INFO');
         console.log(`Transaction status updated: ID=${transactionId}, status=${status}, error=${error || 'none'}`);
-        document.getElementById('transaction-status').textContent = status;
     } catch (err) {
         log_message(`Failed to update transaction status: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to update transaction status:', err.message);
@@ -71,7 +93,7 @@ async function getQuote(tokenMint, solAmount) {
             }
         });
         if (response.status !== 200 || !response.data) {
-            throw new Error('Invalid response from Jupiter API');
+            throw new Error('Không thể lấy báo giá từ Jupiter API');
         }
         log_message(`Quote retrieved: ${response.data.outAmount / 1e9} tokens`, 'make-market.log', 'make-market', 'INFO');
         console.log('Quote retrieved:', response.data);
@@ -94,7 +116,7 @@ async function executeSwap(quote, publicKey, transactionId) {
             prioritizationFeeLamports: 10000
         });
         if (response.status !== 200 || !response.data) {
-            throw new Error('Invalid response from Jupiter swap API');
+            throw new Error('Không thể chuẩn bị giao dịch swap từ Jupiter API');
         }
         const { swapTransaction } = response.data;
         log_message(`Swap transaction prepared: ${swapTransaction}`, 'make-market.log', 'make-market', 'INFO');
@@ -111,9 +133,9 @@ async function executeSwap(quote, publicKey, transactionId) {
         });
         if (!swapResponse.ok) {
             if (swapResponse.status === 404) {
-                throw new Error('Server error: swap.php not found');
+                throw new Error('Lỗi server: Không tìm thấy swap.php');
             }
-            throw new Error(`Server error: HTTP ${swapResponse.status}`);
+            throw new Error(`Lỗi server: HTTP ${swapResponse.status}`);
         }
         const swapResult = await swapResponse.json();
         if (swapResult.status !== 'success') {
@@ -136,7 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const transactionId = new URLSearchParams(window.location.search).get('id');
     if (!transactionId) {
-        showError('Invalid transaction ID');
+        showError('ID giao dịch không hợp lệ');
         return;
     }
 
@@ -157,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
-        showError('Failed to fetch transaction: ' + err.message);
+        showError('Không thể lấy thông tin giao dịch: ' + err.message);
         return;
     }
 
@@ -178,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         log_message(`Public key fetched: ${publicKey}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Public key fetched:', publicKey);
     } catch (err) {
-        showError('Failed to fetch public key: ' + err.message);
+        showError('Không thể lấy địa chỉ ví: ' + err.message);
         return;
     }
 
@@ -187,12 +209,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Check balance server-side
     try {
-        document.getElementById('swap-status').textContent = 'Checking balance...';
+        document.getElementById('swap-status').textContent = 'Đang kiểm tra số dư ví...';
         const balanceResponse = await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         if (!balanceResponse.ok) {
-            throw new Error(`HTTP ${balanceResponse.status}: ${await balanceResponse.text()}`);
+            const errorText = await balanceResponse.text();
+            throw new Error(errorText);
         }
         const balanceResult = await balanceResponse.json();
         if (balanceResult.status !== 'success') {
@@ -201,25 +224,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         log_message(`Balance check passed: ${balanceResult.balance} SOL available`, 'make-market.log', 'make-market', 'INFO');
         console.log('Balance check passed:', balanceResult.balance);
     } catch (err) {
-        showError('Balance check failed: ' + err.message);
+        showError(err.message);
         return;
     }
 
     // Get quote and execute swap
     try {
-        document.getElementById('swap-status').textContent = 'Getting quote...';
+        document.getElementById('swap-status').textContent = 'Đang lấy báo giá...';
         const quote = await getQuote(transaction.token_mint, transaction.sol_amount);
-        document.getElementById('swap-status').textContent = 'Preparing swap...';
+        document.getElementById('swap-status').textContent = 'Đang chuẩn bị giao dịch swap...';
         
         const txid = await executeSwap(quote, publicKey, transactionId);
         await updateTransactionStatus('success');
-        document.getElementById('swap-status').textContent = `Swap completed: txid=${txid}`;
-        log_message('Swap completed, ready for trading', 'make-market.log', 'make-market', 'INFO');
-        console.log('Swap completed, ready for trading');
-        document.getElementById('process-result').innerHTML = `<p style="color: green;">Swap completed. Transaction ID: <a href="https://solscan.io/tx/${txid}" target="_blank">${txid}</a></p>`;
-        document.getElementById('process-result').classList.add('active');
+        showSuccess(`Giao dịch swap hoàn tất thành công`, txid);
     } catch (err) {
-        showError('Swap failed: ' + err.message);
+        showError(err.message);
     }
 });
 
@@ -240,27 +259,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!window.isSecureContext) {
                 log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
-                console.error('Copy blocked: Not in secure context');
-                document.getElementById('process-result').innerHTML = '<p style="color: red;">Error: Unable to copy: This feature requires HTTPS</p>';
-                document.getElementById('process-result').classList.add('active');
+                showError('Không thể sao chép: Tính năng này yêu cầu HTTPS');
                 return;
             }
 
             const fullAddress = icon.getAttribute('data-full');
             if (!fullAddress) {
                 log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
-                console.error('Copy failed: data-full attribute not found or empty');
-                document.getElementById('process-result').innerHTML = '<p style="color: red;">Error: Unable to copy: Invalid address</p>';
-                document.getElementById('process-result').classList.add('active');
+                showError('Không thể sao chép: Địa chỉ không hợp lệ');
                 return;
             }
 
             const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
             if (!base58Regex.test(fullAddress)) {
                 log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
-                console.error(`Invalid address format: ${fullAddress}`);
-                document.getElementById('process-result').innerHTML = '<p style="color: red;">Error: Unable to copy: Invalid address format</p>';
-                document.getElementById('process-result').classList.add('active');
+                showError('Không thể sao chép: Định dạng địa chỉ không hợp lệ');
                 return;
             }
 
@@ -270,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon.classList.add('copied');
                 const tooltip = document.createElement('span');
                 tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
+                tooltip.textContent = 'Đã sao chép!';
                 const parent = icon.parentNode;
                 parent.style.position = 'relative';
                 parent.appendChild(tooltip);
@@ -282,9 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2000);
             }).catch(err => {
                 log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-                console.error('Clipboard API failed:', err.message);
-                document.getElementById('process-result').innerHTML = `<p style="color: red;">Error: Unable to copy: ${err.message}</p>`;
-                document.getElementById('process-result').classList.add('active');
+                showError(`Không thể sao chép: ${err.message}`);
             });
         });
     });
