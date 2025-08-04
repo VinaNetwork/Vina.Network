@@ -35,7 +35,13 @@ function showError(message, detailedError = null) {
     document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
-    updateTransactionStatus('failed', detailedError || message);
+
+    // Catch lỗi khi cập nhật trạng thái để tránh log lặp
+    updateTransactionStatus('failed', detailedError || message)
+        .catch(err => {
+            log_message(`Update status failed (inside showError): ${err.message}`, 'make-market.log', 'make-market', 'DEBUG');
+        });
+
     // Hide Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
