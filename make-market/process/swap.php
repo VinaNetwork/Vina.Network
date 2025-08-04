@@ -20,7 +20,6 @@ use Attestto\SolanaPhpSdk\PublicKey;
 use Attestto\SolanaPhpSdk\Transaction;
 use StephenHill\Base58;
 
-$csp_base = rtrim(BASE_URL, '/');
 header('Content-Type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: $csp_base");
 header('Access-Control-Allow-Methods: POST');
