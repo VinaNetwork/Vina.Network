@@ -67,12 +67,12 @@ try {
 }
 
 // Check session for authentication
-$public_key = $_SESSION['public_key'] ?? null;
-$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+$user_public_key = $_SESSION['public_key'] ?? null;
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
+    $short_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
+    log_message("Session public_key: $short_user_public_key", 'make-market.log', 'make-market', 'DEBUG');
 }
-if (!$public_key) {
+if (!$user_public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/make-market/process';
     header('Location: /accounts');
@@ -99,7 +99,7 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}", 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
@@ -107,7 +107,9 @@ try {
     exit;
 }
 
-// Shorten token_mint for display
+// Shorten public_key and token_mint for display
+$public_key = $transaction['public_key'];
+$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 $token_mint = $transaction['token_mint'];
 $short_token_mint = $token_mint ? substr($token_mint, 0, 4) . '...' . substr($token_mint, -4) : 'Invalid';
 
@@ -136,7 +138,7 @@ $page_css = ['/make-market/process/process.css'];
         <div id="account-info">
             <table>
                 <tr>
-                    <th>Account:</th>
+                    <th>Wallet Address:</th>
                     <td>
                         <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
                             <?php echo htmlspecialchars($short_public_key); ?>
