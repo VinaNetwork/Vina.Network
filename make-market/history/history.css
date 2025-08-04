@@ -6,7 +6,7 @@
 
 .history-container {
     max-width: 1200px;
-    margin: 20px auto;
+    margin-top: 72px;
     padding: 0 15px;
 }
 
@@ -37,10 +37,16 @@
     overflow-x: auto;
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .transaction-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 15px;
+    table-layout: auto;
 }
 
 .transaction-table th, .transaction-table td {
@@ -48,6 +54,7 @@
     border: 1px solid #ddd;
     text-align: left;
     font-size: 14px;
+    white-space: nowrap;
 }
 
 .transaction-table th {
@@ -105,12 +112,14 @@
 .sub-transaction-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
 }
 
 .sub-transaction-table th, .sub-transaction-table td {
     padding: 8px;
     border: 1px solid #ddd;
     font-size: 14px;
+    white-space: nowrap;
 }
 
 .sub-transaction-table th {
@@ -143,79 +152,39 @@
     transform: translateX(-50%);
 }
 
-.mobile-details {
-    background: #f9f9f9;
-    padding: 10px;
-}
-
-.mobile-details-content {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.mobile-details-content p {
-    margin: 5px 0;
-    font-size: 14px;
-}
-
 /* Responsive design */
 @media (max-width: 768px) {
-    .transaction-table {
-        display: none;
+    .history-container {
+       margin-top:64px;
     }
-
-    .transaction-history {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .transaction-card {
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 10px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .transaction-card:hover {
-        background: #f1f1f1;
-        cursor: pointer;
-    }
-
-    .transaction-card p {
-        margin: 5px 0;
-        font-size: 14px;
-    }
-
-    .transaction-card .status {
-        font-weight: bold;
-    }
-
-    .desktop-only {
-        display: none;
-    }
-
     .history-content h1 {
         font-size: 20px;
     }
 
+    .transaction-table th, .transaction-table td {
+        padding: 6px;
+        font-size: 12px;
+    }
+
+    .hide-on-mobile {
+        display: none;
+    }
+
+    .transaction-table {
+        min-width: 600px; /* Ensure table has minimum width for readability */
+    }
+
+    .details-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
     .sub-transaction-table {
-        font-size: 13px;
+        min-width: 500px;
     }
 
     .sub-transaction-table th, .sub-transaction-table td {
         padding: 6px;
-    }
-}
-
-@media (min-width: 769px) {
-    .transaction-card {
-        display: none;
-    }
-
-    .mobile-details {
-        display: none !important;
+        font-size: 12px;
     }
 }
