@@ -229,7 +229,7 @@ async function executeSwapTransactions(transactionId, swapTransactions) {
         if (!response.ok) {
             const result = await response.json();
             if (result.message.includes('Insufficient wallet balance')) {
-                throw new Error(`${result.message} Required: ${result.required} SOL, Available: ${result.balance} SOL`);
+                throw new Error(`Insufficient SOL balance. Required: ${result.required} SOL, Available: ${result.balance} SOL`);
             }
             throw new Error(result.message || `Server error: HTTP ${response.status}`);
         }
@@ -339,11 +339,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const requiredSol = transaction.sol_amount * loopCount * batchSize + 0.005 * loopCount * batchSize; // SOL + phí
         const balanceCheck = await checkSolBalance(transactionId, requiredSol);
         if (!balanceCheck.sufficient) {
-            showError(`Insufficient SOL balance. Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
+            showError(`Insufficient SOL balance.`, `Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
             return;
         }
     } catch (err) {
-        showError('Failed to check SOL balance: ' + err.message);
+        showError('Failed to check SOL balance: ' + err.message, err.message.includes('Insufficient SOL balance') ? err.message : null);
         return;
     }
 
@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions`);
         showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
     } catch (err) {
-        showError('Error during swap process: ' + err.message);
+        showError('Error during swap process: ' + err.message, err.message.includes('Insufficient SOL balance') ? err.message : null);
     }
 });
 
