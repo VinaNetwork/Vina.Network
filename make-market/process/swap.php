@@ -87,6 +87,115 @@ try {
     exit;
 }
 
+// Check balance using Helius getAssetsByOwner
+try {
+    if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
+        log_message("HELIUS_API_KEY is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing HELIUS_API_KEY'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+        CURLOPT_URL => "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS => json_encode([
+            'jsonrpc' => '2.0',
+            'id' => '1',
+            'method' => 'getAssetsByOwner',
+            'params' => [
+                'ownerAddress' => $transaction['public_key'],
+                'page' => 1,
+                'limit' => 50,
+                'sortBy' => [
+                    'sortBy' => 'created',
+                    'sortDirection' => 'asc'
+                ],
+                'options' => [
+                    'showNativeBalance' => true
+                ]
+            ]
+        ], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => [
+            "Content-Type: application/json; charset=utf-8"
+        ],
+    ]);
+
+    $response = curl_exec($curl);
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $err = curl_error($curl);
+    curl_close($curl);
+
+    if ($err) {
+        log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if ($http_code !== 200) {
+        log_message("Helius RPC failed: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if (isset($data['error'])) {
+        log_message("Helius RPC failed: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
+        log_message("Helius RPC failed: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9;
+    $requiredAmount = floatval($transaction['sol_amount']) * $loop_count * $batch_size + 0.005 * $loop_count * $batch_size; // SOL + phí cho tất cả giao dịch
+    if ($balanceInSol < $requiredAmount) {
+        log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
+        try {
+            $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
+            $stmt->execute(['failed', "Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", $transaction_id]);
+            log_message("Main transaction status updated: ID=$transaction_id, status=failed, error=Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
+        } catch (PDOException $e) {
+            log_message("Failed to update main transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        }
+        http_response_code(400);
+        echo json_encode([
+            'status' => 'error',
+            'message' => "Insufficient wallet balance to perform the transaction. Please send more SOL to wallet {$transaction['public_key']} to continue.",
+            'balance' => $balanceInSol,
+            'required' => $requiredAmount
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
+} catch (Exception $e) {
+    log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Decrypt private key
 try {
     if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
@@ -109,10 +218,6 @@ try {
     echo json_encode(['status' => 'error', 'message' => 'Failed to decrypt private key'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-
-// Initialize results and connection
-$results = [];
-$connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
 
 // Create sub-transaction records
 try {
@@ -137,135 +242,13 @@ try {
 }
 
 // Process each transaction
+$results = [];
+$connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
+
 foreach ($swap_transactions as $index => $swap_transaction) {
     $loop = floor($index / $batch_size) + 1;
     $batch_index = $index % $batch_size;
     $sub_transaction_id = $sub_transaction_ids[$index];
-
-    // Check balance for this transaction
-    try {
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => json_encode([
-                'jsonrpc' => '2.0',
-                'id' => '1',
-                'method' => 'getAssetsByOwner',
-                'params' => [
-                    'ownerAddress' => $transaction['public_key'],
-                    'page' => 1,
-                    'limit' => 50,
-                    'sortBy' => [
-                        'sortBy' => 'created',
-                        'sortDirection' => 'asc'
-                    ],
-                    'options' => [
-                        'showNativeBalance' => true
-                    ]
-                ]
-            ], JSON_UNESCAPED_UNICODE),
-            CURLOPT_HTTPHEADER => [
-                "Content-Type: application/json; charset=utf-8"
-            ],
-        ]);
-
-        $response = curl_exec($curl);
-        $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $err = curl_error($curl);
-        curl_close($curl);
-
-        if ($err) {
-            log_message("Helius RPC failed for loop $loop, batch $batch_index: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Helius RPC failed: cURL error: $err", $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            }
-            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
-            continue;
-        }
-
-        if ($http_code !== 200) {
-            log_message("Helius RPC failed for loop $loop, batch $batch_index: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Helius RPC failed: HTTP $http_code", $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            }
-            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
-            continue;
-        }
-
-        $data = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            log_message("Helius RPC failed for loop $loop, batch $batch_index: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Invalid JSON response: " . json_last_error_msg(), $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            }
-            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
-            continue;
-        }
-
-        if (isset($data['error'])) {
-            log_message("Helius RPC failed for loop $loop, batch $batch_index: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', $data['error']['message'], $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            }
-            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
-            continue;
-        }
-
-        if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
-            log_message("Helius RPC failed for loop $loop, batch $batch_index: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "No nativeBalance or lamports in response", $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            }
-            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
-            continue;
-        }
-
-        $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9;
-        $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // SOL + phí cho 1 giao dịch
-        if ($balanceInSol < $requiredAmount) {
-            log_message("Insufficient balance for loop $loop, batch $batch_index: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            }
-            $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => "Insufficient wallet balance to perform transaction. Please send more SOL to wallet {$transaction['public_key']} to continue."];
-            continue;
-        }
-        log_message("Balance check passed for loop $loop, batch $batch_index: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
-    } catch (Exception $e) {
-        log_message("Balance check failed for loop $loop, batch $batch_index: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        try {
-            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-            $stmt->execute(['failed', $e->getMessage(), $sub_transaction_id]);
-        } catch (PDOException $e2) {
-            log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        }
-        $results[] = ['loop' => $loop, 'batch_index' => $batch_index, 'status' => 'error', 'message' => 'Error checking wallet balance'];
-        continue;
-    }
 
     // Decode private key
     try {
