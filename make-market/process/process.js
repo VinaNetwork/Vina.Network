@@ -33,8 +33,8 @@ function showError(message, detailedError = null) {
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
-    log_message(`Process stopped: ${message}`, 'make-market.log', 'make-market', 'ERROR');
-    console.error(`Process stopped: ${message}`);
+    log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'make-market.log', 'make-market', 'ERROR');
+    console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
     updateTransactionStatus('failed', detailedError || message);
     // Hide Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
@@ -143,6 +143,30 @@ async function cancelTransaction(transactionId) {
     }
 }
 
+// Check SOL balance
+async function checkSolBalance(transactionId, requiredSol) {
+    try {
+        const response = await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.status !== 'success') {
+            throw new Error(result.message);
+        }
+        const balanceSol = result.balance;
+        log_message(`Balance checked: transaction_id=${transactionId}, balance=${balanceSol} SOL, required=${requiredSol} SOL`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`Balance checked: ${balanceSol} SOL`);
+        return { sufficient: balanceSol >= requiredSol, balance: balanceSol };
+    } catch (err) {
+        log_message(`Failed to check balance: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to check balance:', err.message);
+        throw err;
+    }
+}
+
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps) {
     try {
@@ -203,7 +227,11 @@ async function executeSwapTransactions(transactionId, swapTransactions) {
             body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions })
         });
         if (!response.ok) {
-            throw new Error(`Server error: HTTP ${response.status}`);
+            const result = await response.json();
+            if (result.message.includes('Insufficient wallet balance')) {
+                throw new Error(`${result.message} Required: ${result.required} SOL, Available: ${result.balance} SOL`);
+            }
+            throw new Error(result.message || `Server error: HTTP ${response.status}`);
         }
         const result = await response.json();
         if (result.status !== 'success' && result.status !== 'partial') {
@@ -247,10 +275,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error(result.message);
         }
         transaction = result.data;
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}`, 'make-market.log', 'make-market', 'INFO');
+        // Ensure defaults
+        transaction.loop_count = parseInt(transaction.loop_count) || 1;
+        transaction.batch_size = parseInt(transaction.batch_size) || 1;
+        transaction.slippage = parseFloat(transaction.slippage) || 0.5;
+        transaction.delay_seconds = parseInt(transaction.delay_seconds) || 1;
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, sol_amount=${transaction.sol_amount}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
+        return;
+    }
+
+    // Validate loop_count and batch_size
+    const loopCount = transaction.loop_count;
+    const batchSize = transaction.batch_size;
+    if (isNaN(loopCount) || isNaN(batchSize) || loopCount <= 0 || batchSize <= 0) {
+        showError('Invalid transaction parameters: loop_count or batch_size is invalid');
         return;
     }
 
@@ -293,6 +334,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Check SOL balance
+    try {
+        const requiredSol = transaction.sol_amount * loopCount * batchSize + 0.005 * loopCount * batchSize; // SOL + phí
+        const balanceCheck = await checkSolBalance(transactionId, requiredSol);
+        if (!balanceCheck.sufficient) {
+            showError(`Insufficient SOL balance. Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
+            return;
+        }
+    } catch (err) {
+        showError('Failed to check SOL balance: ' + err.message);
+        return;
+    }
+
     // Update status to pending
     await updateTransactionStatus('pending');
 
@@ -302,9 +356,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tokenMint = transaction.token_mint;
         const solAmount = transaction.sol_amount * 1e9; // Convert to lamports
         const slippageBps = Math.floor(transaction.slippage * 100); // Convert to basis points
-        const loopCount = parseInt(transaction.loop_count);
-        const batchSize = parseInt(transaction.batch_size);
-        const delaySeconds = parseInt(transaction.delay_seconds) * 1000; // Convert to milliseconds
+        const delaySeconds = transaction.delay_seconds * 1000; // Convert to milliseconds
         const swapTransactions = [];
 
         // Generate swap transactions (buy only)
