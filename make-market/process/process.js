@@ -219,20 +219,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         const balanceResult = await balanceResponse.json();
         if (balanceResult.status !== 'success') {
-            // Parse message from JSON response
-            let errorMessage = balanceResult.message;
-            try {
-                const parsedError = JSON.parse(balanceResult.message);
-                errorMessage = parsedError.message || balanceResult.message;
-            } catch (e) {
-                // If not JSON, use raw message
-            }
-            throw new Error(errorMessage);
+            showError(balanceResult.message, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
+            return;
         }
         log_message(`Balance check passed: ${balanceResult.balance} SOL available`, 'make-market.log', 'make-market', 'INFO');
         console.log('Balance check passed:', balanceResult.balance);
     } catch (err) {
-        showError(err.message, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
+        showError(err.message, `Lỗi kiểm tra số dư: ${err.message}`);
         return;
     }
 
