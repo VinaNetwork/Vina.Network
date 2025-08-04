@@ -13,7 +13,6 @@ $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
-$csp_base = rtrim(BASE_URL, '/');
 header('Content-Type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: $csp_base");
 header('Access-Control-Allow-Methods: GET');
