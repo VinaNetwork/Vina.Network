@@ -1,6 +1,6 @@
 // ============================================================================
 // File: make-market/process/process.js
-// Description: JavaScript for processing Solana token swap using Jupiter Aggregator API
+// Description: JavaScript for processing Solana token swap with looping using Jupiter Aggregator API
 // Created by: Vina Network
 // ============================================================================
 
@@ -26,10 +26,11 @@ function showError(message, detailedError = null) {
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
             <strong>Error:</strong> ${message}
+            ${detailedError ? `<br>Details: ${detailedError}` : ''}
         </div>
     `;
     resultDiv.classList.add('active');
-    document.getElementById('swap-status').textContent = ''; // Clear swap-status
+    document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -38,20 +39,31 @@ function showError(message, detailedError = null) {
 }
 
 // Show success message with styled alert
-function showSuccess(message, txid = null) {
+function showSuccess(message, results = []) {
     const resultDiv = document.getElementById('process-result');
-    resultDiv.innerHTML = `
-        <div class="alert alert-success">
-            <strong>Success:</strong> ${message}
-            ${txid ? `<br><a href="https://solscan.io/tx/${txid}" target="_blank">View transaction on Solscan</a>` : ''}
-        </div>
+    let html = `
+        <div class="alert alert-${results.some(r => r.status === 'error') ? 'warning' : 'success'}">
+            <strong>${results.some(r => r.status === 'error') ? 'Partial Success' : 'Success'}:</strong> ${message}
     `;
+    if (results.length > 0) {
+        html += '<ul>';
+        results.forEach(result => {
+            html += `<li>Loop ${result.loop}, Batch ${result.batch_index}: ${
+                result.status === 'success' 
+                    ? `<a href="https://solscan.io/tx/${result.txid}" target="_blank">Success (txid: ${result.txid})</a>`
+                    : `Failed - ${result.message}`
+            }</li>`;
+        });
+        html += '</ul>';
+    }
+    html += '</div>';
+    resultDiv.innerHTML = html;
     resultDiv.classList.add('active');
-    document.getElementById('swap-status').textContent = ''; // Clear swap-status
-    document.getElementById('transaction-status').textContent = 'Success';
-    document.getElementById('transaction-status').classList.add('text-success');
-    log_message(`Process completed: ${message}${txid ? `, txid=${txid}` : ''}`, 'make-market.log', 'make-market', 'INFO');
-    console.log(`Process completed: ${message}${txid ? `, txid=${txid}` : ''}`);
+    document.getElementById('swap-status').textContent = '';
+    document.getElementById('transaction-status').textContent = results.some(r => r.status === 'error') ? 'Partial' : 'Success';
+    document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
+    log_message(`Process completed: ${message}`, 'make-market.log', 'make-market', 'INFO');
+    console.log(`Process completed: ${message}`);
 }
 
 // Update transaction status and error in database
@@ -82,20 +94,20 @@ async function updateTransactionStatus(status, error = null) {
 }
 
 // Get quote from Jupiter API
-async function getQuote(tokenMint, solAmount) {
+async function getQuote(inputMint, outputMint, amount, slippageBps) {
     try {
         const response = await axios.get('https://quote-api.jup.ag/v6/quote', {
             params: {
-                inputMint: 'So11111111111111111111111111111111111111112', // SOL
-                outputMint: tokenMint,
-                amount: Math.floor(solAmount * 1e9), // Convert SOL to lamports
-                slippageBps: 50 // 0.5% slippage
+                inputMint,
+                outputMint,
+                amount: Math.floor(amount),
+                slippageBps
             }
         });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to retrieve quote from Jupiter API');
         }
-        log_message(`Quote retrieved: ${response.data.outAmount / 1e9} tokens`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9} tokens`, 'make-market.log', 'make-market', 'INFO');
         console.log('Quote retrieved:', response.data);
         return response.data;
     } catch (err) {
@@ -105,8 +117,8 @@ async function getQuote(tokenMint, solAmount) {
     }
 }
 
-// Execute swap using Jupiter API
-async function executeSwap(quote, publicKey, transactionId) {
+// Get swap transaction from Jupiter API
+async function getSwapTransaction(quote, publicKey) {
     try {
         const response = await axios.post('https://quote-api.jup.ag/v6/swap', {
             quoteResponse: quote,
@@ -119,36 +131,45 @@ async function executeSwap(quote, publicKey, transactionId) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
         }
         const { swapTransaction } = response.data;
-        log_message(`Swap transaction prepared: ${swapTransaction}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}...`, 'make-market.log', 'make-market', 'INFO');
         console.log('Swap transaction prepared:', swapTransaction);
+        return swapTransaction;
+    } catch (err) {
+        log_message(`Swap transaction failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Swap transaction failed:', err.message);
+        throw err;
+    }
+}
 
-        // Send to server for signing
-        const swapResponse = await fetch('/make-market/process/swap.php', {
+// Execute swap transactions
+async function executeSwapTransactions(transactionId, swapTransactions) {
+    try {
+        const response = await fetch('/make-market/process/swap.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ id: transactionId, swap_transaction: swapTransaction })
+            body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions })
         });
-        if (!swapResponse.ok) {
-            if (swapResponse.status === 404) {
-                throw new Error('Server error: swap.php not found');
-            }
-            throw new Error(`Server error: HTTP ${swapResponse.status}`);
+        if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}`);
         }
-        const swapResult = await swapResponse.json();
-        if (swapResult.status !== 'success') {
-            throw new Error(swapResult.message);
+        const result = await response.json();
+        if (result.status !== 'success' && result.status !== 'partial') {
+            throw new Error(result.message);
         }
-        log_message(`Swap executed: txid=${swapResult.txid}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Swap executed:', swapResult.txid);
-        return swapResult.txid;
+        return result;
     } catch (err) {
-        log_message(`Swap failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Swap failed:', err.message);
+        log_message(`Swap execution failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Swap execution failed:', err.message);
         throw err;
     }
+}
+
+// Delay function
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Main process
@@ -176,14 +197,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error(result.message);
         }
         transaction = result.data;
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
         return;
     }
 
-    // Fetch public key from private key
+    // Fetch public key
     let publicKey;
     try {
         const response = await fetch(`/make-market/process/get-public-key.php?id=${transactionId}`, {
@@ -207,52 +228,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update status to pending
     await updateTransactionStatus('pending');
 
-    // Check balance server-side
+    // Process swaps with loop_count and batch_size
     try {
-        document.getElementById('swap-status').textContent = 'Checking wallet balance...';
-        const balanceResponse = await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        let balanceResult;
-        try {
-            balanceResult = await balanceResponse.json();
-        } catch (e) {
-            log_message(`Balance check JSON parse error: ${e.message}`, 'make-market.log', 'make-market', 'ERROR');
-            throw new Error('Server error while checking balance');
-        }
-        if (balanceResponse.status === 400 && balanceResult.status === 'error') {
-            const errorMessage = balanceResult.message || 'Insufficient wallet balance to perform the transaction';
-            showError(errorMessage, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
-            return;
-        }
-        if (!balanceResponse.ok) {
-            const errorText = await balanceResponse.text();
-            log_message(`Balance check HTTP error: ${errorText}`, 'make-market.log', 'make-market', 'ERROR');
-            throw new Error('Server error while checking balance');
-        }
-        if (balanceResult.status !== 'success') {
-            const errorMessage = balanceResult.message || 'Insufficient wallet balance to perform the transaction';
-            showError(errorMessage, `Insufficient balance: ${transaction.sol_amount + 0.005} SOL required`);
-            return;
-        }
-        log_message(`Balance check passed: ${balanceResult.balance} SOL available`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Balance check passed:', balanceResult.balance);
-    } catch (err) {
-        showError(err.message, `Balance check error: ${err.message}`);
-        return;
-    }
+        const solMint = 'So11111111111111111111111111111111111111112';
+        const tokenMint = transaction.token_mint;
+        const solAmount = transaction.sol_amount * 1e9; // Convert to lamports
+        const slippageBps = Math.floor(transaction.slippage * 100); // Convert to basis points
+        const loopCount = parseInt(transaction.loop_count);
+        const batchSize = parseInt(transaction.batch_size);
+        const delaySeconds = parseInt(transaction.delay_seconds) * 1000; // Convert to milliseconds
+        const swapTransactions = [];
+        let tokenAmount = 0;
 
-    // Get quote and execute swap
-    try {
-        document.getElementById('swap-status').textContent = 'Retrieving quote...';
-        const quote = await getQuote(transaction.token_mint, transaction.sol_amount);
-        document.getElementById('swap-status').textContent = 'Preparing swap transaction...';
-        
-        const txid = await executeSwap(quote, publicKey, transactionId);
-        await updateTransactionStatus('success');
-        showSuccess(`Swap transaction completed successfully`, txid);
+        // Generate swap transactions
+        for (let loop = 1; loop <= loopCount; loop++) {
+            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount}...`;
+            
+            // Buy transactions
+            for (let i = 0; i < batchSize; i++) {
+                document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1}...`;
+                const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps);
+                tokenAmount = buyQuote.outAmount; // Store for sell transaction
+                const buyTx = await getSwapTransaction(buyQuote, publicKey);
+                swapTransactions.push(buyTx);
+            }
+
+            // Sell transactions (after delay)
+            if (tokenAmount > 0) {
+                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before sell for loop ${loop}...`;
+                await delay(delaySeconds);
+                for (let i = 0; i < batchSize; i++) {
+                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1}...`;
+                    const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps);
+                    const sellTx = await getSwapTransaction(sellQuote, publicKey);
+                    swapTransactions.push(sellTx);
+                }
+            }
+        }
+
+        // Execute swaps
+        document.getElementById('swap-status').textContent = 'Executing swap transactions...';
+        const swapResult = await executeSwapTransactions(transactionId, swapTransactions);
+        const successCount = swapResult.results.filter(r => r.status === 'success').length;
+        const totalTransactions = loopCount * batchSize * 2; // Buy + Sell
+        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions`);
+        showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
     } catch (err) {
-        showError(err.message);
+        showError('Error during swap process: ' + err.message);
     }
 });
 
