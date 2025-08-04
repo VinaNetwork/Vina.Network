@@ -19,7 +19,7 @@ use Attestto\SolanaPhpSdk\Keypair;
 use Attestto\SolanaPhpSdk\PublicKey;
 use Attestto\SolanaPhpSdk\Transaction;
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: https://vina.network');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
@@ -28,7 +28,7 @@ header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
     log_message("Non-AJAX request rejected", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Yêu cầu không hợp lệ']);
+    echo json_encode(['status' => 'error', 'message' => 'Yêu cầu không hợp lệ'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -45,7 +45,7 @@ $swap_transaction = $input['swap_transaction'] ?? null;
 if ($transaction_id <= 0 || !$swap_transaction) {
     log_message("Invalid or missing transaction ID or swap transaction", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Dữ liệu giao dịch không hợp lệ']);
+    echo json_encode(['status' => 'error', 'message' => 'Dữ liệu giao dịch không hợp lệ'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -56,7 +56,7 @@ try {
 } catch (Exception $e) {
     log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cơ sở dữ liệu']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cơ sở dữ liệu'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -68,13 +68,13 @@ try {
     if (!$transaction || $transaction['user_id'] != ($_SESSION['user_id'] ?? 0)) {
         log_message("Transaction not found or unauthorized: ID=$transaction_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
-        echo json_encode(['status' => 'error', 'message' => 'Giao dịch không tồn tại hoặc không được phép']);
+        echo json_encode(['status' => 'error', 'message' => 'Giao dịch không tồn tại hoặc không được phép'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi truy xuất giao dịch']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi truy xuất giao dịch'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -83,21 +83,21 @@ try {
     if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
         log_message("JWT_SECRET is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi cấu hình server']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi cấu hình server'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     $private_key = openssl_decrypt($transaction['private_key'], 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
     if ($private_key === false) {
         log_message("Failed to decrypt private key", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi giải mã khóa riêng']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi giải mã khóa riêng'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     log_message("Private key decrypted successfully", 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
     log_message("Private key decryption failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi giải mã khóa riêng']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi giải mã khóa riêng'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -128,9 +128,9 @@ try {
                     'showNativeBalance' => true
                 ]
             ]
-        ]),
+        ], JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => [
-            "Content-Type: application/json"
+            "Content-Type: application/json; charset=utf-8"
         ],
     ]);
 
@@ -142,14 +142,14 @@ try {
     if ($err) {
         log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     if ($http_code !== 200) {
         log_message("Helius RPC failed: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -157,21 +157,21 @@ try {
     if (json_last_error() !== JSON_ERROR_NONE) {
         log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     if (isset($data['error'])) {
         log_message("Helius RPC failed: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
         log_message("Helius RPC failed: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -183,7 +183,7 @@ try {
         echo json_encode([
             'status' => 'error', 
             'message' => "Số dư ví không đủ để thực hiện giao dịch. Vui lòng gửi thêm SOL vào ví {$transaction['public_key']} để tiếp tục."
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         try {
             $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
             $stmt->execute(['failed', "Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", $transaction_id]);
@@ -204,7 +204,7 @@ try {
         log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     }
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -216,7 +216,7 @@ try {
     } catch (Exception $e) {
         log_message("Failed to decode private key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi xử lý khóa riêng']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi xử lý khóa riêng'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -226,7 +226,7 @@ try {
     } catch (Exception $e) {
         log_message("Failed to create keypair: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi tạo cặp khóa']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi tạo cặp khóa'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -237,7 +237,7 @@ try {
     if ($derivedPublicKey !== $transaction['public_key']) {
         log_message("Public key mismatch: derived=$derivedPublicKey, stored={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Địa chỉ ví không khớp']);
+        echo json_encode(['status' => 'error', 'message' => 'Địa chỉ ví không khớp'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -247,7 +247,7 @@ try {
     } catch (Exception $e) {
         log_message("Failed to decode transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi giải mã giao dịch']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi giải mã giao dịch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -256,7 +256,7 @@ try {
     } catch (Exception $e) {
         log_message("Failed to sign transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi ký giao dịch']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi ký giao dịch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -267,7 +267,7 @@ try {
     } catch (Exception $e) {
         log_message("Failed to send transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi gửi giao dịch']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi gửi giao dịch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -276,11 +276,11 @@ try {
         $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ?, txid = ? WHERE id = ?");
         $stmt->execute(['success', null, $txid, $transaction_id]);
         log_message("Transaction status updated: ID=$transaction_id, status=success, txid=$txid", 'make-market.log', 'make-market', 'INFO');
-        echo json_encode(['status' => 'success', 'message' => 'Giao dịch swap hoàn tất thành công', 'txid' => $txid]);
+        echo json_encode(['status' => 'success', 'message' => 'Giao dịch swap hoàn tất thành công', 'txid' => $txid], JSON_UNESCAPED_UNICODE);
     } catch (PDOException $e) {
         log_message("Failed to update transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi cập nhật trạng thái giao dịch']);
+        echo json_encode(['status' => 'error', 'message' => 'Lỗi cập nhật trạng thái giao dịch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 } catch (Exception $e) {
@@ -293,7 +293,7 @@ try {
         log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     }
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi thực hiện giao dịch swap']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi thực hiện giao dịch swap'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
