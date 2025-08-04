@@ -15,6 +15,8 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 require_once $root_path . '../vendor/autoload.php';
 
+use StephenHill\Base58;
+use Attestto\SolanaPhpSdk\Keypair;
 use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\PublicKey;
 
