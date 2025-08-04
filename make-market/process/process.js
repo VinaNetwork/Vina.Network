@@ -59,27 +59,6 @@ async function updateTransactionStatus(status, error = null) {
     }
 }
 
-// Check wallet balance
-async function checkBalance(publicKey, solAmount) {
-    try {
-        const connection = new window.solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=8eb75cd9-015a-4e24-9de2-5be9ee0f1c63');
-        const publicKeyObj = new window.solanaWeb3.PublicKey(publicKey);
-        const balance = await connection.getBalance(publicKeyObj);
-        const balanceInSol = balance / 1e9; // Convert lamports to SOL
-        const requiredAmount = solAmount + 0.005; // Add 0.005 SOL for fees
-        if (balanceInSol < requiredAmount) {
-            throw new Error(`Insufficient balance: ${balanceInSol} SOL available, ${requiredAmount} SOL required`);
-        }
-        log_message(`Balance check passed: ${balanceInSol} SOL available`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Balance check passed:', balanceInSol);
-        return true;
-    } catch (err) {
-        log_message(`Balance check failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Balance check failed:', err.message);
-        throw err;
-    }
-}
-
 // Get quote from Jupiter API
 async function getQuote(tokenMint, solAmount) {
     try {
@@ -206,12 +185,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update status to pending
     await updateTransactionStatus('pending');
 
-    // Check balance
+    // Check balance server-side
     try {
         document.getElementById('swap-status').textContent = 'Checking balance...';
-        await checkBalance(publicKey, transaction.sol_amount);
+        const balanceResponse = await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!balanceResponse.ok) {
+            throw new Error(`HTTP ${balanceResponse.status}: ${await balanceResponse.text()}`);
+        }
+        const balanceResult = await balanceResponse.json();
+        if (balanceResult.status !== 'success') {
+            throw new Error(balanceResult.message);
+        }
+        log_message(`Balance check passed: ${balanceResult.balance} SOL available`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Balance check passed:', balanceResult.balance);
     } catch (err) {
-        showError(err.message);
+        showError('Balance check failed: ' + err.message);
         return;
     }
 
