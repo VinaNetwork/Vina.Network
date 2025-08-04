@@ -21,7 +21,6 @@ use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\PublicKey;
 
 // Add Security Headers
-$csp_base = rtrim(BASE_URL, '/');
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base https://quote-api.jup.ag; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("Access-Control-Allow-Origin: $csp_base");
 header("X-Frame-Options: DENY");
