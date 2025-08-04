@@ -113,6 +113,9 @@ $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($pu
 $token_mint = $transaction['token_mint'];
 $short_token_mint = $token_mint ? substr($token_mint, 0, 4) . '...' . substr($token_mint, -4) : 'N/A';
 
+// Check if Cancel button should be displayed
+$show_cancel_button = in_array($transaction['status'], ['new', 'pending', 'processing']);
+
 // SEO meta
 $page_title = "Make Market Process - Vina Network";
 $page_description = "Execute your automated Solana token trading with Vina Network's Make Market tool.";
@@ -206,7 +209,9 @@ $page_css = ['/make-market/process/process.css'];
         </div>
         <div id="process-result" class="status-box"></div>
         <div class="action-buttons">
-            <button class="cta-button cancel-btn" onclick="window.location.href='/make-market'">Cancel</button>
+            <?php if ($show_cancel_button): ?>
+                <button class="cta-button cancel-btn" id="cancel-btn" data-transaction-id="<?php echo htmlspecialchars($transaction_id); ?>">Cancel</button>
+            <?php endif; ?>
         </div>
     </div>
 </div>
