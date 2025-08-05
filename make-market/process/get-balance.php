@@ -53,19 +53,13 @@ try {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT public_key, sol_amount, loop_count, batch_size, status FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT public_key, sol_amount FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
         log_message("Transaction not found: ID=$transaction_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(404);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found']);
-        exit;
-    }
-    if (in_array($transaction['status'], ['success', 'failed', 'canceled', 'partial'])) {
-        log_message("Transaction already processed: ID=$transaction_id, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => "Transaction already processed with status: {$transaction['status']}"]);
         exit;
     }
     if (empty($transaction['public_key']) || $transaction['public_key'] === 'undefined') {
@@ -80,9 +74,7 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Invalid wallet address format']);
         exit;
     }
-    $loop_count = intval($transaction['loop_count'] ?? 1);
-    $batch_size = intval($transaction['batch_size'] ?? 1);
-    log_message("Transaction fetched: ID=$transaction_id, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}, loop_count=$loop_count, batch_size=$batch_size, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
@@ -172,16 +164,21 @@ try {
     }
 
     $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert lamports to SOL
-    $requiredAmount = floatval($transaction['sol_amount']) * $loop_count * $batch_size + 0.005 * $loop_count * $batch_size; // SOL + phí
+    $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // Add 0.005 SOL for fees
     if ($balanceInSol < $requiredAmount) {
         log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode([
-            'status' => 'error',
-            'message' => "Insufficient wallet balance to perform the transaction. Please send more SOL to wallet {$transaction['public_key']} to continue.",
-            'balance' => $balanceInSol,
-            'required' => $requiredAmount
+            'status' => 'error', 
+            'message' => "Insufficient wallet balance to perform the transaction. Please send more SOL to wallet {$transaction['public_key']} to continue."
         ], JSON_UNESCAPED_UNICODE);
+        try {
+            $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
+            $stmt->execute(['failed', "Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", $transaction_id]);
+            log_message("Transaction status updated: ID=$transaction_id, status=failed, error=Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
+        } catch (PDOException $e) {
+            log_message("Failed to update transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        }
         exit;
     }
 
@@ -189,6 +186,13 @@ try {
     echo json_encode(['status' => 'success', 'message' => 'Wallet balance sufficient to perform the transaction', 'balance' => $balanceInSol], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    try {
+        $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
+        $stmt->execute(['failed', $e->getMessage(), $transaction_id]);
+        log_message("Transaction status updated: ID=$transaction_id, status=failed, error={$e->getMessage()}", 'make-market.log', 'make-market', 'INFO');
+    } catch (PDOException $e2) {
+        log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    }
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
     exit;
