@@ -1,0 +1,36 @@
+/* ============================================================================
+ * File: css/404.css
+ * Description: Styles specific to the 404 page of Vina Network.
+ * Created by: Vina Network
+ * ========================================================================== */
+
+ /* Contact */
+.404-container {
+    margin-top: 72px;
+    text-align: center;
+}
+
+.404-content {
+     margin: 20px;
+     padding: 20px;
+}
+
+h1 {color: #4a90e2;}
+
+.404-content i {
+    font-size: 2em;
+    color: #ff6f91;
+}
+
+.404-result {
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+a:hover {color: #ff85a1;}
+
+/*  Responsive Design */
+@media screen and (max-width: 768px) {
+    .404-container {margin-top: 64px;}
+    .404-content { width: 100%;}
+}
