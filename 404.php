@@ -53,10 +53,9 @@ $page_css = ['css/404.css'];
 <?php include $root_path . 'include/navbar.php'; ?>
 <div class="404-container">
     <div class="404-content">
-        <h1><i class="fas fa-exclamation-triangle"></i> Page Not Found</h1>
-        <div id="404-result" class="alert alert-danger">
-            <strong>Error:</strong> Trang không tồn tại
-        </div>
+        <i class="fas fa-exclamation-triangle"></i>
+        <h1>404</h1>
+        <p><strong>Error:</strong> Page Not Found.</p>
         <a href="/" class="cta-button">Back to Home</a>
     </div>
 </div>
