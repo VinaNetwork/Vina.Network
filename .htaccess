@@ -16,11 +16,6 @@
 RewriteEngine On
 RewriteBase /
 
-# Rewrite /make-market/process to process.php
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^make-market/process/?$ make-market/process/process.php [L,QSA]
-
 # ----------------------------------------------------------------------------
 # 🔐 SECURITY
 # ----------------------------------------------------------------------------
