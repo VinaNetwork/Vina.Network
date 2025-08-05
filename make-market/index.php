@@ -214,6 +214,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Kiểm tra số dư ví bằng cách gọi get-balance.php
+        try {
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => BASE_URL . "make-market/get-balance.php",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => json_encode([
+                    'public_key' => $transactionPublicKey,
+                    'sol_amount' => $solAmount,
+                    'loop_count' => $loopCount,
+                    'batch_size' => $batchSize
+                ], JSON_UNESCAPED_UNICODE),
+                CURLOPT_HTTPHEADER => [
+                    "Content-Type: application/json; charset=utf-8",
+                    "X-Requested-With: XMLHttpRequest"
+                ],
+            ]);
+
+            $response = curl_exec($curl);
+            $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $err = curl_error($curl);
+            curl_close($curl);
+
+            if ($err) {
+                log_message("Failed to call get-balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Lỗi khi kiểm tra số dư ví']);
+                exit;
+            }
+
+            if ($http_code !== 200) {
+                log_message("Failed to call get-balance.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Lỗi khi kiểm tra số dư ví']);
+                exit;
+            }
+
+            $data = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                log_message("Failed to parse get-balance.php response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Lỗi khi kiểm tra số dư ví']);
+                exit;
+            }
+
+            if ($data['status'] !== 'success') {
+                log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => $data['message']]);
+                exit;
+            }
+
+            log_message("Balance check passed: {$data['message']}, balance={$data['balance']} SOL", 'make-market.log', 'make-market', 'INFO');
+        } catch (Exception $e) {
+            log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Lỗi khi kiểm tra số dư ví']);
+            exit;
+        }
+
         // Check JWT_SECRET
         if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
             log_message("JWT_SECRET is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
