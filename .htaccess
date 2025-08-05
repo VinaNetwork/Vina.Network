@@ -16,6 +16,11 @@
 RewriteEngine On
 RewriteBase /
 
+# Redirect non-existing files and directories to 404 handler
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ 404.php [L,NC]
+
 # ----------------------------------------------------------------------------
 # 🔐 SECURITY
 # ----------------------------------------------------------------------------
