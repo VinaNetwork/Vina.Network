@@ -51,8 +51,8 @@ $page_css = ['css/404.css'];
 <?php include $root_path . 'include/header.php'; ?>
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
-<div class="404-container">
-    <div class="404-content">
+<div class="container-404">
+    <div class="content-404">
         <i class="fas fa-exclamation-triangle"></i>
         <h1>404</h1>
         <p><strong>Error:</strong> Page Not Found.</p>
