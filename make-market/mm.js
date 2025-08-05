@@ -130,7 +130,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Form saved to database: transactionId=', result.transactionId);
         // Redirect to process page
-        const redirectUrl = result.redirect || `/make-market/process?id=${result.transactionId}`;
+        const redirectUrl = result.redirect || `/make-market/process/process.php?id=${result.transactionId}`;
         log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Redirecting to', redirectUrl);
         setTimeout(() => {
