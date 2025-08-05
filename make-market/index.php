@@ -262,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Send redirect
-        $redirect_url = "/make-market/process/process.php?id=$transactionId";
+        $redirect_url = "/make-market/process/$transactionId";
         log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
             header('Content-Type: application/json');
