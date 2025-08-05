@@ -1,7 +1,7 @@
 RewriteEngine On
-RewriteBase /make-market/process/
+RewriteBase /make-market/
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^get-public-key/([0-9]+)$ get-public-key.php?id=$1 [L,NC]
-RewriteRule ^get-tx/([0-9]+)$ get-tx.php?id=$1 [L,NC]
-RewriteRule ^([0-9]+)$ process.php?id=$1 [L,NC]
+RewriteRule ^process/get-public-key/([0-9]+)$ process/get-public-key.php?id=$1 [L,NC]
+RewriteRule ^process/get-tx/([0-9]+)$ process/get-tx.php?id=$1 [L,NC]
+RewriteRule ^process/([0-9]+)$ process/process.php?id=$1 [L,NC]
