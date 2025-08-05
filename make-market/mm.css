@@ -82,6 +82,7 @@ form textarea {
 
 .cta-button {
     margin-top: 20px;
+    float: center;
 }
 
 .cta-button:disabled {
