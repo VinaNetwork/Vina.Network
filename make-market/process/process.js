@@ -143,31 +143,6 @@ async function cancelTransaction(transactionId) {
     }
 }
 
-// Check SOL balance
-async function checkSolBalance(transactionId, requiredSol) {
-    try {
-        const response = await fetch(`/make-market/process/get-balance/${transactionId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        if (!response.ok) {
-            const result = await response.json();
-            throw new Error(result.message || `HTTP ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.status !== 'success') {
-            throw new Error(result.message);
-        }
-        const balanceSol = result.balance;
-        log_message(`Balance checked: transaction_id=${transactionId}, balance=${balanceSol} SOL, required=${requiredSol} SOL`, 'make-market.log', 'make-market', 'INFO');
-        console.log(`Balance checked: ${balanceSol} SOL`);
-        return { sufficient: balanceSol >= requiredSol, balance: balanceSol };
-    } catch (err) {
-        log_message(`Failed to check balance: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to check balance:', err.message);
-        throw err;
-    }
-}
-
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps) {
     try {
@@ -229,9 +204,6 @@ async function executeSwapTransactions(transactionId, swapTransactions) {
         });
         if (!response.ok) {
             const result = await response.json();
-            if (result.message && result.message.includes('Insufficient wallet balance')) {
-                throw new Error(`${result.message}`);
-            }
             throw new Error(result.message || `Server error: HTTP ${response.status}`);
         }
         const result = await response.json();
@@ -392,19 +364,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Check SOL balance
-    try {
-        const requiredSol = transaction.sol_amount * loopCount * batchSize + 0.005 * loopCount * batchSize; // SOL + phí
-        const balanceCheck = await checkSolBalance(transactionId, requiredSol);
-        if (!balanceCheck.sufficient) {
-            showError(`Insufficient SOL balance.`, `Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
-            return;
-        }
-    } catch (err) {
-        showError('Failed to check SOL balance: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
-        return;
-    }
-
     // Update status to pending
     await updateTransactionStatus('pending');
 
@@ -444,6 +403,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions`);
         showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
     } catch (err) {
-        showError('Error during swap process: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
+        showError('Error during swap process: ' + err.message);
     }
 });
