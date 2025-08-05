@@ -12,7 +12,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = './';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/config.php';
 
 // Add Security Headers
 $csp_base = rtrim(BASE_URL, '/');
@@ -42,8 +41,9 @@ $page_description = "The page you are looking for does not exist.";
 $page_keywords = "404, page not found, Vina Network";
 $page_og_title = "Page Not Found";
 $page_og_description = "The page you are looking for does not exist.";
-$page_og_url = BASE_URL . "404";
-$page_canonical = BASE_URL . "404";
+$page_og_url = BASE_URL . "404.php";
+$page_canonical = BASE_URL . "404.php";
+$page_css = ['css/404.css'];
 ?>
 
 <!DOCTYPE html>
@@ -51,17 +51,22 @@ $page_canonical = BASE_URL . "404";
 <?php include $root_path . 'include/header.php'; ?>
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
-<div class="process-container">
-    <div class="process-content">
+<div class="404-container">
+    <div class="404-content">
         <h1><i class="fas fa-exclamation-triangle"></i> Page Not Found</h1>
-        <div id="process-result" class="alert alert-danger">
+        <div id="404-result" class="alert alert-danger">
             <strong>Error:</strong> Trang không tồn tại
         </div>
-        <a href="/make-market/history" class="btn btn-primary">View Transaction History</a>
-        <a href="/" class="btn btn-secondary">Back to Home</a>
+        <a href="/" class="cta-button">Back to Home</a>
     </div>
 </div>
+
+<?php include $root_path . 'include/community.php'; ?>
 <?php include $root_path . 'include/footer.php'; ?>
+
+<!-- Scripts -->
+<script src="js/vina.js"></script>
+<script src="js/navbar.js"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
