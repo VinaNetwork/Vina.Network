@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/process/get-balance.php
+// File: make-market/get-balance.php
 // Description: Check wallet balance server-side using Helius RPC getAssetsByOwner
 // Created by: Vina Network
 // ============================================================================
@@ -9,7 +9,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = '../../';
+$root_path = '../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
