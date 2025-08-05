@@ -6,6 +6,7 @@
 // ============================================================================
 
 ob_start();
+http_response_code(404);
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
