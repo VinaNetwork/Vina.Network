@@ -26,32 +26,32 @@
 }
 
 /* Hover Animation for Notification Card */
-.notification-content:hover {
+.content-404:hover {
     transform: translateY(-5px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* Icon Styling */
-.notification-content i {
+.content-404 i {
     font-size: 4rem;
     color: #00d4ff;
 }
 
 /* Heading Styling */
-.notification-content h1 {color: #00d4ff;}
+.content-404 h1 {color: #00d4ff;}
 
 /* Paragraph Styling */
-.notification-content p {
+.content-404 p {
     color: #fff;
     margin-bottom: 20px !important;
 }
 
 /* Responsive Design for Mobile Screens */
 @media screen and (max-width: 768px) {
-    .notification {
+    .container-404 {
         margin-top: 64px;
         min-height: unset;
     }
 
-    .notification-content i {font-size: 2rem;}
+    .content-404 i {font-size: 2rem;}
 }
