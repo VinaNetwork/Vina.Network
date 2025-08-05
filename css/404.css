@@ -1,9 +1,10 @@
 /* ============================================================================
- * File: css/404.css
- * Description: Styles specific to the 404 page of Vina Network.
+ * File: notification/notification.css
+ * Description: CSS styles for the Notification page of Vina Network.
  * Created by: Vina Network
  * ========================================================================== */
 
+/* Layout & Container Styling */
 .404-container {
     min-height: 100vh;
     margin-top: 72px;
