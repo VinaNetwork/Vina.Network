@@ -4,6 +4,9 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Flag to prevent multiple executions
+let isProcessing = false;
+
 // Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
@@ -35,7 +38,6 @@ function showError(message, detailedError = null) {
     document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
-    updateTransactionStatus('failed', detailedError || message);
     // Hide Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
@@ -253,6 +255,13 @@ function delay(ms) {
 
 // Main process and copy functionality
 document.addEventListener('DOMContentLoaded', async () => {
+    if (isProcessing) {
+        log_message('Process already running, skipping duplicate execution', 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Process already running, skipping duplicate execution');
+        return;
+    }
+    isProcessing = true;
+
     log_message('process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
@@ -316,6 +325,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const transactionId = new URLSearchParams(window.location.search).get('id');
     if (!transactionId) {
         showError('Invalid transaction ID');
+        updateTransactionStatus('failed', 'Invalid transaction ID');
+        isProcessing = false;
         return;
     }
 
@@ -342,6 +353,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
+        updateTransactionStatus('failed', 'Failed to retrieve transaction info: ' + err.message);
+        isProcessing = false;
         return;
     }
 
@@ -350,6 +363,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const batchSize = transaction.batch_size;
     if (isNaN(loopCount) || isNaN(batchSize) || loopCount <= 0 || batchSize <= 0) {
         showError('Invalid transaction parameters: loop_count or batch_size is invalid');
+        updateTransactionStatus('failed', 'Invalid transaction parameters: loop_count or batch_size is invalid');
+        isProcessing = false;
         return;
     }
 
@@ -371,6 +386,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Public key fetched:', publicKey);
     } catch (err) {
         showError('Failed to retrieve wallet address: ' + err.message);
+        updateTransactionStatus('failed', 'Failed to retrieve wallet address: ' + err.message);
+        isProcessing = false;
         return;
     }
 
@@ -389,6 +406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             log_message(`Cancel button clicked for transaction ID=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             console.log(`Cancel button clicked for transaction ID=${transactionId}`);
             await cancelTransaction(transactionId);
+            isProcessing = false;
         });
     }
 
@@ -398,15 +416,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         const balanceCheck = await checkSolBalance(transactionId, requiredSol);
         if (!balanceCheck.sufficient) {
             showError(`Insufficient SOL balance.`, `Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
+            updateTransactionStatus('failed', `Insufficient SOL balance. Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
+            isProcessing = false;
             return;
         }
     } catch (err) {
         showError('Failed to check SOL balance: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
+        updateTransactionStatus('failed', 'Failed to check SOL balance: ' + err.message);
+        isProcessing = false;
         return;
     }
 
     // Update status to pending
-    await updateTransactionStatus('pending');
+    try {
+        await updateTransactionStatus('pending');
+    } catch (err) {
+        showError('Failed to update transaction status to pending: ' + err.message);
+        updateTransactionStatus('failed', 'Failed to update transaction status to pending: ' + err.message);
+        isProcessing = false;
+        return;
+    }
 
     // Process swaps with loop_count and batch_size
     try {
@@ -445,5 +474,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
     } catch (err) {
         showError('Error during swap process: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
+        updateTransactionStatus('failed', 'Error during swap process: ' + err.message);
+    } finally {
+        isProcessing = false;
     }
 });
