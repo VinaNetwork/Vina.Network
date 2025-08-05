@@ -4,33 +4,48 @@
  * Created by: Vina Network
  * ========================================================================== */
 
- /* Contact */
 .404-container {
+    min-height: 100vh;
     margin-top: 72px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
     text-align: center;
 }
 
 .404-content {
-     margin: 20px;
-     padding: 20px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+    border-radius: 15px; 
+    padding: 2rem;
+    margin: 2rem;
+    max-width: 600px; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-h1 {color: #4a90e2;}
+.404-content:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
 
 .404-content i {
-    font-size: 2em;
-    color: #ff6f91;
+    font-size: 4rem;
+    color: #00d4ff;
 }
 
-.404-result {
-    justify-content: center;
-    margin-bottom: 20px;
+.404-content h1 {color: #00d4ff;}
+
+.404-content p {
+    color: #fff;
+    margin-bottom: 20px !important;
 }
 
-a:hover {color: #ff85a1;}
-
-/*  Responsive Design */
+/* Responsive Design for Mobile Screens */
 @media screen and (max-width: 768px) {
-    .404-container {margin-top: 64px;}
-    .404-content { width: 100%;}
+    .404-container {
+        margin-top: 64px;
+        min-height: unset;
+    }
+
+    .404-content i {font-size: 2rem;}
 }
