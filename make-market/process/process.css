@@ -21,12 +21,11 @@
 
 .process-content {
     max-width: 800px;
-    padding: var(--padding);
-    margin: var(--margin-top);
-    border-radius: var(--border-radius);
+    padding: 20px;
+    margin: 20px;
+    border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
-    color: #fff;
 }
 
 h1 {
