@@ -421,8 +421,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
     } catch (err) {
-        showError('Failed to check SOL balance: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
-        updateTransactionStatus('failed', 'Failed to check SOL balance: ' + err.message);
+        let errorMessage = err.message;
+        if (err.message.includes('Insufficient wallet balance')) {
+            const result = await (await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })).json();
+            errorMessage = `Insufficient SOL balance. Required: ${result.required} SOL, Available: ${result.balance} SOL`;
+        }
+        showError('Failed to check SOL balance: ' + err.message, errorMessage);
+        updateTransactionStatus('failed', errorMessage);
         isProcessing = false;
         return;
     }
