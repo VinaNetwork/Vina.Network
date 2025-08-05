@@ -5,7 +5,7 @@
  * ========================================================================== */
 
 /* Layout & Container Styling */
-.404 {
+.container-404 {
     min-height: 100vh;
     margin-top: 72px;
     display: flex; 
@@ -15,7 +15,7 @@
 }
 
 /* Notification Card Styling */
-.notification-content {
+.content-404 {
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
     border-radius: 15px; 
     padding: 2rem;
