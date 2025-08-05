@@ -330,8 +330,7 @@ $defaultSlippage = 0.5;
 
             <label for="privateKey">🔑 Private Key (Base58):</label>
             <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
-            <p class="note-warning">⚠️ Warning: Entering a private key carries security risks. Ensure you understand before proceeding!</p>
-
+            
             <label for="tokenMint">🎯 Token Address:</label>
             <input type="text" name="tokenMint" id="tokenMint" required placeholder="E.g., So111... or any SPL token">
 
