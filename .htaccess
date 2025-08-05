@@ -16,6 +16,10 @@
 RewriteEngine On
 RewriteBase /
 
+# Allow requests to specific directories to be handled by their .htaccess
+RewriteCond %{REQUEST_URI} ^/make-market/process/ [NC]
+RewriteRule ^ - [L]
+
 # 404 - If the request is a directory and it does not contain index.php
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteCond %{REQUEST_FILENAME}/index.php !-f
