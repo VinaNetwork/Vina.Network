@@ -15,19 +15,19 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
         body: JSON.stringify({ message, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
-            console.error(`Ghi log thất bại: HTTP ${response.status}`);
+            console.error(`Log failed: HTTP ${response.status}`);
         }
-    }).catch(err => console.error('Lỗi ghi log:', err));
+    }).catch(err => console.error('Log error:', err));
 }
 
 // Show error message
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
     let enhancedMessage = message;
-    if (message.includes('Số dư ví không đủ')) {
-        enhancedMessage += ' <a href="https://www.binance.com/vi" target="_blank">Nạp SOL tại đây</a>';
+    if (message.includes('Insufficient wallet balance')) {
+        enhancedMessage += ' <a href="https://www.binance.com/en" target="_blank">Top up SOL here</a>';
     }
-    resultDiv.innerHTML = `<p style="color: red;">Lỗi: ${enhancedMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Xóa thông báo</button>`;
+    resultDiv.innerHTML = `<p style="color: red;">Error: ${enhancedMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     resultDiv.classList.add('active');
     document.querySelector('#makeMarketForm button').disabled = false;
 }
@@ -38,10 +38,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     const resultDiv = document.getElementById('mm-result');
     const submitButton = document.querySelector('#makeMarketForm button');
     submitButton.disabled = true;
-    resultDiv.innerHTML = '<div class="spinner">Đang xử lý...</div>';
+    resultDiv.innerHTML = '<div class="spinner">Processing...</div>';
     resultDiv.classList.add('active');
-    log_message('Form đã được gửi', 'make-market.log', 'make-market', 'INFO');
-    console.log('Form đã được gửi');
+    log_message('Form submitted', 'make-market.log', 'make-market', 'INFO');
+    console.log('Form submitted');
 
     const formData = new FormData(e.target);
     const params = {
@@ -56,47 +56,47 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         transactionPublicKey: formData.get('transactionPublicKey'),
         csrf_token: formData.get('csrf_token')
     };
-    log_message(`Dữ liệu form: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
-    console.log('Dữ liệu form:', params);
+    log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
+    console.log('Form data:', params);
 
     // Validate private key
     if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
-        log_message('Private key trống hoặc không hợp lệ', 'make-market.log', 'make-market', 'ERROR');
-        showError('Private key trống hoặc không hợp lệ. Vui lòng kiểm tra lại.');
-        console.error('Private key trống hoặc không hợp lệ');
+        log_message('Private key is empty or invalid', 'make-market.log', 'make-market', 'ERROR');
+        showError('Private key is empty or invalid. Please check again.');
+        console.error('Private key is empty or invalid');
         return;
     }
-    log_message(`Độ dài private key: ${params.privateKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
-    console.log('Độ dài private key:', params.privateKey.length);
+    log_message(`Private key length: ${params.privateKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
+    console.log('Private key length:', params.privateKey.length);
 
     // Derive public key
     let transactionPublicKey;
     try {
         const decodedKey = window.bs58.decode(params.privateKey);
-        log_message(`Độ dài private key đã giải mã: ${decodedKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Độ dài private key đã giải mã:', decodedKey.length);
+        log_message(`Decoded private key length: ${decodedKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Decoded private key length:', decodedKey.length);
         if (decodedKey.length !== 64) {
-            log_message(`Độ dài private key không hợp lệ: ${decodedKey.length}, yêu cầu 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
-            console.error(`Độ dài private key không hợp lệ: ${decodedKey.length}, yêu cầu 64 bytes`);
-            showError('Độ dài private key không hợp lệ. Vui lòng kiểm tra lại.');
+            log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
+            console.error(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`);
+            showError('Invalid private key length. Please check again.');
             return;
         }
         const keypair = window.solanaWeb3.Keypair.fromSecretKey(decodedKey);
         transactionPublicKey = keypair.publicKey.toBase58();
         if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(transactionPublicKey)) {
-            log_message(`Định dạng public key không hợp lệ từ private key`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Định dạng public key không hợp lệ từ private key');
-            showError('Định dạng public key không hợp lệ. Vui lòng kiểm tra private key.');
+            log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Invalid public key format derived from private key');
+            showError('Invalid public key format. Please check the private key.');
             return;
         }
         formData.set('transactionPublicKey', transactionPublicKey);
         document.getElementById('transactionPublicKey').value = transactionPublicKey;
-        log_message(`Public key giao dịch đã suy ra: ${transactionPublicKey}`, 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Public key giao dịch đã suy ra:', transactionPublicKey);
+        log_message(`Derived transaction public key: ${transactionPublicKey}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Derived transaction public key:', transactionPublicKey);
     } catch (error) {
-        log_message(`Private key không hợp lệ: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Private key không hợp lệ:', error.message);
-        showError(`Private key không hợp lệ: ${error.message}. Vui lòng kiểm tra lại.`);
+        log_message(`Invalid private key: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Invalid private key:', error.message);
+        showError(`Invalid private key: ${error.message}. Please check again.`);
         return;
     }
 
@@ -108,118 +108,118 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             body: formData
         });
         const responseText = await response.text();
-        log_message(`Phản hồi gửi form: HTTP ${response.status}, Phản hồi: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Phản hồi gửi form: HTTP', response.status, 'Phản hồi:', responseText);
+        log_message(`Form submission response: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Form submission response: HTTP', response.status, 'Response:', responseText);
         if (!response.ok) {
-            log_message(`Gửi form thất bại: HTTP ${response.status}, Phản hồi: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Gửi form thất bại: HTTP', response.status, 'Phản hồi:', responseText);
-            showError('Gửi form thất bại. Vui lòng thử lại.');
+            log_message(`Form submission failed: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Form submission failed: HTTP', response.status, 'Response:', responseText);
+            showError('Form submission failed. Please try again.');
             return;
         }
         let result;
         try {
             result = JSON.parse(responseText);
         } catch (error) {
-            log_message(`Lỗi phân tích JSON phản hồi: ${error.message}, Phản hồi: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Lỗi phân tích JSON phản hồi:', error.message, 'Phản hồi:', responseText);
-            showError('Phản hồi từ server không hợp lệ. Vui lòng thử lại.');
+            log_message(`Error parsing JSON response: ${error.message}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Error parsing JSON response:', error.message, 'Response:', responseText);
+            showError('Invalid response from server. Please try again.');
             return;
         }
         if (result.status !== 'success') {
-            log_message(`Gửi form thất bại: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Gửi form thất bại:', result.message);
-            showError(result.message); // Hiển thị thông báo lỗi chi tiết từ server
+            log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Form submission failed:', result.message);
+            showError(result.message); // Display detailed error message from server
             return;
         }
-        log_message(`Form đã được lưu vào cơ sở dữ liệu: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Form đã được lưu vào cơ sở dữ liệu: transactionId=', result.transactionId);
+        log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Form saved to database: transactionId=', result.transactionId);
         // Redirect to process page
         const redirectUrl = result.redirect || `/make-market/process/${result.transactionId}`;
-        log_message(`Chuyển hướng đến ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Chuyển hướng đến', redirectUrl);
+        log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Redirecting to', redirectUrl);
         setTimeout(() => {
             window.location.href = redirectUrl;
-            console.log('Thực hiện chuyển hướng đến', redirectUrl);
+            console.log('Redirect executed to', redirectUrl);
         }, 100);
     } catch (error) {
-        log_message(`Lỗi khi gửi form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Lỗi khi gửi form:', error.message);
-        showError(`Lỗi khi gửi form: ${error.message}. Vui lòng thử lại.`);
+        log_message(`Error submitting form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Error submitting form:', error.message);
+        showError(`Error submitting form: ${error.message}. Please try again.`);
     }
 });
 
 // Copy functionality for public_key
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('mm.js được tải');
-    log_message('mm.js được tải', 'make-market.log', 'make-market', 'DEBUG');
+    console.log('mm.js loaded');
+    log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
 
     const copyIcons = document.querySelectorAll('.copy-icon');
-    log_message(`Tìm thấy ${copyIcons.length} biểu tượng sao chép`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`Found ${copyIcons.length} copy icons`, 'make-market.log', 'make-market', 'DEBUG');
     if (copyIcons.length === 0) {
-        log_message('Không tìm thấy phần tử .copy-icon trong DOM', 'make-market.log', 'make-market', 'ERROR');
+        log_message('No .copy-icon elements found in DOM', 'make-market.log', 'make-market', 'ERROR');
         return;
     }
 
     copyIcons.forEach(icon => {
-        log_message('Gắn sự kiện click vào biểu tượng sao chép', 'make-market.log', 'make-market', 'DEBUG');
+        log_message('Attaching click event to copy icon', 'make-market.log', 'make-market', 'DEBUG');
         icon.addEventListener('click', (e) => {
-            log_message('Biểu tượng sao chép được click', 'make-market.log', 'make-market', 'INFO');
-            console.log('Biểu tượng sao chép được click');
+            log_message('Copy icon clicked', 'make-market.log', 'make-market', 'INFO');
+            console.log('Copy icon clicked');
 
             if (!window.isSecureContext) {
-                log_message('Sao chép bị chặn: Không ở trong ngữ cảnh an toàn', 'make-market.log', 'make-market', 'ERROR');
-                console.error('Sao chép bị chặn: Không ở trong ngữ cảnh an toàn');
-                showError('Không thể sao chép: Tính năng này yêu cầu HTTPS');
+                log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
+                console.error('Copy blocked: Not in secure context');
+                showError('Unable to copy: This feature requires HTTPS');
                 return;
             }
 
             const fullAddress = icon.getAttribute('data-full');
             if (!fullAddress) {
-                log_message('Sao chép thất bại: Thuộc tính data-full không tìm thấy hoặc rỗng', 'make-market.log', 'make-market', 'ERROR');
-                console.error('Sao chép thất bại: Thuộc tính data-full không tìm thấy hoặc rỗng');
-                showError('Không thể sao chép: Địa chỉ không hợp lệ');
+                log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
+                console.error('Copy failed: data-full attribute not found or empty');
+                showError('Unable to copy: Invalid address');
                 return;
             }
 
             const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/;
             if (!base58Regex.test(fullAddress)) {
-                log_message(`Định dạng địa chỉ không hợp lệ: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
-                console.error(`Định dạng địa chỉ không hợp lệ: ${fullAddress}`);
-                showError('Không thể sao chép: Định dạng địa chỉ không hợp lệ');
+                log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
+                console.error(`Invalid address format: ${fullAddress}`);
+                showError('Unable to copy: Invalid address format');
                 return;
             }
 
-            const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' + fullAddress.substring(fullAddress.length - 4) : 'Không hợp lệ';
-            log_message(`Đang cố gắng sao chép địa chỉ: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
-            console.log(`Đang cố gắng sao chép địa chỉ: ${shortAddress}`);
+            const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
+            log_message(`Attempting to copy address: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
+            console.log(`Attempting to copy address: ${shortAddress}`);
 
             if (!navigator.clipboard) {
-                log_message('API Clipboard không khả dụng', 'make-market.log', 'make-market', 'ERROR');
-                console.error('API Clipboard không khả dụng');
-                showError('Không thể sao chép: Trình duyệt không hỗ trợ tính năng này. Vui lòng sao chép thủ công.');
+                log_message('Clipboard API unavailable', 'make-market.log', 'make-market', 'ERROR');
+                console.error('Clipboard API unavailable');
+                showError('Unable to copy: Browser does not support this feature. Please copy manually.');
                 return;
             }
 
             navigator.clipboard.writeText(fullAddress).then(() => {
-                log_message('Sao chép thành công', 'make-market.log', 'make-market', 'INFO');
-                console.log('Sao chép thành công');
+                log_message('Copy successful', 'make-market.log', 'make-market', 'INFO');
+                console.log('Copy successful');
                 icon.classList.add('copied');
                 const tooltip = document.createElement('span');
                 tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Đã sao chép!';
+                tooltip.textContent = 'Copied!';
                 const parent = icon.parentNode;
                 parent.style.position = 'relative';
                 parent.appendChild(tooltip);
                 setTimeout(() => {
                     icon.classList.remove('copied');
                     tooltip.remove();
-                    log_message('Phản hồi sao chép đã xóa', 'make-market.log', 'make-market', 'DEBUG');
-                    console.log('Phản hồi sao chép đã xóa');
+                    log_message('Copy feedback removed', 'make-market.log', 'make-market', 'DEBUG');
+                    console.log('Copy feedback removed');
                 }, 2000);
             }).catch(err => {
-                log_message(`API Clipboard thất bại: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-                console.error('API Clipboard thất bại:', err.message);
-                showError(`Không thể sao chép: ${err.message}`);
+                log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+                console.error('Clipboard API failed:', err.message);
+                showError(`Unable to copy: ${err.message}`);
             });
         });
     });
