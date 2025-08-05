@@ -10,6 +10,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
+log_message("process.php loaded: REQUEST_URI={$_SERVER['REQUEST_URI']}, SCRIPT_FILENAME={$_SERVER['SCRIPT_FILENAME']}", 'make-market.log', 'make-market', 'DEBUG');
+
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
