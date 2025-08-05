@@ -124,12 +124,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         if (result.status !== 'success') {
             log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Form submission failed:', result.message);
-            // Kiểm tra lỗi số dư không đủ
-            if (result.message.includes('Số dư ví không đủ')) {
-                showError(result.message); // Hiển thị thông báo lỗi cụ thể từ server
-            } else {
-                showError(`${result.message}. Vui lòng kiểm tra và thử lại.`);
-            }
+            showError(result.message); // Hiển thị thông báo lỗi chi tiết từ server
             return;
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
