@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/get-public-key.php
-// Description: Retrieve public key from private key in database for a transaction
+// Description: Retrieve public key from database for a transaction
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,10 +12,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
-require_once $root_path . '../vendor/autoload.php';
-
-use Attestto\SolanaPhpSdk\Keypair;
-use StephenHill\Base58;
 
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: $csp_base");
@@ -58,9 +54,9 @@ try {
     exit;
 }
 
-// Fetch transaction details
+// Fetch public key from transaction
 try {
-    $stmt = $pdo->prepare("SELECT user_id, private_key FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT user_id, public_key FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != $_SESSION['user_id']) {
@@ -69,55 +65,24 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id", 'make-market.log', 'make-market', 'INFO');
+    if (empty($transaction['public_key']) || $transaction['public_key'] === 'undefined') {
+        log_message("Invalid public key: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key in transaction']);
+        exit;
+    }
+    if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transaction['public_key'])) {
+        log_message("Invalid public key format: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
+        exit;
+    }
+    log_message("Public key retrieved: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'INFO');
+    echo json_encode(['status' => 'success', 'public_key' => $transaction['public_key']]);
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction: ' . $e->getMessage()]);
-    exit;
-}
-
-// Decrypt private key
-try {
-    if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
-        log_message("JWT_SECRET is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Server configuration error: JWT_SECRET missing']);
-        exit;
-    }
-    $private_key = openssl_decrypt($transaction['private_key'], 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
-    if ($private_key === false) {
-        log_message("Failed to decrypt private key: openssl_decrypt returned false", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Failed to decrypt private key']);
-        exit;
-    }
-    log_message("Private key decrypted successfully", 'make-market.log', 'make-market', 'INFO');
-} catch (Exception $e) {
-    log_message("Private key decryption failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Private key decryption failed: ' . $e->getMessage()]);
-    exit;
-}
-
-// Derive public key
-try {
-    $base58 = new Base58();
-    $decodedKey = $base58->decode($private_key);
-    if (strlen($decodedKey) !== 64) {
-        log_message("Invalid private key length: " . strlen($decodedKey), 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid private key length: ' . strlen($decodedKey)]);
-        exit;
-    }
-    $keypair = Keypair::fromSecretKey($decodedKey);
-    $public_key = $keypair->getPublicKey()->toBase58();
-    log_message("Public key derived: $public_key", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'public_key' => $public_key]);
-} catch (Exception $e) {
-    log_message("Failed to derive public key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Failed to derive public key: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving public key: ' . $e->getMessage()]);
     exit;
 }
 ?>
