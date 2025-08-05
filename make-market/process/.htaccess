@@ -1,3 +1,0 @@
-RewriteEngine On
-RewriteBase /make-market/process/
-RewriteRule ^([0-9]+)$ process/process.php?id=$1 [L,NC]
