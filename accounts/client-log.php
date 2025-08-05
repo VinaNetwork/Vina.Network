@@ -6,10 +6,11 @@
 // ============================================================================
 
 if (!defined('VINANETWORK_ENTRY')) {
-    die("Access denied: Direct access to this file is not allowed.");
+    define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/../config/bootstrap.php';
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Set response header
 header('Content-Type: application/json');
