@@ -9,7 +9,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/../config/bootstrap.php';
+$root_path = '../';
+require_once $root_path . 'config/bootstrap.php';
 
 // Log directory
 $log_dir = ACCOUNTS_PATH . '/logs/accounts/';
