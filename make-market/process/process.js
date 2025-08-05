@@ -162,7 +162,7 @@ async function checkSolBalance(transactionId, requiredSol) {
         const balanceSol = result.balance;
         log_message(`Balance checked: transaction_id=${transactionId}, balance=${balanceSol} SOL, required=${requiredSol} SOL`, 'make-market.log', 'make-market', 'INFO');
         console.log(`Balance checked: ${balanceSol} SOL`);
-        return { sufficient: balanceSol >= requiredSol, balance: balanceSol };
+        return { sufficient: balanceSol >= requiredSol, balance: balanceSol, required: requiredSol };
     } catch (err) {
         log_message(`Failed to check balance: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to check balance:', err.message);
@@ -415,18 +415,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const requiredSol = transaction.sol_amount * loopCount * batchSize + 0.005 * loopCount * batchSize; // SOL + phí
         const balanceCheck = await checkSolBalance(transactionId, requiredSol);
         if (!balanceCheck.sufficient) {
-            showError(`Insufficient SOL balance.`, `Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
-            updateTransactionStatus('failed', `Insufficient SOL balance. Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
+            const errorMessage = `Insufficient SOL balance. Required: ${balanceCheck.required} SOL, Available: ${balanceCheck.balance} SOL`;
+            showError('Insufficient SOL balance.', errorMessage);
+            updateTransactionStatus('failed', errorMessage);
             isProcessing = false;
             return;
         }
     } catch (err) {
         let errorMessage = err.message;
         if (err.message.includes('Insufficient wallet balance')) {
-            const result = await (await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })).json();
-            errorMessage = `Insufficient SOL balance. Required: ${result.required} SOL, Available: ${result.balance} SOL`;
+            errorMessage = `Insufficient SOL balance. Required: ${requiredSol} SOL, Available: 0 SOL`;
+        } else if (err.message.includes('Transaction already processed')) {
+            errorMessage = err.message;
         }
         showError('Failed to check SOL balance: ' + err.message, errorMessage);
         updateTransactionStatus('failed', errorMessage);
