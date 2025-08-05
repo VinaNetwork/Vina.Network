@@ -16,6 +16,19 @@
 RewriteEngine On
 RewriteBase /
 
+# 404 - If the request is a directory and it does not contain index.php
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME}/index.php !-f
+RewriteRule ^.*$ /404.php [L]
+
+# 404 - If the request is not a file or directory, redirect to 404
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^.*$ /404.php [L]
+
+# 404 - Handle default 404 error by Apache
+ErrorDocument 404 /404.php
+
 # ----------------------------------------------------------------------------
 # 🔐 SECURITY
 # ----------------------------------------------------------------------------
