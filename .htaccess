@@ -19,7 +19,7 @@ RewriteBase /
 # Rewrite /make-market/process to process.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^make-market/process$ make-market/process/process.php [L,QSA]
+RewriteRule ^make-market/process/?$ make-market/process/process.php [L,QSA]
 
 # ----------------------------------------------------------------------------
 # 🔐 SECURITY
@@ -107,11 +107,3 @@ FileETag None
 RewriteCond %{HTTP_REFERER} !^$
 RewriteCond %{HTTP_REFERER} !^https?://(www\.)?vina\.network/ [NC]
 RewriteRule \.(jpg|jpeg|png|gif|webp)$ - [F,NC]
-
-# ----------------------------------------------------------------------------
-# 🧪 OPTIONAL: SPA-style fallback to index.php
-# ----------------------------------------------------------------------------
-# Enable this block only if your site uses route-style URLs like /tools/view/...
-# RewriteCond %{REQUEST_FILENAME} !-f
-# RewriteCond %{REQUEST_FILENAME} !-d
-# RewriteRule ^ index.php [QSA,L]
