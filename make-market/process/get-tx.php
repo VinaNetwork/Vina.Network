@@ -31,10 +31,13 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("get-tx.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 }
 
-// Get transaction ID
-$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+// Get transaction ID from URL path
+$request_uri = $_SERVER['REQUEST_URI'];
+$path_parts = explode('/', rtrim($request_uri, '/'));
+$transaction_id = end($path_parts);
+$transaction_id = is_numeric($transaction_id) ? intval($transaction_id) : 0;
 if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid or missing transaction ID from URL path: $request_uri", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
     exit;
