@@ -90,7 +90,7 @@ if ($transaction_id <= 0) {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, slippage, delay_seconds, loop_count, batch_size, status FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, slippage, delay_seconds, loop_count, batch_size, status, error FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != $_SESSION['user_id']) {
@@ -99,11 +99,40 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction']);
+    exit;
+}
+
+// Check if transaction is already completed
+if (in_array($transaction['status'], ['success', 'failed', 'canceled', 'partial'])) {
+    log_message("Transaction already processed: ID=$transaction_id, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <?php include $root_path . 'include/header.php'; ?>
+    <body>
+    <?php include $root_path . 'include/navbar.php'; ?>
+    <div class="process-container">
+        <div class="process-content">
+            <h1><i class="fas fa-cogs"></i> Make Market Process</h1>
+            <div class="alert alert-info">
+                <strong>Transaction Completed:</strong> This transaction has already been processed with status: <?php echo htmlspecialchars($transaction['status']); ?>.
+                <?php if ($transaction['error']): ?>
+                    <br><strong>Error Details:</strong> <?php echo htmlspecialchars($transaction['error']); ?>
+                <?php endif; ?>
+                <br><a href="/make-market/history">View Transaction History</a>
+            </div>
+        </div>
+    </div>
+    <?php include $root_path . 'include/footer.php'; ?>
+    </body>
+    </html>
+    <?php
+    ob_end_flush();
     exit;
 }
 
