@@ -80,6 +80,10 @@ form textarea {
     border-radius: 6px;
 }
 
+.cta-button {
+    margin-top: 20px;
+}
+
 .cta-button:disabled {
     background: #cccccc;
     cursor: not-allowed;
