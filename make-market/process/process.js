@@ -4,9 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Flag to prevent multiple executions
-let isProcessing = false;
-
 // Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
@@ -38,6 +35,7 @@ function showError(message, detailedError = null) {
     document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
+    updateTransactionStatus('failed', detailedError || message);
     // Hide Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
@@ -82,7 +80,6 @@ function showSuccess(message, results = []) {
 async function updateTransactionStatus(status, error = null) {
     const transactionId = new URLSearchParams(window.location.search).get('id');
     try {
-        log_message(`Attempting to update transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch('/make-market/process/get-status.php', {
             method: 'POST',
             headers: {
@@ -96,7 +93,7 @@ async function updateTransactionStatus(status, error = null) {
         }
         const result = await response.json();
         if (result.status !== 'success') {
-            throw new Error(result.message || 'Failed to update transaction status');
+            throw new Error(result.message);
         }
         log_message(`Transaction status updated: ID=${transactionId}, status=${status}, error=${error || 'none'}`, 'make-market.log', 'make-market', 'INFO');
         console.log(`Transaction status updated: ID=${transactionId}, status=${status}, error=${error || 'none'}`);
@@ -163,7 +160,7 @@ async function checkSolBalance(transactionId, requiredSol) {
         const balanceSol = result.balance;
         log_message(`Balance checked: transaction_id=${transactionId}, balance=${balanceSol} SOL, required=${requiredSol} SOL`, 'make-market.log', 'make-market', 'INFO');
         console.log(`Balance checked: ${balanceSol} SOL`);
-        return { sufficient: balanceSol >= requiredSol, balance: balanceSol, required: requiredSol };
+        return { sufficient: balanceSol >= requiredSol, balance: balanceSol };
     } catch (err) {
         log_message(`Failed to check balance: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to check balance:', err.message);
@@ -256,13 +253,6 @@ function delay(ms) {
 
 // Main process and copy functionality
 document.addEventListener('DOMContentLoaded', async () => {
-    if (isProcessing) {
-        log_message('Process already running, skipping duplicate execution', 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Process already running, skipping duplicate execution');
-        return;
-    }
-    isProcessing = true;
-
     log_message('process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
@@ -326,8 +316,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const transactionId = new URLSearchParams(window.location.search).get('id');
     if (!transactionId) {
         showError('Invalid transaction ID');
-        updateTransactionStatus('failed', 'Invalid transaction ID');
-        isProcessing = false;
         return;
     }
 
@@ -354,8 +342,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
-        await updateTransactionStatus('failed', 'Failed to retrieve transaction info: ' + err.message);
-        isProcessing = false;
         return;
     }
 
@@ -364,8 +350,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const batchSize = transaction.batch_size;
     if (isNaN(loopCount) || isNaN(batchSize) || loopCount <= 0 || batchSize <= 0) {
         showError('Invalid transaction parameters: loop_count or batch_size is invalid');
-        await updateTransactionStatus('failed', 'Invalid transaction parameters: loop_count or batch_size is invalid');
-        isProcessing = false;
         return;
     }
 
@@ -387,8 +371,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Public key fetched:', publicKey);
     } catch (err) {
         showError('Failed to retrieve wallet address: ' + err.message);
-        await updateTransactionStatus('failed', 'Failed to retrieve wallet address: ' + err.message);
-        isProcessing = false;
         return;
     }
 
@@ -407,7 +389,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             log_message(`Cancel button clicked for transaction ID=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
             console.log(`Cancel button clicked for transaction ID=${transactionId}`);
             await cancelTransaction(transactionId);
-            isProcessing = false;
         });
     }
 
@@ -416,37 +397,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const requiredSol = transaction.sol_amount * loopCount * batchSize + 0.005 * loopCount * batchSize; // SOL + phí
         const balanceCheck = await checkSolBalance(transactionId, requiredSol);
         if (!balanceCheck.sufficient) {
-            const errorMessage = `Insufficient SOL balance. Required: ${balanceCheck.required} SOL, Available: ${balanceCheck.balance} SOL`;
-            showError('Insufficient SOL balance.', errorMessage);
-            await updateTransactionStatus('failed', errorMessage);
-            isProcessing = false;
+            showError(`Insufficient SOL balance.`, `Required: ${requiredSol} SOL, Available: ${balanceCheck.balance} SOL`);
             return;
         }
-        log_message(`Balance check passed: ${balanceCheck.balance} SOL available, required=${requiredSol} SOL`, 'make-market.log', 'make-market', 'INFO');
     } catch (err) {
-        let errorMessage = err.message;
-        if (err.message.includes('Insufficient wallet balance')) {
-            errorMessage = `Insufficient SOL balance. Required: ${requiredSol} SOL, Available: 0 SOL`;
-        } else if (err.message.includes('Transaction already processed')) {
-            errorMessage = err.message;
-        } else {
-            errorMessage = `Failed to check SOL balance: ${err.message}`;
-        }
-        showError('Failed to check SOL balance.', errorMessage);
-        await updateTransactionStatus('failed', errorMessage);
-        isProcessing = false;
+        showError('Failed to check SOL balance: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
         return;
     }
 
     // Update status to pending
-    try {
-        await updateTransactionStatus('pending');
-    } catch (err) {
-        showError('Failed to update transaction status to pending: ' + err.message);
-        await updateTransactionStatus('failed', 'Failed to update transaction status to pending: ' + err.message);
-        isProcessing = false;
-        return;
-    }
+    await updateTransactionStatus('pending');
 
     // Process swaps with loop_count and batch_size
     try {
@@ -484,9 +444,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions`);
         showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
     } catch (err) {
-        showError('Error during swap process: ' + err.message);
-        await updateTransactionStatus('failed', 'Error during swap process: ' + err.message);
-    } finally {
-        isProcessing = false;
+        showError('Error during swap process: ' + err.message, err.message.includes('Insufficient wallet balance') ? err.message : null);
     }
 });
