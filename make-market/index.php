@@ -123,10 +123,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 5);
         $transactionPublicKey = $form_data['transactionPublicKey'] ?? '';
+        $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
         // Log form data for debugging
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck", 'make-market.log', 'make-market', 'DEBUG');
         }
 
         // Validate inputs
@@ -214,71 +215,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Check wallet balance by calling get-balance.php
-        try {
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL => BASE_URL . "make-market/get-balance.php",
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => "",
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => "POST",
-                CURLOPT_POSTFIELDS => json_encode([
-                    'public_key' => $transactionPublicKey,
-                    'sol_amount' => $solAmount,
-                    'loop_count' => $loopCount,
-                    'batch_size' => $batchSize
-                ], JSON_UNESCAPED_UNICODE),
-                CURLOPT_HTTPHEADER => [
-                    "Content-Type: application/json; charset=utf-8",
-                    "X-Requested-With: XMLHttpRequest"
-                ],
-            ]);
+        // Check wallet balance by calling get-balance.php, unless skipped
+        if (!$skipBalanceCheck) {
+            try {
+                $curl = curl_init();
+                curl_setopt_array($curl, [
+                    CURLOPT_URL => BASE_URL . "make-market/get-balance.php",
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => "",
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 30,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => "POST",
+                    CURLOPT_POSTFIELDS => json_encode([
+                        'public_key' => $transactionPublicKey,
+                        'sol_amount' => $solAmount,
+                        'loop_count' => $loopCount,
+                        'batch_size' => $batchSize
+                    ], JSON_UNESCAPED_UNICODE),
+                    CURLOPT_HTTPHEADER => [
+                        "Content-Type: application/json; charset=utf-8",
+                        "X-Requested-With: XMLHttpRequest"
+                    ],
+                ]);
 
-            $response = curl_exec($curl);
-            $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $err = curl_error($curl);
-            curl_close($curl);
+                $response = curl_exec($curl);
+                $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                $err = curl_error($curl);
+                curl_close($curl);
 
-            if ($err) {
-                log_message("Failed to call get-balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Connection error while checking wallet balance']);
-                exit;
-            }
+                if ($err) {
+                    log_message("Failed to call get-balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Connection error while checking wallet balance']);
+                    exit;
+                }
 
-            if ($http_code !== 200) {
-                log_message("Failed to call get-balance.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+                if ($http_code !== 200) {
+                    log_message("Failed to call get-balance.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+                    $data = json_decode($response, true);
+                    $errorMessage = isset($data['message']) ? $data['message'] : 'Unknown error while checking wallet balance';
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => $errorMessage]);
+                    exit;
+                }
+
                 $data = json_decode($response, true);
-                $errorMessage = isset($data['message']) ? $data['message'] : 'Unknown error while checking wallet balance';
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    log_message("Failed to parse get-balance.php response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
+                    exit;
+                }
+
+                if ($data['status'] !== 'success') {
+                    log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
+                    exit;
+                }
+
+                log_message("Balance check passed: {$data['message']}, balance={$data['balance']} SOL", 'make-market.log', 'make-market', 'INFO');
+            } catch (Exception $e) {
+                log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => $errorMessage]);
+                echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
                 exit;
             }
-
-            $data = json_decode($response, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                log_message("Failed to parse get-balance.php response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
-                exit;
-            }
-
-            if ($data['status'] !== 'success') {
-                log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => $data['message']]);
-                exit;
-            }
-
-            log_message("Balance check passed: {$data['message']}, balance={$data['balance']} SOL", 'make-market.log', 'make-market', 'INFO');
-        } catch (Exception $e) {
-            log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
-            exit;
+        } else {
+            log_message("Wallet balance check skipped by user", 'make-market.log', 'make-market', 'INFO');
         }
 
         // Check JWT_SECRET
@@ -415,6 +420,12 @@ $defaultSlippage = 0.5;
 
             <label for="batchSize">📦 Batch Size (1-10):</label>
             <input type="number" name="batchSize" id="batchSize" min="1" max="10" value="5" required>
+
+            <!-- Add Skip Wallet Balance Check checkbox -->
+            <label for="skipBalanceCheck">
+                <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
+                Skip wallet balance check (only select if you are sure the wallet has sufficient SOL)
+            </label>
 
             <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
