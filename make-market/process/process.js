@@ -78,7 +78,7 @@ function showSuccess(message, results = []) {
 
 // Update transaction status and error in database
 async function updateTransactionStatus(status, error = null) {
-    const transactionId = new URLSearchParams(window.location.search).get('id');
+    const transactionId = window.location.pathname.split('/').pop();
     try {
         const response = await fetch('/make-market/process/get-status.php', {
             method: 'POST',
@@ -146,7 +146,7 @@ async function cancelTransaction(transactionId) {
 // Check SOL balance
 async function checkSolBalance(transactionId, requiredSol) {
     try {
-        const response = await fetch(`/make-market/process/get-balance.php?id=${transactionId}`, {
+        const response = await fetch(`/make-market/process/get-balance/${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         if (!response.ok) {
@@ -313,8 +313,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Main process
-    const transactionId = new URLSearchParams(window.location.search).get('id');
-    if (!transactionId) {
+    const transactionId = window.location.pathname.split('/').pop();
+    if (!transactionId || isNaN(transactionId)) {
         showError('Invalid transaction ID');
         return;
     }
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch transaction details
     let transaction;
     try {
-        const response = await fetch(`/make-market/process/get-tx.php?id=${transactionId}`, {
+        const response = await fetch(`/make-market/process/get-tx/${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         if (!response.ok) {
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch public key
     let publicKey;
     try {
-        const response = await fetch(`/make-market/process/get-public-key.php?id=${transactionId}`, {
+        const response = await fetch(`/make-market/process/get-public-key/${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         if (!response.ok) {
