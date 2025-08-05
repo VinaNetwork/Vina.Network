@@ -56,7 +56,7 @@ try {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT public_key, sol_amount FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT public_key, sol_amount, loop_count, batch_size FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
@@ -77,7 +77,7 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Invalid wallet address format']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}", 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}, loop_count={$transaction['loop_count']}, batch_size={$transaction['batch_size']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
@@ -167,13 +167,15 @@ try {
     }
 
     $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert lamports to SOL
-    $requiredAmount = floatval($transaction['sol_amount']) + 0.005; // Add 0.005 SOL for fees
+    // Tính số dư tối thiểu theo công thức mới
+    $totalTransactions = $transaction['loop_count'] * $transaction['batch_size'];
+    $requiredAmount = ($transaction['sol_amount'] + 0.005) * ($totalTransactions / 2);
     if ($balanceInSol < $requiredAmount) {
         log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode([
             'status' => 'error', 
-            'message' => "Insufficient wallet balance to perform the transaction. Please send more SOL to wallet {$transaction['public_key']} to continue."
+            'message' => "Số dư ví không đủ để thực hiện giao dịch. Cần ít nhất $requiredAmount SOL trong ví {$transaction['public_key']}."
         ], JSON_UNESCAPED_UNICODE);
         try {
             $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
@@ -186,7 +188,7 @@ try {
     }
 
     log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'message' => 'Wallet balance sufficient to perform the transaction', 'balance' => $balanceInSol], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'success', 'message' => 'Số dư ví đủ để thực hiện giao dịch', 'balance' => $balanceInSol], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     try {
@@ -197,7 +199,7 @@ try {
         log_message("Failed to update transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     }
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi khi kiểm tra số dư ví'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
