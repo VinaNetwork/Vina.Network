@@ -1,9 +1,18 @@
 RewriteEngine On
-RewriteBase /make-market/process/
+RewriteBase /make-market/
+
+# Nếu không phải file hoặc thư mục thật
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{ENV:REDIRECT_STATUS} ^$
+
+# Các rule cho từng chức năng
 RewriteRule ^get-public-key/([0-9]+)$ process/get-public-key.php?id=$1 [L,NC]
 RewriteRule ^get-tx/([0-9]+)$ process/get-tx.php?id=$1 [L,NC]
+RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC]
+RewriteRule ^swap/([0-9]+)$ process/swap.php?id=$1 [L,NC]
+
+# Rule chung cho ID → process.php
 RewriteRule ^([0-9]+)$ process/process.php?id=$1 [L,NC]
+
+# Tùy chọn bảo mật
 Options -Indexes
