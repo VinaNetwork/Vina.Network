@@ -5,18 +5,32 @@
 // Created by: Vina Network
 // ============================================================================
 
+ob_start();
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/config.php';
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+log_message("view-process.php loaded: REQUEST_URI={$_SERVER['REQUEST_URI']}, SCRIPT_FILENAME={$_SERVER['SCRIPT_FILENAME']}, DOCUMENT_ROOT={$_SERVER['DOCUMENT_ROOT']}, HTTP_HOST={$_SERVER['HTTP_HOST']}, GET=" . json_encode($_GET) . ", SESSION_user_id=" . ($_SESSION['user_id'] ?? 'not set'), 'make-market.log', 'make-market', 'DEBUG');
 
 session_start([
     'cookie_secure' => true,
     'cookie_httponly' => true,
     'cookie_samesite' => 'Strict'
 ]);
+
+// Kiểm tra session
+if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
+    log_message("Session not set or invalid user_id: {$_SESSION['user_id'] ?? 'not set'}", 'make-market.log', 'make-market', 'ERROR');
+    header('Location: /login?redirect=/make-market/process/view/' . ($_GET['id'] ?? ''));
+    exit;
+}
 
 $transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($transaction_id <= 0) {
@@ -29,12 +43,12 @@ if ($transaction_id <= 0) {
 try {
     $pdo = get_db_connection();
     $stmt = $pdo->prepare("SELECT * FROM make_market WHERE id = ? AND user_id = ?");
-    $stmt->execute([$transaction_id, $_SESSION['user_id'] ?? 0]);
+    $stmt->execute([$transaction_id, $_SESSION['user_id']]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
-        log_message("Transaction not found: ID=$transaction_id, user_id={$_SESSION['user_id'] ?? 'not set'}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Transaction not found: ID=$transaction_id, user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Transaction not found']);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
     log_message("Transaction loaded for view: ID=$transaction_id, process_name={$transaction['process_name']}", 'make-market.log', 'make-market', 'INFO');
@@ -51,10 +65,11 @@ $page_description = "View details of Make Market transaction #{$transaction_id} 
 $page_keywords = "Solana trading, transaction details, Vina Network, make market";
 $page_og_title = "Transaction #{$transaction_id} Details";
 $page_og_description = "View details of your Make Market transaction on Vina Network.";
-$page_og_url = BASE_URL . "make-market/process/{$transaction_id}";
-$page_canonical = BASE_URL . "make-market/process/{$transaction_id}";
-$page_css = ['/make-market/process/process.css'];
+$page_og_url = BASE_URL . "make-market/process/view/{$transaction_id}";
+$page_canonical = BASE_URL . "make-market/process/view/{$transaction_id}";
+$page_css = ['/make-market/process/view-process.css'];
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <?php include $root_path . 'include/header.php'; ?>
@@ -121,7 +136,6 @@ $page_css = ['/make-market/process/process.css'];
         </div>
     </div>
 </div>
-  
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Source code -->
