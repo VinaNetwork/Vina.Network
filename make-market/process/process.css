@@ -28,11 +28,8 @@
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
 }
 
-h1 {
-    text-align: center;
-    color: #fff;
-}
-h2 {color: #fff;}
+h1 {text-align: center;}
+h1, h2, i {color: #00d4ff;}
 
 /* Copy Tooltip */
 .copy-tooltip {
