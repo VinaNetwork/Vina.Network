@@ -1,10 +1,4 @@
 <?php
-$root_path = '../../';
-require_once $root_path . 'config/bootstrap.php';
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-log_message("process.php loaded: REQUEST_URI={$_SERVER['REQUEST_URI']}, SCRIPT_FILENAME={$_SERVER['SCRIPT_FILENAME']}, DOCUMENT_ROOT={$_SERVER['DOCUMENT_ROOT']}, HTTP_HOST={$_SERVER['HTTP_HOST']}, GET=" . json_encode($_GET), 'make-market.log', 'make-market', 'DEBUG');
 // ============================================================================
 // File: make-market/process/process.php
 // Description: Process page for Make Market to execute Solana token swap with looping
@@ -16,7 +10,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-log_message("process.php loaded: REQUEST_URI={$_SERVER['REQUEST_URI']}, SCRIPT_FILENAME={$_SERVER['SCRIPT_FILENAME']}", 'make-market.log', 'make-market', 'DEBUG');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
