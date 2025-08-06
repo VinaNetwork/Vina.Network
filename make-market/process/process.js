@@ -53,7 +53,7 @@ function showSuccess(message, results = []) {
     if (results.length > 0) {
         html += '<ul>';
         results.forEach(result => {
-            html += `<li>Loop ${result.loop}, Batch ${result.batch_index}: ${
+            html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
                 result.status === 'success' 
                     ? `<a href="https://solscan.io/tx/${result.txid}" target="_blank">Success (txid: ${result.txid})</a>`
                     : `Failed - ${result.message}`
@@ -310,18 +310,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         transaction.batch_size = parseInt(transaction.batch_size) || 1;
         transaction.slippage = parseFloat(transaction.slippage) || 0.5;
         transaction.delay_seconds = parseInt(transaction.delay_seconds) || 1;
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, sol_amount=${transaction.sol_amount}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}`, 'make-market.log', 'make-market', 'INFO');
+        transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
+        transaction.token_amount = parseFloat(transaction.token_amount) || 0;
+        transaction.trade_direction = transaction.trade_direction || 'buy';
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
         return;
     }
 
-    // Validate loop_count and batch_size
+    // Validate transaction parameters
     const loopCount = transaction.loop_count;
     const batchSize = transaction.batch_size;
+    const tradeDirection = transaction.trade_direction;
     if (isNaN(loopCount) || isNaN(batchSize) || loopCount <= 0 || batchSize <= 0) {
         showError('Invalid transaction parameters: loop_count or batch_size is invalid');
+        return;
+    }
+    if (!['buy', 'sell', 'both'].includes(tradeDirection)) {
+        showError('Invalid trade direction: ' + tradeDirection);
+        return;
+    }
+    if (transaction.sol_amount <= 0 && (tradeDirection === 'buy' || tradeDirection === 'both')) {
+        showError('SOL amount must be greater than 0 for buy or both transactions');
+        return;
+    }
+    if (transaction.token_amount <= 0 && (tradeDirection === 'sell' || tradeDirection === 'both')) {
+        showError('Token amount must be greater than 0 for sell or both transactions');
         return;
     }
 
@@ -372,21 +388,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         const solMint = 'So11111111111111111111111111111111111111112';
         const tokenMint = transaction.token_mint;
         const solAmount = transaction.sol_amount * 1e9; // Convert to lamports
+        const tokenAmount = transaction.token_amount * 1e9; // Assume 9 decimals for token
         const slippageBps = Math.floor(transaction.slippage * 100); // Convert to basis points
         const delaySeconds = transaction.delay_seconds * 1000; // Convert to milliseconds
         const swapTransactions = [];
 
-        // Generate swap transactions (buy only)
+        // Generate swap transactions based on trade_direction
         for (let loop = 1; loop <= loopCount; loop++) {
             document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount}...`;
             for (let i = 0; i < batchSize; i++) {
-                document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1}...`;
-                const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps);
-                const buyTx = await getSwapTransaction(buyQuote, publicKey);
-                swapTransactions.push(buyTx);
-                if (i < batchSize - 1) {
-                    document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
-                    await delay(delaySeconds);
+                if (tradeDirection === 'buy' || tradeDirection === 'both') {
+                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1}...`;
+                    const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps);
+                    const buyTx = await getSwapTransaction(buyQuote, publicKey);
+                    swapTransactions.push({ direction: 'buy', tx: buyTx });
+                    if (i < batchSize - 1 || tradeDirection === 'both') {
+                        document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next ${tradeDirection === 'both' ? 'buy/sell' : 'batch'} in loop ${loop}...`;
+                        await delay(delaySeconds);
+                    }
+                }
+                if (tradeDirection === 'sell' || tradeDirection === 'both') {
+                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1}...`;
+                    const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps);
+                    const sellTx = await getSwapTransaction(sellQuote, publicKey);
+                    swapTransactions.push({ direction: 'sell', tx: sellTx });
+                    if (i < batchSize - 1) {
+                        document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
+                        await delay(delaySeconds);
+                    }
                 }
             }
             if (loop < loopCount) {
@@ -399,7 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('swap-status').textContent = 'Executing swap transactions...';
         const swapResult = await executeSwapTransactions(transactionId, swapTransactions);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
-        const totalTransactions = loopCount * batchSize;
+        const totalTransactions = swapTransactions.length;
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions`);
         showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
     } catch (err) {
