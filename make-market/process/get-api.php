@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/get-api.php
-// Description: Retrieve Helius API key for authenticated users
+// Description: Retrieve Helius API key and Solana network for authenticated users
 // Created by: Vina Network
 // ============================================================================
 
@@ -39,15 +39,25 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
     exit;
 }
 
-// Check if HELIUS_API_KEY is defined
+// Check if HELIUS_API_KEY and SOLANA_NETWORK are defined
 if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
     log_message("HELIUS_API_KEY is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing HELIUS_API_KEY']);
+    exit;
+}
+if (!defined('SOLANA_NETWORK') || !in_array(SOLANA_NETWORK, ['mainnet', 'testnet'])) {
+    log_message("SOLANA_NETWORK is not defined or invalid", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Invalid SOLANA_NETWORK']);
     exit;
 }
 
-// Return Helius API key
-log_message("Helius API key retrieved successfully", 'make-market.log', 'make-market', 'INFO');
-echo json_encode(['status' => 'success', 'helius_api_key' => HELIUS_API_KEY]);
+// Return Helius API key and Solana network
+log_message("Helius API key and Solana network retrieved successfully: network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+echo json_encode([
+    'status' => 'success',
+    'helius_api_key' => HELIUS_API_KEY,
+    'solana_network' => SOLANA_NETWORK
+]);
 ?>
