@@ -46,8 +46,7 @@ $token_amount = floatval($post_data['token_amount'] ?? 0);
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
 $trade_direction = $post_data['trade_direction'] ?? 'buy';
-$skip_balance_check = isset($post_data['skip_balance_check']) && $post_data['skip_balance_check'] == '1';
-$token_mint = $post_data['token_mint'] ?? ''; // Added to check token balance
+$token_mint = $post_data['token_mint'] ?? '';
 
 // Validate input
 if (empty($public_key) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
@@ -93,14 +92,7 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
     exit;
 }
 
-log_message("Parameters received: public_key=$public_key, sol_amount=$sol_amount, token_amount=$token_amount, loop_count=$loop_count, batch_size=$batch_size, trade_direction=$trade_direction, skip_balance_check=$skip_balance_check, token_mint=$token_mint", 'make-market.log', 'make-market', 'INFO');
-
-// Skip balance check if requested
-if ($skip_balance_check) {
-    log_message("Wallet balance check skipped by user", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'message' => 'Balance check skipped', 'balance' => 0], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+log_message("Parameters received: public_key=$public_key, sol_amount=$sol_amount, token_amount=$token_amount, loop_count=$loop_count, batch_size=$batch_size, trade_direction=$trade_direction, token_mint=$token_mint", 'make-market.log', 'make-market', 'INFO');
 
 // Check balance using Helius getAssetsByOwner
 try {
@@ -134,7 +126,7 @@ try {
                 ],
                 'options' => [
                     'showNativeBalance' => true,
-                    'showTokenBalance' => true // Request token balance
+                    'showTokenBalance' => true
                 ]
             ]
         ], JSON_UNESCAPED_UNICODE),
