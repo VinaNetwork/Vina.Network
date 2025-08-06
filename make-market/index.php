@@ -118,6 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $privateKey = trim($form_data['privateKey'] ?? '');
         $tokenMint = $form_data['tokenMint'] ?? '';
         $solAmount = floatval($form_data['solAmount'] ?? 0);
+        $tokenAmount = floatval($form_data['tokenAmount'] ?? 0);
+        $tradeDirection = $form_data['tradeDirection'] ?? 'buy';
         $slippage = floatval($form_data['slippage'] ?? 0.5);
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
@@ -126,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Log form data for debugging
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck", 'make-market.log', 'make-market', 'DEBUG');
+            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck", 'make-market.log', 'make-market', 'DEBUG');
         }
 
         // Validate inputs
@@ -152,6 +154,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_message("Invalid SOL amount: $solAmount", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0']);
+            exit;
+        }
+        if ($tokenAmount <= 0) {
+            log_message("Invalid token amount: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0']);
+            exit;
+        }
+        if (!in_array($tradeDirection, ['buy', 'sell'])) {
+            log_message("Invalid trade direction: $tradeDirection", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
             exit;
         }
         if ($slippage < 0) {
@@ -214,6 +228,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     CURLOPT_POSTFIELDS => json_encode([
                         'public_key' => $transactionPublicKey,
                         'sol_amount' => $solAmount,
+                        'token_amount' => $tokenAmount, // Thêm token_amount vào payload
+                        'trade_direction' => $tradeDirection, // Thêm trade_direction vào payload
                         'loop_count' => $loopCount,
                         'batch_size' => $batchSize
                     ], JSON_UNESCAPED_UNICODE),
@@ -292,8 +308,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 INSERT INTO make_market (
                     user_id, public_key, process_name, private_key, token_mint, 
-                    sol_amount, slippage, delay_seconds, loop_count, batch_size, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
+                    sol_amount, token_amount, trade_direction, slippage, delay_seconds, 
+                    loop_count, batch_size, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
             ");
             $stmt->execute([
                 $_SESSION['user_id'],
@@ -302,6 +319,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $encryptedPrivateKey,
                 $tokenMint,
                 $solAmount,
+                $tokenAmount,
+                $tradeDirection,
                 $slippage,
                 $delay,
                 $loopCount,
@@ -386,8 +405,15 @@ $defaultSlippage = 0.5;
             <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
             <label for="tokenMint">🎯 Token Address:</label>
             <input type="text" name="tokenMint" id="tokenMint" required placeholder="Example: So111... or any SPL token">
-            <label for="solAmount">💰 SOL Amount to Buy:</label>
+            <label for="solAmount">💰 SOL Amount to Buy/Sell:</label>
             <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
+            <label for="tokenAmount">🪙 Token Amount:</label>
+            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" required placeholder="Example: 1000.0">
+            <label for="tradeDirection">📈 Trade Direction:</label>
+            <select name="tradeDirection" id="tradeDirection" required>
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+            </select>
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
             <label for="delay">⏱️ Delay Between Buy and Sell (seconds):</label>
