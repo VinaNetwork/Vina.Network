@@ -13,6 +13,9 @@ $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
+session_start(); // Đảm bảo session được khởi động
+log_message("Session data: " . json_encode($_SESSION), 'make-market.log', 'make-market', 'DEBUG');
+
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: $csp_base");
 header('Access-Control-Allow-Methods: GET');
