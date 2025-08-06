@@ -111,6 +111,11 @@ try {
     exit;
 }
 
+// Determine Solana RPC endpoint based on SOLANA_NETWORK
+$rpc_endpoint = SOLANA_NETWORK === 'testnet' 
+    ? 'https://api.testnet.solana.com'
+    : 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY;
+
 // Create sub-transaction records
 try {
     $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, created_at) VALUES (?, ?, ?, ?, 'pending', NOW())");
@@ -138,7 +143,7 @@ try {
 
 // Process each transaction
 $results = [];
-$connection = new Connection('https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY);
+$connection = new Connection($rpc_endpoint);
 
 foreach ($swap_transactions as $index => $swap) {
     $direction = $swap['direction'] ?? 'buy';
@@ -264,7 +269,7 @@ foreach ($swap_transactions as $index => $swap) {
     // Send transaction
     try {
         $txid = $connection->sendRawTransaction($transactionObj->serialize());
-        log_message("Swap transaction sent for loop $loop, batch $batch_index, direction=$direction: txid=$txid", 'make-market.log', 'make-market', 'INFO');
+        log_message("Swap transaction sent for loop $loop, batch $batch_index, direction=$direction: txid=$txid, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
         try {
             $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
             $stmt->execute(['success', null, $txid, $sub_transaction_id]);
@@ -305,7 +310,7 @@ try {
     $error_message = $success_count < count($swap_transactions) ? "Completed $success_count of " . count($swap_transactions) . " transactions" : null;
     $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
     $stmt->execute([$overall_status, $error_message, $transaction_id]);
-    log_message("Main transaction status updated: ID=$transaction_id, status=$overall_status, success_count=$success_count", 'make-market.log', 'make-market', 'INFO');
+    log_message("Main transaction status updated: ID=$transaction_id, status=$overall_status, success_count=$success_count, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Failed to update main transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
