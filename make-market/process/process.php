@@ -208,9 +208,6 @@ $page_css = ['/make-market/process/process.css'];
                         <?php echo htmlspecialchars($transaction['status']); ?>
                     </span></td>
                 </tr>
-            </table>
-            <h2>Configuration</h2>
-            <table class="details-table">
                 <tr>
                     <th>SOL Amount:</th>
                     <td><?php echo htmlspecialchars($transaction['sol_amount']); ?></td>
