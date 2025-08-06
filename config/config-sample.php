@@ -29,6 +29,11 @@ if (!defined('HELIUS_API_KEY')) {
     define('HELIUS_API_KEY', 'helius_api_key');
 }
 
+// Solana Network Configuration
+if (!defined('SOLANA_NETWORK')) {
+    define('SOLANA_NETWORK', 'testnet'); // Set to 'mainnet' or 'testnet'
+}
+
 // JWT Secret for encryption
 if (!defined('JWT_SECRET')) {
     define('JWT_SECRET', 'jwt_secret_key');
