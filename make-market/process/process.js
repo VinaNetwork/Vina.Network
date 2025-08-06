@@ -143,10 +143,36 @@ async function cancelTransaction(transactionId) {
     }
 }
 
-// Get token decimals from Helius API
-async function getTokenDecimals(tokenMint) {
+// Get Helius API key from server
+async function getHeliusApiKey() {
     try {
-        const response = await axios.post('https://mainnet.helius-rpc.com/?api-key=' + HELIUS_API_KEY, {
+        const response = await fetch('/make-market/process/get-api.php', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.status !== 'success') {
+            throw new Error(result.message);
+        }
+        log_message('Helius API key fetched successfully', 'make-market.log', 'make-market', 'INFO');
+        console.log('Helius API key fetched successfully');
+        return result.helius_api_key;
+    } catch (err) {
+        log_message(`Failed to fetch Helius API key: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to fetch Helius API key:', err.message);
+        throw err;
+    }
+}
+
+// Get token decimals from Helius API
+async function getTokenDecimals(tokenMint, heliusApiKey) {
+    try {
+        const response = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`, {
             jsonrpc: '2.0',
             id: '1',
             method: 'getAsset',
@@ -314,6 +340,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Fetch Helius API key
+    let heliusApiKey;
+    try {
+        heliusApiKey = await getHeliusApiKey();
+    } catch (err) {
+        showError('Failed to retrieve Helius API key: ' + err.message);
+        return;
+    }
+
     // Fetch transaction details
     let transaction;
     try {
@@ -409,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch token decimals
     let tokenDecimals;
     try {
-        tokenDecimals = await getTokenDecimals(transaction.token_mint);
+        tokenDecimals = await getTokenDecimals(transaction.token_mint, heliusApiKey);
     } catch (err) {
         showError('Failed to retrieve token decimals: ' + err.message);
         return;
