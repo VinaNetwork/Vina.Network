@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/get-balance.php
-// Description: Check wallet balance server-side using Helius RPC getAssetsByOwner
+// Description: Check wallet balance for SOL and Token using Helius RPC getAssetsByOwner
 // Created by: Vina Network
 // ============================================================================
 
@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $post_data = json_decode(file_get_contents('php://input'), true);
 $public_key = $post_data['public_key'] ?? '';
 $sol_amount = floatval($post_data['sol_amount'] ?? 0);
+$token_amount = floatval($post_data['token_amount'] ?? 0);
+$token_mint = $post_data['token_mint'] ?? '';
+$trade_direction = $post_data['trade_direction'] ?? 'buy';
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
 
@@ -58,6 +61,24 @@ if ($sol_amount <= 0) {
     echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0']);
     exit;
 }
+if ($token_amount <= 0) {
+    log_message("Invalid token amount: $token_amount", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0']);
+    exit;
+}
+if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $token_mint)) {
+    log_message("Invalid token mint: $token_mint", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address']);
+    exit;
+}
+if (!in_array($trade_direction, ['buy', 'sell'])) {
+    log_message("Invalid trade direction: $trade_direction", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
+    exit;
+}
 if ($loop_count < 1) {
     log_message("Invalid loop count: $loop_count", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
@@ -71,7 +92,7 @@ if ($batch_size < 1 || $batch_size > 10) {
     exit;
 }
 
-log_message("Parameters received: public_key=$public_key, sol_amount=$sol_amount, loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'INFO');
+log_message("Parameters received: public_key=" . substr($public_key, 0, 4) . "..., sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'INFO');
 
 // Check balance using Helius getAssetsByOwner
 try {
@@ -104,7 +125,8 @@ try {
                     'sortDirection' => 'asc'
                 ],
                 'options' => [
-                    'showNativeBalance' => true
+                    'showNativeBalance' => true,
+                    'showFungible' => true
                 ]
             ]
         ], JSON_UNESCAPED_UNICODE),
@@ -154,25 +176,62 @@ try {
         exit;
     }
 
+    // Check SOL balance for 'buy' transactions
     $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert from lamports to SOL
     $totalTransactions = $loop_count * $batch_size;
-    $requiredAmount = ($sol_amount + 0.005) * ($totalTransactions / 2); // New formula
-    if ($balanceInSol < $requiredAmount) {
-        log_message("Insufficient balance: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'ERROR');
+    $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2); // Formula for SOL
+    if ($trade_direction === 'buy' && $balanceInSol < $requiredSolAmount) {
+        log_message("Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode([
-            'status' => 'error', 
-            'message' => "Insufficient wallet balance to perform the transaction. At least $requiredAmount SOL is required in wallet $public_key."
+            'status' => 'error',
+            'message' => "Insufficient wallet balance to perform the transaction. At least $requiredSolAmount SOL is required in wallet $public_key."
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
-    log_message("Balance check passed: $balanceInSol SOL available, required=$requiredAmount SOL", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'message' => 'Wallet balance is sufficient to perform the transaction', 'balance' => $balanceInSol], JSON_UNESCAPED_UNICODE);
+    // Check token balance for 'sell' transactions
+    if ($trade_direction === 'sell') {
+        $tokenBalance = 0;
+        $decimals = 9; // Default decimals, will be updated if found in response
+        if (isset($data['result']['items']) && is_array($data['result']['items'])) {
+            foreach ($data['result']['items'] as $item) {
+                if ($item['interface'] === 'FungibleToken' && isset($item['id']) && $item['id'] === $token_mint) {
+                    $tokenBalance = floatval($item['token_info']['balance'] ?? 0) / pow(10, $item['token_info']['decimals'] ?? 9);
+                    $decimals = $item['token_info']['decimals'] ?? 9;
+                    break;
+                }
+            }
+        }
+
+        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+            log_message("Token balance for $public_key (mint: $token_mint): $tokenBalance tokens (decimals: $decimals)", 'make-market.log', 'make-market', 'DEBUG');
+        }
+
+        $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Formula for token
+        if ($tokenBalance < $requiredTokenAmount) {
+            log_message("Insufficient token balance: $tokenBalance tokens available, required=$requiredTokenAmount tokens", 'make-market.log', 'make-market', 'ERROR');
+            http_response_code(400);
+            echo json_encode([
+                'status' => 'error',
+                'message' => "Insufficient token balance to perform the transaction. At least $requiredTokenAmount tokens are required in wallet $public_key."
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        log_message("Token balance check passed: $tokenBalance tokens available, required=$requiredTokenAmount tokens", 'make-market.log', 'make-market', 'INFO');
+    }
+
+    log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . ($trade_direction === 'sell' ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Wallet balance is sufficient to perform the transaction',
+        'balance' => $trade_direction === 'buy' ? $balanceInSol : $tokenBalance
+    ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
