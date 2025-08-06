@@ -176,24 +176,24 @@ try {
         exit;
     }
 
-    // Check SOL balance for 'buy' or 'both' transactions
+    // Initialize variables
     $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert from lamports to SOL
     $totalTransactions = $loop_count * $batch_size;
     $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2); // Formula for SOL
-    if (in_array($trade_direction, ['buy', 'both']) && $balanceInSol < $requiredSolAmount) {
-        log_message("Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(400);
-        echo json_encode([
-            'status' => 'error',
-            'message' => "Insufficient wallet balance to perform the transaction. At least $requiredSolAmount SOL is required in wallet $public_key."
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
+    $tokenBalance = 0;
+    $decimals = 9; // Default decimals
+    $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Formula for token
+    $errors = [];
+
+    // Check SOL balance for 'buy' or 'both' transactions
+    if (in_array($trade_direction, ['buy', 'both'])) {
+        if ($balanceInSol < $requiredSolAmount) {
+            $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL";
+        }
     }
 
     // Check token balance for 'sell' or 'both' transactions
     if (in_array($trade_direction, ['sell', 'both'])) {
-        $tokenBalance = 0;
-        $decimals = 9; // Default decimals, will be updated if found in response
         if (isset($data['result']['items']) && is_array($data['result']['items'])) {
             foreach ($data['result']['items'] as $item) {
                 if ($item['interface'] === 'FungibleToken' && isset($item['id']) && $item['id'] === $token_mint) {
@@ -208,18 +208,20 @@ try {
             log_message("Token balance for $public_key (mint: $token_mint): $tokenBalance tokens (decimals: $decimals)", 'make-market.log', 'make-market', 'DEBUG');
         }
 
-        $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Formula for token
         if ($tokenBalance < $requiredTokenAmount) {
-            log_message("Insufficient token balance: $tokenBalance tokens available, required=$requiredTokenAmount tokens", 'make-market.log', 'make-market', 'ERROR');
-            http_response_code(400);
-            echo json_encode([
-                'status' => 'error',
-                'message' => "Insufficient token balance to perform the transaction. At least $requiredTokenAmount tokens are required in wallet $public_key."
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
+            $errors[] = "Insufficient token balance: $tokenBalance tokens available, required=$requiredTokenAmount tokens";
         }
+    }
 
-        log_message("Token balance check passed: $tokenBalance tokens available, required=$requiredTokenAmount tokens", 'make-market.log', 'make-market', 'INFO');
+    // Return errors if any
+    if (!empty($errors)) {
+        log_message(implode("; ", $errors), 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(400);
+        echo json_encode([
+            'status' => 'error',
+            'message' => implode("; ", $errors)
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . (in_array($trade_direction, ['sell', 'both']) ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
