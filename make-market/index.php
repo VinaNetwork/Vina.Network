@@ -162,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0']);
             exit;
         }
-        if (!in_array($tradeDirection, ['buy', 'sell'])) {
+        if (!in_array($tradeDirection, ['buy', 'sell', 'both'])) {
             log_message("Invalid trade direction: $tradeDirection", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
@@ -229,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'public_key' => $transactionPublicKey,
                         'sol_amount' => $solAmount,
                         'token_amount' => $tokenAmount,
-                        'token_mint' => $tokenMint, // Thêm token_mint vào payload
+                        'token_mint' => $tokenMint,
                         'trade_direction' => $tradeDirection,
                         'loop_count' => $loopCount,
                         'batch_size' => $batchSize
@@ -276,7 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
 
-                log_message("Balance check passed: {$data['message']}, balance={$data['balance']} SOL", 'make-market.log', 'make-market', 'INFO');
+                log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
             } catch (Exception $e) {
                 log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
@@ -414,6 +414,7 @@ $defaultSlippage = 0.5;
             <select name="tradeDirection" id="tradeDirection" required>
                 <option value="buy">Buy</option>
                 <option value="sell">Sell</option>
+                <option value="both">Both (Buy and Sell)</option>
             </select>
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
@@ -425,7 +426,7 @@ $defaultSlippage = 0.5;
             <input type="number" name="batchSize" id="batchSize" min="1" max="10" value="5" required>
             <label for="skipBalanceCheck">
                 <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
-                Skip wallet balance check (only select if you are sure the wallet has sufficient SOL)
+                Skip wallet balance check (only select if you are sure the wallet has sufficient SOL and tokens)
             </label>
             <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
