@@ -92,7 +92,7 @@ if ($transaction_id <= 0) {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, slippage, delay_seconds, loop_count, batch_size, status, error FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, token_amount, trade_direction, slippage, delay_seconds, loop_count, batch_size, status, error FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != $_SESSION['user_id']) {
@@ -101,7 +101,7 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
@@ -199,8 +199,16 @@ $page_css = ['/make-market/process/process.css'];
                     </td>
                 </tr>
                 <tr>
+                    <th>Trade Direction:</th>
+                    <td><?php echo htmlspecialchars(ucfirst($transaction['trade_direction'])); ?></td>
+                </tr>
+                <tr>
                     <th>SOL Amount:</th>
                     <td><?php echo htmlspecialchars($transaction['sol_amount']); ?></td>
+                </tr>
+                <tr>
+                    <th>Token Amount:</th>
+                    <td><?php echo htmlspecialchars($transaction['token_amount']); ?></td>
                 </tr>
                 <tr>
                     <th>Slippage:</th>
