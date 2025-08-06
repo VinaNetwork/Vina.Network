@@ -228,8 +228,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     CURLOPT_POSTFIELDS => json_encode([
                         'public_key' => $transactionPublicKey,
                         'sol_amount' => $solAmount,
-                        'token_amount' => $tokenAmount, // Thêm token_amount vào payload
-                        'trade_direction' => $tradeDirection, // Thêm trade_direction vào payload
+                        'token_amount' => $tokenAmount,
+                        'token_mint' => $tokenMint, // Thêm token_mint vào payload
+                        'trade_direction' => $tradeDirection,
                         'loop_count' => $loopCount,
                         'batch_size' => $batchSize
                     ], JSON_UNESCAPED_UNICODE),
