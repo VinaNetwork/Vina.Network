@@ -40,6 +40,12 @@ if ($transaction_id <= 0) {
     exit;
 }
 
+if (!in_array($transaction['status'], ['success', 'failed', 'canceled', 'partial'])) {
+    log_message("Invalid view attempt: ID=$transaction_id, status={$transaction['status']}", 'make-market.log', 'make-market', 'ERROR');
+    header('Location: /make-market/process/' . $transaction_id);
+    exit;
+}
+
 try {
     $pdo = get_db_connection();
     $stmt = $pdo->prepare("SELECT * FROM make_market WHERE id = ? AND user_id = ?");
