@@ -31,15 +31,20 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("get-tx.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 }
 
-// Get transaction ID from URL path
-$request_uri = $_SERVER['REQUEST_URI'];
-$path_parts = explode('/', rtrim($request_uri, '/'));
-$transaction_id = end($path_parts);
-$transaction_id = is_numeric($transaction_id) ? intval($transaction_id) : 0;
+// Get transaction ID from URL
+$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID from URL path: $request_uri", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid or missing transaction ID: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
+    exit;
+}
+
+// Check if user is authenticated
+if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
+    log_message("Unauthorized access attempt: session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access']);
     exit;
 }
 
@@ -56,12 +61,12 @@ try {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT id, user_id, public_key, token_mint, sol_amount, token_amount, trade_direction, process_name, loop_count, batch_size, slippage, delay_seconds, status FROM make_market WHERE id = ?");
-    $stmt->execute([$transaction_id]);
+    $stmt = $pdo->prepare("SELECT id, user_id, public_key, token_mint, sol_amount, token_amount, trade_direction, process_name, loop_count, batch_size, slippage, delay_seconds, status FROM make_market WHERE id = ? AND user_id = ?");
+    $stmt->execute([$transaction_id, $_SESSION['user_id']]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$transaction || $transaction['user_id'] != ($_SESSION['user_id'] ?? 0)) {
+    if (!$transaction) {
         log_message("Transaction not found or unauthorized: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(403);
+        http_response_code(404);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
         exit;
     }
