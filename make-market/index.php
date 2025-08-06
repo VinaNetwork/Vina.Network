@@ -118,18 +118,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $privateKey = trim($form_data['privateKey'] ?? '');
         $tokenMint = $form_data['tokenMint'] ?? '';
         $solAmount = floatval($form_data['solAmount'] ?? 0);
-        $tokenAmount = floatval($form_data['tokenAmount'] ?? 0);
         $slippage = floatval($form_data['slippage'] ?? 0.5);
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 5);
-        $tradeDirection = $form_data['tradeDirection'] ?? 'buy';
         $transactionPublicKey = $form_data['transactionPublicKey'] ?? '';
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
         // Log form data for debugging
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, tradeDirection=$tradeDirection, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck", 'make-market.log', 'make-market', 'DEBUG');
+            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck", 'make-market.log', 'make-market', 'DEBUG');
         }
 
         // Validate inputs
@@ -163,12 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0']);
             exit;
         }
-        if ($tokenAmount <= 0) {
-            log_message("Invalid token amount: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0']);
-            exit;
-        }
         if ($slippage < 0) {
             log_message("Invalid slippage: $slippage", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
@@ -185,12 +177,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_message("Invalid batch size: $batchSize", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Batch size must be between 1 and 10']);
-            exit;
-        }
-        if (!in_array($tradeDirection, ['buy', 'sell'])) {
-            log_message("Invalid trade direction: $tradeDirection", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
             exit;
         }
 
@@ -244,10 +230,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     CURLOPT_POSTFIELDS => json_encode([
                         'public_key' => $transactionPublicKey,
                         'sol_amount' => $solAmount,
-                        'token_amount' => $tokenAmount,
                         'loop_count' => $loopCount,
-                        'batch_size' => $batchSize,
-                        'trade_direction' => $tradeDirection
+                        'batch_size' => $batchSize
                     ], JSON_UNESCAPED_UNICODE),
                     CURLOPT_HTTPHEADER => [
                         "Content-Type: application/json; charset=utf-8",
@@ -324,9 +308,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 INSERT INTO make_market (
                     user_id, public_key, process_name, private_key, token_mint, 
-                    sol_amount, token_amount, slippage, delay_seconds, loop_count, 
-                    batch_size, trade_direction, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
+                    sol_amount, slippage, delay_seconds, loop_count, batch_size, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
             ");
             $stmt->execute([
                 $_SESSION['user_id'],
@@ -335,12 +318,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $encryptedPrivateKey,
                 $tokenMint,
                 $solAmount,
-                $tokenAmount,
                 $slippage,
                 $delay,
                 $loopCount,
-                $batchSize,
-                $tradeDirection
+                $batchSize
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
@@ -428,9 +409,6 @@ $defaultSlippage = 0.5;
             <label for="solAmount">💰 SOL Amount to Buy:</label>
             <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
 
-            <label for="tokenAmount">💸 Token Amount to Sell per Batch:</label>
-            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" required placeholder="Example: 1000">
-
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
 
@@ -442,12 +420,6 @@ $defaultSlippage = 0.5;
 
             <label for="batchSize">📦 Batch Size (1-10):</label>
             <input type="number" name="batchSize" id="batchSize" min="1" max="10" value="5" required>
-
-            <label for="tradeDirection">📈 Trade Direction:</label>
-            <select name="tradeDirection" id="tradeDirection" required>
-                <option value="buy">Buy First</option>
-                <option value="sell">Sell First</option>
-            </select>
 
             <!-- Add Skip Wallet Balance Check checkbox -->
             <label for="skipBalanceCheck">
