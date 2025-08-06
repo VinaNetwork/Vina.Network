@@ -49,6 +49,8 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         privateKey: formData.get('privateKey'),
         tokenMint: formData.get('tokenMint'),
         solAmount: parseFloat(formData.get('solAmount')),
+        tokenAmount: parseFloat(formData.get('tokenAmount')),
+        tradeDirection: formData.get('tradeDirection'),
         slippage: parseFloat(formData.get('slippage')),
         delay: parseInt(formData.get('delay')),
         loopCount: parseInt(formData.get('loopCount')),
@@ -58,11 +60,23 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('Form data:', params);
 
-    // Basic validation for private key
+    // Basic validation
     if (!params.privateKey || typeof params.privateKey !== 'string' || !/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/.test(params.privateKey)) {
         log_message('Private key is empty or invalid format', 'make-market.log', 'make-market', 'ERROR');
         showError('Private key is empty or invalid format. Please check again.');
         console.error('Private key is empty or invalid format');
+        return;
+    }
+    if (!params.tokenAmount || params.tokenAmount <= 0) {
+        log_message('Token amount is empty or invalid', 'make-market.log', 'make-market', 'ERROR');
+        showError('Token amount must be greater than 0.');
+        console.error('Token amount is empty or invalid');
+        return;
+    }
+    if (!params.tradeDirection || !['buy', 'sell'].includes(params.tradeDirection)) {
+        log_message('Invalid trade direction', 'make-market.log', 'make-market', 'ERROR');
+        showError('Please select a valid trade direction (Buy or Sell).');
+        console.error('Invalid trade direction');
         return;
     }
 
