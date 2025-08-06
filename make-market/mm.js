@@ -53,50 +53,16 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         delay: parseInt(formData.get('delay')),
         loopCount: parseInt(formData.get('loopCount')),
         batchSize: parseInt(formData.get('batchSize')),
-        transactionPublicKey: formData.get('transactionPublicKey'),
         csrf_token: formData.get('csrf_token')
     };
     log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('Form data:', params);
 
-    // Validate private key
-    if (!params.privateKey || typeof params.privateKey !== 'string' || params.privateKey.length < 1) {
-        log_message('Private key is empty or invalid', 'make-market.log', 'make-market', 'ERROR');
-        showError('Private key is empty or invalid. Please check again.');
-        console.error('Private key is empty or invalid');
-        return;
-    }
-    log_message(`Private key length: ${params.privateKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
-    console.log('Private key length:', params.privateKey.length);
-
-    // Derive public key
-    let transactionPublicKey;
-    try {
-        const decodedKey = window.bs58.decode(params.privateKey);
-        log_message(`Decoded private key length: ${decodedKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Decoded private key length:', decodedKey.length);
-        if (decodedKey.length !== 64) {
-            log_message(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`, 'make-market.log', 'make-market', 'ERROR');
-            console.error(`Invalid private key length: ${decodedKey.length}, expected 64 bytes`);
-            showError('Invalid private key length. Please check again.');
-            return;
-        }
-        const keypair = window.solanaWeb3.Keypair.fromSecretKey(decodedKey);
-        transactionPublicKey = keypair.publicKey.toBase58();
-        if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(transactionPublicKey)) {
-            log_message(`Invalid public key format derived from private key`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Invalid public key format derived from private key');
-            showError('Invalid public key format. Please check the private key.');
-            return;
-        }
-        formData.set('transactionPublicKey', transactionPublicKey);
-        document.getElementById('transactionPublicKey').value = transactionPublicKey;
-        log_message(`Derived transaction public key: ${transactionPublicKey}`, 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Derived transaction public key:', transactionPublicKey);
-    } catch (error) {
-        log_message(`Invalid private key: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Invalid private key:', error.message);
-        showError(`Invalid private key: ${error.message}. Please check again.`);
+    // Basic validation for private key
+    if (!params.privateKey || typeof params.privateKey !== 'string' || !/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/.test(params.privateKey)) {
+        log_message('Private key is empty or invalid format', 'make-market.log', 'make-market', 'ERROR');
+        showError('Private key is empty or invalid format. Please check again.');
+        console.error('Private key is empty or invalid format');
         return;
     }
 
