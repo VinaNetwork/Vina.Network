@@ -73,7 +73,7 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
     echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address']);
     exit;
 }
-if (!in_array($trade_direction, ['buy', 'sell'])) {
+if (!in_array($trade_direction, ['buy', 'sell', 'both'])) {
     log_message("Invalid trade direction: $trade_direction", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
@@ -176,11 +176,11 @@ try {
         exit;
     }
 
-    // Check SOL balance for 'buy' transactions
+    // Check SOL balance for 'buy' or 'both' transactions
     $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert from lamports to SOL
     $totalTransactions = $loop_count * $batch_size;
     $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2); // Formula for SOL
-    if ($trade_direction === 'buy' && $balanceInSol < $requiredSolAmount) {
+    if (in_array($trade_direction, ['buy', 'both']) && $balanceInSol < $requiredSolAmount) {
         log_message("Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode([
@@ -190,8 +190,8 @@ try {
         exit;
     }
 
-    // Check token balance for 'sell' transactions
-    if ($trade_direction === 'sell') {
+    // Check token balance for 'sell' or 'both' transactions
+    if (in_array($trade_direction, ['sell', 'both'])) {
         $tokenBalance = 0;
         $decimals = 9; // Default decimals, will be updated if found in response
         if (isset($data['result']['items']) && is_array($data['result']['items'])) {
@@ -222,11 +222,11 @@ try {
         log_message("Token balance check passed: $tokenBalance tokens available, required=$requiredTokenAmount tokens", 'make-market.log', 'make-market', 'INFO');
     }
 
-    log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . ($trade_direction === 'sell' ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
+    log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . (in_array($trade_direction, ['sell', 'both']) ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
         'status' => 'success',
         'message' => 'Wallet balance is sufficient to perform the transaction',
-        'balance' => $trade_direction === 'buy' ? $balanceInSol : $tokenBalance
+        'balance' => $trade_direction === 'buy' ? $balanceInSol : ($trade_direction === 'sell' ? $tokenBalance : ['sol' => $balanceInSol, 'token' => $tokenBalance])
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
