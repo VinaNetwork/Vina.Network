@@ -44,8 +44,9 @@ function showError(message, detailedError = null) {
 }
 
 // Show success message with styled alert
-function showSuccess(message, results = []) {
+function showSuccess(message, results = [], solanaNetwork = 'mainnet') {
     const resultDiv = document.getElementById('process-result');
+    const explorerUrl = solanaNetwork === 'testnet' ? 'https://solana.fm/tx/' : 'https://solscan.io/tx/';
     let html = `
         <div class="alert alert-${results.some(r => r.status === 'error') ? 'warning' : 'success'}">
             <strong>${results.some(r => r.status === 'error') ? 'Partial Success' : 'Success'}:</strong> ${message}
@@ -55,7 +56,7 @@ function showSuccess(message, results = []) {
         results.forEach(result => {
             html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
                 result.status === 'success' 
-                    ? `<a href="https://solscan.io/tx/${result.txid}" target="_blank">Success (txid: ${result.txid})</a>`
+                    ? `<a href="${explorerUrl}${result.txid}${solanaNetwork === 'testnet' ? '?cluster=testnet' : ''}" target="_blank">Success (txid: ${result.txid})</a>`
                     : `Failed - ${result.message}`
             }</li>`;
         });
@@ -67,8 +68,8 @@ function showSuccess(message, results = []) {
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = results.some(r => r.status === 'error') ? 'Partial' : 'Success';
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
-    log_message(`Process completed: ${message}`, 'make-market.log', 'make-market', 'INFO');
-    console.log(`Process completed: ${message}`);
+    log_message(`Process completed: ${message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+    console.log(`Process completed: ${message}, network=${solanaNetwork}`);
     // Hide Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
@@ -143,8 +144,8 @@ async function cancelTransaction(transactionId) {
     }
 }
 
-// Get Helius API key from server
-async function getHeliusApiKey() {
+// Get Helius API key and Solana network from server
+async function getApiConfig() {
     try {
         const response = await fetch('/make-market/process/get-api.php', {
             method: 'GET',
@@ -159,20 +160,26 @@ async function getHeliusApiKey() {
         if (result.status !== 'success') {
             throw new Error(result.message);
         }
-        log_message('Helius API key fetched successfully', 'make-market.log', 'make-market', 'INFO');
-        console.log('Helius API key fetched successfully');
-        return result.helius_api_key;
+        log_message(`API config fetched successfully: network=${result.solana_network}`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`API config fetched successfully: network=${result.solana_network}`);
+        return {
+            heliusApiKey: result.helius_api_key,
+            solanaNetwork: result.solana_network
+        };
     } catch (err) {
-        log_message(`Failed to fetch Helius API key: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to fetch Helius API key:', err.message);
+        log_message(`Failed to fetch API config: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to fetch API config:', err.message);
         throw err;
     }
 }
 
 // Get token decimals from Helius API
-async function getTokenDecimals(tokenMint, heliusApiKey) {
+async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     try {
-        const response = await axios.post(`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`, {
+        const rpcUrl = solanaNetwork === 'testnet' 
+            ? 'https://api.testnet.solana.com'
+            : `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+        const response = await axios.post(rpcUrl, {
             jsonrpc: '2.0',
             id: '1',
             method: 'getAsset',
@@ -181,21 +188,61 @@ async function getTokenDecimals(tokenMint, heliusApiKey) {
         if (response.status !== 200 || !response.data.result) {
             throw new Error('Failed to retrieve token decimals from Helius API');
         }
-        const decimals = response.data.result.token_info.decimals || 9;
-        log_message(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}`, 'make-market.log', 'make-market', 'INFO');
-        console.log(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}`);
+        const decimals = response.data.result.token_info?.decimals || 9;
+        log_message(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
         return decimals;
     } catch (err) {
-        log_message(`Failed to get token decimals: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Failed to get token decimals: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to get token decimals:', err.message);
         throw err;
     }
 }
 
-// Get quote from Jupiter API
-async function getQuote(inputMint, outputMint, amount, slippageBps) {
+// Check wallet balance
+async function checkBalance(publicKey, tokenMint, heliusApiKey, solanaNetwork, tokenDecimals) {
     try {
-        const response = await axios.get('https://quote-api.jup.ag/v6/quote', {
+        const rpcUrl = solanaNetwork === 'testnet' 
+            ? 'https://api.testnet.solana.com'
+            : `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+        const tokenResponse = await axios.post(rpcUrl, {
+            jsonrpc: '2.0',
+            id: '1',
+            method: 'getTokenAccountsByOwner',
+            params: [
+                publicKey,
+                { mint: tokenMint },
+                { encoding: 'jsonParsed' }
+            ]
+        });
+        const solResponse = await axios.post(rpcUrl, {
+            jsonrpc: '2.0',
+            id: '1',
+            method: 'getBalance',
+            params: [publicKey]
+        });
+        if (tokenResponse.status !== 200 || solResponse.status !== 200) {
+            throw new Error('Failed to retrieve balance from Solana RPC');
+        }
+        const tokenBalance = tokenResponse.data.result.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
+        const solBalance = solResponse.data.result.value / 1e9;
+        log_message(`Balance checked: SOL=${solBalance}, Token=${tokenBalance}, mint=${tokenMint}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`Balance checked: SOL=${solBalance}, Token=${tokenBalance}, mint=${tokenMint}, network=${solanaNetwork}`);
+        return { solBalance, tokenBalance };
+    } catch (err) {
+        log_message(`Failed to check balance: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to check balance:', err.message);
+        throw err;
+    }
+}
+
+// Get quote from Jupiter API
+async function getQuote(inputMint, outputMint, amount, slippageBps, solanaNetwork) {
+    try {
+        const quoteApiUrl = solanaNetwork === 'testnet' 
+            ? 'https://quote-api.jup.ag/v6/quote?testnet=true'
+            : 'https://quote-api.jup.ag/v6/quote';
+        const response = await axios.get(quoteApiUrl, {
             params: {
                 inputMint,
                 outputMint,
@@ -206,42 +253,45 @@ async function getQuote(inputMint, outputMint, amount, slippageBps) {
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to retrieve quote from Jupiter API');
         }
-        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9} tokens`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Quote retrieved:', response.data);
         return response.data;
     } catch (err) {
-        log_message(`Failed to get quote: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Failed to get quote: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to get quote:', err.message);
         throw err;
     }
 }
 
 // Get swap transaction from Jupiter API
-async function getSwapTransaction(quote, publicKey) {
+async function getSwapTransaction(quote, publicKey, solanaNetwork) {
     try {
-        const response = await axios.post('https://quote-api.jup.ag/v6/swap', {
+        const swapApiUrl = solanaNetwork === 'testnet' 
+            ? 'https://quote-api.jup.ag/v6/swap?testnet=true'
+            : 'https://quote-api.jup.ag/v6/swap';
+        const response = await axios.post(swapApiUrl, {
             quoteResponse: quote,
             userPublicKey: publicKey,
             wrapAndUnwrapSol: true,
             dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: 10000
+            prioritizationFeeLamports: solanaNetwork === 'testnet' ? 0 : 10000
         });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
         }
         const { swapTransaction } = response.data;
-        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}...`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Swap transaction prepared:', swapTransaction);
         return swapTransaction;
     } catch (err) {
-        log_message(`Swap transaction failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Swap transaction failed: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Swap transaction failed:', err.message);
         throw err;
     }
 }
 
 // Execute swap transactions
-async function executeSwapTransactions(transactionId, swapTransactions) {
+async function executeSwapTransactions(transactionId, swapTransactions, solanaNetwork) {
     try {
         const response = await fetch('/make-market/process/swap.php', {
             method: 'POST',
@@ -259,9 +309,10 @@ async function executeSwapTransactions(transactionId, swapTransactions) {
         if (result.status !== 'success' && result.status !== 'partial') {
             throw new Error(result.message || 'Unknown server error');
         }
+        log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
         return result;
     } catch (err) {
-        log_message(`Swap execution failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Swap execution failed: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Swap execution failed:', err.message);
         throw err;
     }
@@ -340,12 +391,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Fetch Helius API key
-    let heliusApiKey;
+    // Fetch API config
+    let heliusApiKey, solanaNetwork;
     try {
-        heliusApiKey = await getHeliusApiKey();
+        const apiConfig = await getApiConfig();
+        heliusApiKey = apiConfig.heliusApiKey;
+        solanaNetwork = apiConfig.solanaNetwork;
     } catch (err) {
-        showError('Failed to retrieve Helius API key: ' + err.message);
+        showError('Failed to retrieve API config: ' + err.message);
         return;
     }
 
@@ -371,7 +424,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
         transaction.token_amount = parseFloat(transaction.token_amount) || 0;
         transaction.trade_direction = transaction.trade_direction || 'buy';
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
@@ -413,7 +466,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error(result.message);
         }
         publicKey = result.public_key;
-        log_message(`Public key fetched: ${publicKey}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Public key fetched: ${publicKey}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Public key fetched:', publicKey);
     } catch (err) {
         showError('Failed to retrieve wallet address: ' + err.message);
@@ -432,7 +485,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', async () => {
-            log_message(`Cancel button clicked for transaction ID=${transactionId}`, 'make-market.log', 'make-market', 'INFO');
+            log_message(`Cancel button clicked for transaction ID=${transactionId}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
             console.log(`Cancel button clicked for transaction ID=${transactionId}`);
             await cancelTransaction(transactionId);
         });
@@ -444,15 +497,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch token decimals
     let tokenDecimals;
     try {
-        tokenDecimals = await getTokenDecimals(transaction.token_mint, heliusApiKey);
+        tokenDecimals = await getTokenDecimals(transaction.token_mint, heliusApiKey, solanaNetwork);
     } catch (err) {
         showError('Failed to retrieve token decimals: ' + err.message);
         return;
     }
 
+    // Check wallet balance
+    let balance;
+    try {
+        balance = await checkBalance(publicKey, transaction.token_mint, heliusApiKey, solanaNetwork, tokenDecimals);
+        const requiredSol = tradeDirection === 'buy' || tradeDirection === 'both' ? transaction.sol_amount * loopCount * batchSize : 0;
+        const requiredTokens = tradeDirection === 'sell' || tradeDirection === 'both' ? transaction.token_amount * loopCount * batchSize : 0;
+        if (balance.solBalance < requiredSol) {
+            throw new Error(`Insufficient SOL balance: required ${requiredSol}, available ${balance.solBalance}`);
+        }
+        if (balance.tokenBalance < requiredTokens) {
+            throw new Error(`Insufficient token balance: required ${requiredTokens}, available ${balance.tokenBalance}`);
+        }
+    } catch (err) {
+        showError('Balance check failed: ' + err.message);
+        return;
+    }
+
     // Process swaps with loop_count and batch_size
     try {
-        const solMint = 'So11111111111111111111111111111111111111112';
+        const solMint = solanaNetwork === 'testnet' 
+            ? 'So11111111111111111111111111111111111111112' // WSOL on testnet
+            : 'So11111111111111111111111111111111111111112';
         const tokenMint = transaction.token_mint;
         const solAmount = transaction.sol_amount * 1e9; // Convert SOL to lamports
         const tokenAmount = transaction.token_amount * Math.pow(10, tokenDecimals); // Convert token amount to correct decimals
@@ -462,12 +534,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Generate swap transactions based on trade_direction
         for (let loop = 1; loop <= loopCount; loop++) {
-            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount}...`;
+            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${solanaNetwork}...`;
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1}...`;
-                    const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps);
-                    const buyTx = await getSwapTransaction(buyQuote, publicKey);
+                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${solanaNetwork}...`;
+                    const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps, solanaNetwork);
+                    const buyTx = await getSwapTransaction(buyQuote, publicKey, solanaNetwork);
                     swapTransactions.push({ direction: 'buy', tx: buyTx });
                     if (i < batchSize - 1 || tradeDirection === 'both') {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next ${tradeDirection === 'both' ? 'buy/sell' : 'batch'} in loop ${loop}...`;
@@ -475,9 +547,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
                 if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1}...`;
-                    const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps);
-                    const sellTx = await getSwapTransaction(sellQuote, publicKey);
+                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${solanaNetwork}...`;
+                    const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps, solanaNetwork);
+                    const sellTx = await getSwapTransaction(sellQuote, publicKey, solanaNetwork);
                     swapTransactions.push({ direction: 'sell', tx: sellTx });
                     if (i < batchSize - 1) {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
@@ -486,18 +558,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
             if (loop < loopCount) {
-                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop...`;
+                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop on ${solanaNetwork}...`;
                 await delay(delaySeconds);
             }
         }
 
         // Execute swaps
-        document.getElementById('swap-status').textContent = 'Executing swap transactions...';
-        const swapResult = await executeSwapTransactions(transactionId, swapTransactions);
+        document.getElementById('swap-status').textContent = `Executing swap transactions on ${solanaNetwork}...`;
+        const swapResult = await executeSwapTransactions(transactionId, swapTransactions, solanaNetwork);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
-        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions`);
-        showSuccess(`Completed ${successCount} of ${totalTransactions} transactions`, swapResult.results);
+        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${solanaNetwork}`);
+        showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${solanaNetwork}`, swapResult.results, solanaNetwork);
     } catch (err) {
         showError('Error during swap process: ' + err.message);
     }
