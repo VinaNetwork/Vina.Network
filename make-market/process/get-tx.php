@@ -13,9 +13,6 @@ $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
 
-session_start(); // Đảm bảo session được khởi động
-log_message("Session data: " . json_encode($_SESSION), 'make-market.log', 'make-market', 'DEBUG');
-
 header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: $csp_base");
 header('Access-Control-Allow-Methods: GET');
@@ -33,6 +30,10 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("get-tx.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 }
+
+// Debug session
+session_start();
+log_message("Session data: " . json_encode($_SESSION), 'make-market.log', 'make-market', 'DEBUG');
 
 // Get transaction ID from URL
 $transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -88,8 +89,8 @@ try {
     // Ensure defaults
     $transaction['loop_count'] = intval($transaction['loop_count'] ?? 1);
     $transaction['batch_size'] = intval($transaction['batch_size'] ?? 1);
-    $transaction['slippage'] = floatval($transaction['slippage'] ?? 0.5); // Default slippage 0.5%
-    $transaction['delay_seconds'] = intval($transaction['delay_seconds'] ?? 1); // Default delay 1 second
+    $transaction['slippage'] = floatval($transaction['slippage'] ?? 0.5);
+    $transaction['delay_seconds'] = intval($transaction['delay_seconds'] ?? 1);
     $transaction['sol_amount'] = floatval($transaction['sol_amount'] ?? 0);
     $transaction['token_amount'] = floatval($transaction['token_amount'] ?? 0);
     $transaction['trade_direction'] = $transaction['trade_direction'] ?? 'buy';
