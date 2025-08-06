@@ -122,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 5);
-        $transactionPublicKey = $form_data['transactionPublicKey'] ?? '';
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
         // Log form data for debugging
@@ -131,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Validate inputs
-        if (empty($processName) || empty($privateKey) || empty($tokenMint) || empty($transactionPublicKey)) {
+        if (empty($processName) || empty($privateKey) || empty($tokenMint)) {
             log_message("Missing required fields", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
@@ -141,12 +140,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_message("Invalid private key format: length=" . strlen($privateKey), 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid private key format']);
-            exit;
-        }
-        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transactionPublicKey)) {
-            log_message("Invalid transaction public key format: " . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid transaction public key format']);
             exit;
         }
         if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $tokenMint)) {
@@ -180,16 +173,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Validate private key using SolanaPhpSdk
+        // Validate private key using SolanaPhpSdk and derive transactionPublicKey
         try {
             $base58 = new Base58();
             if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
                 log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
             }
             $decodedKey = $base58->decode($privateKey);
-            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-                log_message("Decoded privateKey length: " . strlen($decodedKey), 'make-market.log', 'make-market', 'DEBUG');
-            }
             if (strlen($decodedKey) !== 64) {
                 log_message("Invalid private key length: " . strlen($decodedKey) . ", expected 64 bytes", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
@@ -197,17 +187,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
             $keypair = Keypair::fromSecretKey($decodedKey);
-            $derivedPublicKey = $keypair->getPublicKey()->toBase58();
+            $transactionPublicKey = $keypair->getPublicKey()->toBase58();
             if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-                log_message("Derived public key: $derivedPublicKey", 'make-market.log', 'make-market', 'DEBUG');
+                log_message("Derived public key: $transactionPublicKey", 'make-market.log', 'make-market', 'DEBUG');
             }
-            if ($derivedPublicKey !== $transactionPublicKey) {
-                log_message("Private key does not match transaction public key: derived=$derivedPublicKey, provided=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Private key does not match transaction public key']);
-                exit;
-            }
-            log_message("Private key validated: public_key=$derivedPublicKey", 'make-market.log', 'make-market', 'INFO');
+            log_message("Private key validated: public_key=$transactionPublicKey", 'make-market.log', 'make-market', 'INFO');
         } catch (Exception $e) {
             log_message("Invalid private key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
@@ -396,37 +380,26 @@ $defaultSlippage = 0.5;
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
-            <input type="hidden" name="transactionPublicKey" id="transactionPublicKey">
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
-
             <label for="privateKey">🔑 Private Key (Base58):</label>
             <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
-            
             <label for="tokenMint">🎯 Token Address:</label>
             <input type="text" name="tokenMint" id="tokenMint" required placeholder="Example: So111... or any SPL token">
-
             <label for="solAmount">💰 SOL Amount to Buy:</label>
             <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
-
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
-
             <label for="delay">⏱️ Delay Between Buy and Sell (seconds):</label>
             <input type="number" name="delay" id="delay" value="0" min="0">
-
             <label for="loopCount">🔁 Loop Count:</label>
             <input type="number" name="loopCount" id="loopCount" min="1" value="1">
-
             <label for="batchSize">📦 Batch Size (1-10):</label>
             <input type="number" name="batchSize" id="batchSize" min="1" max="10" value="5" required>
-
-            <!-- Add Skip Wallet Balance Check checkbox -->
             <label for="skipBalanceCheck">
                 <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
                 Skip wallet balance check (only select if you are sure the wallet has sufficient SOL)
             </label>
-
             <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
 
@@ -442,9 +415,7 @@ $defaultSlippage = 0.5;
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
-<script defer src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
 <script defer src="/js/libs/anchor.umd.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/anchor.umd.js')"></script>
 <script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/spl-token.iife.js')"></script>
 <!-- Scripts - Source code -->
