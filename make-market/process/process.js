@@ -405,9 +405,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch transaction details
     let transaction;
     try {
-        const response = await fetch(`/make-market/process/get-tx/${transactionId}`, {
+        const response = await fetch(`/make-market/get-tx/${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
+        console.log(`Fetching transaction for ID: ${transactionId}, URL: /make-market/get-tx/${transactionId}`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
