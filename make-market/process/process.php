@@ -112,7 +112,29 @@ try {
 // Check if transaction is already completed
 if (in_array($transaction['status'], ['success', 'failed', 'canceled', 'partial'])) {
     log_message("Transaction already processed: ID=$transaction_id, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
-    include 'view-process.php';
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <?php include $root_path . 'include/header.php'; ?>
+    <body>
+    <?php include $root_path . 'include/navbar.php'; ?>
+    <div class="process-container">
+        <div class="process-content">
+            <h1><i class="fas fa-cogs"></i> Make Market Process</h1>
+            <div class="alert alert-info">
+                <strong>Transaction Completed:</strong> This transaction has already been processed with status: <?php echo htmlspecialchars($transaction['status']); ?>.
+                <?php if ($transaction['error']): ?>
+                    <br><strong>Error Details:</strong> <?php echo htmlspecialchars($transaction['error']); ?>
+                <?php endif; ?>
+                <br><a href="/make-market/history">View Transaction History</a>
+            </div>
+        </div>
+    </div>
+    <?php include $root_path . 'include/footer.php'; ?>
+    </body>
+    </html>
+    <?php
+    ob_end_flush();
     exit;
 }
 
