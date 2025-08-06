@@ -199,12 +199,6 @@ $page_css = ['/make-market/process/process.css'];
                     </td>
                 </tr>
                 <tr>
-                    <th>Status:</th>
-                    <td><span id="transaction-status" class="<?php echo $transaction['status'] === 'success' ? 'text-success' : ($transaction['status'] === 'partial' ? 'text-warning' : 'text-danger'); ?>">
-                        <?php echo htmlspecialchars($transaction['status']); ?>
-                    </span></td>
-                </tr>
-                <tr>
                     <th>SOL Amount:</th>
                     <td><?php echo htmlspecialchars($transaction['sol_amount']); ?></td>
                 </tr>
@@ -227,6 +221,12 @@ $page_css = ['/make-market/process/process.css'];
                 <tr>
                     <th>Total Transactions:</th>
                     <td><?php echo htmlspecialchars($transaction['loop_count'] * $transaction['batch_size']); ?></td>
+                </tr>
+                <tr>
+                    <th>Status:</th>
+                    <td><span id="transaction-status" class="<?php echo $transaction['status'] === 'success' ? 'text-success' : ($transaction['status'] === 'partial' ? 'text-warning' : 'text-danger'); ?>">
+                        <?php echo htmlspecialchars($transaction['status']); ?>
+                    </span></td>
                 </tr>
             </table>
             <p id="swap-status">Preparing swap...</p>
