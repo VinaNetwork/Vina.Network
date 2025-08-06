@@ -143,6 +143,29 @@ async function cancelTransaction(transactionId) {
     }
 }
 
+// Get token decimals from Helius API
+async function getTokenDecimals(tokenMint) {
+    try {
+        const response = await axios.post('https://mainnet.helius-rpc.com/?api-key=' + HELIUS_API_KEY, {
+            jsonrpc: '2.0',
+            id: '1',
+            method: 'getAsset',
+            params: { id: tokenMint }
+        });
+        if (response.status !== 200 || !response.data.result) {
+            throw new Error('Failed to retrieve token decimals from Helius API');
+        }
+        const decimals = response.data.result.token_info.decimals || 9;
+        log_message(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}`);
+        return decimals;
+    } catch (err) {
+        log_message(`Failed to get token decimals: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to get token decimals:', err.message);
+        throw err;
+    }
+}
+
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps) {
     try {
@@ -383,12 +406,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update status to pending
     await updateTransactionStatus('pending');
 
+    // Fetch token decimals
+    let tokenDecimals;
+    try {
+        tokenDecimals = await getTokenDecimals(transaction.token_mint);
+    } catch (err) {
+        showError('Failed to retrieve token decimals: ' + err.message);
+        return;
+    }
+
     // Process swaps with loop_count and batch_size
     try {
         const solMint = 'So11111111111111111111111111111111111111112';
         const tokenMint = transaction.token_mint;
-        const solAmount = transaction.sol_amount * 1e9; // Convert to lamports
-        const tokenAmount = transaction.token_amount * 1e9; // Assume 9 decimals for token
+        const solAmount = transaction.sol_amount * 1e9; // Convert SOL to lamports
+        const tokenAmount = transaction.token_amount * Math.pow(10, tokenDecimals); // Convert token amount to correct decimals
         const slippageBps = Math.floor(transaction.slippage * 100); // Convert to basis points
         const delaySeconds = transaction.delay_seconds * 1000; // Convert to milliseconds
         const swapTransactions = [];
