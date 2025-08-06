@@ -49,10 +49,12 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         privateKey: formData.get('privateKey'),
         tokenMint: formData.get('tokenMint'),
         solAmount: parseFloat(formData.get('solAmount')),
+        tokenAmount: parseFloat(formData.get('tokenAmount')),
         slippage: parseFloat(formData.get('slippage')),
         delay: parseInt(formData.get('delay')),
         loopCount: parseInt(formData.get('loopCount')),
         batchSize: parseInt(formData.get('batchSize')),
+        tradeDirection: formData.get('tradeDirection'),
         transactionPublicKey: formData.get('transactionPublicKey'),
         csrf_token: formData.get('csrf_token')
     };
@@ -68,6 +70,22 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     }
     log_message(`Private key length: ${params.privateKey.length}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('Private key length:', params.privateKey.length);
+
+    // Validate token amount
+    if (isNaN(params.tokenAmount) || params.tokenAmount <= 0) {
+        log_message('Invalid token amount: ' + params.tokenAmount, 'make-market.log', 'make-market', 'ERROR');
+        showError('Token amount must be greater than 0. Please check again.');
+        console.error('Invalid token amount:', params.tokenAmount);
+        return;
+    }
+
+    // Validate trade direction
+    if (!['buy', 'sell'].includes(params.tradeDirection)) {
+        log_message('Invalid trade direction: ' + params.tradeDirection, 'make-market.log', 'make-market', 'ERROR');
+        showError('Invalid trade direction. Please select Buy or Sell.');
+        console.error('Invalid trade direction:', params.tradeDirection);
+        return;
+    }
 
     // Derive public key
     let transactionPublicKey;
