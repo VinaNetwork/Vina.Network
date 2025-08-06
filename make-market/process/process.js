@@ -81,7 +81,7 @@ function showSuccess(message, results = [], solanaNetwork = 'mainnet') {
 async function updateTransactionStatus(status, error = null) {
     const transactionId = window.location.pathname.split('/').pop();
     try {
-        const response = await fetch('/make-market/process/get-status.php', {
+        const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -89,6 +89,7 @@ async function updateTransactionStatus(status, error = null) {
             },
             body: JSON.stringify({ id: transactionId, status, error })
         });
+        console.log(`Updating status for ID: ${transactionId}, URL: /make-market/get-status/${transactionId}`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -107,7 +108,7 @@ async function updateTransactionStatus(status, error = null) {
 // Cancel transaction
 async function cancelTransaction(transactionId) {
     try {
-        const response = await fetch('/make-market/process/get-status.php', {
+        const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -115,6 +116,7 @@ async function cancelTransaction(transactionId) {
             },
             body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user' })
         });
+        console.log(`Canceling transaction for ID: ${transactionId}, URL: /make-market/get-status/${transactionId}`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -147,12 +149,13 @@ async function cancelTransaction(transactionId) {
 // Get Helius API key and Solana network from server
 async function getApiConfig() {
     try {
-        const response = await fetch('/make-market/process/get-api.php', {
+        const response = await fetch('/make-market/get-api', {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         });
+        console.log(`Fetching API config, URL: /make-market/get-api`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -293,7 +296,7 @@ async function getSwapTransaction(quote, publicKey, solanaNetwork) {
 // Execute swap transactions
 async function executeSwapTransactions(transactionId, swapTransactions, solanaNetwork) {
     try {
-        const response = await fetch('/make-market/process/swap.php', {
+        const response = await fetch('/make-market/swap-transactions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -301,6 +304,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, solanaNe
             },
             body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions })
         });
+        console.log(`Executing swap transactions for ID: ${transactionId}, URL: /make-market/swap-transactions`);
         if (!response.ok) {
             const result = await response.json();
             throw new Error(result.message || `Server error: HTTP ${response.status}`);
@@ -456,9 +460,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch public key
     let publicKey;
     try {
-        const response = await fetch(`/make-market/process/get-public-key/${transactionId}`, {
+        const response = await fetch(`/make-market/get-public-key/${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
+        console.log(`Fetching public key for ID: ${transactionId}, URL: /make-market/get-public-key/${transactionId}`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
