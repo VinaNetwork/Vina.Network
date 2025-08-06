@@ -30,25 +30,9 @@
 
 h1 {
     text-align: center;
+    color: #fff;
 }
-
-/* Account Info */
-#account-info {
-    margin: var(--margin-top) auto;
-}
-
-#account-info table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: var(--padding);
-}
-
-#account-info th, #account-info td {
-    padding: 8px;
-    border: 1px solid #ddd;
-    text-align: left;
-    background: #a3a3a3;
-}
+h2 {color: #fff;}
 
 /* Copy Tooltip */
 .copy-tooltip {
@@ -169,9 +153,6 @@ h1 {
     }
     .process-content {
         max-width: 100%;
-    }
-    table {
-        font-size: 12px;
     }
 
     .details-table th,
