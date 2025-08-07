@@ -10,32 +10,24 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = '../../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'make-market/get-bootstrap.php';
 require_once $root_path . 'config/config.php';
 
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: $csp_base");
-header('Access-Control-Allow-Methods: GET');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+setup_cors_headers($csp_base, 'GET');
+check_ajax_request();
+$user_id = check_authenticated_user();
+log_request_info('get-api.php');
 
-// Check AJAX request
-if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Non-AJAX request rejected", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
-    exit;
-}
+// Cache configuration for 1 hour
+$cache_key = 'api_config_' . $user_id;
+$cache_file = $root_path . 'cache/' . $cache_key . '.json';
+$cache_duration = 3600;
 
-// Log request info
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("get-api.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
-}
-
-// Check if user is authenticated
-if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
-    log_message("Unauthorized access attempt: session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access']);
+if (file_exists($cache_file) && (time() - filemtime($cache_file)) < $cache_duration) {
+    $cached_data = file_get_contents($cache_file);
+    $config = json_decode($cached_data, true);
+    log_message("API config retrieved from cache: network={$config['solana_network']}, user_id=$user_id", 'make-market.log', 'make-market', 'INFO');
+    echo json_encode($config);
     exit;
 }
 
@@ -43,21 +35,23 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
 if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
     log_message("HELIUS_API_KEY is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing HELIUS_API_KEY']);
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing HELIUS_API_KEY'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if (!defined('SOLANA_NETWORK') || !in_array(SOLANA_NETWORK, ['mainnet', 'testnet'])) {
     log_message("SOLANA_NETWORK is not defined or invalid", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Invalid SOLANA_NETWORK']);
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Invalid SOLANA_NETWORK'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// Return Helius API key and Solana network
-log_message("Helius API key and Solana network retrieved successfully: network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
-echo json_encode([
+// Store in cache
+$config = [
     'status' => 'success',
     'helius_api_key' => HELIUS_API_KEY,
     'solana_network' => SOLANA_NETWORK
-]);
+];
+file_put_contents($cache_file, json_encode($config, JSON_UNESCAPED_UNICODE));
+log_message("Helius API key and Solana network retrieved successfully: network=" . SOLANA_NETWORK . ", user_id=$user_id", 'make-market.log', 'make-market', 'INFO');
+echo json_encode($config, JSON_UNESCAPED_UNICODE);
 ?>
