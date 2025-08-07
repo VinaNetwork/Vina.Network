@@ -42,11 +42,21 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
 $input = json_decode(file_get_contents('php://input'), true);
 $transaction_id = isset($input['id']) ? intval($input['id']) : 0;
 $swap_transactions = $input['swap_transactions'] ?? null;
+$sub_transaction_ids = $input['sub_transaction_ids'] ?? null;
+$client_network = $input['network'] ?? null;
 
-if ($transaction_id <= 0 || !is_array($swap_transactions)) {
-    log_message("Invalid or missing transaction ID or swap transactions", 'make-market.log', 'make-market', 'ERROR');
+if ($transaction_id <= 0 || !is_array($swap_transactions) || !is_array($sub_transaction_ids) || count($swap_transactions) !== count($sub_transaction_ids) || !in_array($client_network, ['testnet', 'mainnet'])) {
+    log_message("Invalid input: transaction_id=$transaction_id, swap_transactions=" . json_encode($swap_transactions) . ", sub_transaction_ids=" . json_encode($sub_transaction_ids) . ", client_network=$client_network", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction data'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction data or network'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Check network consistency
+if ($client_network !== SOLANA_NETWORK) {
+    log_message("Network mismatch: client_network=$client_network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => "Network mismatch: client ($client_network) vs server (" . SOLANA_NETWORK . ")"], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -63,22 +73,13 @@ try {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT user_id, public_key, token_mint, sol_amount, token_amount, trade_direction, private_key, loop_count, batch_size FROM make_market WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT user_id, public_key, token_mint, sol_amount, token_amount, trade_direction, private_key FROM make_market WHERE id = ?");
     $stmt->execute([$transaction_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != ($_SESSION['user_id'] ?? 0)) {
         log_message("Transaction not found or unauthorized: ID=$transaction_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    $loop_count = intval($transaction['loop_count'] ?? 1);
-    $batch_size = intval($transaction['batch_size'] ?? 1);
-    $trade_direction = $transaction['trade_direction'] ?? 'buy';
-    if ($loop_count <= 0 || $batch_size <= 0) {
-        log_message("Invalid loop_count or batch_size: loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid loop count or batch size'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 } catch (PDOException $e) {
@@ -111,39 +112,15 @@ try {
     exit;
 }
 
-// Determine Solana RPC endpoint based on SOLANA_NETWORK
+// Determine Solana RPC endpoint
 $rpc_endpoint = SOLANA_NETWORK === 'testnet' 
     ? 'https://api.testnet.solana.com'
     : 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY;
 
-// Create sub-transaction records
-try {
-    $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, created_at) VALUES (?, ?, ?, ?, 'pending', NOW())");
-    $total_transactions = $trade_direction === 'both' ? $loop_count * $batch_size * 2 : $loop_count * $batch_size;
-    $sub_transaction_ids = [];
-    for ($loop = 1; $loop <= $loop_count; $loop++) {
-        for ($batch_index = 0; $batch_index < $batch_size; $batch_index++) {
-            if ($trade_direction === 'buy' || $trade_direction === 'both') {
-                $stmt->execute([$transaction_id, $loop, $batch_index, 'buy']);
-                $sub_transaction_ids[] = $pdo->lastInsertId();
-            }
-            if ($trade_direction === 'sell' || $trade_direction === 'both') {
-                $stmt->execute([$transaction_id, $loop, $batch_index, 'sell']);
-                $sub_transaction_ids[] = $pdo->lastInsertId();
-            }
-        }
-    }
-    log_message("Created $total_transactions sub-transactions for transaction ID=$transaction_id, IDs: " . implode(',', $sub_transaction_ids), 'make-market.log', 'make-market', 'INFO');
-} catch (PDOException $e) {
-    log_message("Failed to create sub-transactions: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Failed to create sub-transactions'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 // Process each transaction
 $results = [];
 $connection = new Connection($rpc_endpoint);
+$maxRetries = 3;
 
 foreach ($swap_transactions as $index => $swap) {
     $direction = $swap['direction'] ?? 'buy';
@@ -153,8 +130,8 @@ foreach ($swap_transactions as $index => $swap) {
     if ($sub_transaction_id === 0 || empty($swap_transaction)) {
         log_message("Invalid sub-transaction ID or swap transaction for index=$index, direction=$direction", 'make-market.log', 'make-market', 'ERROR');
         $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
+            'loop' => $swap['loop'] ?? 1,
+            'batch_index' => $swap['batch_index'] ?? 1,
             'direction' => $direction,
             'status' => 'error',
             'message' => 'Invalid sub-transaction ID or swap transaction'
@@ -167,7 +144,7 @@ foreach ($swap_transactions as $index => $swap) {
         $base58 = new Base58();
         $decoded_private_key = $base58->decode($private_key);
     } catch (Exception $e) {
-        log_message("Failed to decode private key for loop $loop, batch $batch_index, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Failed to decode private key for sub-transaction ID=$sub_transaction_id, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         try {
             $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
             $stmt->execute(['failed', "Failed to decode private key: {$e->getMessage()}", $sub_transaction_id]);
@@ -175,8 +152,8 @@ foreach ($swap_transactions as $index => $swap) {
             log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         }
         $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
+            'loop' => $swap['loop'] ?? 1,
+            'batch_index' => $swap['batch_index'] ?? 1,
             'direction' => $direction,
             'status' => 'error',
             'message' => 'Error processing private key'
@@ -188,7 +165,7 @@ foreach ($swap_transactions as $index => $swap) {
     try {
         $keypair = Keypair::fromSecretKey($decoded_private_key);
     } catch (Exception $e) {
-        log_message("Failed to create keypair for loop $loop, batch $batch_index, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Failed to create keypair for sub-transaction ID=$sub_transaction_id, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         try {
             $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
             $stmt->execute(['failed', "Failed to create keypair: {$e->getMessage()}", $sub_transaction_id]);
@@ -196,8 +173,8 @@ foreach ($swap_transactions as $index => $swap) {
             log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         }
         $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
+            'loop' => $swap['loop'] ?? 1,
+            'batch_index' => $swap['batch_index'] ?? 1,
             'direction' => $direction,
             'status' => 'error',
             'message' => 'Error creating keypair'
@@ -208,7 +185,7 @@ foreach ($swap_transactions as $index => $swap) {
     // Verify public key matches
     $derivedPublicKey = $keypair->getPublicKey()->toBase58();
     if ($derivedPublicKey !== $transaction['public_key']) {
-        log_message("Public key mismatch for loop $loop, batch $batch_index, direction=$direction: derived=$derivedPublicKey, stored={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Public key mismatch for sub-transaction ID=$sub_transaction_id, direction=$direction: derived=$derivedPublicKey, stored={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
         try {
             $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
             $stmt->execute(['failed', "Public key mismatch: derived=$derivedPublicKey, stored={$transaction['public_key']}", $sub_transaction_id]);
@@ -216,8 +193,8 @@ foreach ($swap_transactions as $index => $swap) {
             log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         }
         $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
+            'loop' => $swap['loop'] ?? 1,
+            'batch_index' => $swap['batch_index'] ?? 1,
             'direction' => $direction,
             'status' => 'error',
             'message' => 'Wallet address mismatch'
@@ -229,7 +206,7 @@ foreach ($swap_transactions as $index => $swap) {
     try {
         $transactionObj = Transaction::from($swap_transaction);
     } catch (Exception $e) {
-        log_message("Failed to decode transaction for loop $loop, batch $batch_index, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Failed to decode transaction for sub-transaction ID=$sub_transaction_id, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         try {
             $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
             $stmt->execute(['failed', "Failed to decode transaction: {$e->getMessage()}", $sub_transaction_id]);
@@ -237,8 +214,8 @@ foreach ($swap_transactions as $index => $swap) {
             log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         }
         $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
+            'loop' => $swap['loop'] ?? 1,
+            'batch_index' => $swap['batch_index'] ?? 1,
             'direction' => $direction,
             'status' => 'error',
             'message' => 'Error decoding transaction'
@@ -249,7 +226,7 @@ foreach ($swap_transactions as $index => $swap) {
     try {
         $transactionObj->sign($keypair);
     } catch (Exception $e) {
-        log_message("Failed to sign transaction for loop $loop, batch $batch_index, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Failed to sign transaction for sub-transaction ID=$sub_transaction_id, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         try {
             $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
             $stmt->execute(['failed', "Failed to sign transaction: {$e->getMessage()}", $sub_transaction_id]);
@@ -257,8 +234,8 @@ foreach ($swap_transactions as $index => $swap) {
             log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
         }
         $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
+            'loop' => $swap['loop'] ?? 1,
+            'batch_index' => $swap['batch_index'] ?? 1,
             'direction' => $direction,
             'status' => 'error',
             'message' => 'Error signing transaction'
@@ -266,40 +243,48 @@ foreach ($swap_transactions as $index => $swap) {
         continue;
     }
 
-    // Send transaction
-    try {
-        $txid = $connection->sendRawTransaction($transactionObj->serialize());
-        log_message("Swap transaction sent for loop $loop, batch $batch_index, direction=$direction: txid=$txid, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    // Send transaction with retries
+    $txid = null;
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
         try {
-            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
-            $stmt->execute(['success', null, $txid, $sub_transaction_id]);
-            log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=success, txid=$txid, direction=$direction", 'make-market.log', 'make-market', 'INFO');
-        } catch (PDOException $e) {
-            log_message("Failed to update sub-transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            $txid = $connection->sendRawTransaction($transactionObj->serialize());
+            log_message("Swap transaction sent for sub-transaction ID=$sub_transaction_id, direction=$direction: txid=$txid, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+            try {
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
+                $stmt->execute(['success', null, $txid, $sub_transaction_id]);
+                log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=success, txid=$txid, direction=$direction", 'make-market.log', 'make-market', 'INFO');
+            } catch (PDOException $e) {
+                log_message("Failed to update sub-transaction status: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            }
+            $results[] = [
+                'loop' => $swap['loop'] ?? 1,
+                'batch_index' => $swap['batch_index'] ?? 1,
+                'direction' => $direction,
+                'status' => 'success',
+                'txid' => $txid
+            ];
+            break;
+        } catch (Exception $e) {
+            log_message("Failed to send transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, attempt $attempt/$maxRetries: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            if ($attempt === $maxRetries) {
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "Failed to send transaction after $maxRetries attempts: {$e->getMessage()}", $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                }
+                $results[] = [
+                    'loop' => $swap['loop'] ?? 1,
+                    'batch_index' => $swap['batch_index'] ?? 1,
+                    'direction' => $direction,
+                    'status' => 'error',
+                    'message' => "Error sending transaction after $maxRetries attempts: {$e->getMessage()}"
+                ];
+            }
+            if ($attempt < $maxRetries) {
+                sleep(1 * $attempt); // Wait 1s, 2s, 3s
+            }
         }
-        $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'direction' => $direction,
-            'status' => 'success',
-            'txid' => $txid
-        ];
-    } catch (Exception $e) {
-        log_message("Failed to send transaction for loop $loop, batch $batch_index, direction=$direction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        try {
-            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-            $stmt->execute(['failed', "Failed to send transaction: {$e->getMessage()}", $sub_transaction_id]);
-        } catch (PDOException $e2) {
-            log_message("Failed to update sub-transaction status: {$e2->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        }
-        $results[] = [
-            'loop' => floor($index / ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'batch_index' => ($index % ($trade_direction === 'both' ? $batch_size * 2 : $batch_size)) + 1,
-            'direction' => $direction,
-            'status' => 'error',
-            'message' => 'Error sending transaction: ' . $e->getMessage()
-        ];
-        continue;
     }
 }
 
