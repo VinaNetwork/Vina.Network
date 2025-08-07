@@ -181,7 +181,7 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     while (attempt < maxRetries) {
         try {
             log_message(`Attempting to get token decimals from server (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
-            const response = await axios.post('/make-market/get-decimals.php', {
+            const response = await axios.post('/make-market/process/get-decimals.php', {
                 tokenMint
             }, {
                 timeout: 15000, // 15 seconds timeout
