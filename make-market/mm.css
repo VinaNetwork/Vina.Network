@@ -89,6 +89,10 @@ form textarea,
     width: unset;
     margin: 0 10px;
 }
+.check-box input:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
+}
 
 .cta-button {
     margin-top: var(--margin-top);
