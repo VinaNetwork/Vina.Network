@@ -177,7 +177,12 @@ async function getApiConfig() {
 async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     const maxRetries = 3;
     const endpoints = solanaNetwork === 'testnet' 
-        ? ['https://api.testnet.solana.com', 'https://api.devnet.solana.com'] // Fallback endpoint
+        ? [
+            'https://api.testnet.solana.com',
+            'https://api.devnet.solana.com',
+            'https://rpc.ankr.com/solana',
+            'https://solana-rpc.projectserum.com'
+        ]
         : [`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`];
     let attempt = 0;
     let endpointIndex = 0;
@@ -185,19 +190,29 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     while (attempt < maxRetries) {
         const rpcUrl = endpoints[endpointIndex];
         try {
+            log_message(`Attempting to get token decimals (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, endpoint=${rpcUrl}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
             const response = await axios.post(rpcUrl, {
                 jsonrpc: '2.0',
                 id: '1',
                 method: 'getAccountInfo',
                 params: [tokenMint, { encoding: 'jsonParsed' }]
             }, {
-                timeout: 10000, // 10 seconds timeout
+                timeout: 15000, // 15 seconds timeout
                 headers: { 'Content-Type': 'application/json' }
             });
+
+            log_message(`Response from getAccountInfo: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
+
             if (response.status !== 200 || !response.data.result || !response.data.result.value) {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
             }
-            const decimals = response.data.result.value.data.parsed.info.decimals || 9;
+
+            const parsedData = response.data.result.value.data.parsed;
+            if (parsedData.type !== 'mint') {
+                throw new Error(`Invalid account type: received type=${parsedData.type}, expected 'mint'`);
+            }
+
+            const decimals = parsedData.info.decimals || 9;
             log_message(`Token decimals retrieved via getAccountInfo: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, endpoint=${rpcUrl}`, 'make-market.log', 'make-market', 'INFO');
             console.log(`Token decimals retrieved via getAccountInfo: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, endpoint=${rpcUrl}`);
             return decimals;
