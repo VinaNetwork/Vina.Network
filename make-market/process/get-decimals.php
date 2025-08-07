@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
-// File: make-market/process/get-api.php
-// Description: Retrieve Helius API key and Solana network for authenticated users
+// File: make-market/process/get-decimals.php
+// Description:  Get Decimals Token Solana
 // Created by: Vina Network
 // ============================================================================
 
