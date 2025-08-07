@@ -34,6 +34,23 @@ function showError(message) {
     document.querySelector('#makeMarketForm button').disabled = false;
 }
 
+// Function to validate Trade Direction conditions
+function isValidTradeDirection(tradeDirection, solAmount, tokenAmount) {
+    if (solAmount <= 0) {
+        return false;
+    }
+    if (tradeDirection === 'buy' && tokenAmount == 0) {
+        return true;
+    }
+    if (tradeDirection === 'sell' && tokenAmount > 0) {
+        return true;
+    }
+    if (tradeDirection === 'both' && tokenAmount > 0) {
+        return true;
+    }
+    return false;
+}
+
 // Handle form submission
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -59,7 +76,8 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         delay: parseInt(formData.get('delay')) || 0,
         loopCount: parseInt(formData.get('loopCount')) || 1,
         batchSize: parseInt(formData.get('batchSize')) || 5,
-        csrf_token: formData.get('csrf_token')
+        csrf_token: formData.get('csrf_token'),
+        skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
     };
     log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('Form data:', params);
@@ -100,6 +118,11 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         showError('Please select a valid trade direction (Buy, Sell, or Both).');
         console.error('Invalid trade direction');
         return;
+    }
+
+    // Log if balance check is skipped due to invalid trade direction or user choice
+    if (params.skipBalanceCheck || !isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)) {
+        log_message(`Balance check skipped: skipBalanceCheck=${params.skipBalanceCheck}, validTradeDirection=${isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)}`, 'make-market.log', 'make-market', 'INFO');
     }
 
     try {
@@ -150,7 +173,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     }
 });
 
-// Copy functionality for public_key
+// Copy functionality for public_key and dynamic tokenAmount handling
 document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
@@ -224,5 +247,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 showError(`Unable to copy: ${err.message}`);
             });
         });
+    });
+
+    // Dynamic tokenAmount handling based on tradeDirection
+    const tradeDirectionSelect = document.getElementById('tradeDirection');
+    const tokenAmountInput = document.getElementById('tokenAmount');
+
+    tradeDirectionSelect.addEventListener('change', () => {
+        if (tradeDirectionSelect.value === 'buy') {
+            tokenAmountInput.value = '0';
+            tokenAmountInput.disabled = true;
+            log_message('Token amount set to 0 and disabled for Buy direction', 'make-market.log', 'make-market', 'INFO');
+        } else {
+            tokenAmountInput.disabled = false;
+            log_message('Token amount input enabled for Sell or Both direction', 'make-market.log', 'make-market', 'INFO');
+        }
     });
 });
