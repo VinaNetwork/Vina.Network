@@ -305,7 +305,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 }
             }
         }
-        const response = await fetch(`/make-market/create-sub-transactions/${transactionId}`, {
+        const response = await fetch(`/make-market/process/create-tx/${transactionId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
