@@ -179,9 +179,7 @@ async function getApiConfig() {
 // Get token decimals from Helius API
 async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     try {
-        const rpcUrl = solanaNetwork === 'testnet' 
-            ? 'https://api.testnet.solana.com'
-            : `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+        const rpcUrl = `https://${solanaNetwork === 'testnet' ? 'testnet' : 'mainnet'}.helius-rpc.com/?api-key=${heliusApiKey}`;
         const response = await axios.post(rpcUrl, {
             jsonrpc: '2.0',
             id: '1',
@@ -205,9 +203,7 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
 // Check wallet balance
 async function checkBalance(publicKey, tokenMint, heliusApiKey, solanaNetwork, tokenDecimals) {
     try {
-        const rpcUrl = solanaNetwork === 'testnet' 
-            ? 'https://api.testnet.solana.com'
-            : `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
+        const rpcUrl = `https://${solanaNetwork === 'testnet' ? 'testnet' : 'mainnet'}.helius-rpc.com/?api-key=${heliusApiKey}`;
         const tokenResponse = await axios.post(rpcUrl, {
             jsonrpc: '2.0',
             id: '1',
