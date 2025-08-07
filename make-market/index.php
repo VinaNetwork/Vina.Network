@@ -451,7 +451,7 @@ $defaultSlippage = 0.5;
             <label for="solAmount">💰 SOL Amount:</label>
             <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
             <label for="tokenAmount">🪙 Token Amount:</label>
-            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" placeholder="Example: 1000.0">
+            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" placeholder="Example: 1000.0" disabled value="0">
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
             <label for="delay">⏱️ Delay between 2 batch (seconds):</label>
