@@ -36,7 +36,6 @@ function showError(message, detailedError = null) {
     log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'make-market.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
     updateTransactionStatus('failed', detailedError || message);
-    // Hide Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -70,7 +69,6 @@ function showSuccess(message, results = [], solanaNetwork = 'mainnet') {
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
     log_message(`Process completed: ${message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
     console.log(`Process completed: ${message}, network=${solanaNetwork}`);
-    // Hide Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -135,7 +133,6 @@ async function cancelTransaction(transactionId) {
             </div>
         `;
         document.getElementById('process-result').classList.add('active');
-        // Hide Cancel button
         const cancelBtn = document.getElementById('cancel-btn');
         if (cancelBtn) {
             cancelBtn.style.display = 'none';
@@ -176,61 +173,28 @@ async function getApiConfig() {
     }
 }
 
-// Get token decimals from Helius API
+// Get token decimals from Solana or Helius API
 async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     try {
-        const rpcUrl = `https://${solanaNetwork === 'testnet' ? 'testnet' : 'mainnet'}.helius-rpc.com/?api-key=${heliusApiKey}`;
+        const rpcUrl = solanaNetwork === 'testnet' 
+            ? 'https://api.testnet.solana.com'
+            : `https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`;
         const response = await axios.post(rpcUrl, {
             jsonrpc: '2.0',
             id: '1',
-            method: 'getAsset',
-            params: { id: tokenMint }
+            method: 'getTokenSupply',
+            params: [tokenMint]
         });
         if (response.status !== 200 || !response.data.result) {
-            throw new Error('Failed to retrieve token decimals from Helius API');
+            throw new Error('Failed to retrieve token decimals from Solana RPC');
         }
-        const decimals = response.data.result.token_info?.decimals || 9;
+        const decimals = response.data.result.value.decimals || 9;
         log_message(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
         console.log(`Token decimals retrieved: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
         return decimals;
     } catch (err) {
         log_message(`Failed to get token decimals: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to get token decimals:', err.message);
-        throw err;
-    }
-}
-
-// Check wallet balance
-async function checkBalance(publicKey, tokenMint, heliusApiKey, solanaNetwork, tokenDecimals) {
-    try {
-        const rpcUrl = `https://${solanaNetwork === 'testnet' ? 'testnet' : 'mainnet'}.helius-rpc.com/?api-key=${heliusApiKey}`;
-        const tokenResponse = await axios.post(rpcUrl, {
-            jsonrpc: '2.0',
-            id: '1',
-            method: 'getTokenAccountsByOwner',
-            params: [
-                publicKey,
-                { mint: tokenMint },
-                { encoding: 'jsonParsed' }
-            ]
-        });
-        const solResponse = await axios.post(rpcUrl, {
-            jsonrpc: '2.0',
-            id: '1',
-            method: 'getBalance',
-            params: [publicKey]
-        });
-        if (tokenResponse.status !== 200 || solResponse.status !== 200) {
-            throw new Error('Failed to retrieve balance from Solana RPC');
-        }
-        const tokenBalance = tokenResponse.data.result.value[0]?.account.data.parsed.info.tokenAmount.uiAmount || 0;
-        const solBalance = solResponse.data.result.value / 1e9;
-        log_message(`Balance checked: SOL=${solBalance}, Token=${tokenBalance}, mint=${tokenMint}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
-        console.log(`Balance checked: SOL=${solBalance}, Token=${tokenBalance}, mint=${tokenMint}, network=${solanaNetwork}`);
-        return { solBalance, tokenBalance };
-    } catch (err) {
-        log_message(`Failed to check balance: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to check balance:', err.message);
         throw err;
     }
 }
@@ -417,7 +381,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error(result.message);
         }
         transaction = result.data;
-        // Ensure defaults
         transaction.loop_count = parseInt(transaction.loop_count) || 1;
         transaction.batch_size = parseInt(transaction.batch_size) || 1;
         transaction.slippage = parseFloat(transaction.slippage) || 0.5;
@@ -502,23 +465,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         tokenDecimals = await getTokenDecimals(transaction.token_mint, heliusApiKey, solanaNetwork);
     } catch (err) {
         showError('Failed to retrieve token decimals: ' + err.message);
-        return;
-    }
-
-    // Check wallet balance
-    let balance;
-    try {
-        balance = await checkBalance(publicKey, transaction.token_mint, heliusApiKey, solanaNetwork, tokenDecimals);
-        const requiredSol = tradeDirection === 'buy' || tradeDirection === 'both' ? transaction.sol_amount * loopCount * batchSize : 0;
-        const requiredTokens = tradeDirection === 'sell' || tradeDirection === 'both' ? transaction.token_amount * loopCount * batchSize : 0;
-        if (balance.solBalance < requiredSol) {
-            throw new Error(`Insufficient SOL balance: required ${requiredSol}, available ${balance.solBalance}`);
-        }
-        if (balance.tokenBalance < requiredTokens) {
-            throw new Error(`Insufficient token balance: required ${requiredTokens}, available ${balance.tokenBalance}`);
-        }
-    } catch (err) {
-        showError('Balance check failed: ' + err.message);
         return;
     }
 
