@@ -34,20 +34,6 @@ function showError(message) {
     document.querySelector('#makeMarketForm button').disabled = false;
 }
 
-// Function to validate Trade Direction conditions
-function isValidTradeDirection(tradeDirection, solAmount, tokenAmount) {
-    if (tradeDirection === 'buy') {
-        return solAmount > 0 && tokenAmount === 0;
-    }
-    if (tradeDirection === 'sell') {
-        return tokenAmount > 0;
-    }
-    if (tradeDirection === 'both') {
-        return solAmount > 0 && tokenAmount > 0;
-    }
-    return false;
-}
-
 // Handle form submission
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -67,14 +53,13 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         privateKey: formData.get('privateKey'),
         tokenMint: formData.get('tokenMint'),
         tradeDirection: formData.get('tradeDirection'),
-        solAmount: formData.get('tradeDirection') === 'sell' ? 0 : parseFloat(formData.get('solAmount')) || 0,
+        solAmount: parseFloat(formData.get('solAmount')) || 0,
         tokenAmount: tokenAmountValue !== null && tokenAmountValue !== '' ? parseFloat(tokenAmountValue) : 0,
         slippage: parseFloat(formData.get('slippage')) || 0.5,
         delay: parseInt(formData.get('delay')) || 0,
         loopCount: parseInt(formData.get('loopCount')) || 1,
         batchSize: parseInt(formData.get('batchSize')) || 5,
-        csrf_token: formData.get('csrf_token'),
-        skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
+        csrf_token: formData.get('csrf_token')
     };
     log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('Form data:', params);
@@ -86,73 +71,35 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         console.error('Private key is empty or invalid format');
         return;
     }
-    if (!params.tokenMint || !/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(params.tokenMint)) {
-        log_message('Invalid token address', 'make-market.log', 'make-market', 'ERROR');
-        showError('Invalid token address. Please check again.');
-        console.error('Invalid token address');
+    if (isNaN(params.tokenAmount) || params.tokenAmount < 0) {
+        log_message(`Token amount is invalid or negative: ${params.tokenAmount}`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Token amount must be non-negative.');
+        console.error('Token amount is invalid or negative');
         return;
     }
-    if (params.tradeDirection === 'buy') {
-        if (isNaN(params.solAmount) || params.solAmount <= 0) {
-            log_message(`Invalid SOL amount for buy: ${params.solAmount}`, 'make-market.log', 'make-market', 'ERROR');
-            showError('SOL amount must be greater than 0 for buy transactions.');
-            console.error('Invalid SOL amount for buy');
-            return;
-        }
-        if (params.tokenAmount !== 0) {
-            log_message(`Invalid token amount for buy: ${params.tokenAmount}, must be exactly 0`, 'make-market.log', 'make-market', 'ERROR');
-            showError('Token amount must be exactly 0 for buy transactions.');
-            console.error('Invalid token amount for buy');
-            return;
-        }
-    } else if (params.tradeDirection === 'sell') {
-        if (isNaN(params.tokenAmount) || params.tokenAmount <= 0) {
-            log_message(`Invalid token amount for sell: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
-            showError('Token amount must be greater than 0 for sell transactions.');
-            console.error('Invalid token amount for sell');
-            return;
-        }
-    } else if (params.tradeDirection === 'both') {
-        if (isNaN(params.solAmount) || params.solAmount <= 0) {
-            log_message(`Invalid SOL amount for both: ${params.solAmount}`, 'make-market.log', 'make-market', 'ERROR');
-            showError('SOL amount must be greater than 0 for both transactions.');
-            console.error('Invalid SOL amount for both');
-            return;
-        }
-        if (isNaN(params.tokenAmount) || params.tokenAmount <= 0) {
-            log_message(`Invalid token amount for both: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
-            showError('Token amount must be greater than 0 for both transactions.');
-            console.error('Invalid token amount for both');
-            return;
-        }
-    } else {
+    if (params.tradeDirection === 'buy' && params.tokenAmount != 0) {
+        log_message(`Invalid token amount for buy: ${params.tokenAmount}, must be exactly 0`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Token amount must be exactly 0 for buy transactions.');
+        console.error('Invalid token amount for buy');
+        return;
+    }
+    if (params.tradeDirection === 'sell' && params.tokenAmount <= 0) {
+        log_message(`Invalid token amount for sell: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Token amount must be greater than 0 for sell transactions.');
+        console.error('Invalid token amount for sell');
+        return;
+    }
+    if (params.tradeDirection === 'both' && params.tokenAmount <= 0) {
+        log_message(`Invalid token amount for both: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Token amount must be greater than 0 for both transactions.');
+        console.error('Invalid token amount for both');
+        return;
+    }
+    if (!params.tradeDirection || !['buy', 'sell', 'both'].includes(params.tradeDirection)) {
         log_message('Invalid trade direction', 'make-market.log', 'make-market', 'ERROR');
         showError('Please select a valid trade direction (Buy, Sell, or Both).');
         console.error('Invalid trade direction');
         return;
-    }
-    if (isNaN(params.slippage) || params.slippage < 0) {
-        log_message(`Invalid slippage: ${params.slippage}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Slippage must be non-negative.');
-        console.error('Invalid slippage');
-        return;
-    }
-    if (isNaN(params.loopCount) || params.loopCount < 1) {
-        log_message(`Invalid loop count: ${params.loopCount}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Loop count must be at least 1.');
-        console.error('Invalid loop count');
-        return;
-    }
-    if (isNaN(params.batchSize) || params.batchSize < 1 || params.batchSize > 10) {
-        log_message(`Invalid batch size: ${params.batchSize}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Batch size must be between 1 and 10.');
-        console.error('Invalid batch size');
-        return;
-    }
-
-    // Log if balance check is skipped due to invalid trade direction or user choice
-    if (params.skipBalanceCheck || !isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)) {
-        log_message(`Balance check skipped: skipBalanceCheck=${params.skipBalanceCheck}, validTradeDirection=${isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)}`, 'make-market.log', 'make-market', 'INFO');
     }
 
     try {
@@ -203,7 +150,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     }
 });
 
-// Copy functionality for public_key and dynamic input handling
+// Copy functionality for public_key
 document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
@@ -277,33 +224,5 @@ document.addEventListener('DOMContentLoaded', () => {
                 showError(`Unable to copy: ${err.message}`);
             });
         });
-    });
-
-    // Dynamic input handling based on tradeDirection
-    const tradeDirectionSelect = document.getElementById('tradeDirection');
-    const solAmountInput = document.getElementById('solAmount');
-    const tokenAmountInput = document.getElementById('tokenAmount');
-
-    tradeDirectionSelect.addEventListener('change', () => {
-        if (tradeDirectionSelect.value === 'buy') {
-            tokenAmountInput.value = '0';
-            tokenAmountInput.disabled = true;
-            solAmountInput.disabled = false;
-            solAmountInput.required = true;
-            log_message('Token amount set to 0 and disabled, SOL amount enabled for Buy direction', 'make-market.log', 'make-market', 'INFO');
-        } else if (tradeDirectionSelect.value === 'sell') {
-            solAmountInput.value = '0';
-            solAmountInput.disabled = true;
-            solAmountInput.required = false;
-            tokenAmountInput.disabled = false;
-            tokenAmountInput.required = true;
-            log_message('SOL amount set to 0 and disabled, Token amount enabled for Sell direction', 'make-market.log', 'make-market', 'INFO');
-        } else if (tradeDirectionSelect.value === 'both') {
-            solAmountInput.disabled = false;
-            solAmountInput.required = true;
-            tokenAmountInput.disabled = false;
-            tokenAmountInput.required = true;
-            log_message('SOL and Token amount inputs enabled for Both direction', 'make-market.log', 'make-market', 'INFO');
-        }
     });
 });

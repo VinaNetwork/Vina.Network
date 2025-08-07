@@ -48,17 +48,47 @@ $trade_direction = $post_data['trade_direction'] ?? 'buy';
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
 
-// Validate minimal required inputs
+// Validate input
 if (empty($public_key) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
     log_message("Invalid public key: $public_key", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid wallet address']);
     exit;
 }
+if ($sol_amount <= 0) {
+    log_message("Invalid SOL amount: $sol_amount", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0']);
+    exit;
+}
+if ($token_amount <= 0) {
+    log_message("Invalid token amount: $token_amount", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0']);
+    exit;
+}
 if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $token_mint)) {
     log_message("Invalid token mint: $token_mint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address']);
+    exit;
+}
+if (!in_array($trade_direction, ['buy', 'sell', 'both'])) {
+    log_message("Invalid trade direction: $trade_direction", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
+    exit;
+}
+if ($loop_count < 1) {
+    log_message("Invalid loop count: $loop_count", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Loop count must be at least 1']);
+    exit;
+}
+if ($batch_size < 1 || $batch_size > 10) {
+    log_message("Invalid batch size: $batch_size", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Batch size must be between 1 and 10']);
     exit;
 }
 
@@ -155,15 +185,15 @@ try {
     $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Formula for token
     $errors = [];
 
-    // Check SOL balance for 'buy' or 'both' transactions only
-    if ($trade_direction === 'buy' || $trade_direction === 'both') {
+    // Check SOL balance for 'buy' or 'both' transactions
+    if (in_array($trade_direction, ['buy', 'both'])) {
         if ($balanceInSol < $requiredSolAmount) {
             $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL";
         }
     }
 
     // Check token balance for 'sell' or 'both' transactions
-    if ($trade_direction === 'sell' || $trade_direction === 'both') {
+    if (in_array($trade_direction, ['sell', 'both'])) {
         if (isset($data['result']['items']) && is_array($data['result']['items'])) {
             foreach ($data['result']['items'] as $item) {
                 if ($item['interface'] === 'FungibleToken' && isset($item['id']) && $item['id'] === $token_mint) {
@@ -194,7 +224,7 @@ try {
         exit;
     }
 
-    log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . ($trade_direction === 'sell' || $trade_direction === 'both' ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
+    log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . (in_array($trade_direction, ['sell', 'both']) ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
         'status' => 'success',
         'message' => 'Wallet balance is sufficient to perform the transaction',
