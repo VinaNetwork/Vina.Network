@@ -96,6 +96,23 @@ try {
     exit;
 }
 
+// Function to validate Trade Direction conditions
+function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
+    if ($solAmount <= 0) {
+        return false;
+    }
+    if ($tradeDirection === 'buy' && $tokenAmount == 0) {
+        return true;
+    }
+    if ($tradeDirection === 'sell' && $tokenAmount > 0) {
+        return true;
+    }
+    if ($tradeDirection === 'both' && $tokenAmount > 0) {
+        return true;
+    }
+    return false;
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -231,8 +248,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Check wallet balance by calling get-balance.php, unless skipped
-        if (!$skipBalanceCheck) {
+        // Check wallet balance by calling get-balance.php, unless skipped or trade direction conditions are not met
+        if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
             try {
                 $curl = curl_init();
                 curl_setopt_array($curl, [
@@ -302,7 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } else {
-            log_message("Wallet balance check skipped by user", 'make-market.log', 'make-market', 'INFO');
+            log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
         }
 
         // Check JWT_SECRET
@@ -433,7 +450,7 @@ $defaultSlippage = 0.5;
             <label for="solAmount">💰 SOL Amount:</label>
             <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
             <label for="tokenAmount">🪙 Token Amount:</label>
-            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" required placeholder="Example: 1000.0">
+            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" placeholder="Example: 1000.0">
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
             <label for="delay">⏱️ Delay between 2 batch (seconds):</label>
