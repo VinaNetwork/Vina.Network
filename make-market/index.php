@@ -327,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 INSERT INTO make_market (
                     user_id, public_key, process_name, private_key, token_mint, 
-                    sol_amount, token_amount, trade_direction, slippage, delay_seconds, 
+                    trade_direction, sol_amount, token_amount, slippage, delay_seconds, 
                     loop_count, batch_size, status
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
             ");
