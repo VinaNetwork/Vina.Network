@@ -228,7 +228,8 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, solanaNetwor
                 outputMint,
                 amount: Math.floor(amount),
                 slippageBps
-            }
+            },
+            timeout: 15000 // 15 seconds timeout
         });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to retrieve quote from Jupiter API');
@@ -237,9 +238,12 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, solanaNetwor
         console.log('Quote retrieved:', response.data);
         return response.data;
     } catch (err) {
-        log_message(`Failed to get quote: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to get quote:', err.message);
-        throw err;
+        const errorMessage = err.response 
+            ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || quoteApiUrl}`;
+        log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to get quote:', errorMessage);
+        throw new Error(errorMessage);
     }
 }
 
