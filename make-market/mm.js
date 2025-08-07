@@ -46,17 +46,18 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     console.log('Form submitted');
 
     const formData = new FormData(e.target);
+    const tokenAmountValue = formData.get('tokenAmount');
     const params = {
         processName: formData.get('processName'),
         privateKey: formData.get('privateKey'),
         tokenMint: formData.get('tokenMint'),
-        solAmount: parseFloat(formData.get('solAmount')),
-        tokenAmount: parseFloat(formData.get('tokenAmount')),
+        solAmount: parseFloat(formData.get('solAmount')) || 0,
+        tokenAmount: tokenAmountValue ? parseFloat(tokenAmountValue) : 0, // Parse as number, default to 0
         tradeDirection: formData.get('tradeDirection'),
-        slippage: parseFloat(formData.get('slippage')),
-        delay: parseInt(formData.get('delay')),
-        loopCount: parseInt(formData.get('loopCount')),
-        batchSize: parseInt(formData.get('batchSize')),
+        slippage: parseFloat(formData.get('slippage')) || 0.5,
+        delay: parseInt(formData.get('delay')) || 0,
+        loopCount: parseInt(formData.get('loopCount')) || 1,
+        batchSize: parseInt(formData.get('batchSize')) || 5,
         csrf_token: formData.get('csrf_token')
     };
     log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -69,26 +70,26 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         console.error('Private key is empty or invalid format');
         return;
     }
-    if (params.tokenAmount < 0) {
-        log_message('Token amount is negative', 'make-market.log', 'make-market', 'ERROR');
+    if (isNaN(params.tokenAmount) || params.tokenAmount < 0) {
+        log_message(`Token amount is invalid or negative: ${params.tokenAmount}`, 'make-market.log', 'make-market', 'ERROR');
         showError('Token amount must be non-negative.');
-        console.error('Token amount is negative');
+        console.error('Token amount is invalid or negative');
         return;
     }
     if (params.tradeDirection === 'buy' && params.tokenAmount !== 0) {
-        log_message('Invalid token amount for buy: must be 0', 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Invalid token amount for buy: ${params.tokenAmount}, must be 0`, 'make-market.log', 'make-market', 'ERROR');
         showError('Token amount must be 0 for buy transactions.');
         console.error('Invalid token amount for buy');
         return;
     }
     if (params.tradeDirection === 'sell' && params.tokenAmount <= 0) {
-        log_message('Invalid token amount for sell: must be greater than 0', 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Invalid token amount for sell: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
         showError('Token amount must be greater than 0 for sell transactions.');
         console.error('Invalid token amount for sell');
         return;
     }
     if (params.tradeDirection === 'both' && params.tokenAmount <= 0) {
-        log_message('Invalid token amount for both: must be greater than 0', 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Invalid token amount for both: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
         showError('Token amount must be greater than 0 for both transactions.');
         console.error('Invalid token amount for both');
         return;
