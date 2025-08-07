@@ -117,9 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $processName = $form_data['processName'] ?? '';
         $privateKey = trim($form_data['privateKey'] ?? '');
         $tokenMint = $form_data['tokenMint'] ?? '';
+        $tradeDirection = $form_data['tradeDirection'] ?? 'buy';
         $solAmount = floatval($form_data['solAmount'] ?? 0);
         $tokenAmount = isset($form_data['tokenAmount']) && $form_data['tokenAmount'] !== '' ? floatval($form_data['tokenAmount']) : 0;
-        $tradeDirection = $form_data['tradeDirection'] ?? 'buy';
         $slippage = floatval($form_data['slippage'] ?? 0.5);
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
@@ -245,10 +245,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     CURLOPT_CUSTOMREQUEST => "POST",
                     CURLOPT_POSTFIELDS => json_encode([
                         'public_key' => $transactionPublicKey,
-                        'sol_amount' => $solAmount,
-                        'token_amount' => $tokenAmount,
                         'token_mint' => $tokenMint,
                         'trade_direction' => $tradeDirection,
+                        'sol_amount' => $solAmount,
+                        'token_amount' => $tokenAmount,
                         'loop_count' => $loopCount,
                         'batch_size' => $batchSize
                     ], JSON_UNESCAPED_UNICODE),
@@ -337,9 +337,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $processName,
                 $encryptedPrivateKey,
                 $tokenMint,
+                $tradeDirection,
                 $solAmount,
                 $tokenAmount,
-                $tradeDirection,
                 $slippage,
                 $delay,
                 $loopCount,
@@ -424,16 +424,16 @@ $defaultSlippage = 0.5;
             <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
             <label for="tokenMint">🎯 Token Address:</label>
             <input type="text" name="tokenMint" id="tokenMint" required placeholder="Example: So111... or any SPL token">
-            <label for="solAmount">💰 SOL Amount to Buy/Sell:</label>
-            <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
-            <label for="tokenAmount">🪙 Token Amount:</label>
-            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" required placeholder="Example: 1000.0">
             <label for="tradeDirection">📈 Trade Direction:</label>
             <select name="tradeDirection" id="tradeDirection" required>
                 <option value="buy">Buy</option>
                 <option value="sell">Sell</option>
                 <option value="both">Both (Buy and Sell)</option>
             </select>
+            <label for="solAmount">💰 SOL Amount to Buy/Sell:</label>
+            <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
+            <label for="tokenAmount">🪙 Token Amount:</label>
+            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" required placeholder="Example: 1000.0">
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
             <label for="delay">⏱️ Delay Between Buy and Sell (seconds):</label>
