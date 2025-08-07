@@ -277,7 +277,7 @@ async function getSwapTransaction(quote, publicKey, solanaNetwork) {
 // Execute swap transactions
 async function executeSwapTransactions(transactionId, swapTransactions, solanaNetwork) {
     try {
-        const response = await fetch('/make-market/swap-transactions', {
+        const response = await fetch('/make-market/swap', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -285,7 +285,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, solanaNe
             },
             body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions })
         });
-        console.log(`Executing swap transactions for ID: ${transactionId}, URL: /make-market/swap-transactions`);
+        console.log(`Executing swap transactions for ID: ${transactionId}, URL: /make-market/swap`);
         if (!response.ok) {
             const result = await response.json();
             throw new Error(result.message || `Server error: HTTP ${response.status}`);
