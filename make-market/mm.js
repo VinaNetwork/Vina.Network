@@ -29,7 +29,7 @@ function showError(message) {
     } else if (message.includes('Insufficient token balance')) {
         enhancedMessage += ' <a href="https://www.binance.com/en" target="_blank">Top up tokens here</a>';
     }
-    resultDiv.innerHTML = `<p style="color: red;">Error: ${enhancedMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    resultDiv.innerHTML = `<p>Error: ${enhancedMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     resultDiv.classList.add('active');
     document.querySelector('#makeMarketForm button').disabled = false;
 }
