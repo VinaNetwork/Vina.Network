@@ -81,6 +81,15 @@ form textarea,
     border-radius: var(--border-radius);
 }
 
+.check-box {
+    display: flex;
+    align-items: center;
+}
+.check-box input {
+    width: unset;
+    margin: 0 10px;
+}
+
 .cta-button {
     margin-top: var(--margin-top);
     float: center;
