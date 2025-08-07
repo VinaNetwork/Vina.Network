@@ -156,10 +156,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0']);
             exit;
         }
-        if ($tokenAmount <= 0) {
+        if ($tokenAmount < 0) {
             log_message("Invalid token amount: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0']);
+            echo json_encode(['status' => 'error', 'message' => 'Token amount must be non-negative']);
+            exit;
+        }
+        if ($tradeDirection === 'buy' && $tokenAmount !== 0) {
+            log_message("Invalid token amount for buy: $tokenAmount, must be 0", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Token amount must be 0 for buy transactions']);
+            exit;
+        }
+        if ($tradeDirection === 'sell' && $tokenAmount <= 0) {
+            log_message("Invalid token amount for sell: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0 for sell transactions']);
+            exit;
+        }
+        if ($tradeDirection === 'both' && $tokenAmount <= 0) {
+            log_message("Invalid token amount for both: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0 for both transactions']);
             exit;
         }
         if (!in_array($tradeDirection, ['buy', 'sell', 'both'])) {
