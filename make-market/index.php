@@ -442,9 +442,9 @@ $defaultSlippage = 0.5;
             <input type="number" name="loopCount" id="loopCount" min="1" value="1">
             <label for="batchSize">📦 Batch Size (1-10):</label>
             <input type="number" name="batchSize" id="batchSize" min="1" max="10" value="5" required>
-            <label for="skipBalanceCheck">
+            <label for="skipBalanceCheck" class="check-box">
                 <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
-                Skip wallet balance check (only select if you are sure the wallet has sufficient SOL and tokens)
+                <p>Skip wallet balance check</p>
             </label>
             <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
