@@ -98,17 +98,14 @@ try {
 
 // Function to validate Trade Direction conditions
 function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
-    if ($solAmount <= 0) {
-        return false;
+    if ($tradeDirection === 'buy') {
+        return $solAmount > 0 && $tokenAmount == 0;
     }
-    if ($tradeDirection === 'buy' && $tokenAmount == 0) {
-        return true;
+    if ($tradeDirection === 'sell') {
+        return $tokenAmount > 0;
     }
-    if ($tradeDirection === 'sell' && $tokenAmount > 0) {
-        return true;
-    }
-    if ($tradeDirection === 'both' && $tokenAmount > 0) {
-        return true;
+    if ($tradeDirection === 'both') {
+        return $solAmount > 0 && $tokenAmount > 0;
     }
     return false;
 }
@@ -135,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $privateKey = trim($form_data['privateKey'] ?? '');
         $tokenMint = $form_data['tokenMint'] ?? '';
         $tradeDirection = $form_data['tradeDirection'] ?? 'buy';
-        $solAmount = floatval($form_data['solAmount'] ?? 0);
+        $solAmount = $tradeDirection === 'sell' ? 0 : floatval($form_data['solAmount'] ?? 0);
         $tokenAmount = isset($form_data['tokenAmount']) && $form_data['tokenAmount'] !== '' ? floatval($form_data['tokenAmount']) : 0;
         $slippage = floatval($form_data['slippage'] ?? 0.5);
         $delay = intval($form_data['delay'] ?? 0);
@@ -167,37 +164,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Invalid token address']);
             exit;
         }
-        if ($solAmount <= 0) {
-            log_message("Invalid SOL amount: $solAmount", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0']);
-            exit;
-        }
-        if (is_nan($tokenAmount) || $tokenAmount < 0) {
-            log_message("Invalid token amount: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Token amount must be non-negative']);
-            exit;
-        }
-        if ($tradeDirection === 'buy' && $tokenAmount != 0) {
-            log_message("Invalid token amount for buy: $tokenAmount, must be exactly 0", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Token amount must be exactly 0 for buy transactions']);
-            exit;
-        }
-        if ($tradeDirection === 'sell' && $tokenAmount <= 0) {
-            log_message("Invalid token amount for sell: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0 for sell transactions']);
-            exit;
-        }
-        if ($tradeDirection === 'both' && $tokenAmount <= 0) {
-            log_message("Invalid token amount for both: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0 for both transactions']);
-            exit;
-        }
-        if (!in_array($tradeDirection, ['buy', 'sell', 'both'])) {
+        if ($tradeDirection === 'buy') {
+            if ($solAmount <= 0) {
+                log_message("Invalid SOL amount for buy: $solAmount", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0 for buy transactions']);
+                exit;
+            }
+            if ($tokenAmount != 0) {
+                log_message("Invalid token amount for buy: $tokenAmount, must be exactly 0", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Token amount must be exactly 0 for buy transactions']);
+                exit;
+            }
+        } elseif ($tradeDirection === 'sell') {
+            if ($tokenAmount <= 0) {
+                log_message("Invalid token amount for sell: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0 for sell transactions']);
+                exit;
+            }
+        } elseif ($tradeDirection === 'both') {
+            if ($solAmount <= 0) {
+                log_message("Invalid SOL amount for both: $solAmount", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0 for both transactions']);
+                exit;
+            }
+            if ($tokenAmount <= 0) {
+                log_message("Invalid token amount for both: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Token amount must be greater than 0 for both transactions']);
+                exit;
+            }
+        } else {
             log_message("Invalid trade direction: $tradeDirection", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
@@ -250,6 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Check wallet balance by calling get-balance.php, unless skipped or trade direction conditions are not met
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
+            log_message("Calling get-balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount", 'make-market.log', 'make-market', 'INFO');
             try {
                 $curl = curl_init();
                 curl_setopt_array($curl, [
