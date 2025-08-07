@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $privateKey = trim($form_data['privateKey'] ?? '');
         $tokenMint = $form_data['tokenMint'] ?? '';
         $solAmount = floatval($form_data['solAmount'] ?? 0);
-        $tokenAmount = floatval($form_data['tokenAmount'] ?? 0);
+        $tokenAmount = isset($form_data['tokenAmount']) && $form_data['tokenAmount'] !== '' ? floatval($form_data['tokenAmount']) : 0;
         $tradeDirection = $form_data['tradeDirection'] ?? 'buy';
         $slippage = floatval($form_data['slippage'] ?? 0.5);
         $delay = intval($form_data['delay'] ?? 0);
@@ -156,16 +156,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'SOL amount must be greater than 0']);
             exit;
         }
-        if ($tokenAmount < 0) {
+        if (is_nan($tokenAmount) || $tokenAmount < 0) {
             log_message("Invalid token amount: $tokenAmount", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Token amount must be non-negative']);
             exit;
         }
-        if ($tradeDirection === 'buy' && $tokenAmount !== 0) {
-            log_message("Invalid token amount for buy: $tokenAmount, must be 0", 'make-market.log', 'make-market', 'ERROR');
+        if ($tradeDirection === 'buy' && $tokenAmount != 0) {
+            log_message("Invalid token amount for buy: $tokenAmount, must be exactly 0", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Token amount must be 0 for buy transactions']);
+            echo json_encode(['status' => 'error', 'message' => 'Token amount must be exactly 0 for buy transactions']);
             exit;
         }
         if ($tradeDirection === 'sell' && $tokenAmount <= 0) {
