@@ -47,12 +47,13 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     const formData = new FormData(e.target);
     const tokenAmountValue = formData.get('tokenAmount');
+    log_message(`Raw tokenAmount value: ${tokenAmountValue}`, 'make-market.log', 'make-market', 'DEBUG');
     const params = {
         processName: formData.get('processName'),
         privateKey: formData.get('privateKey'),
         tokenMint: formData.get('tokenMint'),
         solAmount: parseFloat(formData.get('solAmount')) || 0,
-        tokenAmount: tokenAmountValue ? parseFloat(tokenAmountValue) : 0, // Parse as number, default to 0
+        tokenAmount: tokenAmountValue !== null && tokenAmountValue !== '' ? parseFloat(tokenAmountValue) : 0,
         tradeDirection: formData.get('tradeDirection'),
         slippage: parseFloat(formData.get('slippage')) || 0.5,
         delay: parseInt(formData.get('delay')) || 0,
@@ -76,9 +77,9 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         console.error('Token amount is invalid or negative');
         return;
     }
-    if (params.tradeDirection === 'buy' && params.tokenAmount !== 0) {
-        log_message(`Invalid token amount for buy: ${params.tokenAmount}, must be 0`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Token amount must be 0 for buy transactions.');
+    if (params.tradeDirection === 'buy' && params.tokenAmount != 0) {
+        log_message(`Invalid token amount for buy: ${params.tokenAmount}, must be exactly 0`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Token amount must be exactly 0 for buy transactions.');
         console.error('Invalid token amount for buy');
         return;
     }
