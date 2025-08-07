@@ -446,6 +446,7 @@ $defaultSlippage = 0.5;
                 <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
                 <p>Skip wallet balance check</p>
             </label>
+            <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
             <button class="cta-button" type="submit">🚀 Make Market</button>
         </form>
 
