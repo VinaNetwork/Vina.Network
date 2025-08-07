@@ -41,10 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $post_data = json_decode(file_get_contents('php://input'), true);
 $public_key = $post_data['public_key'] ?? '';
+$trade_direction = $post_data['trade_direction'] ?? 'buy';
 $sol_amount = floatval($post_data['sol_amount'] ?? 0);
 $token_amount = floatval($post_data['token_amount'] ?? 0);
 $token_mint = $post_data['token_mint'] ?? '';
-$trade_direction = $post_data['trade_direction'] ?? 'buy';
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
 
