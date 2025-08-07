@@ -430,13 +430,13 @@ $defaultSlippage = 0.5;
                 <option value="sell">Sell</option>
                 <option value="both">Both (Buy and Sell)</option>
             </select>
-            <label for="solAmount">💰 SOL Amount to Buy/Sell:</label>
+            <label for="solAmount">💰 SOL Amount:</label>
             <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Example: 0.1">
             <label for="tokenAmount">🪙 Token Amount:</label>
             <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" required placeholder="Example: 1000.0">
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
-            <label for="delay">⏱️ Delay Between Buy and Sell (seconds):</label>
+            <label for="delay">⏱️ Delay between 2 batch (seconds):</label>
             <input type="number" name="delay" id="delay" value="0" min="0">
             <label for="loopCount">🔁 Loop Count:</label>
             <input type="number" name="loopCount" id="loopCount" min="1" value="1">
