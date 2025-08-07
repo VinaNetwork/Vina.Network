@@ -181,7 +181,7 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     while (attempt < maxRetries) {
         try {
             log_message(`Attempting to get token decimals from server (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
-            const response = await axios.post('/make-market/process/get-decimals.php', {
+            const response = await axios.post('/make-market/get-decimals', {
                 tokenMint
             }, {
                 timeout: 15000, // 15 seconds timeout
@@ -191,7 +191,7 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
                 }
             });
 
-            log_message(`Response from get-decimals.php: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
+            log_message(`Response from get-decimals: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
 
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
@@ -205,7 +205,7 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
             attempt++;
             const errorMessage = err.response 
                 ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/make-market/get-decimals.php'}`;
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/make-market/get-decimals'}`;
             log_message(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
             console.error(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}):`, errorMessage);
             if (attempt === maxRetries) {
