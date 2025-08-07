@@ -10,82 +10,78 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = '../../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'make-market/get-bootstrap.php';
 require_once $root_path . 'config/config.php';
 
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: $csp_base");
-header('Access-Control-Allow-Methods: GET');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
-
-// Check AJAX request
-if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Non-AJAX request rejected", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
-    exit;
-}
-
-// Log request info
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("get-tx.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
-}
-
-// Debug session
-session_start();
-log_message("Session data: " . json_encode($_SESSION), 'make-market.log', 'make-market', 'DEBUG');
+setup_cors_headers($csp_base, 'GET');
+check_ajax_request();
+$user_id = check_authenticated_user();
+log_request_info('get-tx.php');
 
 // Get transaction ID from URL
 $transaction_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID: $transaction_id", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid or missing transaction ID: $transaction_id, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
-    exit;
-}
-
-// Check if user is authenticated
-if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
-    log_message("Unauthorized access attempt: session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Database connection
-try {
-    $pdo = get_db_connection();
-    log_message("Database connection retrieved", 'make-market.log', 'make-market', 'INFO');
-} catch (Exception $e) {
-    log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed: ' . $e->getMessage()]);
-    exit;
-}
+$pdo = get_db_connection_safe();
 
 // Fetch transaction details
 try {
     $stmt = $pdo->prepare("SELECT id, user_id, public_key, token_mint, sol_amount, token_amount, trade_direction, process_name, loop_count, batch_size, slippage, delay_seconds, status FROM make_market WHERE id = ? AND user_id = ?");
-    $stmt->execute([$transaction_id, $_SESSION['user_id']]);
+    $stmt->execute([$transaction_id, $user_id]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
-        log_message("Transaction not found or unauthorized: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Transaction not found or unauthorized: ID=$transaction_id, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(404);
-        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+
+    // Validate public key
     if (empty($transaction['public_key']) || $transaction['public_key'] === 'undefined') {
-        log_message("Invalid public key in database: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Invalid public key in database: ID=$transaction_id, public_key={$transaction['public_key']}, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid public key in transaction']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key in transaction'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $transaction['public_key'])) {
-        log_message("Invalid public key format: ID=$transaction_id, public_key={$transaction['public_key']}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Invalid public key format: ID=$transaction_id, public_key={$transaction['public_key']}, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid public key format']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid public key format'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+
+    // Validate token mint on network
+    $rpc_endpoint = SOLANA_NETWORK === 'testnet' ? 'https://api.testnet.solana.com' : 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY;
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+        CURLOPT_URL => $rpc_endpoint,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_POSTFIELDS => json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'getAccountInfo',
+            'params' => [$transaction['token_mint'], ['encoding' => 'jsonParsed']]
+        ])
+    ]);
+    $response = curl_exec($curl);
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+    $result = json_decode($response, true);
+    if ($http_code !== 200 || !isset($result['result']['value']) || $result['result']['value'] === null) {
+        log_message("Invalid token mint for network: ID=$transaction_id, token_mint={$transaction['token_mint']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Token mint is invalid or does not exist on ' . SOLANA_NETWORK], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     // Ensure defaults
     $transaction['loop_count'] = intval($transaction['loop_count'] ?? 1);
     $transaction['batch_size'] = intval($transaction['batch_size'] ?? 1);
@@ -94,12 +90,13 @@ try {
     $transaction['sol_amount'] = floatval($transaction['sol_amount'] ?? 0);
     $transaction['token_amount'] = floatval($transaction['token_amount'] ?? 0);
     $transaction['trade_direction'] = $transaction['trade_direction'] ?? 'buy';
-    log_message("Transaction fetched: ID=$transaction_id, token_mint={$transaction['token_mint']}, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}, token_amount={$transaction['token_amount']}, trade_direction={$transaction['trade_direction']}, loop_count={$transaction['loop_count']}, batch_size={$transaction['batch_size']}, slippage={$transaction['slippage']}, delay_seconds={$transaction['delay_seconds']}, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
-    echo json_encode(['status' => 'success', 'data' => $transaction]);
+
+    log_message("Transaction fetched: ID=$transaction_id, token_mint={$transaction['token_mint']}, public_key={$transaction['public_key']}, sol_amount={$transaction['sol_amount']}, token_amount={$transaction['token_amount']}, trade_direction={$transaction['trade_direction']}, loop_count={$transaction['loop_count']}, batch_size={$transaction['batch_size']}, slippage={$transaction['slippage']}, delay_seconds={$transaction['delay_seconds']}, status={$transaction['status']}, user_id=$user_id, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    echo json_encode(['status' => 'success', 'data' => $transaction], JSON_UNESCAPED_UNICODE);
 } catch (PDOException $e) {
-    log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database query failed: {$e->getMessage()}, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
