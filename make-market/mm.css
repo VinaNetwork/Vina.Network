@@ -21,7 +21,7 @@
 
 .mm-content {
     max-width: 700px;
-    padding: var(--padding);
+    padding: 20px;
     margin: var(--margin-top);
     border-radius: var(--border-radius);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -92,7 +92,7 @@ form textarea,
 
 .cta-button {
     margin-top: var(--margin-top);
-    float: center;
+    width: 100%;
 }
 
 .cta-button:disabled {
