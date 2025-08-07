@@ -149,13 +149,23 @@ try {
     // Initialize variables
     $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert from lamports to SOL
     $totalTransactions = $loop_count * $batch_size;
-    $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2); // Formula for SOL
+    $requiredSolAmount = 0; // Initialize to 0
+    $requiredTokenAmount = 0; // Initialize to 0
     $tokenBalance = 0;
     $decimals = 9; // Default decimals
-    $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Formula for token
     $errors = [];
 
-    // Check SOL balance for 'buy' or 'both' transactions only
+    // Calculate required amounts based on trade direction
+    if ($trade_direction === 'buy') {
+        $requiredSolAmount = ($sol_amount + 0.005) * $totalTransactions; // Case 1: Buy only
+    } elseif ($trade_direction === 'sell') {
+        $requiredTokenAmount = $token_amount * $totalTransactions; // Case 2: Sell only
+    } elseif ($trade_direction === 'both') {
+        $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2); // Case 3: Both
+        $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Case 3: Both
+    }
+
+    // Check SOL balance for 'buy' or 'both' transactions
     if ($trade_direction === 'buy' || $trade_direction === 'both') {
         if ($balanceInSol < $requiredSolAmount) {
             $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL";
