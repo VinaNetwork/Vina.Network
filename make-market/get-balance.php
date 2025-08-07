@@ -155,15 +155,15 @@ try {
     $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Formula for token
     $errors = [];
 
-    // Check SOL balance for 'buy' or 'both' transactions
-    if (in_array($trade_direction, ['buy', 'both'])) {
+    // Check SOL balance for 'buy' or 'both' transactions only
+    if ($trade_direction === 'buy' || $trade_direction === 'both') {
         if ($balanceInSol < $requiredSolAmount) {
             $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL";
         }
     }
 
     // Check token balance for 'sell' or 'both' transactions
-    if (in_array($trade_direction, ['sell', 'both'])) {
+    if ($trade_direction === 'sell' || $trade_direction === 'both') {
         if (isset($data['result']['items']) && is_array($data['result']['items'])) {
             foreach ($data['result']['items'] as $item) {
                 if ($item['interface'] === 'FungibleToken' && isset($item['id']) && $item['id'] === $token_mint) {
@@ -194,7 +194,7 @@ try {
         exit;
     }
 
-    log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . (in_array($trade_direction, ['sell', 'both']) ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
+    log_message("Balance check passed: SOL balance=$balanceInSol, required SOL=$requiredSolAmount" . ($trade_direction === 'sell' || $trade_direction === 'both' ? ", Token balance=$tokenBalance, required Token=$requiredTokenAmount" : ""), 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
         'status' => 'success',
         'message' => 'Wallet balance is sufficient to perform the transaction',
