@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Fetch transaction details
-    let transaction;
+    let transaction, publicKey;
     try {
         const response = await fetch(`/make-market/get-tx/${transactionId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -458,6 +458,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error(result.message);
         }
         transaction = result.data;
+        publicKey = transaction.public_key; // Use public_key from get-tx response
         transaction.loop_count = parseInt(transaction.loop_count) || 1;
         transaction.batch_size = parseInt(transaction.batch_size) || 1;
         transaction.slippage = parseFloat(transaction.slippage) || 0.5;
@@ -465,7 +466,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
         transaction.token_amount = parseFloat(transaction.token_amount) || 0;
         transaction.trade_direction = transaction.trade_direction || 'buy';
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${transaction.public_key}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
@@ -490,28 +491,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (transaction.token_amount <= 0 && (tradeDirection === 'sell' || tradeDirection === 'both')) {
         showError('Token amount must be greater than 0 for sell or both transactions');
-        return;
-    }
-
-    // Fetch public key
-    let publicKey;
-    try {
-        const response = await fetch(`/make-market/get-public-key/${transactionId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        console.log(`Fetching public key for ID: ${transactionId}, URL: /make-market/get-public-key/${transactionId}`);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        const result = await response.json();
-        if (result.status !== 'success') {
-            throw new Error(result.message);
-        }
-        publicKey = result.public_key;
-        log_message(`Public key fetched: ${publicKey}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Public key fetched:', publicKey);
-    } catch (err) {
-        showError('Failed to retrieve wallet address: ' + err.message);
         return;
     }
 
