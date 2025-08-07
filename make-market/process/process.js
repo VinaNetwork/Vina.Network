@@ -173,63 +173,45 @@ async function getApiConfig() {
     }
 }
 
-// Get token decimals from Solana or Helius API
+// Get token decimals from server-side endpoint
 async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     const maxRetries = 3;
-    const endpoints = solanaNetwork === 'testnet' 
-        ? [
-            'https://api.testnet.solana.com',
-            'https://api.devnet.solana.com',
-            'https://rpc.ankr.com/solana',
-            'https://solana-rpc.projectserum.com'
-        ]
-        : [`https://mainnet.helius-rpc.com/?api-key=${heliusApiKey}`];
     let attempt = 0;
-    let endpointIndex = 0;
 
     while (attempt < maxRetries) {
-        const rpcUrl = endpoints[endpointIndex];
         try {
-            log_message(`Attempting to get token decimals (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, endpoint=${rpcUrl}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
-            const response = await axios.post(rpcUrl, {
-                jsonrpc: '2.0',
-                id: '1',
-                method: 'getAccountInfo',
-                params: [tokenMint, { encoding: 'jsonParsed' }]
+            log_message(`Attempting to get token decimals from server (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+            const response = await axios.post('/make-market/get-decimals.php', {
+                tokenMint
             }, {
                 timeout: 15000, // 15 seconds timeout
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
             });
 
-            log_message(`Response from getAccountInfo: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
+            log_message(`Response from get-decimals.php: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
 
-            if (response.status !== 200 || !response.data.result || !response.data.result.value) {
+            if (response.status !== 200 || !response.data || response.data.status !== 'success') {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
             }
 
-            const parsedData = response.data.result.value.data.parsed;
-            if (parsedData.type !== 'mint') {
-                throw new Error(`Invalid account type: received type=${parsedData.type}, expected 'mint'`);
-            }
-
-            const decimals = parsedData.info.decimals || 9;
-            log_message(`Token decimals retrieved via getAccountInfo: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, endpoint=${rpcUrl}`, 'make-market.log', 'make-market', 'INFO');
-            console.log(`Token decimals retrieved via getAccountInfo: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, endpoint=${rpcUrl}`);
+            const decimals = response.data.decimals || 9;
+            log_message(`Token decimals retrieved from server: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+            console.log(`Token decimals retrieved from server: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
             return decimals;
         } catch (err) {
             attempt++;
-            const errorMessage = err.response ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}` : err.message;
-            log_message(`Failed to get token decimals (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, network=${solanaNetwork}, endpoint=${rpcUrl}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error(`Failed to get token decimals (attempt ${attempt}/${maxRetries}):`, errorMessage);
-            if (attempt === maxRetries && endpointIndex < endpoints.length - 1) {
-                endpointIndex++; // Switch to fallback endpoint
-                attempt = 0; // Reset attempts for new endpoint
-                log_message(`Switching to fallback endpoint: ${endpoints[endpointIndex]}`, 'make-market.log', 'make-market', 'INFO');
-                console.log(`Switching to fallback endpoint: ${endpoints[endpointIndex]}`);
-            } else if (attempt === maxRetries) {
+            const errorMessage = err.response 
+                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/make-market/get-decimals.php'}`;
+            log_message(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}):`, errorMessage);
+            if (attempt === maxRetries) {
                 throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
             }
-            await delay(1000 * attempt); // Wait 1s, 2s, 3s before retry
+            await delay(1000 * attempt); // Wait 1s, 2s, 3s
         }
     }
 }
