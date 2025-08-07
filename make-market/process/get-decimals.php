@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: make-market/process/get-decimals.php
-// Description: Get Decimals Token Solana with caching
+// Description: Get Decimals Token Solana with caching and periodic cache cleanup
 // Created by: Vina Network
 // ============================================================================
 
@@ -23,9 +23,10 @@ define('CACHE_DIR', MAKE_MARKET_PATH . 'cache/');
 define('CACHE_FILE', CACHE_DIR . 'cache-decimals.json');
 define('CACHE_TTL', 24 * 60 * 60); // Cache TTL: 24 hours in seconds
 
-// Function to read from cache
+// Function to read from cache and clean up expired entries
 function read_from_cache($tokenMint, $network) {
     if (!file_exists(CACHE_FILE)) {
+        error_log("get-decimals.php: Cache file does not exist: " . CACHE_FILE);
         return null;
     }
 
@@ -35,8 +36,26 @@ function read_from_cache($tokenMint, $network) {
         return null;
     }
 
+    // Remove expired cache entries
+    $current_time = time();
+    $initial_count = count($cache_data);
+    $cache_data = array_filter($cache_data, function($entry) use ($current_time) {
+        return $entry['timestamp'] + CACHE_TTL > $current_time;
+    });
+
+    // Write back cleaned cache if any entries were removed
+    if (count($cache_data) !== $initial_count) {
+        if (!ensure_directory_and_file(CACHE_DIR, CACHE_FILE)) {
+            error_log("get-decimals.php: Failed to ensure cache directory or file for cleanup: " . CACHE_FILE);
+        } elseif (file_put_contents(CACHE_FILE, json_encode($cache_data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
+            error_log("get-decimals.php: Failed to write cleaned cache file: " . CACHE_FILE);
+        } else {
+            error_log("get-decimals.php: Cleaned up expired cache entries, removed " . ($initial_count - count($cache_data)) . " entries");
+        }
+    }
+
     $cache_key = $tokenMint . '_' . $network;
-    if (isset($cache_data[$cache_key]) && $cache_data[$cache_key]['timestamp'] + CACHE_TTL > time()) {
+    if (isset($cache_data[$cache_key]) && $cache_data[$cache_key]['timestamp'] + CACHE_TTL > $current_time) {
         return $cache_data[$cache_key]['decimals'];
     }
 
@@ -48,6 +67,7 @@ function write_to_cache($tokenMint, $network, $decimals) {
     $cache_data = file_exists(CACHE_FILE) ? json_decode(file_get_contents(CACHE_FILE), true) : [];
     if (json_last_error() !== JSON_ERROR_NONE) {
         $cache_data = [];
+        error_log("get-decimals.php: Failed to parse cache file for writing: " . json_last_error_msg());
     }
 
     $cache_key = $tokenMint . '_' . $network;
