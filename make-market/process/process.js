@@ -7,24 +7,6 @@
 // Import auth utilities
 import { initializeAuth, addAuthHeaders, addAxiosAuthHeaders } from '../auth.js';
 
-// Network configuration
-const NETWORK_CONFIG = {
-    testnet: {
-        jupiterApi: 'https://quote-api.jup.ag/v6',
-        explorerUrl: 'https://solana.fm/tx/',
-        explorerQuery: '?cluster=testnet',
-        solMint: 'So11111111111111111111111111111111111111112',
-        prioritizationFeeLamports: 0
-    },
-    mainnet: {
-        jupiterApi: 'https://quote-api.jup.ag/v6',
-        explorerUrl: 'https://solscan.io/tx/',
-        explorerQuery: '',
-        solMint: 'So11111111111111111111111111111111111111112',
-        prioritizationFeeLamports: 10000
-    }
-};
-
 // Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
@@ -64,8 +46,7 @@ function showError(message, detailedError = null) {
 }
 
 // Show success message with styled alert
-function showSuccess(message, results = [], solanaNetwork = 'mainnet') {
-    const config = NETWORK_CONFIG[solanaNetwork] || NETWORK_CONFIG.mainnet;
+function showSuccess(message, results = [], networkConfig) {
     const resultDiv = document.getElementById('process-result');
     let html = `
         <div class="alert alert-${results.some(r => r.status === 'error') ? 'warning' : 'success'}">
@@ -76,7 +57,7 @@ function showSuccess(message, results = [], solanaNetwork = 'mainnet') {
         results.forEach(result => {
             html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
                 result.status === 'success' 
-                    ? `<a href="${config.explorerUrl}${result.txid}${config.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
+                    ? `<a href="${networkConfig.explorerUrl}${result.txid}${networkConfig.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
                     : `Failed - ${result.message}`
             }</li>`;
         });
@@ -88,8 +69,8 @@ function showSuccess(message, results = [], solanaNetwork = 'mainnet') {
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = results.some(r => r.status === 'error') ? 'Partial' : 'Success';
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
-    log_message(`Process completed: ${message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
-    console.log(`Process completed: ${message}, network=${solanaNetwork}`);
+    log_message(`Process completed: ${message}, network=${networkConfig.network}`, 'make-market.log', 'make-market', 'INFO');
+    console.log(`Process completed: ${message}, network=${networkConfig.network}`);
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -162,14 +143,14 @@ async function cancelTransaction(transactionId) {
     }
 }
 
-// Get Helius API key and Solana network from server
-async function getApiConfig() {
+// Get network configuration from server
+async function getNetworkConfig() {
     try {
-        const response = await fetch('/make-market/get-api', {
+        const response = await fetch('/make-market/process/get-network', {
             method: 'GET',
             headers: addAuthHeaders()
         });
-        console.log(`Fetching API config, URL: /make-market/get-api`);
+        console.log(`Fetching network config, URL: /make-market/process/get-network`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -177,18 +158,15 @@ async function getApiConfig() {
         if (result.status !== 'success') {
             throw new Error(result.message);
         }
-        if (!['testnet', 'mainnet'].includes(result.solana_network)) {
-            throw new Error(`Invalid network: ${result.solana_network}`);
+        if (!['testnet', 'mainnet'].includes(result.network)) {
+            throw new Error(`Invalid network: ${result.network}`);
         }
-        log_message(`API config fetched successfully: network=${result.solana_network}`, 'make-market.log', 'make-market', 'INFO');
-        console.log(`API config fetched successfully: network=${result.solana_network}`);
-        return {
-            heliusApiKey: result.helius_api_key,
-            solanaNetwork: result.solana_network
-        };
+        log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.config.explorerUrl}`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`Network config fetched successfully:`, result);
+        return result;
     } catch (err) {
-        log_message(`Failed to fetch API config: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to fetch API config:', err.message);
+        log_message(`Failed to fetch network config: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to fetch network config:', err.message);
         throw err;
     }
 }
@@ -234,56 +212,54 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
 }
 
 // Get quote from Jupiter API
-async function getQuote(inputMint, outputMint, amount, slippageBps, solanaNetwork) {
-    const config = NETWORK_CONFIG[solanaNetwork] || NETWORK_CONFIG.mainnet;
+async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig) {
     const params = {
         inputMint,
         outputMint,
         amount: Math.floor(amount),
         slippageBps
     };
-    if (solanaNetwork === 'testnet') {
+    if (networkConfig.network === 'testnet') {
         params.testnet = true;
     }
     try {
-        const response = await axios.get(`${config.jupiterApi}/quote`, { params, timeout: 15000 });
+        const response = await axios.get(`${networkConfig.config.jupiterApi}/quote`, { params, timeout: 15000 });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to retrieve quote from Jupiter API');
         }
-        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Quote retrieved:', response.data);
         return response.data;
     } catch (err) {
         const errorMessage = err.response 
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${config.jupiterApi}/quote`}`;
-        log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.config.jupiterApi}/quote`}`;
+        log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to get quote:', errorMessage);
         throw new Error(errorMessage);
     }
 }
 
 // Get swap transaction from Jupiter API
-async function getSwapTransaction(quote, publicKey, solanaNetwork) {
-    const config = NETWORK_CONFIG[solanaNetwork] || NETWORK_CONFIG.mainnet;
+async function getSwapTransaction(quote, publicKey, networkConfig) {
     try {
-        const response = await axios.post(`${config.jupiterApi}/swap`, {
+        const response = await axios.post(`${networkConfig.config.jupiterApi}/swap`, {
             quoteResponse: quote,
             userPublicKey: publicKey,
             wrapAndUnwrapSol: true,
             dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: config.prioritizationFeeLamports,
-            testnet: solanaNetwork === 'testnet'
+            prioritizationFeeLamports: networkConfig.config.prioritizationFeeLamports,
+            testnet: networkConfig.network === 'testnet'
         });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
         }
         const { swapTransaction } = response.data;
-        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Swap transaction prepared:', swapTransaction);
         return swapTransaction;
     } catch (err) {
-        log_message(`Swap transaction failed: ${err.message}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Swap transaction failed: ${err.message}, network=${networkConfig.network}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Swap transaction failed:', err.message);
         throw err;
     }
@@ -376,6 +352,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initializeAuth();
     } catch (err) {
         showError('Failed to initialize authentication: ' + err.message);
+        return;
+    }
+
+    // Fetch network configuration
+    let networkConfig;
+    try {
+        networkConfig = await getNetworkConfig();
+    } catch (err) {
+        showError('Failed to retrieve network config: ' + err.message);
         return;
     }
 
@@ -549,8 +534,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Process swaps with loop_count and batch_size
     try {
-        const config = NETWORK_CONFIG[solanaNetwork] || NETWORK_CONFIG.mainnet;
-        const solMint = config.solMint;
+        const solMint = networkConfig.config.solMint;
         const solAmount = transaction.sol_amount * 1e9; // Convert SOL to lamports
         const tokenAmount = transaction.token_amount * Math.pow(10, tokenDecimals); // Convert token amount to correct decimals
         const slippageBps = Math.floor(transaction.slippage * 100); // Convert to basis points
@@ -560,12 +544,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Generate swap transactions based on trade_direction
         let subTransactionIndex = 0;
         for (let loop = 1; loop <= loopCount; loop++) {
-            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${solanaNetwork}...`;
+            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${solanaNetwork}...`;
-                    const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, solanaNetwork);
-                    const buyTx = await getSwapTransaction(buyQuote, publicKey, solanaNetwork);
+                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
+                    const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, networkConfig);
+                    const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1 || tradeDirection === 'both') {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next ${tradeDirection === 'both' ? 'buy/sell' : 'batch'} in loop ${loop}...`;
@@ -573,9 +557,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
                 if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${solanaNetwork}...`;
-                    const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, solanaNetwork);
-                    const sellTx = await getSwapTransaction(sellQuote, publicKey, solanaNetwork);
+                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
+                    const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, networkConfig);
+                    const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1) {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
@@ -584,18 +568,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
             if (loop < loopCount) {
-                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop on ${solanaNetwork}...`;
+                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop on ${networkConfig.network}...`;
                 await delay(delaySeconds);
             }
         }
 
         // Execute swaps
-        document.getElementById('swap-status').textContent = `Executing swap transactions on ${solanaNetwork}...`;
+        document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}...`;
         const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
-        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${solanaNetwork}`);
-        showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${solanaNetwork}`, swapResult.results, solanaNetwork);
+        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
+        showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
     } catch (err) {
         showError('Error during swap process: ' + err.message, err.message);
     }
