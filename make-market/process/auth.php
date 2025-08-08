@@ -11,7 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/config.php';
 require_once $root_path . 'make-market/process/network.php';
 
 /**
