@@ -21,7 +21,6 @@ use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\PublicKey;
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://api.devnet.solana.com https://solscan.io https://solana.fm; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("Access-Control-Allow-Origin: $csp_base");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
