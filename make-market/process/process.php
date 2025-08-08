@@ -13,6 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
+require_once $root_path . 'make-market/process/network.php';
 require_once $root_path . '../vendor/autoload.php';
 
 use StephenHill\Base58;
@@ -30,7 +31,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: POST, GET");
-header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With, X-CSRF-Token");
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
 
@@ -92,16 +93,16 @@ if ($transaction_id <= 0) {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, token_amount, trade_direction, slippage, delay_seconds, loop_count, batch_size, status, error FROM make_market WHERE id = ?");
-    $stmt->execute([$transaction_id]);
+    $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, token_amount, trade_direction, slippage, delay_seconds, loop_count, batch_size, status, error, network FROM make_market WHERE id = ? AND user_id = ? AND network = ?");
+    $stmt->execute([$transaction_id, $_SESSION['user_id'], SOLANA_NETWORK]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$transaction || $transaction['user_id'] != $_SESSION['user_id']) {
-        log_message("Transaction not found or unauthorized: ID=$transaction_id, user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+    if (!$transaction) {
+        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id={$_SESSION['user_id']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized']);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
@@ -166,6 +167,12 @@ $page_css = ['/make-market/process/process.css'];
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
 
+<?php if (SOLANA_NETWORK === 'mainnet'): ?>
+<div class="alert alert-warning">
+    <strong>Warning:</strong> You are operating on Solana Mainnet. Transactions will use real SOL and tokens. Please verify all details before proceeding.
+</div>
+<?php endif; ?>
+
 <div class="process-container">
     <div class="process-content">
         <h1><i class="fas fa-cogs"></i> Make Market Process</h1>
@@ -175,7 +182,7 @@ $page_css = ['/make-market/process/process.css'];
                 <tr>
                     <th>Wallet Address:</th>
                     <td>
-                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
+                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?><?php echo EXPLORER_QUERY; ?>" target="_blank">
                             <?php echo htmlspecialchars($short_public_key); ?>
                         </a>
                         <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
@@ -192,7 +199,7 @@ $page_css = ['/make-market/process/process.css'];
                 <tr>
                     <th>Token Address:</th>
                     <td>
-                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($token_mint); ?>" target="_blank">
+                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($token_mint); ?><?php echo EXPLORER_QUERY; ?>" target="_blank">
                             <?php echo htmlspecialchars($short_token_mint); ?>
                         </a>
                         <i class="fas fa-copy copy-icon" title="Copy full token address" data-full="<?php echo htmlspecialchars($token_mint); ?>"></i>
@@ -231,6 +238,10 @@ $page_css = ['/make-market/process/process.css'];
                     <td><?php echo htmlspecialchars($transaction['loop_count'] * $transaction['batch_size']); ?></td>
                 </tr>
                 <tr>
+                    <th>Network:</th>
+                    <td><?php echo htmlspecialchars(ucfirst($transaction['network'])); ?></td>
+                </tr>
+                <tr>
                     <th>Status:</th>
                     <td><span id="transaction-status" class="<?php echo $transaction['status'] === 'success' ? 'text-success' : ($transaction['status'] === 'partial' ? 'text-warning' : 'text-danger'); ?>">
                         <?php echo htmlspecialchars($transaction['status']); ?>
@@ -249,6 +260,11 @@ $page_css = ['/make-market/process/process.css'];
 </div>
 
 <?php include $root_path . 'include/footer.php'; ?>
+
+<!-- Pass network to JavaScript -->
+<script>
+    window.SOLANA_NETWORK = '<?php echo htmlspecialchars(SOLANA_NETWORK); ?>';
+</script>
 
 <!-- Scripts - Internal library -->
 <script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
