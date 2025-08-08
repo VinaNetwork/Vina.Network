@@ -5,16 +5,9 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    http_response_code(403);
-    exit('No direct access allowed!');
-}
-
-// Yêu cầu config.php và bootstrap.php
-require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/bootstrap.php';
 
-// Hàm lấy kết nối database
+// Connect database
 function get_db_connection() {
     try {
         $pdo = new PDO(
