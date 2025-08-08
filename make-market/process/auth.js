@@ -41,11 +41,11 @@ async function getCsrfToken() {
         if (result.status !== 'success') {
             throw new Error(result.message || 'Failed to fetch CSRF token');
         }
-        log_message(`CSRF token fetched: ${result.csrf_token}`, 'make-market.log', 'auth', 'INFO');
+        log_message(`CSRF token fetched: ${result.csrf_token}`, 'make-market.log', 'make-market', 'INFO');
         console.log(`CSRF token fetched: ${result.csrf_token}, network=${window.SOLANA_NETWORK || 'unknown'}`);
         return result.csrf_token;
     } catch (err) {
-        log_message(`Failed to fetch CSRF token: ${err.message}`, 'make-market.log', 'auth', 'ERROR');
+        log_message(`Failed to fetch CSRF token: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error(`Failed to fetch CSRF token: ${err.message}, network=${window.SOLANA_NETWORK || 'unknown'}`);
         throw err;
     }
@@ -59,7 +59,7 @@ async function initializeAuth() {
     }
     // Validate network
     if (!['testnet', 'mainnet'].includes(window.SOLANA_NETWORK)) {
-        log_message(`Invalid network: ${window.SOLANA_NETWORK || 'undefined'}`, 'make-market.log', 'auth', 'ERROR');
+        log_message(`Invalid network: ${window.SOLANA_NETWORK || 'undefined'}`, 'make-market.log', 'make-market', 'ERROR');
         throw new Error(`Invalid network: ${window.SOLANA_NETWORK || 'undefined'}`);
     }
     return cachedCsrfToken;
