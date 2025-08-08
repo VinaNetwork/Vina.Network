@@ -345,8 +345,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO make_market (
                     user_id, public_key, process_name, private_key, token_mint, 
                     trade_direction, sol_amount, token_amount, slippage, delay_seconds, 
-                    loop_count, batch_size, status
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
+                    loop_count, batch_size, status, network
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)
             ");
             $stmt->execute([
                 $_SESSION['user_id'],
@@ -360,7 +360,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $slippage,
                 $delay,
                 $loopCount,
-                $batchSize
+                $batchSize,
+                SOLANA_NETWORK
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
