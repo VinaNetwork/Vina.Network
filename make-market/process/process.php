@@ -275,7 +275,7 @@ $page_css = ['/make-market/process/process.css'];
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script type="module" defer src="/make-market/process/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
+<script defer src="/make-market/process/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
 <script>
     window.SOLANA_NETWORK = '<?php echo SOLANA_NETWORK; ?>';
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
