@@ -11,14 +11,15 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/config.php'; // Load SOLANA_NETWORK and HELIUS_API_KEY
+require_once $root_path . 'config/config.php';
+require_once $root_path . 'make-market/process/auth.php';
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type');
+// Perform authentication check (only AJAX and CSRF, no user auth)
+initialize_auth();
+if (!check_ajax_request() || !validate_csrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+    exit;
+}
 
-// Define cache settings
 define('CACHE_DIR', MAKE_MARKET_PATH . 'cache/');
 define('CACHE_FILE', CACHE_DIR . 'cache-decimals.json');
 define('CACHE_TTL', 24 * 60 * 60); // Cache TTL: 24 hours in seconds
