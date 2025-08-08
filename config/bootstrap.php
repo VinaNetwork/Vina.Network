@@ -30,6 +30,9 @@ define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
+// make-market/process/create-tx.php
+define('ENVIRONMENT', 'development');
+
 // ---------------------------------------------------
 // PHP configuration
 // Set error handling and session
