@@ -1,23 +1,26 @@
 RewriteEngine On
 RewriteBase /make-market/
 
-# Prevent direct access to PHP files in process directory
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteCond %{REQUEST_FILENAME} \.php$
-RewriteRule ^process/ - [F,L]
-
-# If it is not a real file or folder
+# Allow rewrite to process.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-
-# Rule for /make-market/process/{id} → process/process.php?id={id}
 RewriteRule ^process/([0-9]+)$ process/process.php?id=$1 [L,NC]
+
+# Prevent direct access to other PHP files in process directory
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_FILENAME} \.php$
+RewriteCond %{REQUEST_URI} !^/make-market/process/process.php
+RewriteRule ^process/ - [F,L]
 
 # Rules for other functions
 RewriteRule ^get-tx/([0-9]+)$ process/get-tx.php?id=$1 [L,NC]
 RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC]
-RewriteRule ^swap/([0-9]+)$ process/swap.php?id=$1 [L,NC]
+RewriteRule ^swap$ process/swap.php [L,NC] # Sửa swap/([0-9]+) thành swap
 RewriteRule ^get-api$ process/get-api.php [L,NC]
 RewriteRule ^get-decimals$ process/get-decimals.php [L,NC]
 RewriteRule ^get-network$ process/get-network.php [L,NC]
 RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC]
+
+# Allow access to static files (js, css, etc.)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
