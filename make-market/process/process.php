@@ -280,7 +280,7 @@ $page_css = ['/make-market/process/process.css'];
     window.SOLANA_NETWORK = '<?php echo SOLANA_NETWORK; ?>';
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
 </script>
-<script type="module" defer src="/make-market/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
+<script defer src="/make-market/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
