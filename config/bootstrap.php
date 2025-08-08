@@ -30,7 +30,7 @@ define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
-// make-market/process/create-tx.php
+// Define environment: make-market/process/create-tx.php
 define('ENVIRONMENT', 'development');
 
 // ---------------------------------------------------
@@ -111,13 +111,14 @@ function ensure_directory_and_file($dir_path, $file_path) {
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
 function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
+    if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
+        return;
+    }
     $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : TOOLS_PATH));
     $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : TOOLS_PATH . $log_file));
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
-
     try {
-        // Ensure the log directory and file are set up correctly
         if (!ensure_directory_and_file($dir_path, $log_path)) {
             error_log("Log setup failed for $log_path: $message");
             return;
