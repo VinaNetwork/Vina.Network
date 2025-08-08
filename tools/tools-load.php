@@ -9,14 +9,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$bootstrap_path = __DIR__ . '/../config/bootstrap.php';
-if (!file_exists($bootstrap_path)) {
-    error_log("load-tool: bootstrap.php not found at $bootstrap_path");
-    http_response_code(500);
-    echo '<div class="result-error"><p>Error: bootstrap.php not found</p></div>';
-    exit;
-}
-require_once $bootstrap_path;
+$root_path = __DIR__ . '/../';
+require_once $root_path . 'config/bootstrap.php';
 
 $tool = isset($_GET['tool']) ? trim($_GET['tool']) : '';
 $tab = isset($_GET['tab']) ? trim($_GET['tab']) : '';
