@@ -4,7 +4,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Log message function (tái sử dụng từ mm.js)
+// Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
