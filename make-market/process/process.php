@@ -263,11 +263,6 @@ $page_css = ['/make-market/process/process.css'];
 
 <?php include $root_path . 'include/footer.php'; ?>
 
-<!-- Pass network to JavaScript -->
-<script>
-    window.SOLANA_NETWORK = '<?php echo htmlspecialchars(SOLANA_NETWORK); ?>';
-</script>
-
 <!-- Scripts - Internal library -->
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <script src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
@@ -276,6 +271,7 @@ $page_css = ['/make-market/process/process.css'];
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script src="/make-market/process/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
+<!-- Pass network to JavaScript -->
 <script>
     window.SOLANA_NETWORK = '<?php echo SOLANA_NETWORK; ?>';
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
