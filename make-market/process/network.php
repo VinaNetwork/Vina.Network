@@ -10,10 +10,10 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-// Load environment variables if using phpdotenv
-if (file_exists(__DIR__ . '/../../.env')) {
-    require_once __DIR__ . '/../../vendor/autoload.php';
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
+$rootPath = realpath(__DIR__ . '/../../../');
+if (file_exists($rootPath . '/.env')) {
+    require_once $rootPath . '/vendor/autoload.php';
+    $dotenv = Dotenv\Dotenv::createImmutable($rootPath);
     $dotenv->load();
 }
 
