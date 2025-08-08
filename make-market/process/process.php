@@ -78,11 +78,14 @@ if (!$user_public_key) {
     exit;
 }
 
-// Get transaction ID from URL path
-$request_uri = $_SERVER['REQUEST_URI'];
-$path_parts = explode('/', rtrim($request_uri, '/'));
-$transaction_id = end($path_parts);
-$transaction_id = is_numeric($transaction_id) ? intval($transaction_id) : 0;
+// Get transaction ID from query parameter
+$transaction_id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : 0;
+if ($transaction_id <= 0) {
+    log_message("Invalid or missing transaction ID from query parameter: id={$_GET['id']}", 'make-market.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
+    exit;
+}
 if ($transaction_id <= 0) {
     log_message("Invalid or missing transaction ID from URL path: $request_uri", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
