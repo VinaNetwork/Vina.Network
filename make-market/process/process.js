@@ -10,16 +10,14 @@ import { initializeAuth, addAuthHeaders, addAxiosAuthHeaders } from '../auth.js'
 // Network configuration
 const NETWORK_CONFIG = {
     testnet: {
-        jupiterQuoteApi: 'https://quote-api.jup.ag/v6/quote?testnet=true',
-        jupiterSwapApi: 'https://quote-api.jup.ag/v6/swap?testnet=true',
+        jupiterApi: 'https://quote-api.jup.ag/v6',
         explorerUrl: 'https://solana.fm/tx/',
         explorerQuery: '?cluster=testnet',
         solMint: 'So11111111111111111111111111111111111111112',
         prioritizationFeeLamports: 0
     },
     mainnet: {
-        jupiterQuoteApi: 'https://quote-api.jup.ag/v6/quote',
-        jupiterSwapApi: 'https://quote-api.jup.ag/v6/swap',
+        jupiterApi: 'https://quote-api.jup.ag/v6',
         explorerUrl: 'https://solscan.io/tx/',
         explorerQuery: '',
         solMint: 'So11111111111111111111111111111111111111112',
@@ -238,16 +236,17 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps, solanaNetwork) {
     const config = NETWORK_CONFIG[solanaNetwork] || NETWORK_CONFIG.mainnet;
+    const params = {
+        inputMint,
+        outputMint,
+        amount: Math.floor(amount),
+        slippageBps
+    };
+    if (solanaNetwork === 'testnet') {
+        params.testnet = true;
+    }
     try {
-        const response = await axios.get(config.jupiterQuoteApi, {
-            params: {
-                inputMint,
-                outputMint,
-                amount: Math.floor(amount),
-                slippageBps
-            },
-            timeout: 15000
-        });
+        const response = await axios.get(`${config.jupiterApi}/quote`, { params, timeout: 15000 });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to retrieve quote from Jupiter API');
         }
@@ -257,7 +256,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, solanaNetwor
     } catch (err) {
         const errorMessage = err.response 
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || config.jupiterQuoteApi}`;
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${config.jupiterApi}/quote`}`;
         log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to get quote:', errorMessage);
         throw new Error(errorMessage);
@@ -268,12 +267,13 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, solanaNetwor
 async function getSwapTransaction(quote, publicKey, solanaNetwork) {
     const config = NETWORK_CONFIG[solanaNetwork] || NETWORK_CONFIG.mainnet;
     try {
-        const response = await axios.post(config.jupiterSwapApi, {
+        const response = await axios.post(`${config.jupiterApi}/swap`, {
             quoteResponse: quote,
             userPublicKey: publicKey,
             wrapAndUnwrapSol: true,
             dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: config.prioritizationFeeLamports
+            prioritizationFeeLamports: config.prioritizationFeeLamports,
+            testnet: solanaNetwork === 'testnet'
         });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
@@ -366,6 +366,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     log_message('process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
+    // Warn if on mainnet
+    if (window.SOLANA_NETWORK === 'mainnet') {
+        alert('Warning: You are on Solana Mainnet. Transactions will use real funds.');
+    }
+
     // Initialize authentication
     try {
         await initializeAuth();
@@ -442,7 +447,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const apiConfig = await getApiConfig();
         heliusApiKey = apiConfig.heliusApiKey;
-        solanaNetwork = apiConfig.solanaNetwork;
+        solanaNetwork = window.SOLANA_NETWORK || apiConfig.solanaNetwork;
+        if (solanaNetwork !== window.SOLANA_NETWORK) {
+            showError(`Network mismatch: client (${solanaNetwork}) vs server (${window.SOLANA_NETWORK})`);
+            return;
+        }
     } catch (err) {
         showError('Failed to retrieve API config: ' + err.message);
         return;
@@ -557,7 +566,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${solanaNetwork}...`;
                     const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, solanaNetwork);
                     const buyTx = await getSwapTransaction(buyQuote, publicKey, solanaNetwork);
-                    swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: subTransactionIds[subTransactionIndex++] });
+                    swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1 || tradeDirection === 'both') {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next ${tradeDirection === 'both' ? 'buy/sell' : 'batch'} in loop ${loop}...`;
                         await delay(delaySeconds);
@@ -567,7 +576,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${solanaNetwork}...`;
                     const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, solanaNetwork);
                     const sellTx = await getSwapTransaction(sellQuote, publicKey, solanaNetwork);
-                    swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: subTransactionIds[subTransactionIndex++] });
+                    swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1) {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
                         await delay(delaySeconds);
