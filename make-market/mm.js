@@ -23,13 +23,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
 // Show error message
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
-    let enhancedMessage = message;
-    if (message.includes('Insufficient wallet balance') || message.includes('Insufficient SOL balance')) {
-        enhancedMessage += ' <a href="https://www.binance.com/en" target="_blank">Top up SOL here</a>';
-    } else if (message.includes('Insufficient token balance')) {
-        enhancedMessage += ' <a href="https://www.binance.com/en" target="_blank">Top up tokens here</a>';
-    }
-    resultDiv.innerHTML = `<p>Error: ${enhancedMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    resultDiv.innerHTML = `<p>Error: ${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     resultDiv.classList.add('active');
     document.querySelector('#makeMarketForm button').disabled = false;
 }
