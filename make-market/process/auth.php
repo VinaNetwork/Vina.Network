@@ -36,7 +36,7 @@ function initialize_auth() {
  */
 function check_ajax_request() {
     if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-        log_message("Non-AJAX request rejected, network=" . SOLANA_NETWORK, 'make-market.log', 'auth', 'ERROR');
+        log_message("Non-AJAX request rejected, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
         return false;
@@ -51,7 +51,7 @@ function check_ajax_request() {
  */
 function validate_csrf($token) {
     if (!isset($token) || !validate_csrf_token($token)) {
-        log_message("Invalid CSRF token, network=" . SOLANA_NETWORK, 'make-market.log', 'auth', 'ERROR');
+        log_message("Invalid CSRF token, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
         return false;
@@ -65,7 +65,7 @@ function validate_csrf($token) {
  */
 function check_user_auth() {
     if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
-        log_message("Unauthorized access attempt: session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'auth', 'ERROR');
+        log_message("Unauthorized access attempt: session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Unauthorized access'], JSON_UNESCAPED_UNICODE);
         return false;
@@ -85,14 +85,14 @@ function check_transaction_ownership($pdo, $transaction_id) {
         $stmt->execute([$transaction_id, $_SESSION['user_id'], SOLANA_NETWORK]);
         $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$transaction) {
-            log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'auth', 'ERROR');
+            log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
             http_response_code(403);
             echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
             return false;
         }
         return true;
     } catch (PDOException $e) {
-        log_message("Database query failed: {$e->getMessage()}, network=" . SOLANA_NETWORK . ", session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'auth', 'ERROR');
+        log_message("Database query failed: {$e->getMessage()}, network=" . SOLANA_NETWORK . ", session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking transaction ownership'], JSON_UNESCAPED_UNICODE);
         return false;
@@ -107,10 +107,10 @@ function check_transaction_ownership($pdo, $transaction_id) {
  */
 function validate_csrf_token($token) {
     if (!isset($_SESSION['csrf_token']) || empty($token) || $token !== $_SESSION['csrf_token']) {
-        log_message("CSRF token validation failed: provided=$token, session=" . ($_SESSION['csrf_token'] ?? 'none'), 'make-market.log', 'auth', 'ERROR');
+        log_message("CSRF token validation failed: provided=$token, session=" . ($_SESSION['csrf_token'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
         return false;
     }
-    log_message("CSRF token validated: $token", 'make-market.log', 'auth', 'INFO');
+    log_message("CSRF token validated: $token", 'make-market.log', 'make-market', 'INFO');
     return true;
 }
 function perform_auth_check($pdo = null, $transaction_id = null) {
@@ -125,7 +125,7 @@ function perform_auth_check($pdo = null, $transaction_id = null) {
     log_message("Authentication successful: session_user_id=" . ($_SESSION['user_id'] ?? 'none') . 
                 ($transaction_id ? ", transaction_id=$transaction_id" : "") . 
                 ", network=" . SOLANA_NETWORK, 
-                'make-market.log', 'auth', 'INFO');
+                'make-market.log', 'make-market', 'INFO');
     return true;
 }
 ?>
