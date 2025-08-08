@@ -26,7 +26,7 @@ if (!defined('HELIUS_API_KEY')) {
 
 // Solana Network Configuration
 if (!defined('SOLANA_NETWORK')) {
-    define('SOLANA_NETWORK', 'testnet'); // Set to 'mainnet' or 'testnet'
+    define('SOLANA_NETWORK', 'devnet'); // Set to 'mainnet' or 'devnet' or 'testnet'
 }
 
 // JWT Secret for encryption
