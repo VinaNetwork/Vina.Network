@@ -14,20 +14,18 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
 
 /**
- * Initialize session and set headers
+ * Initialize session
  * @return void
  */
 function initialize_auth() {
-    session_start([
-        'cookie_secure' => true,
-        'cookie_httponly' => true,
-        'cookie_samesite' => 'Strict'
-    ]);
-    global $csp_base;
-    header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: $csp_base");
-    header('Access-Control-Allow-Methods: POST');
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start([
+            'cookie_secure' => false, // Tạm tắt để debug
+            'cookie_httponly' => true,
+            'cookie_samesite' => 'Strict'
+        ]);
+    }
+    log_message("Session initialized, user_id=" . ($_SESSION['user_id'] ?? 'none') . ", public_key=" . ($_SESSION['public_key'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 }
 
 /**
@@ -50,12 +48,13 @@ function check_ajax_request() {
  * @return bool
  */
 function validate_csrf($token) {
-    if (!isset($token) || !validate_csrf_token($token)) {
-        log_message("Invalid CSRF token, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    if (!validate_csrf_token($token)) {
+        log_message("Invalid CSRF token, provided=$token, session=" . ($_SESSION['csrf_token'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
         return false;
     }
+    log_message("CSRF token validated: $token, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
     return true;
 }
 
@@ -64,12 +63,13 @@ function validate_csrf($token) {
  * @return bool
  */
 function check_user_auth() {
-    if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] <= 0) {
-        log_message("Unauthorized access attempt: session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['public_key'])) {
+        log_message("Unauthorized access attempt: user_id=" . ($_SESSION['user_id'] ?? 'none') . ", public_key=" . ($_SESSION['public_key'] ?? 'none') . ", network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Unauthorized access'], JSON_UNESCAPED_UNICODE);
         return false;
     }
+    log_message("Auth check passed: user_id={$_SESSION['user_id']}, public_key={$_SESSION['public_key']}, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'INFO');
     return true;
 }
 
@@ -105,14 +105,6 @@ function check_transaction_ownership($pdo, $transaction_id) {
  * @param int|null $transaction_id Transaction ID (optional)
  * @return bool
  */
-function validate_csrf_token($token) {
-    if (!isset($_SESSION['csrf_token']) || empty($token) || $token !== $_SESSION['csrf_token']) {
-        log_message("CSRF token validation failed: provided=$token, session=" . ($_SESSION['csrf_token'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
-        return false;
-    }
-    log_message("CSRF token validated: $token", 'make-market.log', 'make-market', 'INFO');
-    return true;
-}
 function perform_auth_check($pdo = null, $transaction_id = null) {
     initialize_auth();
     if (!check_ajax_request()) return false;
@@ -121,7 +113,6 @@ function perform_auth_check($pdo = null, $transaction_id = null) {
     if ($pdo && $transaction_id !== null) {
         if (!check_transaction_ownership($pdo, $transaction_id)) return false;
     }
-    // Log successful authentication
     log_message("Authentication successful: session_user_id=" . ($_SESSION['user_id'] ?? 'none') . 
                 ($transaction_id ? ", transaction_id=$transaction_id" : "") . 
                 ", network=" . SOLANA_NETWORK, 
