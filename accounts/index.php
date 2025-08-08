@@ -15,7 +15,7 @@ require_once $root_path . 'config/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
