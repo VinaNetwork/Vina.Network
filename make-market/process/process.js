@@ -4,6 +4,9 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Import auth utilities
+import { initializeAuth, addAuthHeaders, addAxiosAuthHeaders } from '../auth.js';
+
 // Network configuration
 const NETWORK_CONFIG = {
     testnet: {
@@ -101,10 +104,9 @@ async function updateTransactionStatus(status, error = null) {
     try {
         const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: addAuthHeaders({
+                'Content-Type': 'application/json'
+            }),
             body: JSON.stringify({ id: transactionId, status, error })
         });
         console.log(`Updating status for ID: ${transactionId}, URL: /make-market/get-status/${transactionId}`);
@@ -128,10 +130,9 @@ async function cancelTransaction(transactionId) {
     try {
         const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: addAuthHeaders({
+                'Content-Type': 'application/json'
+            }),
             body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user' })
         });
         console.log(`Canceling transaction for ID: ${transactionId}, URL: /make-market/get-status/${transactionId}`);
@@ -168,9 +169,7 @@ async function getApiConfig() {
     try {
         const response = await fetch('/make-market/get-api', {
             method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: addAuthHeaders()
         });
         console.log(`Fetching API config, URL: /make-market/get-api`);
         if (!response.ok) {
@@ -206,13 +205,13 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
             const response = await axios.post('/make-market/get-decimals', {
                 tokenMint,
                 network: solanaNetwork
-            }, {
+            }, addAxiosAuthHeaders({
                 timeout: 15000,
                 headers: { 
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 }
-            });
+            }));
             log_message(`Response from get-decimals: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
@@ -307,10 +306,9 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
         }
         const response = await fetch(`/make-market/process/create-tx/${transactionId}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: addAuthHeaders({
+                'Content-Type': 'application/json'
+            }),
             body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork })
         });
         if (!response.ok) {
@@ -335,10 +333,9 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
     try {
         const response = await fetch('/make-market/swap', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: addAuthHeaders({
+                'Content-Type': 'application/json'
+            }),
             body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork })
         });
         console.log(`Executing swap transactions for ID: ${transactionId}, URL: /make-market/swap`);
@@ -368,6 +365,14 @@ function delay(ms) {
 document.addEventListener('DOMContentLoaded', async () => {
     log_message('process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
+
+    // Initialize authentication
+    try {
+        await initializeAuth();
+    } catch (err) {
+        showError('Failed to initialize authentication: ' + err.message);
+        return;
+    }
 
     // Copy functionality
     const copyIcons = document.querySelectorAll('.copy-icon');
@@ -447,7 +452,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let transaction, publicKey;
     try {
         const response = await fetch(`/make-market/get-tx/${transactionId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers: addAuthHeaders()
         });
         console.log(`Fetching transaction for ID: ${transactionId}, URL: /make-market/get-tx/${transactionId}`);
         if (!response.ok) {
