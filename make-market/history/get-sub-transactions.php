@@ -9,9 +9,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = '../../';
+$root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: $csp_base");
