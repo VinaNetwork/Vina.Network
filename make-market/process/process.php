@@ -155,7 +155,6 @@ $page_og_title = "Make Market Process: Automate Solana Token Trading";
 $page_og_description = "Execute Solana token swaps using Jupiter Aggregator.";
 $page_og_url = BASE_URL . "make-market/process/";
 $page_canonical = BASE_URL . "make-market/process/";
-<meta name="csrf-token" content="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
 
 // CSS for Process page
 $page_css = ['/make-market/process/process.css'];
@@ -258,8 +257,8 @@ $page_css = ['/make-market/process/process.css'];
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script defer src="/make-market/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
-<script defer src="/make-market/process/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
+<script type="module" defer src="/make-market/process/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
+<script type="module" defer src="/make-market/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
