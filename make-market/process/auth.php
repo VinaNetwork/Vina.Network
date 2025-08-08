@@ -105,6 +105,14 @@ function check_transaction_ownership($pdo, $transaction_id) {
  * @param int|null $transaction_id Transaction ID (optional)
  * @return bool
  */
+function validate_csrf_token($token) {
+    if (!isset($_SESSION['csrf_token']) || empty($token) || $token !== $_SESSION['csrf_token']) {
+        log_message("CSRF token validation failed: provided=$token, session=" . ($_SESSION['csrf_token'] ?? 'none'), 'make-market.log', 'auth', 'ERROR');
+        return false;
+    }
+    log_message("CSRF token validated: $token", 'make-market.log', 'auth', 'INFO');
+    return true;
+}
 function perform_auth_check($pdo = null, $transaction_id = null) {
     initialize_auth();
     if (!check_ajax_request()) return false;
