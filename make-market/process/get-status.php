@@ -12,16 +12,17 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
+require_once $root_path . 'make-market/process/network.php';
 require_once $root_path . 'make-market/process/auth.php';
 
 // Database connection
 try {
     $pdo = get_db_connection();
-    log_message("Database connection retrieved", 'make-market.log', 'make-market', 'INFO');
+    log_message("Database connection retrieved, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
-    log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -33,15 +34,15 @@ $error = $input['error'] ?? null;
 
 // Validate input
 if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid or missing transaction ID, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if (!in_array($status, ['pending', 'processing', 'failed', 'success', 'canceled'])) {
-    log_message("Invalid status: $status", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid status: $status, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid status']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid status'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -52,14 +53,14 @@ if (!perform_auth_check($pdo, $transaction_id)) {
 
 // Update transaction
 try {
-    $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
-    $stmt->execute([$status, $error, $transaction_id]);
-    log_message("Transaction status updated: ID=$transaction_id, status=$status, error=" . ($error ?? 'none'), 'make-market.log', 'make-market', 'INFO');
+    $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ? AND network = ?");
+    $stmt->execute([$status, $error, $transaction_id, SOLANA_NETWORK]);
+    log_message("Transaction status updated: ID=$transaction_id, status=$status, error=" . ($error ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
     echo json_encode(['status' => 'success']);
 } catch (PDOException $e) {
-    log_message("Database update failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database update failed: {$e->getMessage()}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error updating transaction']);
+    echo json_encode(['status' => 'error', 'message' => 'Error updating transaction'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
