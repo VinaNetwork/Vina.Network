@@ -12,6 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = '../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/config.php';
+require_once $root_path . 'make-market/process/network.php';
 require_once $root_path . 'make-market/process/auth.php';
 
 // Initialize security headers and authentication
@@ -61,25 +62,16 @@ try {
 
 // Fetch transaction details
 try {
-    $stmt = $pdo->prepare("SELECT user_id, trade_direction, loop_count, batch_size FROM make_market WHERE id = ? AND user_id = ?");
-    $stmt->execute([$transaction_id, $_SESSION['user_id']]);
+    $stmt = $pdo->prepare("SELECT user_id, trade_direction, loop_count, batch_size, network FROM make_market WHERE id = ? AND user_id = ? AND network = ?");
+    $stmt->execute([$transaction_id, $_SESSION['user_id'], SOLANA_NETWORK]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
-        log_message("Transaction not found or unauthorized: ID=$transaction_id, user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id={$_SESSION['user_id']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
-        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $loop_count = intval($transaction['loop_count'] ?? 1);
-    $batch_size = intval($transaction['batch_size'] ?? 1);
-    $trade_direction = $transaction['trade_direction'] ?? 'buy';
-    $expected_total = $trade_direction === 'both' ? $loop_count * $batch_size * 2 : $loop_count * $batch_size;
-    if (count($sub_transactions) !== $expected_total) {
-        log_message("Sub-transaction count mismatch: expected=$expected_total, received=" . count($sub_transactions) . ", user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Sub-transaction count mismatch'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
+    log_message("Transaction fetched: ID=$transaction_id, trade_direction={$transaction['trade_direction']}, loop_count={$transaction['loop_count']}, batch_size={$transaction['batch_size']}, network=" . SOLANA_NETWORK . ", user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}, user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
@@ -87,32 +79,47 @@ try {
     exit;
 }
 
-// Create sub-transaction records
+// Validate sub-transactions
+$expected_count = $transaction['trade_direction'] === 'both' 
+    ? $transaction['loop_count'] * $transaction['batch_size'] * 2 
+    : $transaction['loop_count'] * $transaction['batch_size'];
+if (count($sub_transactions) !== $expected_count) {
+    log_message("Sub-transaction count mismatch: expected=$expected_count, received=" . count($sub_transactions) . ", user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Sub-transaction count mismatch'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Insert sub-transactions
+$sub_transaction_ids = [];
 try {
-    $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, created_at) VALUES (?, ?, ?, ?, 'pending', NOW())");
-    $sub_transaction_ids = [];
-    foreach ($sub_transactions as $sub) {
-        $loop = intval($sub['loop'] ?? 1);
-        $batch_index = intval($sub['batch_index'] ?? 0);
-        $direction = $sub['direction'] ?? 'buy';
-        if (!in_array($direction, ['buy', 'sell']) || $loop < 1 || $batch_index < 0) {
+    $pdo->beginTransaction();
+    $stmt = $pdo->prepare("INSERT INTO make_market_sub (transaction_id, loop_number, batch_index, direction, status, network) VALUES (?, ?, ?, ?, 'pending', ?)");
+    foreach ($sub_transactions as $sub_tx) {
+        $loop = isset($sub_tx['loop']) ? intval($sub_tx['loop']) : 0;
+        $batch_index = isset($sub_tx['batch_index']) ? intval($sub_tx['batch_index']) : 0;
+        $direction = isset($sub_tx['direction']) && in_array($sub_tx['direction'], ['buy', 'sell']) ? $sub_tx['direction'] : null;
+        if ($loop <= 0 || $batch_index < 0 || !$direction) {
             log_message("Invalid sub-transaction data: loop=$loop, batch_index=$batch_index, direction=$direction, user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+            $pdo->rollBack();
             http_response_code(400);
             echo json_encode(['status' => 'error', 'message' => 'Invalid sub-transaction data'], JSON_UNESCAPED_UNICODE);
             exit;
         }
-        $stmt->execute([$transaction_id, $loop, $batch_index, $direction]);
+        $stmt->execute([$transaction_id, $loop, $batch_index, $direction, SOLANA_NETWORK]);
         $sub_transaction_ids[] = $pdo->lastInsertId();
     }
-    log_message("Created " . count($sub_transaction_ids) . " sub-transactions for transaction ID=$transaction_id, IDs: " . implode(',', $sub_transaction_ids) . ", user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'INFO');
+    $pdo->commit();
+    log_message("Created " . count($sub_transaction_ids) . " sub-transactions for transaction ID=$transaction_id, network=" . SOLANA_NETWORK . ", user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
+    $pdo->rollBack();
     log_message("Failed to create sub-transactions: {$e->getMessage()}, user_id={$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Failed to create sub-transactions'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Error creating sub-transactions'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// Return results
+// Return success response
 echo json_encode([
     'status' => 'success',
     'message' => 'Sub-transactions created successfully',
