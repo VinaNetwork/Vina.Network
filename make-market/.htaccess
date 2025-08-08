@@ -1,6 +1,8 @@
 RewriteEngine On
 RewriteBase /make-market/
 
+AddType application/javascript .js
+
 # Allow rewrite to process.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
