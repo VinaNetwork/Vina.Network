@@ -5,8 +5,9 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
 
 $bootstrap_path = __DIR__ . '/../config/bootstrap.php';
 if (!file_exists($bootstrap_path)) {
