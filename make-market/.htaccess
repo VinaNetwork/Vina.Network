@@ -1,6 +1,11 @@
 RewriteEngine On
 RewriteBase /make-market/
 
+# Prevent direct access to PHP files in process directory
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_FILENAME} \.php$
+RewriteRule ^process/ - [F,L]
+
 # If it is not a real file or folder
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -14,3 +19,4 @@ RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC]
 RewriteRule ^swap/([0-9]+)$ process/swap.php?id=$1 [L,NC]
 RewriteRule ^get-api$ process/get-api.php [L,NC]
 RewriteRule ^get-decimals$ process/get-decimals.php [L,NC]
+RewriteRule ^process/get-network$ process/get-network.php [L,NC]
