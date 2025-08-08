@@ -89,20 +89,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Back to Top Button Logic
 const backToTopButton = document.getElementById("back-to-top");
+if (backToTopButton) {
+    window.onscroll = function() {
+        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+            backToTopButton.classList.add("show");
+        } else {
+            backToTopButton.classList.remove("show");
+        }
+    };
 
-// Show the button only after scrolling down 100px
-window.onscroll = function() {
-    if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-        backToTopButton.classList.add("show");
-    } else {
-        backToTopButton.classList.remove("show");
-    }
-};
-
-// Scroll smoothly to top when button is clicked
-backToTopButton.addEventListener("click", function() {
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
+    backToTopButton.addEventListener("click", function() {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
     });
-});
+}
