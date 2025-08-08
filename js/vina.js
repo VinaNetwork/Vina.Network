@@ -41,16 +41,6 @@ function typewriterEffect(element, text, speed = 50, delay = 200) {
 // DOM Ready: Activate fade-in animation and typewriter effect
 document.addEventListener('DOMContentLoaded', () => {
     const fadeElements = document.querySelectorAll('.fade-in'); // Elements with fade-in animation
-    const heroP = document.querySelector('.hero-content p');    // Hero section paragraph
-    console.log('Hero P element:', heroP); // Debug
-
-    if (heroP) {
-        // Start typewriter effect on hero section text
-        typewriterEffect(heroP, '"Simplifying Crypto. Unlocking Web3"', 50, 200);
-    } else {
-        console.error('Hero P element not found'); // Debug error log
-    }
-
     // Initialize IntersectionObserver for fade-in animations
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
