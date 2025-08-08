@@ -155,6 +155,7 @@ $page_og_title = "Make Market Process: Automate Solana Token Trading";
 $page_og_description = "Execute Solana token swaps using Jupiter Aggregator.";
 $page_og_url = BASE_URL . "make-market/process/";
 $page_canonical = BASE_URL . "make-market/process/";
+<meta name="csrf-token" content="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
 
 // CSS for Process page
 $page_css = ['/make-market/process/process.css'];
