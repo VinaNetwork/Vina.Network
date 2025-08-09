@@ -47,9 +47,16 @@ log_message("Network configuration loaded: SOLANA_NETWORK=" . SOLANA_NETWORK . "
 
 // Handle HTTP request if called as an endpoint
 if (isset($_SERVER['REQUEST_METHOD'])) {
+    // Check if request is AJAX
+    if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+        log_message("Direct access to network.php detected, rejecting request", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Direct access not allowed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     // Log request
     log_message("network.php: Request received, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
-
     try {
         $config = [
             'status' => 'success',
@@ -64,11 +71,12 @@ if (isset($_SERVER['REQUEST_METHOD'])) {
         ];
         log_message("Network config sent: network=" . SOLANA_NETWORK . ", explorerUrl=" . EXPLORER_URL . ", explorerQuery=" . EXPLORER_QUERY . ", prioritizationFeeLamports=" . $config['config']['prioritizationFeeLamports'], 'make-market.log', 'make-market', 'INFO');
         echo json_encode($config, JSON_UNESCAPED_SLASHES);
+        exit;
     } catch (Exception $e) {
         log_message("Failed to fetch network config: " . $e->getMessage(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Failed to fetch network configuration'], JSON_UNESCAPED_UNICODE);
+        exit;
     }
-    exit;
 }
 ?>
