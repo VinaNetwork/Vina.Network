@@ -34,6 +34,13 @@ define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
+// Initialize session with security options
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Lax'
+]);
+
 // PHP configuration
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
