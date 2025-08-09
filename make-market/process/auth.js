@@ -32,30 +32,49 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     });
 }
 
-// Fetch CSRF token from server
-async function getCsrfToken() {
-    try {
-        const response = await fetch('/make-market/get-csrf', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            credentials: 'include' // Ensure cookies are sent
-        });
-        if (!response.ok) {
-            throw new Error('HTTP ' + response.status);
+// Delay function for retry
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Fetch CSRF token from server with retry
+async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            log_message(`Attempting to fetch CSRF token (attempt ${attempt + 1}/${maxRetries})`, 'make-market.log', 'make-market', 'DEBUG');
+            const response = await fetch('/make-market/get-csrf', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include' // Ensure cookies are sent
+            });
+            if (response.status === 401) {
+                log_message('User not authenticated, redirecting to login', 'make-market.log', 'make-market', 'ERROR');
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                throw new Error('User not authenticated');
+            }
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            const result = await response.json();
+            if (result.status !== 'success' || !result.csrf_token) {
+                throw new Error(result.message || 'Invalid CSRF token response');
+            }
+            log_message('CSRF token fetched: ' + result.csrf_token, 'make-market.log', 'make-market', 'INFO');
+            console.log('CSRF token fetched: ' + result.csrf_token + ', network=' + window.SOLANA_NETWORK);
+            return result.csrf_token;
+        } catch (err) {
+            attempt++;
+            log_message(`Failed to fetch CSRF token (attempt ${attempt}/${maxRetries}): ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error(`Failed to fetch CSRF token (attempt ${attempt}/${maxRetries}): ${err.message}, network=${window.SOLANA_NETWORK}`);
+            if (attempt === maxRetries) {
+                throw new Error(`Failed to fetch CSRF token after ${maxRetries} attempts: ${err.message}`);
+            }
+            await delay(retryDelay * attempt);
         }
-        const result = await response.json();
-        if (result.status !== 'success' || !result.csrf_token) {
-            throw new Error(result.message || 'Invalid CSRF token response');
-        }
-        log_message('CSRF token fetched: ' + result.csrf_token, 'make-market.log', 'make-market', 'INFO');
-        console.log('CSRF token fetched: ' + result.csrf_token + ', network=' + window.SOLANA_NETWORK);
-        return result.csrf_token;
-    } catch (err) {
-        log_message('Failed to fetch CSRF token: ' + err.message, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to fetch CSRF token: ' + err.message + ', network=' + window.SOLANA_NETWORK);
-        throw err;
     }
 }
 
@@ -70,12 +89,14 @@ async function initializeAuth() {
         log_message('Invalid network: ' + window.SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         throw new Error('Invalid network: ' + window.SOLANA_NETWORK);
     }
+    log_message('Authentication initialized, CSRF token: ' + cachedCsrfToken, 'make-market.log', 'make-market', 'INFO');
     return cachedCsrfToken;
 }
 
 // Add CSRF token to fetch headers
 function addAuthHeaders(headers = {}) {
     if (!cachedCsrfToken) {
+        log_message('CSRF token not initialized, call initializeAuth first', 'make-market.log', 'make-market', 'ERROR');
         throw new Error('CSRF token not initialized. Call initializeAuth first.');
     }
     return {
@@ -88,6 +109,7 @@ function addAuthHeaders(headers = {}) {
 // Add CSRF token to axios headers
 function addAxiosAuthHeaders(config = {}) {
     if (!cachedCsrfToken) {
+        log_message('CSRF token not initialized, call initializeAuth first', 'make-market.log', 'make-market', 'ERROR');
         throw new Error('CSRF token not initialized. Call initializeAuth first.');
     }
     return {
