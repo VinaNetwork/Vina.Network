@@ -2,7 +2,6 @@
 // ============================================================================
 // File: make-market/process/get-csrf.php
 // Description: Generate and return CSRF token
-// Note: Session is already started in bootstrap.php
 // Created by: Vina Network
 // ============================================================================
 
@@ -15,6 +14,8 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/auth.php';
 
 log_message("get-csrf.php started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_id: " . session_id(), 'make-market.log', 'make-market', 'DEBUG');
+
+// Session start: in config/bootstrap.php
 
 // Only allow GET requests
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -35,9 +36,7 @@ if (!check_user_auth()) {
 }
 
 // Generate CSRF token
-$csrf_token = bin2hex(random_bytes(32));
-$_SESSION['csrf_token'] = $csrf_token;
-
+$csrf_token = generate_csrf_token();
 log_message("CSRF token generated: $csrf_token, session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", session_id: " . session_id(), 'make-market.log', 'make-market', 'INFO');
 
 header('Content-Type: application/json');
@@ -45,3 +44,4 @@ echo json_encode([
     'status' => 'success',
     'csrf_token' => $csrf_token
 ], JSON_UNESCAPED_UNICODE);
+?>
