@@ -20,7 +20,7 @@ require_once $root_path . 'make-market/process/network.php';
 function initialize_auth() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start([
-            'cookie_secure' => false, // Tạm tắt để debug
+            'cookie_secure' => true,
             'cookie_httponly' => true,
             'cookie_samesite' => 'Strict'
         ]);
