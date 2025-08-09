@@ -15,7 +15,7 @@ RewriteRule ^process/([0-9]+)$ process/process.php?id=$1 [L,NC]
 # Prevent direct access to other PHP files in process directory
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteCond %{REQUEST_FILENAME} \.php$
-RewriteCond %{REQUEST_URI} !^/make-market/process/(process\.php|get-csrf\.php|get-tx\.php|get-status\.php|swap\.php|get-api\.php|get-decimals\.php|get-network\.php|create-tx\.php)
+RewriteCond %{REQUEST_URI} !^/make-market/process/(process\.php|get-csrf\.php|get-tx\.php|get-status\.php|swap\.php|get-api\.php|get-decimals\.php|network\.php|create-tx\.php)
 RewriteRule ^process/ - [F,L]
 
 # Fallback to index.php
