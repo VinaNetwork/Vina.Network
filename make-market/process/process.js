@@ -4,7 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Import auth utilities
 import { initializeAuth, addAuthHeaders, addAxiosAuthHeaders } from '/make-market/process/auth.js';
 
 // Log message function
@@ -18,12 +17,12 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
         body: JSON.stringify({ message, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
-            console.error(`Log failed: HTTP ${response.status}`);
+            console.error('Log failed: HTTP ' + response.status);
         }
     }).catch(err => console.error('Log error:', err));
 }
 
-// Show error message with styled alert
+// Show error message
 function showError(message, detailedError = null) {
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
@@ -45,7 +44,7 @@ function showError(message, detailedError = null) {
     }
 }
 
-// Show success message with styled alert
+// Show success message
 function showSuccess(message, results = [], networkConfig) {
     const resultDiv = document.getElementById('process-result');
     let html = `
@@ -77,10 +76,21 @@ function showSuccess(message, results = [], networkConfig) {
     }
 }
 
-// Update transaction status and error in database
+// Retry initializeAuth
+async function ensureAuthInitialized() {
+    try {
+        await initializeAuth();
+    } catch (err) {
+        log_message('Failed to initialize authentication: ' + err.message, 'make-market.log', 'make-market', 'ERROR');
+        throw err;
+    }
+}
+
+// Update transaction status
 async function updateTransactionStatus(status, error = null) {
     const transactionId = window.location.pathname.split('/').pop();
     try {
+        await ensureAuthInitialized();
         const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
             headers: addAuthHeaders({
@@ -107,6 +117,7 @@ async function updateTransactionStatus(status, error = null) {
 // Cancel transaction
 async function cancelTransaction(transactionId) {
     try {
+        await ensureAuthInitialized();
         const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
             headers: addAuthHeaders({
@@ -143,9 +154,10 @@ async function cancelTransaction(transactionId) {
     }
 }
 
-// Get network configuration from server
+// Get network configuration
 async function getNetworkConfig() {
     try {
+        await ensureAuthInitialized();
         const response = await fetch('/make-market/process/get-network', {
             method: 'GET',
             headers: addAuthHeaders()
@@ -158,7 +170,7 @@ async function getNetworkConfig() {
         if (result.status !== 'success') {
             throw new Error(result.message);
         }
-        if (!['testnet', 'mainnet'].includes(result.network)) {
+        if (!['testnet', 'mainnet', 'devnet'].includes(result.network)) {
             throw new Error(`Invalid network: ${result.network}`);
         }
         log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.config.explorerUrl}`, 'make-market.log', 'make-market', 'INFO');
@@ -171,13 +183,14 @@ async function getNetworkConfig() {
     }
 }
 
-// Get token decimals from server-side endpoint
+// Get token decimals
 async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
     const maxRetries = 3;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
             log_message(`Attempting to get token decimals from server (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+            await ensureAuthInitialized();
             const response = await axios.post('/make-market/get-decimals', {
                 tokenMint,
                 network: solanaNetwork
@@ -219,7 +232,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         amount: Math.floor(amount),
         slippageBps
     };
-    if (networkConfig.network === 'testnet') {
+    if (networkConfig.network === 'testnet' || networkConfig.network === 'devnet') {
         params.testnet = true;
     }
     try {
@@ -240,7 +253,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
     }
 }
 
-// Get swap transaction from Jupiter API
+// Get swap transaction
 async function getSwapTransaction(quote, publicKey, networkConfig) {
     try {
         const response = await axios.post(`${networkConfig.config.jupiterApi}/swap`, {
@@ -249,7 +262,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             wrapAndUnwrapSol: true,
             dynamicComputeUnitLimit: true,
             prioritizationFeeLamports: networkConfig.config.prioritizationFeeLamports,
-            testnet: networkConfig.network === 'testnet'
+            testnet: networkConfig.network === 'testnet' || networkConfig.network === 'devnet'
         });
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
@@ -268,6 +281,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
 // Create sub-transaction records
 async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork) {
     try {
+        await ensureAuthInitialized();
         const totalTransactions = tradeDirection === 'both' ? loopCount * batchSize * 2 : loopCount * batchSize;
         const subTransactions = [];
         for (let loop = 1; loop <= loopCount; loop++) {
@@ -307,6 +321,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 // Execute swap transactions
 async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
     try {
+        await ensureAuthInitialized();
         const response = await fetch('/make-market/swap', {
             method: 'POST',
             headers: addAuthHeaders({
@@ -337,7 +352,7 @@ function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Main process and copy functionality
+// Main process
 document.addEventListener('DOMContentLoaded', async () => {
     log_message('process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
@@ -427,24 +442,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Fetch API config
-    let heliusApiKey, solanaNetwork;
-    try {
-        const apiConfig = await getApiConfig();
-        heliusApiKey = apiConfig.heliusApiKey;
-        solanaNetwork = window.SOLANA_NETWORK || apiConfig.solanaNetwork;
-        if (solanaNetwork !== window.SOLANA_NETWORK) {
-            showError(`Network mismatch: client (${solanaNetwork}) vs server (${window.SOLANA_NETWORK})`);
-            return;
-        }
-    } catch (err) {
-        showError('Failed to retrieve API config: ' + err.message);
-        return;
-    }
-
     // Fetch transaction details
     let transaction, publicKey;
     try {
+        await ensureAuthInitialized();
         const response = await fetch(`/make-market/get-tx/${transactionId}`, {
             headers: addAuthHeaders()
         });
@@ -457,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error(result.message);
         }
         transaction = result.data;
-        publicKey = transaction.public_key; // Use public_key from get-tx response
+        publicKey = transaction.public_key;
         transaction.loop_count = parseInt(transaction.loop_count) || 1;
         transaction.batch_size = parseInt(transaction.batch_size) || 1;
         transaction.slippage = parseFloat(transaction.slippage) || 0.5;
@@ -465,7 +466,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
         transaction.token_amount = parseFloat(transaction.token_amount) || 0;
         transaction.trade_direction = transaction.trade_direction || 'buy';
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${window.SOLANA_NETWORK}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message);
@@ -493,7 +494,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Check initial status and hide Cancel button if not new/pending/processing
+    // Check initial status
     if (!['new', 'pending', 'processing'].includes(transaction.status)) {
         const cancelBtn = document.getElementById('cancel-btn');
         if (cancelBtn) {
@@ -501,11 +502,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Handle Cancel button click
+    // Handle Cancel button
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', async () => {
-            log_message(`Cancel button clicked for transaction ID=${transactionId}, network=${solanaNetwork}`, 'make-market.log', 'make-market', 'INFO');
+            log_message(`Cancel button clicked for transaction ID=${transactionId}, network=${window.SOLANA_NETWORK}`, 'make-market.log', 'make-market', 'INFO');
             console.log(`Cancel button clicked for transaction ID=${transactionId}`);
             await cancelTransaction(transactionId);
         });
@@ -517,7 +518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch token decimals
     let tokenDecimals;
     try {
-        tokenDecimals = await getTokenDecimals(transaction.token_mint, heliusApiKey, solanaNetwork);
+        tokenDecimals = await getTokenDecimals(transaction.token_mint, null, window.SOLANA_NETWORK);
     } catch (err) {
         showError('Failed to retrieve token decimals: ' + err.message);
         return;
@@ -526,23 +527,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Create sub-transaction records
     let subTransactionIds;
     try {
-        subTransactionIds = await createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork);
+        subTransactionIds = await createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, window.SOLANA_NETWORK);
     } catch (err) {
         showError('Failed to create sub-transactions: ' + err.message);
         return;
     }
 
-    // Process swaps with loop_count and batch_size
+    // Process swaps
     try {
         const solMint = networkConfig.config.solMint;
-        const solAmount = transaction.sol_amount * 1e9; // Convert SOL to lamports
-        const tokenAmount = transaction.token_amount * Math.pow(10, tokenDecimals); // Convert token amount to correct decimals
-        const slippageBps = Math.floor(transaction.slippage * 100); // Convert to basis points
-        const delaySeconds = transaction.delay_seconds * 1000; // Convert to milliseconds
+        const solAmount = transaction.sol_amount * 1e9;
+        const tokenAmount = transaction.token_amount * Math.pow(10, tokenDecimals);
+        const slippageBps = Math.floor(transaction.slippage * 100);
+        const delaySeconds = transaction.delay_seconds * 1000;
         const swapTransactions = [];
 
-        // Generate swap transactions based on trade_direction
-        let subTransactionIndex = 0;
         for (let loop = 1; loop <= loopCount; loop++) {
             document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
             for (let i = 0; i < batchSize; i++) {
@@ -573,9 +572,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        // Execute swaps
         document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}...`;
-        const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork);
+        const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, window.SOLANA_NETWORK);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
