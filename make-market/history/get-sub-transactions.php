@@ -12,10 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 
-header('Content-Type: application/json; charset=utf-8');
-header("Access-Control-Allow-Origin: $csp_base");
-header('Access-Control-Allow-Methods: GET');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+// Add Security Headers
+require_once $root_path . 'make-market/security-headers.php';
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
@@ -41,12 +39,7 @@ try {
     exit;
 }
 
-// Check session
-session_start([
-    'cookie_secure' => true,
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict'
-]);
+// Session start: in config/bootstrap.php
 $user_id = $_SESSION['user_id'] ?? null;
 if (!$user_id) {
     log_message("No user ID in session", 'make-market.log', 'make-market', 'ERROR');
