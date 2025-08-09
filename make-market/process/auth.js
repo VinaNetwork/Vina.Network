@@ -5,15 +5,15 @@
 // ============================================================================
 
 // Set default values for global variables
-window.SOLANA_NETWORK = window.SOLANA_NETWORK || 'devnet'; // Match config.php
 window.ENVIRONMENT = window.ENVIRONMENT || 'development'; // Match bootstrap.php
 
-// Log message function (reused from process.js to avoid duplication)
+// Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && window.ENVIRONMENT !== 'development') {
         return;
     }
-    const logMessage = `${message}, network=${window.SOLANA_NETWORK}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`;
+    const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
+    const logMessage = `${message}, session_id=${session_id}`;
     fetch('/make-market/log.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -23,12 +23,12 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
             module: module,
             log_type: log_type
         })
-    }).then(function(response) {
+    }).then(response => {
         if (!response.ok) {
-            console.error(`Log failed: HTTP ${response.status}, network=${window.SOLANA_NETWORK}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`);
+            console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}`);
         }
-    }).catch(function(err) {
-        console.error(`Log error: ${err.message}, network=${window.SOLANA_NETWORK}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`);
+    }).catch(err => {
+        console.error(`Log error: ${err.message}, session_id=${session_id}`);
     });
 }
 
@@ -71,7 +71,7 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
                 throw new Error(responseBody.message || `Invalid CSRF token response: ${JSON.stringify(responseBody)}`);
             }
             log_message(`CSRF token fetched: ${responseBody.csrf_token}`, 'make-market.log', 'make-market', 'INFO');
-            console.log(`CSRF token fetched: ${responseBody.csrf_token}, network=${window.SOLANA_NETWORK}`);
+            console.log(`CSRF token fetched: ${responseBody.csrf_token}`);
             return responseBody.csrf_token;
         } catch (err) {
             attempt++;
@@ -82,7 +82,7 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
                 errorDetails = `No response received: ${err.message}, url=/make-market/get-csrf`;
             }
             log_message(`Failed to fetch CSRF token (attempt ${attempt}/${maxRetries}): ${errorDetails}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error(`Failed to fetch CSRF token (attempt ${attempt}/${maxRetries}): ${errorDetails}, network=${window.SOLANA_NETWORK}`);
+            console.error(`Failed to fetch CSRF token (attempt ${attempt}/${maxRetries}): ${errorDetails}`);
             if (attempt === maxRetries) {
                 throw new Error(`Failed to fetch CSRF token after ${maxRetries} attempts: ${errorDetails}`);
             }
@@ -103,13 +103,8 @@ async function initializeAuth() {
             throw err;
         }
     }
-    // Validate network
-    if (!['testnet', 'mainnet', 'devnet'].includes(window.SOLANA_NETWORK)) {
-        log_message(`Invalid network: ${window.SOLANA_NETWORK}`, 'make-market.log', 'make-market', 'ERROR');
-        throw new Error(`Invalid network: ${window.SOLANA_NETWORK}`);
-    }
     log_message(`Authentication initialized, CSRF token: ${cachedCsrfToken}`, 'make-market.log', 'make-market', 'INFO');
-    console.log(`Authentication initialized, CSRF token: ${cachedCsrfToken}, network=${window.SOLANA_NETWORK}`);
+    console.log(`Authentication initialized, CSRF token: ${cachedCsrfToken}`);
     return cachedCsrfToken;
 }
 
