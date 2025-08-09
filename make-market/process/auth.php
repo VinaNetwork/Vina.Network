@@ -10,37 +10,38 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-try {
-    log_message("Attempting to load bootstrap.php", 'make-market.log', 'make-market', 'DEBUG');
-    require_once $root_path . 'config/bootstrap.php';
-    log_message("bootstrap.php loaded successfully", 'make-market.log', 'make-market', 'DEBUG');
-    require_once $root_path . 'make-market/process/network.php';
-    log_message("network.php loaded successfully", 'make-market.log', 'make-market', 'DEBUG');
-} catch (Exception $e) {
-    log_message("Failed to load required files: {$e->getMessage()}, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Server error'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'make-market/process/network.php';
 
 /**
- * Initialize session
+ * Initialize session logging (session already started in config/bootstrap.php)
  * @return void
  */
 function initialize_auth() {
     try {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start([
-                'cookie_secure' => true,
-                'cookie_httponly' => true,
-                'cookie_samesite' => 'Strict'
-            ]);
-        }
-        log_message("Session initialized, session_id=" . session_id() . ", user_id=" . ($_SESSION['user_id'] ?? 'none') . ", public_key=" . ($_SESSION['public_key'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
+        // Log current session data for debugging
+        log_message(
+            "Session initialized, session_id=" . session_id() . 
+            ", user_id=" . ($_SESSION['user_id'] ?? 'none') . 
+            ", public_key=" . ($_SESSION['public_key'] ?? 'none'),
+            'make-market.log',
+            'make-market',
+            'DEBUG'
+        );
+
     } catch (Exception $e) {
-        log_message("Session initialization failed: {$e->getMessage()}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        // Log error if session logging fails
+        log_message(
+            "Session logging failed: {$e->getMessage()}, network=" . SOLANA_NETWORK,
+            'make-market.log',
+            'make-market',
+            'ERROR'
+        );
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Session initialization error'], JSON_UNESCAPED_UNICODE);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Session logging error'
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 }
