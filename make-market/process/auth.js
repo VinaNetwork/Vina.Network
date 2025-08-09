@@ -18,7 +18,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Thêm header
+            'X-Requested-With': 'XMLHttpRequest' // Add header
         },
         body: JSON.stringify({
             message: logMessage,
