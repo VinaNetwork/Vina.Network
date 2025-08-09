@@ -25,14 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
-// Check AJAX request
-if (!check_ajax_request()) {
+// Validate request: must be AJAX and authenticated
+if (!check_ajax_request() || !check_user_auth()) {
     exit;
-}
-
-// Check authentication
-if (!check_user_auth()) {
-    exit; // Will return HTTP 401 from check_user_auth()
 }
 
 // Generate CSRF token
