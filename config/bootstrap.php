@@ -35,11 +35,14 @@ define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
 // Initialize session with security options
+$is_secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 session_start([
-    'cookie_secure' => true,
+    'cookie_lifetime' => 86400,
     'cookie_httponly' => true,
-    'cookie_samesite' => 'Lax'
+    'cookie_samesite' => $is_secure ? 'None' : 'Lax', // Use None if HTTPS
+    'cookie_secure' => $is_secure // Enable secure only if HTTPS
 ]);
+log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", samesite=" . ($is_secure ? 'None' : 'Lax'), 'make-market.log', 'make-market', 'INFO');
 
 // PHP configuration
 ini_set('display_errors', 0);
