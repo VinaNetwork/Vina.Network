@@ -11,6 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/db.php'; // Include the db.php file
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
@@ -19,12 +20,7 @@ use StephenHill\Base58;
 // Database connection
 $start_time = microtime(true);
 try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = get_db_connection(); // Use the function from config/db.php
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
