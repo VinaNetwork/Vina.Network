@@ -18,7 +18,7 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 // Only allow resource loading if the browser supports specific security features
 header("Permissions-Policy: accelerometer=(), camera=(), microphone=(), geolocation=(), payment=()");
 // CORS – adjust the origin if Make Market API is accessed from another domain
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: $csp_base");
 header('Access-Control-Allow-Credentials: true');
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token, Authorization");
