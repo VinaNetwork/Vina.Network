@@ -204,15 +204,15 @@ async function getNetworkConfig() {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Thêm header
+            'X-Requested-With': 'XMLHttpRequest' // Add header
         });
         log_message(`Fetching network config, headers=${JSON.stringify(headers)}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await fetch('/make-market/network', { // Sửa URL
+        const response = await fetch('/make-market/get-network', {
             method: 'GET',
             headers,
             credentials: 'include'
         });
-        log_message(`Response from /make-market/network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}`, 'make-market.log', 'make-market', 'DEBUG');
+        log_message(`Response from /make-market/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
@@ -247,7 +247,7 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
                 headers: { 
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest' // Thêm header
+                    'X-Requested-With': 'XMLHttpRequest' // Add header
                 }
             }).headers;
             log_message(`Requesting /make-market/get-decimals, headers=${JSON.stringify(headers)}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -294,7 +294,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         const response = await axios.get(`${networkConfig.config.jupiterApi}/quote`, { 
             params, 
             timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' } // Thêm header
+            headers: { 'X-Requested-With': 'XMLHttpRequest' } // Add header
         });
         log_message(`Response from ${networkConfig.config.jupiterApi}/quote: status=${response.status}, data=${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
@@ -327,7 +327,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
         log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await axios.post(`${networkConfig.config.jupiterApi}/swap`, requestBody, { 
             timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' } // Thêm header
+            headers: { 'X-Requested-With': 'XMLHttpRequest' } // Add header
         });
         log_message(`Response from ${networkConfig.config.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
@@ -366,7 +366,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Thêm header
+            'X-Requested-With': 'XMLHttpRequest' // Add header
         });
         log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/make-market/process/create-tx/${transactionId}`, {
@@ -401,7 +401,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Thêm header
+            'X-Requested-With': 'XMLHttpRequest' // Add header
         });
         log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch('/make-market/swap', {
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest' // Thêm header
+            'X-Requested-With': 'XMLHttpRequest' // Add header
         });
         log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/make-market/get-tx/${transactionId}`, {
