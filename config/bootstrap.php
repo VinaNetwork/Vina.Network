@@ -20,10 +20,6 @@ $domain = $_SERVER['HTTP_HOST'];
 define('BASE_URL', $protocol . $domain . '/');
 $csp_base = rtrim(BASE_URL, '/');
 
-// Load configuration
-require_once ROOT_PATH . 'config/config.php';
-require_once ROOT_PATH . 'config/db.php';
-
 // Define core path constants. Used for logging and configuration across modules
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('LOGS_PATH', ROOT_PATH . 'logs/');
@@ -31,6 +27,10 @@ define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
 define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
+
+// Load configuration
+require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'config/db.php';
 
 // PHP configuration. Set error handling and session
 ini_set('display_errors', 0);
