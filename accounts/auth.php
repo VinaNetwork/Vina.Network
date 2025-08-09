@@ -14,11 +14,7 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
-session_start([
-    'cookie_secure' => true,
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict'
-]);
+// Session start: in config/bootstrap.php
 
 // Database connection
 $start_time = microtime(true);
