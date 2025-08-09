@@ -9,6 +9,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
+log_message("get-network.php: File accessed, REQUEST_URI=" . ($_SERVER['REQUEST_URI'] ?? 'none') . ", REQUEST_METHOD=" . ($_SERVER['REQUEST_METHOD'] ?? 'none') . ", cookies=" . ($_SERVER['HTTP_COOKIE'] ?? 'none'), 'make-market.log', 'make-market', 'INFO');
+
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
