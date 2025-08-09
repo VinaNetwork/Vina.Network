@@ -19,13 +19,24 @@ try {
 
     log_message("get-csrf.php started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
 
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        log_message("Invalid request method: {$_SERVER['REQUEST_METHOD']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(405);
+        echo json_encode(['status' => 'error', 'message' => 'Method Not Allowed'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if (!check_ajax_request()) {
+        exit;
+    }
+
     initialize_auth();
     log_message("After initialize_auth, session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", public_key=" . ($_SESSION['public_key'] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 
     if (!check_user_auth()) {
         log_message("check_user_auth failed, exiting", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -41,9 +52,9 @@ try {
         'csrf_token' => $csrf_token
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    log_message("get-csrf.php error: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("get-csrf.php error: {$e->getMessage()}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Internal Server Error: ' . $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Internal Server Error: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit;
 }
 ?>
