@@ -143,7 +143,7 @@ $page_css = ['/accounts/acc.css'];
         </form>
     </div>
 </div>
-<?php require_once $root_path . 'include/navbar.php';?>
+<?php require_once $root_path . 'include/footer.php';?>
 
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
