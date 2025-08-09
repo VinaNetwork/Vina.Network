@@ -18,10 +18,22 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 // Only allow resource loading if the browser supports specific security features
 header("Permissions-Policy: accelerometer=(), camera=(), microphone=(), geolocation=(), payment=()");
 // CORS – adjust the origin if Make Market API is accessed from another domain
-header("Access-Control-Allow-Origin: $csp_base");
+$origin = $_SERVER['HTTP_ORIGIN'] ?? 'https://vina.network';
+$allowed_origins = ['https://vina.network', 'https://www.vina.network'];
+if (in_array($origin, $allowed_origins)) {
+    header("Access-Control-Allow-Origin: $origin");
+} else {
+    header("Access-Control-Allow-Origin: https://vina.network");
+}
 header('Access-Control-Allow-Credentials: true');
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token, Authorization");
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    log_message("CORS preflight request handled for " . ($_SERVER['REQUEST_URI'] ?? 'none'), 'make-market.log', 'make-market', 'INFO');
+    http_response_code(204);
+    exit;
+}
+log_message("CORS headers set: Access-Control-Allow-Origin=$origin, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
 // Optional: disable caching if the data is sensitive
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Pragma: no-cache");
