@@ -11,8 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
-
-// Add Security Headers
 require_once $root_path . 'make-market/security-headers.php';
 
 // Validate SOLANA_NETWORK
@@ -23,7 +21,7 @@ if (!defined('SOLANA_NETWORK') || !in_array(SOLANA_NETWORK, ['devnet', 'testnet'
         echo json_encode(['status' => 'error', 'message' => 'Invalid SOLANA_NETWORK configuration'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    return; // Return silently if included by another PHP file
+    return;
 }
 
 // Define network-specific constants
@@ -42,21 +40,18 @@ define('EXPLORER_QUERY_MAINNET', '');
 define('EXPLORER_URL', SOLANA_NETWORK === 'devnet' ? EXPLORER_URL_DEVNET : (SOLANA_NETWORK === 'testnet' ? EXPLORER_URL_TESTNET : EXPLORER_URL_MAINNET));
 define('EXPLORER_QUERY', SOLANA_NETWORK === 'devnet' ? EXPLORER_QUERY_DEVNET : (SOLANA_NETWORK === 'testnet' ? EXPLORER_QUERY_TESTNET : EXPLORER_QUERY_MAINNET));
 
-// Log network configuration when included
+// Log network configuration
 log_message("Network configuration loaded: SOLANA_NETWORK=" . SOLANA_NETWORK . ", RPC_ENDPOINT=" . RPC_ENDPOINT . ", EXPLORER_URL=" . EXPLORER_URL . EXPLORER_QUERY, 'make-market.log', 'make-market', 'INFO');
 
-// Handle HTTP request if called as an endpoint
+// Handle HTTP request if called directly
 if (isset($_SERVER['REQUEST_METHOD'])) {
-    // Check if request is AJAX
     if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
         log_message("Direct access to network.php detected, rejecting request", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Direct access not allowed'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-
-    // Log request
-    log_message("network.php: Request received, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    log_message("network.php: AJAX request received, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
     try {
         $config = [
             'status' => 'success',
