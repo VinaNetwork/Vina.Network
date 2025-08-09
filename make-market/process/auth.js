@@ -53,22 +53,26 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
                 credentials: 'include' // Ensure cookies are sent
             });
             log_message(`Response from /make-market/get-csrf: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}`, 'make-market.log', 'make-market', 'DEBUG');
+            let responseBody = {};
+            try {
+                responseBody = await response.json();
+            } catch (e) {
+                responseBody = { text: await response.text() };
+            }
             if (response.status === 401) {
                 log_message('User not authenticated, redirecting to login', 'make-market.log', 'make-market', 'ERROR');
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
                 throw new Error('User not authenticated');
             }
             if (!response.ok) {
-                const result = await response.json().catch(() => ({}));
-                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
+                throw new Error(`HTTP ${response.status}: ${JSON.stringify(responseBody)}`);
             }
-            const result = await response.json();
-            if (result.status !== 'success' || !result.csrf_token) {
-                throw new Error(result.message || `Invalid CSRF token response: ${JSON.stringify(result)}`);
+            if (responseBody.status !== 'success' || !responseBody.csrf_token) {
+                throw new Error(responseBody.message || `Invalid CSRF token response: ${JSON.stringify(responseBody)}`);
             }
-            log_message(`CSRF token fetched: ${result.csrf_token}`, 'make-market.log', 'make-market', 'INFO');
-            console.log(`CSRF token fetched: ${result.csrf_token}, network=${window.SOLANA_NETWORK}`);
-            return result.csrf_token;
+            log_message(`CSRF token fetched: ${responseBody.csrf_token}`, 'make-market.log', 'make-market', 'INFO');
+            console.log(`CSRF token fetched: ${responseBody.csrf_token}, network=${window.SOLANA_NETWORK}`);
+            return responseBody.csrf_token;
         } catch (err) {
             attempt++;
             let errorDetails = err.message;
