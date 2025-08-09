@@ -11,16 +11,17 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    const logMessage = `${message}, network=${window.SOLANA_NETWORK}`; // Add network to all logs
+    const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
+    const logMessage = `${message}, session_id=${session_id}`;
     fetch('/make-market/log.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
-            console.error(`Log failed: HTTP ${response.status}, network=${window.SOLANA_NETWORK}`);
+            console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}`);
         }
-    }).catch(err => console.error(`Log error: ${err.message}, network=${window.SOLANA_NETWORK}`));
+    }).catch(err => console.error(`Log error: ${err.message}, session_id=${session_id}`));
 }
 
 // Delay function
@@ -62,7 +63,7 @@ function showSuccess(message, results = [], networkConfig) {
         results.forEach(result => {
             html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
                 result.status === 'success' 
-                    ? `<a href="${networkConfig.explorerUrl}${result.txid}${networkConfig.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
+                    ? `<a href="${networkConfig.config.explorerUrl}${result.txid}${networkConfig.config.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
                     : `Failed - ${result.message}`
             }</li>`;
         });
@@ -103,8 +104,6 @@ async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
                 }
             } else if (err.request) {
                 errorDetails = `No response received: ${err.message}, url=${err.config?.url || '/make-market/get-csrf'}`;
-            } else {
-                errorDetails = `Error: ${err.message}`;
             }
             log_message(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
             console.error(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}`);
@@ -419,26 +418,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     log_message('process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
-    // Warn if on mainnet
-    if (window.SOLANA_NETWORK === 'mainnet') {
-        alert('Warning: You are on Solana Mainnet. Transactions will use real funds.');
-    }
-
     // Initialize authentication
-    try {
-        await ensureAuthInitialized();
-    } catch (err) {
-        showError('Failed to initialize authentication: ' + err.message, err.message);
-        return;
-    }
-
-    // Fetch network configuration
     let networkConfig;
     try {
+        await ensureAuthInitialized();
         networkConfig = await getNetworkConfig();
     } catch (err) {
-        showError('Failed to retrieve network config: ' + err.message, err.message);
+        showError('Failed to initialize authentication or network config: ' + err.message, err.message);
         return;
+    }
+
+    // Warn if on mainnet
+    if (networkConfig.network === 'mainnet') {
+        alert('Warning: You are on Solana Mainnet. Transactions will use real funds.');
     }
 
     // Copy functionality
@@ -534,7 +526,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
         transaction.token_amount = parseFloat(transaction.token_amount) || 0;
         transaction.trade_direction = transaction.trade_direction || 'buy';
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${window.SOLANA_NETWORK}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message, err.message);
@@ -574,7 +566,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', async () => {
-            log_message(`Cancel button clicked for transaction ID=${transactionId}, network=${window.SOLANA_NETWORK}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
+            log_message(`Cancel button clicked for transaction ID=${transactionId}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
             console.log(`Cancel button clicked for transaction ID=${transactionId}`);
             await cancelTransaction(transactionId);
         });
@@ -586,7 +578,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch token decimals
     let tokenDecimals;
     try {
-        tokenDecimals = await getTokenDecimals(transaction.token_mint, null, window.SOLANA_NETWORK);
+        tokenDecimals = await getTokenDecimals(transaction.token_mint, null, networkConfig.network);
     } catch (err) {
         showError('Failed to retrieve token decimals: ' + err.message, err.message);
         return;
@@ -596,7 +588,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let subTransactionIds;
     let subTransactionIndex = 0;
     try {
-        subTransactionIds = await createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, window.SOLANA_NETWORK);
+        subTransactionIds = await createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, networkConfig.network);
     } catch (err) {
         showError('Failed to create sub-transactions: ' + err.message, err.message);
         return;
@@ -642,7 +634,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}...`;
-        const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, window.SOLANA_NETWORK);
+        const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, networkConfig.network);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
