@@ -5,6 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct access allowed!');
@@ -19,10 +20,11 @@ $domain = $_SERVER['HTTP_HOST'];
 define('BASE_URL', $protocol . $domain . '/');
 $csp_base = rtrim(BASE_URL, '/');
 
-// ---------------------------------------------------
-// Define core path constants
-// Used for logging and configuration across modules
-// ---------------------------------------------------
+// Load configuration
+require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'config/db.php';
+
+// Define core path constants. Used for logging and configuration across modules
 define('ROOT_PATH', dirname(__DIR__) . '/');
 define('LOGS_PATH', ROOT_PATH . 'logs/');
 define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
@@ -30,35 +32,12 @@ define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
-// Define environment: make-market/process/create-tx.php
-define('ENVIRONMENT', 'development');
-
-// ---------------------------------------------------
-// PHP configuration
-// Set error handling and session
-// ---------------------------------------------------
+// PHP configuration. Set error handling and session
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
-
-// ---------------------------------------------------
-// Load configuration file
-// ---------------------------------------------------
-$config_path = ROOT_PATH . 'config/config.php';
-if (!file_exists($config_path)) {
-    error_log("bootstrap: config.php not found at $config_path");
-    http_response_code(500);
-    echo '<div class="result-error"><p>Error: Configuration file not found</p></div>';
-    exit;
-}
-require_once $config_path;
-
-// ---------------------------------------------------
-// Load database connection
-// ---------------------------------------------------
-require_once __DIR__ . '/db.php';
 
 // ---------------------------------------------------
 // Ensure directory and file exist with correct permissions
@@ -152,4 +131,7 @@ function generate_csrf_token() {
 function validate_csrf_token($token) {
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
+
+// Define environment: make-market/process/create-tx.php
+define('ENVIRONMENT', 'development');
 ?>
