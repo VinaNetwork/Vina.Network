@@ -51,30 +51,14 @@ $page_og_title = "Connect Wallet to Vina Network";
 $page_og_description = "Connect your Solana wallet to register or login to Vina Network";
 $page_og_url = BASE_URL . "accounts/";
 $page_canonical = BASE_URL . "accounts/";
-// CSS for Accounts
 $page_css = ['/accounts/acc.css'];
-
-// Header
-$header_path = $root_path . 'include/header.php';
-if (!file_exists($header_path)) {
-    log_message("index.php: header.php not found at $header_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing header.php');
-}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<?php include $header_path; ?>
+<?php require_once $root_path . 'include/header.php';?>
 <body>
-<?php
-$navbar_path = $root_path . 'include/navbar.php';
-if (!file_exists($navbar_path)) {
-    log_message("index.php: navbar.php not found at $navbar_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing navbar.php');
-}
-include $navbar_path;
-?>
-
+<?php require_once $root_path . 'include/navbar.php';?>
 <div class="acc-container">
     <div class="acc-content">
         <h1>Login with Phantom Wallet</h1>
@@ -86,15 +70,7 @@ include $navbar_path;
         <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
     </div>
 </div>
-
-<?php
-$footer_path = $root_path . 'include/footer.php';
-if (!file_exists($footer_path)) {
-    log_message("index.php: footer.php not found at $footer_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing footer.php');
-}
-include $footer_path;
-?>
+<?php require_once $root_path . 'include/footer.php';?>
 
 <!-- Scripts - Internal library -->
 <script>console.log('Attempting to load JS files...');</script>
