@@ -18,30 +18,13 @@ use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://www.google-analytics.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
-header("X-Frame-Options: DENY");
-header("X-Content-Type-Options: nosniff");
-header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
-header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
-header("Access-Control-Allow-Origin: $csp_base");
-header("Access-Control-Allow-Credentials: true");
-header("Access-Control-Allow-Methods: POST, GET");
-header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
+require_once $root_path . 'make-market/security-headers.php';
 
 // Error reporting
 ini_set('log_errors', 1);
 ini_set('error_log', ERROR_LOG_PATH);
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
-
-session_start([
-    'cookie_secure' => true,
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict'
-]);
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
