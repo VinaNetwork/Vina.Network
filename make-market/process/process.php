@@ -130,10 +130,8 @@ $page_description = "Execute your automated Solana token trading with Vina Netwo
 $page_keywords = "Solana trading, automated trading, Jupiter API, make market, Vina Network";
 $page_og_title = "Make Market Process: Automate Solana Token Trading";
 $page_og_description = "Execute Solana token swaps using Jupiter Aggregator.";
-$page_og_url = BASE_URL . "make-market/process/";
-$page_canonical = BASE_URL . "make-market/process/";
-
-// CSS for Process page
+$page_og_url = BASE_URL . "make-market/";
+$page_canonical = BASE_URL . "make-market/";
 $page_css = ['/make-market/process/process.css'];
 ?>
 
@@ -234,7 +232,6 @@ $page_css = ['/make-market/process/process.css'];
         </div>
     </div>
 </div>
-
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
