@@ -28,10 +28,10 @@ try {
             'explorerUrl' => EXPLORER_URL,
             'explorerQuery' => EXPLORER_QUERY,
             'solMint' => 'So11111111111111111111111111111111111111112',
-            'prioritizationFeeLamports' => SOLANA_NETWORK === 'testnet' ? 0 : 10000
+            'prioritizationFeeLamports' => in_array(SOLANA_NETWORK, ['testnet', 'devnet']) ? 0 : 10000
         ]
     ];
-    log_message("Network config sent: network=" . SOLANA_NETWORK . ", explorerUrl=" . EXPLORER_URL . ", explorerQuery=" . EXPLORER_QUERY, 'make-market.log', 'make-market', 'INFO');
+    log_message("Network config sent: network=" . SOLANA_NETWORK . ", explorerUrl=" . EXPLORER_URL . ", explorerQuery=" . EXPLORER_QUERY . ", prioritizationFeeLamports=" . $config['config']['prioritizationFeeLamports'], 'make-market.log', 'make-market', 'INFO');
     echo json_encode($config, JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
     log_message("Failed to fetch network config: " . $e->getMessage(), 'make-market.log', 'make-market', 'ERROR');
