@@ -16,6 +16,8 @@ require_once $root_path . 'make-market/process/auth.php';
 
 // Add Security Headers
 require_once $root_path . 'make-market/security-headers.php';
+// File: make-market/process/get-network.php
+log_message("get-network.php: Headers sent, Access-Control-Allow-Origin=$origin, session_id=$session_id, cookies=$cookies", 'make-market.log', 'make-market', 'DEBUG');
 
 // Log request details
 $session_id = session_id() ?: 'none';
