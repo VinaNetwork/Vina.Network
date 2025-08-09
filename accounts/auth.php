@@ -11,7 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/db.php'; // Include the db.php file
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
