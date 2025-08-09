@@ -15,26 +15,12 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://www.vina.network; connect-src 'self' https://www.vina.network; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
-header("X-Frame-Options: DENY");
-header("X-Content-Type-Options: nosniff");
-header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
-header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+require_once $root_path . 'make-market/security-headers.php';
 
 use StephenHill\Base58;
 
-// Error reporting
-ini_set('log_errors', 1);
-ini_set('error_log', ERROR_LOG_PATH);
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-
-session_start([
-    'cookie_secure' => true,
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict'
-]);
+// Session start: in config/bootstrap.php
+// Error reporting: in config/bootstrap.php
 
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
@@ -120,28 +106,13 @@ $page_og_description = "View your Vina Network account information";
 $page_og_url = BASE_URL . "accounts/profile.php";
 $page_canonical = BASE_URL . "accounts/profile.php";
 $page_css = ['/accounts/acc.css'];
-
-// Header
-$header_path = $root_path . 'include/header.php';
-if (!file_exists($header_path)) {
-    log_message("profile.php: header.php not found at $header_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing header.php');
-}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<?php include $header_path; ?>
+<?php require_once $root_path . 'include/header.php';?>
 <body>
-<?php
-$navbar_path = $root_path . 'include/navbar.php';
-if (!file_exists($navbar_path)) {
-    log_message("profile.php: navbar.php not found at $navbar_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing navbar.php');
-}
-include $navbar_path;
-?>
-
+<?php require_once $root_path . 'include/navbar.php';?>
 <div class="acc-container">
     <div class="acc-content">
         <h1>Your Profile</h1>
@@ -172,15 +143,7 @@ include $navbar_path;
         </form>
     </div>
 </div>
-
-<?php
-$footer_path = $root_path . 'include/footer.php';
-if (!file_exists($footer_path)) {
-    log_message("profile.php: footer.php not found at $footer_path", 'accounts.log', 'accounts', 'ERROR');
-    die('Internal Server Error: Missing footer.php');
-}
-include $footer_path;
-?>
+<?php require_once $root_path . 'include/navbar.php';?>
 
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
