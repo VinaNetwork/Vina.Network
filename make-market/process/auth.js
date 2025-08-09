@@ -16,7 +16,10 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     const logMessage = `${message}, session_id=${session_id}`;
     fetch('/make-market/log.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest' // Thêm header
+        },
         body: JSON.stringify({
             message: logMessage,
             log_file: log_file,
