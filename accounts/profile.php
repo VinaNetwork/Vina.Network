@@ -12,6 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/db.php'; // Include the db.php file
 require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
 
 // Add Security Headers
@@ -28,12 +29,7 @@ $csrf_token = generate_csrf_token();
 // Database connection
 $start_time = microtime(true);
 try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = get_db_connection(); // Use the function from config/db.php
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
@@ -97,7 +93,6 @@ try {
 }
 
 // SEO meta
-$root_path = '../';
 $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
 $page_keywords = "Vina Network, account, profile";
@@ -120,23 +115,23 @@ $page_css = ['/accounts/acc.css'];
             <table>
                 <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr>
-		    <th>Wallet address:</th>
-		    <td>
-			<?php if ($short_public_key !== 'Invalid address'): ?>
-			<a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
-				<?php echo htmlspecialchars($short_public_key); ?>
-			</a>
-			<i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
-			<?php else: ?>
-			<span>Invalid address</span>
-			<?php endif; ?>
-		    </td>
+                    <th>Wallet address:</th>
+                    <td>
+                        <?php if ($short_public_key !== 'Invalid address'): ?>
+                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+                            <?php echo htmlspecialchars($short_public_key); ?>
+                        </a>
+                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+                        <?php else: ?>
+                        <span>Invalid address</span>
+                        <?php endif; ?>
+                    </td>
                 </tr>
                 <tr><th>Created at:</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
                 <tr><th>Last Login:</th><td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td></tr>
             </table>
         </div>
-		
+        
         <form method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
