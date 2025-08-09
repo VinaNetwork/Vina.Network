@@ -19,6 +19,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
+        credentials: 'include', // Đảm bảo gửi cookie
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
@@ -262,7 +263,11 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
             const response = await axios.post('/make-market/get-decimals', {
                 tokenMint,
                 network: solanaNetwork
-            }, { headers, timeout: 15000 });
+            }, { 
+                headers, 
+                timeout: 15000,
+                withCredentials: true // Thêm để gửi cookie
+            });
             log_message(`Response from /make-market/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
