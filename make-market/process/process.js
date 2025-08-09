@@ -201,12 +201,12 @@ async function getNetworkConfig() {
             'Accept': 'application/json'
         });
         log_message(`Fetching network config, headers=${JSON.stringify(headers)}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await fetch('/make-market/process/get-network', {
+        const response = await fetch('/make-market/process/network', {
             method: 'GET',
             headers,
             credentials: 'include'
         });
-        log_message(`Response from /make-market/process/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}`, 'make-market.log', 'make-market', 'DEBUG');
+        log_message(`Response from /make-market/process/network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
