@@ -12,10 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 
-header('Content-Type: application/json; charset=utf-8');
-header("Access-Control-Allow-Origin: $csp_base");
-header('Access-Control-Allow-Methods: POST');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+// Add Security Headers
+require_once $root_path . 'make-market/security-headers.php';
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
