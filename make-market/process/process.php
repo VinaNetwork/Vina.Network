@@ -66,12 +66,6 @@ if ($transaction_id <= 0) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
     exit;
 }
-if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID from URL path: $request_uri", 'make-market.log', 'make-market', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
-    exit;
-}
 
 // Fetch transaction details
 try {
