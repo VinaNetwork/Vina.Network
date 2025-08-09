@@ -13,38 +13,7 @@ $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
 
-/**
- * Initialize session logging (session already started in config/bootstrap.php)
- * @return void
- */
-function initialize_auth() {
-    try {
-        // Log current session data for debugging
-        log_message(
-            "Session initialized, session_id=" . session_id() . 
-            ", user_id=" . ($_SESSION['user_id'] ?? 'none') . 
-            ", public_key=" . ($_SESSION['public_key'] ?? 'none'),
-            'make-market.log',
-            'make-market',
-            'DEBUG'
-        );
-
-    } catch (Exception $e) {
-        // Log error if session logging fails
-        log_message(
-            "Session logging failed: {$e->getMessage()}, network=" . SOLANA_NETWORK,
-            'make-market.log',
-            'make-market',
-            'ERROR'
-        );
-        http_response_code(500);
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Session logging error'
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-}
+// Session start: in config/bootstrap.php
 
 /**
  * Check if request is AJAX
