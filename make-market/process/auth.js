@@ -4,12 +4,16 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Set default values for global variables
+window.SOLANA_NETWORK = window.SOLANA_NETWORK || 'devnet'; // Match config.php
+window.ENVIRONMENT = window.ENVIRONMENT || 'development'; // Match bootstrap.php
+
 // Log message function (reused from process.js to avoid duplication)
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
-    if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
+    if (log_type === 'DEBUG' && window.ENVIRONMENT !== 'development') {
         return;
     }
-    const logMessage = message + ', network=' + (window.SOLANA_NETWORK || 'unknown');
+    const logMessage = message + ', network=' + window.SOLANA_NETWORK;
     fetch('/make-market/log.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -21,10 +25,10 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
         })
     }).then(function(response) {
         if (!response.ok) {
-            console.error('Log failed: HTTP ' + response.status + ', network=' + (window.SOLANA_NETWORK || 'unknown'));
+            console.error('Log failed: HTTP ' + response.status + ', network=' + window.SOLANA_NETWORK);
         }
     }).catch(function(err) {
-        console.error('Log error: ' + err.message + ', network=' + (window.SOLANA_NETWORK || 'unknown'));
+        console.error('Log error: ' + err.message + ', network=' + window.SOLANA_NETWORK);
     });
 }
 
@@ -35,21 +39,22 @@ async function getCsrfToken() {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
-            }
+            },
+            credentials: 'include' // Ensure cookies are sent
         });
         if (!response.ok) {
             throw new Error('HTTP ' + response.status);
         }
         const result = await response.json();
-        if (result.status !== 'success') {
-            throw new Error(result.message || 'Failed to fetch CSRF token');
+        if (result.status !== 'success' || !result.csrf_token) {
+            throw new Error(result.message || 'Invalid CSRF token response');
         }
         log_message('CSRF token fetched: ' + result.csrf_token, 'make-market.log', 'make-market', 'INFO');
-        console.log('CSRF token fetched: ' + result.csrf_token + ', network=' + (window.SOLANA_NETWORK || 'unknown'));
+        console.log('CSRF token fetched: ' + result.csrf_token + ', network=' + window.SOLANA_NETWORK);
         return result.csrf_token;
     } catch (err) {
         log_message('Failed to fetch CSRF token: ' + err.message, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to fetch CSRF token: ' + err.message + ', network=' + (window.SOLANA_NETWORK || 'unknown'));
+        console.error('Failed to fetch CSRF token: ' + err.message + ', network=' + window.SOLANA_NETWORK);
         throw err;
     }
 }
@@ -61,9 +66,9 @@ async function initializeAuth() {
         cachedCsrfToken = await getCsrfToken();
     }
     // Validate network
-    if (!['testnet', 'mainnet'].includes(window.SOLANA_NETWORK)) {
-        log_message('Invalid network: ' + (window.SOLANA_NETWORK || 'undefined'), 'make-market.log', 'make-market', 'ERROR');
-        throw new Error('Invalid network: ' + (window.SOLANA_NETWORK || 'undefined'));
+    if (!['testnet', 'mainnet', 'devnet'].includes(window.SOLANA_NETWORK)) {
+        log_message('Invalid network: ' + window.SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        throw new Error('Invalid network: ' + window.SOLANA_NETWORK);
     }
     return cachedCsrfToken;
 }
