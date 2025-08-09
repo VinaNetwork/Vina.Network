@@ -40,7 +40,8 @@ session_start([
     'cookie_lifetime' => 86400,
     'cookie_httponly' => true,
     'cookie_samesite' => $is_secure ? 'None' : 'Lax', // Use None if HTTPS
-    'cookie_secure' => $is_secure // Enable secure only if HTTPS
+    'cookie_secure' => $is_secure, // Enable secure only if HTTPS
+    'cookie_domain' => '.vina.network'
 ]);
 log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", samesite=" . ($is_secure ? 'None' : 'Lax'), 'make-market.log', 'make-market', 'INFO');
 
