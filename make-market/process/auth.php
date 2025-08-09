@@ -17,10 +17,11 @@ require_once $root_path . 'make-market/process/network.php';
 
 /**
  * Check if request is AJAX
+ * @param bool $enforce If true, reject non-AJAX requests
  * @return bool
  */
-function check_ajax_request() {
-    if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
+function check_ajax_request($enforce = true) {
+    if ($enforce && (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest')) {
         log_message("Non-AJAX request rejected, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
@@ -34,7 +35,6 @@ function check_ajax_request() {
  * @return bool
  */
 function check_user_auth() {
-    // Session already started in bootstrap.php
     $session_id = session_id() ?: 'none';
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['public_key'])) {
         log_message(
@@ -100,10 +100,11 @@ function check_transaction_ownership($pdo, $transaction_id) {
  * Perform full authentication check (AJAX, CSRF, user, and optional transaction ownership)
  * @param PDO|null $pdo Database connection (required for transaction ownership check)
  * @param int|null $transaction_id Transaction ID (optional)
+ * @param bool $enforceAjax If true, require AJAX request
  * @return bool
  */
-function perform_auth_check($pdo = null, $transaction_id = null) {
-    if (!check_ajax_request()) return false;
+function perform_auth_check($pdo = null, $transaction_id = null, $enforceAjax = true) {
+    if ($enforceAjax && !check_ajax_request(true)) return false;
     if (!check_user_auth()) return false;
     $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
     if (!validate_csrf_token($csrf_token)) {
