@@ -14,12 +14,7 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
 
 // Add Security Headers
-header("Content-Type: application/json; charset=UTF-8");
-header("Access-Control-Allow-Origin: $csp_base");
-header("X-Frame-Options: DENY");
-header("X-Content-Type-Options: nosniff");
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
+require_once $root_path . 'make-market/security-headers.php';
 
 // Log request
 log_message("get-network.php: Request received, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
