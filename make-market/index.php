@@ -20,11 +20,8 @@ use StephenHill\Base58;
 // Add Security Headers
 require_once $root_path . 'make-market/security-headers.php';
 
-// Error reporting
-ini_set('log_errors', 1);
-ini_set('error_log', ERROR_LOG_PATH);
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
+// Session start: in config/bootstrap.php
+// Error reporting: in config/bootstrap.php
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
