@@ -21,7 +21,7 @@ require_once $root_path . 'make-market/process/network.php';
  */
 function check_ajax_request() {
     if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-        log_message("Non-AJAX request rejected, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        log_message("Non-AJAX request rejected, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
         return false;
@@ -34,14 +34,27 @@ function check_ajax_request() {
  * @return bool
  */
 function check_user_auth() {
-    initialize_auth(); // Ensure session is started
+    // Session already started in bootstrap.php
+    $session_id = session_id() ?: 'none';
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['public_key'])) {
-        log_message("Unauthorized access attempt: user_id=" . ($_SESSION['user_id'] ?? 'none') . ", public_key=" . ($_SESSION['public_key'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        log_message(
+            "Unauthorized access attempt: user_id=" . ($_SESSION['user_id'] ?? 'none') . 
+            ", public_key=" . ($_SESSION['public_key'] ?? 'none') . 
+            ", session_id=$session_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
+            'make-market.log',
+            'make-market',
+            'ERROR'
+        );
         http_response_code(401);
         echo json_encode(['status' => 'error', 'message' => 'Please log in to continue'], JSON_UNESCAPED_UNICODE);
         return false;
     }
-    log_message("Auth check passed: user_id={$_SESSION['user_id']}, public_key={$_SESSION['public_key']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    log_message(
+        "Auth check passed: user_id={$_SESSION['user_id']}, public_key={$_SESSION['public_key']}, session_id=$session_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
+        'make-market.log',
+        'make-market',
+        'INFO'
+    );
     return true;
 }
 
@@ -57,14 +70,26 @@ function check_transaction_ownership($pdo, $transaction_id) {
         $stmt->execute([$transaction_id, $_SESSION['user_id'], SOLANA_NETWORK]);
         $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$transaction) {
-            log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+            log_message(
+                "Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, session_user_id=" . ($_SESSION['user_id'] ?? 'none') . 
+                ", network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
+                'make-market.log',
+                'make-market',
+                'ERROR'
+            );
             http_response_code(403);
             echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
             return false;
         }
         return true;
     } catch (PDOException $e) {
-        log_message("Database query failed: {$e->getMessage()}, network=" . SOLANA_NETWORK . ", session_user_id=" . ($_SESSION['user_id'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
+        log_message(
+            "Database query failed: {$e->getMessage()}, session_user_id=" . ($_SESSION['user_id'] ?? 'none') . 
+            ", network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
+            'make-market.log',
+            'make-market',
+            'ERROR'
+        );
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking transaction ownership'], JSON_UNESCAPED_UNICODE);
         return false;
@@ -79,22 +104,37 @@ function check_transaction_ownership($pdo, $transaction_id) {
  */
 function perform_auth_check($pdo = null, $transaction_id = null) {
     if (!check_ajax_request()) return false;
-    if (!check_user_auth()) return false; // Check user auth before CSRF
+    if (!check_user_auth()) return false;
     $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
     if (!validate_csrf_token($csrf_token)) {
-        log_message("Invalid CSRF token, provided=$csrf_token, session=" . ($_SESSION['csrf_token'] ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        log_message(
+            "Invalid CSRF token, provided=$csrf_token, session=" . ($_SESSION['csrf_token'] ?? 'none') . 
+            ", network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
+            'make-market.log',
+            'make-market',
+            'ERROR'
+        );
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
         return false;
     }
-    log_message("CSRF token validated: $csrf_token, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    log_message(
+        "CSRF token validated: $csrf_token, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
+        'make-market.log',
+        'make-market',
+        'INFO'
+    );
     if ($pdo && $transaction_id !== null) {
         if (!check_transaction_ownership($pdo, $transaction_id)) return false;
     }
-    log_message("Authentication successful: session_user_id=" . ($_SESSION['user_id'] ?? 'none') . 
-                ($transaction_id ? ", transaction_id=$transaction_id" : "") . 
-                ", network=" . SOLANA_NETWORK, 
-                'make-market.log', 'make-market', 'INFO');
+    log_message(
+        "Authentication successful: session_user_id=" . ($_SESSION['user_id'] ?? 'none') . 
+        ($transaction_id ? ", transaction_id=$transaction_id" : "") . 
+        ", network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
+        'make-market.log',
+        'make-market',
+        'INFO'
+    );
     return true;
 }
 ?>
