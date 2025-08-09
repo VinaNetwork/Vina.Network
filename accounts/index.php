@@ -15,19 +15,10 @@ require_once $root_path . 'config/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 // Add Security Headers
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://www.googletagmanager.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base https://www.google-analytics.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
-header("X-Frame-Options: DENY");
-header("X-Content-Type-Options: nosniff");
-header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
-header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
+require_once $root_path . 'make-market/security-headers.php';
 
-// Start session
-session_start([
-    'cookie_secure' => true,
-    'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict'
-]);
+// Session start: in config/bootstrap.php
+// Error reporting: in config/bootstrap.php
 
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
@@ -49,12 +40,6 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     }
 }
 
-// Error reporting
-ini_set('log_errors', 1);
-ini_set('error_log', ERROR_LOG_PATH);
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
 
@@ -66,7 +51,6 @@ $page_og_title = "Connect Wallet to Vina Network";
 $page_og_description = "Connect your Solana wallet to register or login to Vina Network";
 $page_og_url = BASE_URL . "accounts/";
 $page_canonical = BASE_URL . "accounts/";
-
 // CSS for Accounts
 $page_css = ['/accounts/acc.css'];
 
