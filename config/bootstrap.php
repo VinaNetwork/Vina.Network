@@ -39,6 +39,7 @@ define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 if (session_status() === PHP_SESSION_NONE) {
     session_start([
         'cookie_lifetime' => 86400,
+        'use_strict_mode' => true,
         'cookie_httponly' => true,
         'cookie_samesite' => $is_secure ? 'None' : 'Lax',
         'cookie_secure' => $is_secure,
