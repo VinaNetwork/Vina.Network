@@ -15,7 +15,7 @@ require_once $root_path . 'config/bootstrap.php';
 require_once __DIR__ . '/auth.php';
 
 // Add Security Headers
-require_once $root_path . 'accounts/security-headers.php';
+require_once $root_path . 'accounts/auth-headers.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
