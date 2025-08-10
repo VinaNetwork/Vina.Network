@@ -142,7 +142,8 @@ $page_css = ['/accounts/acc.css'];
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
+<script src="/accounts/js/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/ui.js')"></script>
+<script src="/accounts/js/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
