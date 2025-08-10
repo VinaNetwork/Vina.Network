@@ -17,8 +17,3 @@ RewriteCond %{REQUEST_FILENAME} -f
 RewriteCond %{REQUEST_FILENAME} \.php$
 RewriteCond %{REQUEST_URI} !^/make-market/process/(process\.php|get-csrf\.php|get-tx\.php|get-status\.php|swap\.php|get-api\.php|get-decimals\.php|get-network\.php|create-tx\.php)
 RewriteRule ^process/ - [F,L]
-
-# Fallback to index.php
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
