@@ -1,5 +1,5 @@
 // ============================================================================
-// File: accounts/acc.js
+// File: accounts/js/acc.js
 // Description: Script for managing the entire Accounts page with HTTPS and XSS checks.
 // Created by: Vina Network
 // ============================================================================
