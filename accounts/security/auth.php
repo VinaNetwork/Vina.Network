@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: accounts/auth.php
+// File: accounts/security/auth.php
 // Description: API handles Solana wallet signature verification with rate limiting and session regeneration.
 // Created by: Vina Network
 // ============================================================================
@@ -9,7 +9,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = __DIR__ . '/../';
+$root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
