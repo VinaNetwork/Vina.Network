@@ -4,7 +4,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-import { initializeAuth, addAuthHeaders, addAxiosAuthHeaders } from '/make-market/process/auth.js';
+import { initializeAuth, addAuthHeaders, addAxiosAuthHeaders } from '/make-market/security/auth.js';
 
 // Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
