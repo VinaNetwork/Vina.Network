@@ -13,7 +13,7 @@ $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
 require_once $root_path . '../vendor/autoload.php';
-require_once $root_path . 'make-market/process/auth.php';
+require_once $root_path . 'make-market/security/auth.php';
 
 use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\Keypair;
