@@ -38,16 +38,16 @@ define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 // Initialize session with security options
 if (session_status() === PHP_SESSION_NONE) {
     session_start([
-        'cookie_lifetime' => 86400,
+        'cookie_lifetime' => 0,
         'use_strict_mode' => true,
         'cookie_httponly' => true,
-        'cookie_samesite' => $is_secure ? 'None' : 'Lax',
+        'cookie_samesite' => 'Strict',
         'cookie_secure' => $is_secure,
-        'cookie_domain' => 'vina.network'
+        'cookie_domain' => '.vina.network'
     ]);
-    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", samesite=" . ($is_secure ? 'None' : 'Lax') . ", cookie_domain=.vina.network", 'make-market.log', 'make-market', 'INFO');
+    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=.vina.network", 'make-market.log', 'make-market', 'INFO');
 } else {
-    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", samesite=" . ($is_secure ? 'None' : 'Lax') . ", cookie_domain=.vina.network", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=.vina.network", 'make-market.log', 'make-market', 'DEBUG');
 }
 
 // PHP configuration
