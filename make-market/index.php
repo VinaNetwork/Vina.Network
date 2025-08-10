@@ -467,6 +467,7 @@ $defaultSlippage = 0.5;
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script defer src="/make-market/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script defer src="/make-market/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
