@@ -12,10 +12,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once __DIR__ . '/auth.php';
+require_once $root_path . 'accounts/security/auth.php';
 
 // Add Security Headers
-require_once $root_path . 'accounts/auth-headers.php';
+require_once $root_path . 'accounts/security/auth-headers.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
