@@ -1,12 +1,11 @@
 <?php
 // ============================================================================
-// File: tools/index.php - Main Interface Loader for NFT Holder Tools
+// File: tools/index.php
 // Description: Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders, Check Wallet Creators, Check Wallet Analysis.
 // Created by: Vina Network
 // ============================================================================
 
 ob_start();
-// Start output buffering and define constants for context
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
@@ -14,23 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 
-// Set error reporting and logging
-ini_set('log_errors', 1);
-ini_set('error_log', ERROR_LOG_PATH);
-ini_set('display_errors', 0);
-error_reporting(E_ALL);
-
-// Set SEO meta variables
-$page_title = "Vina Network - Solana NFT Tools & Solana Checker";
-$page_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
-$page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT Info, Wallet Analysis, blockchain, NFT";
-$page_og_title = "Vina Network - Solana NFT Tools & Solana Checker";
-$page_og_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
-$page_og_url = BASE_URL . "tools/";
-$page_canonical = BASE_URL . "tools/";
-
-// CSS for Tools
-$page_css = ['/tools/tools.css'];
+// Error reporting: in config/bootstrap.php
 
 // Function to extract title and description from a PHP file
 function getToolInfo($file_path) {
@@ -82,28 +65,22 @@ $tools = [
 // Get the requested tool from query string
 $tool = isset($_GET['tool']) && array_key_exists($_GET['tool'], $tools) ? $_GET['tool'] : null;
 
-// Include header
-$header_path = $root_path . 'include/header.php';
-if (!file_exists($header_path)) {
-    log_message("index: header.php not found at $header_path", 'tools-index.log', 'tools', 'ERROR');
-    die('Internal Server Error: Missing header.php');
-}
-include $header_path;
+// Set SEO meta variables
+$page_title = "Vina Network - Solana NFT Tools & Solana Checker";
+$page_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
+$page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT Info, Wallet Analysis, blockchain, NFT";
+$page_og_title = "Vina Network - Solana NFT Tools & Solana Checker";
+$page_og_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
+$page_og_url = BASE_URL . "tools/";
+$page_canonical = BASE_URL . "tools/";
+$page_css = ['/tools/tools.css'];
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+<?php require_once $root_path . 'include/header.php';?>
 <body>
-<?php 
-// Include navigation bar
-$navbar_path = $root_path . 'include/navbar.php';
-if (!file_exists($navbar_path)) {
-    log_message("index: navbar.php not found at $navbar_path", 'tools-index.log', 'tools', 'ERROR');
-    die('Internal Server Error: Missing navbar.php');
-}
-include $navbar_path;
-?>
-
+<?php require_once $root_path . 'include/navbar.php';?>
 <!-- Tools Content -->
 <section class="tools">
     <div class="tools-container">
@@ -134,22 +111,11 @@ include $navbar_path;
         </div>
     </div>
 </section>
-
-<?php 
-// Include footer
-$footer_path = __DIR__ . '/../include/footer.php';
-log_message("index: Checking footer_path: $footer_path", 'tools-index.log', 'tools', 'DEBUG');
-if (!file_exists($footer_path)) {
-    log_message("index: footer.php not found at $footer_path", 'tools-index.log', 'tools', 'ERROR');
-    die('Internal Server Error: Missing footer.php');
-}
-include $footer_path;
-?>
+<?php require_once $root_path . 'include/footer.php';?>
 
 <!-- Load JavaScript files with timestamp and error fallback -->
 <script>console.log('Attempting to load JS files...');</script>
 <script src="../js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
-<script src="../js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/navbar.js')"></script>
 <script src="tools.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load tools/tools.js')"></script>
 </body>
 </html>
