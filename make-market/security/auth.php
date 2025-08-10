@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/process/auth.php
+// File: make-market/security/auth.php
 // Description: Centralized authentication for Make Market
 // Created by: Vina Network
 // ============================================================================
