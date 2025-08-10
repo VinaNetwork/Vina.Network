@@ -46,11 +46,12 @@ $csrf_token = generate_csrf_token();
 // SEO meta
 $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
+$page_url = BASE_URL . "accounts/";
 $page_keywords = "Vina Network, connect wallet, login, register";
-$page_og_title = "Connect Wallet to Vina Network";
-$page_og_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_og_url = BASE_URL . "accounts/";
-$page_canonical = BASE_URL . "accounts/";
+$page_og_title = $page_title;
+$page_og_description = $page_description;
+$page_og_url = $page_url;
+$page_canonical = $page_url;
 $page_css = ['/accounts/acc.css'];
 ?>
 
