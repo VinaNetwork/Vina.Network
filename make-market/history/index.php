@@ -187,7 +187,7 @@ $page_css = ['/make-market/history/history.css'];
 <script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
-<script defer src="/make-market/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load ui.js')"></script>
+<script defer src="/make-market/js/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load ui.js')"></script>
 <script defer src="/make-market/history/history.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load history.js')"></script>
 </body>
 </html>
