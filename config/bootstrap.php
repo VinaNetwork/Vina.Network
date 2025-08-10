@@ -14,6 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Dynamic Domain Name Definition
 // Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$is_secure = $protocol === 'https://'; // Thêm định nghĩa $is_secure
 // Get the current domain (e.g., www.vina.network)
 $domain = $_SERVER['HTTP_HOST'];
 // Combine to form the base URL and define it as a constant
@@ -90,6 +91,7 @@ function ensure_directory_and_file($dir_path, $file_path) {
         return false;
     }
 }
+
 // Write log entry to file
 function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
@@ -119,11 +121,12 @@ function generate_csrf_token() {
     }
     return $_SESSION['csrf_token'];
 }
+
 // Validate CSRF token from session
 function validate_csrf_token($token) {
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
-// Define environment: make-market/process/create-tx.php
+// Define environment
 define('ENVIRONMENT', 'development');
 ?>
