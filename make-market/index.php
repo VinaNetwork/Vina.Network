@@ -18,7 +18,7 @@ use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
 // Add Security Headers
-require_once $root_path . 'make-market/security-headers.php';
+require_once $root_path . 'make-market/security/auth-headers.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
