@@ -15,13 +15,13 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
 
 // Add Security Headers
-require_once $root_path . 'accounts/auth-headers.php';
-
-use StephenHill\Base58;
+require_once $root_path . 'accounts/security/auth-headers.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
 
+// Library Base58
+use StephenHill\Base58;
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
 
