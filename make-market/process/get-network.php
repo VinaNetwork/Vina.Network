@@ -9,17 +9,13 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-log_message("get-network.php: File accessed, REQUEST_URI=" . ($_SERVER['REQUEST_URI'] ?? 'none') . ", REQUEST_METHOD=" . ($_SERVER['REQUEST_METHOD'] ?? 'none') . ", cookies=" . ($_SERVER['HTTP_COOKIE'] ?? 'none'), 'make-market.log', 'make-market', 'INFO');
-
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
 require_once $root_path . 'make-market/process/auth.php';
 
-// Add Security Headers
+// Add Security Headers (includes CORS handling)
 require_once $root_path . 'make-market/security-headers.php';
-// File: make-market/process/get-network.php
-log_message("get-network.php: Headers sent, Access-Control-Allow-Origin=$origin, session_id=$session_id, cookies=$cookies", 'make-market.log', 'make-market', 'DEBUG');
 
 // Log request details
 $session_id = session_id() ?: 'none';
@@ -28,6 +24,14 @@ $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 log_message("get-network.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'make-market.log', 'make-market', 'INFO');
+
+// Validate CSRF token for non-GET requests
+if ($request_method !== 'GET' && !validate_csrf_token($headers['X-CSRF-Token'] ?? $_POST['csrf_token'] ?? '')) {
+    log_message("Invalid CSRF token, session_id=$session_id", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // Check session validity
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['public_key'])) {
@@ -66,6 +70,7 @@ try {
         ]
     ];
     log_message("Network config sent: network=" . SOLANA_NETWORK . ", explorerUrl=" . EXPLORER_URL . ", explorerQuery=" . EXPLORER_QUERY . ", prioritizationFeeLamports=" . $config['config']['prioritizationFeeLamports'] . ", session_id=$session_id", 'make-market.log', 'make-market', 'INFO');
+    header('Content-Type: application/json');
     echo json_encode($config, JSON_UNESCAPED_SLASHES);
 } catch (Exception $e) {
     log_message("Failed to fetch network config: " . $e->getMessage() . ", session_id=$session_id", 'make-market.log', 'make-market', 'ERROR');
