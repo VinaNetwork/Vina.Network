@@ -41,13 +41,25 @@ try {
 
 // Check session
 $public_key = $_SESSION['public_key'] ?? null;
-$short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-log_message("Profile.php - Session public_key: " . ($short_public_key ?? 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
+log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
     header('Location: /accounts');
     exit;
 }
+
+// Validate public_key format and compute short_public_key early
+$base58 = new Base58();
+$short_public_key = 'Invalid address';
+try {
+    if (strlen($public_key) >= 8) {
+        $base58->decode($public_key);
+        $short_public_key = substr($public_key, 0, 4) . '...' . substr($public_key, -4);
+    }
+} catch (Exception $e) {
+    log_message("Invalid public_key format: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+}
+log_message("Profile.php - Short public_key: " . $short_public_key, 'accounts.log', 'accounts', 'DEBUG');
 
 // Fetch account info
 try {
@@ -81,24 +93,15 @@ if (isset($_POST['logout']) && isset($_POST['csrf_token'])) {
     exit;
 }
 
-// Validate public_key format
-$base58 = new Base58();
-$short_public_key = 'Invalid address';
-try {
-    $base58->decode($account['public_key']);
-    $short_public_key = substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4);
-} catch (Exception $e) {
-    log_message("Invalid public_key format: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
-}
-
-// SEO meta
+// SEO meta - Use base variables and derive others for reduced redundancy
 $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
+$page_url = BASE_URL . "accounts/profile.php";
 $page_keywords = "Vina Network, account, profile";
-$page_og_title = "Vina Network - Profile";
-$page_og_description = "View your Vina Network account information";
-$page_og_url = BASE_URL . "accounts/profile.php";
-$page_canonical = BASE_URL . "accounts/profile.php";
+$page_og_title = $page_title;
+$page_og_description = $page_description;
+$page_og_url = $page_url;
+$page_canonical = $page_url;
 $page_css = ['/accounts/acc.css'];
 ?>
 
