@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: accounts/client-log.php
+// File: accounts/log.php
 // Description: Handles client-side logging with size limitation.
 // Created by: Vina Network
 // ============================================================================
