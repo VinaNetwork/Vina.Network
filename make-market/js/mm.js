@@ -1,5 +1,5 @@
 // ============================================================================
-// File: make-market/mm.js
+// File: make-market/js/mm.js
 // Description: JavaScript file for form handling and validation on Make Market page
 // Created by: Vina Network
 // ============================================================================
