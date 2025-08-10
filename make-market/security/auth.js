@@ -1,5 +1,5 @@
 // ============================================================================
-// File: make-market/process/auth.js
+// File: make-market/security/auth.js
 // Description: JavaScript utility for handling CSRF token and AJAX authentication
 // Created by: Vina Network
 // ============================================================================
