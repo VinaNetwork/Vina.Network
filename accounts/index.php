@@ -77,7 +77,6 @@ $page_css = ['/accounts/acc.css'];
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/js/navbar.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/navbar.js')"></script>
 <script src="/accounts/js/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/ui.js')"></script>
 <script src="/accounts/js/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
 </body>
