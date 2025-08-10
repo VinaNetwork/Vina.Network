@@ -8,7 +8,7 @@
 // Force HTTPS and prevent downgrade attacks
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
 // Prevent clickjacking
-header("X-Frame-Options: SAMEORIGIN");
+header("X-Frame-Options: DENY");
 // Prevent MIME type sniffing
 header("X-Content-Type-Options: nosniff");
 // Enable basic XSS protection (for older browsers)
