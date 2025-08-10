@@ -71,6 +71,5 @@ include $root_path . 'include/header.php';
 	<?php include $root_path . 'include/footer.php'; ?>
 	<!-- Scripts -->
 	<script src="../js/vina.js"></script>
-	<script src="../js/navbar.js"></script>
 </body>
 </html>
