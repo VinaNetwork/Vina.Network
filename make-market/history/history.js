@@ -65,11 +65,11 @@ function displaySubTransactions(subTransactions, transactionId) {
             <table class="sub-transaction-table">
                 <thead>
                     <tr>
-                        <th>Loop</th>
-                        <th>Batch</th>
-                        <th>Status</th>
-                        <th>Transaction ID</th>
-                        <th>Error</th>
+                    <th>Loop</th>
+                    <th>Batch</th>
+                    <th>Status</th>
+                    <th>Transaction ID</th>
+                    <th>Error</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -125,57 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('sub-transaction-details').classList.add('active');
             const subTransactions = await fetchSubTransactions(transactionId);
             displaySubTransactions(subTransactions, transactionId);
-        });
-    });
-
-    // Copy functionality
-    const copyIcons = document.querySelectorAll('.copy-icon');
-    log_message(`Found ${copyIcons.length} copy icons`, 'make-market.log', 'make-market', 'DEBUG');
-    if (copyIcons.length === 0) {
-        log_message('No .copy-icon elements found in DOM', 'make-market.log', 'make-market', 'ERROR');
-    }
-
-    copyIcons.forEach(icon => {
-        icon.addEventListener('click', () => {
-            log_message('Copy icon clicked', 'make-market.log', 'make-market', 'INFO');
-            if (!window.isSecureContext) {
-                log_message('Copy blocked: Not in secure context', 'make-market.log', 'make-market', 'ERROR');
-                showError('Cannot copy: This feature requires HTTPS');
-                return;
-            }
-
-            const fullAddress = icon.getAttribute('data-full');
-            if (!fullAddress) {
-                log_message('Copy failed: data-full attribute not found or empty', 'make-market.log', 'make-market', 'ERROR');
-                showError('Cannot copy: Invalid address');
-                return;
-            }
-
-            const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,88}$/;
-            if (!base58Regex.test(fullAddress)) {
-                log_message(`Invalid address format: ${fullAddress}`, 'make-market.log', 'make-market', 'ERROR');
-                showError('Cannot copy: Invalid address format');
-                return;
-            }
-
-            navigator.clipboard.writeText(fullAddress).then(() => {
-                log_message('Copy successful', 'make-market.log', 'make-market', 'INFO');
-                icon.classList.add('copied');
-                const tooltip = document.createElement('span');
-                tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
-                const parent = icon.parentNode;
-                parent.style.position = 'relative';
-                parent.appendChild(tooltip);
-                setTimeout(() => {
-                    icon.classList.remove('copied');
-                    tooltip.remove();
-                    log_message('Copy feedback removed', 'make-market.log', 'make-market', 'DEBUG');
-                }, 2000);
-            }).catch(err => {
-                log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
-                showError(`Cannot copy: ${err.message}`);
-            });
         });
     });
 });
