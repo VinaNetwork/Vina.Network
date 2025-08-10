@@ -13,7 +13,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
-require_once $root_path . 'make-market/process/auth.php';
 require_once $root_path . '../vendor/autoload.php';
 
 use StephenHill\Base58;
@@ -29,7 +28,7 @@ require_once $root_path . 'make-market/security-headers.php';
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("process.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
+    log_message("process.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
 }
 
 // Database connection
@@ -50,45 +49,19 @@ try {
 $user_public_key = $_SESSION['public_key'] ?? null;
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     $short_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
-    log_message("Session public_key: $short_user_public_key, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
+    log_message("Session public_key: $short_user_public_key", 'make-market.log', 'make-market', 'DEBUG');
 }
 if (!$user_public_key) {
-    log_message("No public key in session, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO');
-    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-        header('Content-Type: application/json');
-        http_response_code(401);
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: No public key in session']);
-        exit;
-    } else {
-        $_SESSION['redirect_url'] = '/make-market/process';
-        header('Location: /accounts');
-        exit;
-    }
+    log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
+    $_SESSION['redirect_url'] = '/make-market/process';
+    header('Location: /accounts');
+    exit;
 }
 
-// Validate CSRF token for non-GET requests
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
-    if (!validate_csrf_token($csrf_token)) {
-        log_message("Invalid CSRF token, provided=$csrf_token, session=" . ($_SESSION['csrf_token'] ?? 'none') . ", session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
-        header('Content-Type: application/json');
-        http_response_code(403);
-        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-        exit;
-    }
-    log_message("CSRF token validated: $csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO');
-}
-
-// Get transaction ID from query parameter or URL path
+// Get transaction ID from query parameter
 $transaction_id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : 0;
 if ($transaction_id <= 0) {
-    // Try to extract from URL path (e.g., /make-market/process/41)
-    $path_parts = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
-    $transaction_id = end($path_parts);
-    $transaction_id = is_numeric($transaction_id) ? intval($transaction_id) : 0;
-}
-if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID: GET id={$_GET['id'] ?? 'none'}, URI={$_SERVER['REQUEST_URI']}, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid or missing transaction ID from query parameter: id={$_GET['id']}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID']);
     exit;
@@ -100,14 +73,14 @@ try {
     $stmt->execute([$transaction_id, $_SESSION['user_id'], SOLANA_NETWORK]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
-        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id={$_SESSION['user_id']}, network=" . SOLANA_NETWORK . ", session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id={$_SESSION['user_id']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch']);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, network=" . SOLANA_NETWORK . ", session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
-    log_message("Database query failed: {$e->getMessage()}, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction']);
     exit;
@@ -115,7 +88,7 @@ try {
 
 // Check if transaction is already completed
 if (in_array($transaction['status'], ['success', 'failed', 'canceled', 'partial'])) {
-    log_message("Transaction already processed: ID=$transaction_id, status={$transaction['status']}, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction already processed: ID=$transaction_id, status={$transaction['status']}", 'make-market.log', 'make-market', 'INFO');
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -272,7 +245,6 @@ $page_css = ['/make-market/process/process.css'];
 <!-- Pass environment to JavaScript -->
 <script>
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
-    window.CSRF_TOKEN = '<?php echo generate_csrf_token(); ?>';
 </script>
 <script type="module" src="/make-market/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 </body>
