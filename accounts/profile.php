@@ -47,6 +47,8 @@ if (!$public_key) {
     header('Location: /accounts');
     exit;
 }
+// Regenerate session ID for improved security
+session_regenerate_id(true);
 
 // Validate public_key format and compute short_public_key early
 $base58 = new Base58();
@@ -59,6 +61,14 @@ try {
 } catch (Exception $e) {
     log_message("Invalid public_key format: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
 }
+
+// If public_key is invalid, redirect immediately
+if ($short_public_key === 'Invalid address') {
+    log_message("Invalid public_key detected, redirecting to login", 'accounts.log', 'accounts', 'WARNING');
+    header('Location: /accounts');
+    exit;
+}
+
 log_message("Profile.php - Short public_key: " . $short_public_key, 'accounts.log', 'accounts', 'DEBUG');
 
 // Fetch account info
@@ -78,6 +88,10 @@ try {
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving account information']);
     exit;
 }
+
+// Validate DB fields for additional sanitization
+$created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Invalid date';
+$last_login = $account['last_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['last_login']) ? $account['last_login'] : 'Invalid date') : 'Never';
 
 // Handle logout
 if (isset($_POST['logout']) && isset($_POST['csrf_token'])) {
@@ -129,8 +143,8 @@ $page_css = ['/accounts/acc.css'];
                         <?php endif; ?>
                     </td>
                 </tr>
-                <tr><th>Created at:</th><td><?php echo htmlspecialchars($account['created_at']); ?></td></tr>
-                <tr><th>Last Login:</th><td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td></tr>
+                <tr><th>Created at:</th><td><?php echo htmlspecialchars($created_at); ?></td></tr>
+                <tr><th>Last Login:</th><td><?php echo htmlspecialchars($last_login); ?></td></tr>
             </table>
         </div>
         
