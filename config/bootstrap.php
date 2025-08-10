@@ -41,7 +41,8 @@ if (session_status() === PHP_SESSION_NONE) {
         'cookie_lifetime' => 86400,
         'cookie_httponly' => true,
         'cookie_samesite' => $is_secure ? 'None' : 'Lax',
-        'cookie_secure' => $is_secure
+        'cookie_secure' => $is_secure,
+        'cookie_domain' => 'vina.network'
     ]);
     log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", samesite=" . ($is_secure ? 'None' : 'Lax') . ", cookie_domain=.vina.network", 'make-market.log', 'make-market', 'INFO');
 } else {
