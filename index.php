@@ -12,21 +12,13 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/';
-$bootstrap_file = $root_path . 'config/bootstrap.php';
-if (!file_exists($bootstrap_file)) {
-    die("Missing bootstrap.php");
-}
-require_once $bootstrap_file;
-
-// Head Section (Meta, Styles, Title) is included via header.php
+require_once $root_path . 'config/bootstrap.php';
 $page_css = ['css/home.css'];
-include __DIR__ . '/include/header.php';
+require_once $root_path . 'include/header.php';
 ?>
 
 <body>
-<!-- Navigation Bar -->
-<?php include __DIR__ . '/include/navbar.php'; ?>
-
+<?php require_once $root_path . 'include/navbar.php';?>
 <div class="home-container">
     <!-- Hero Section -->
     <section class="home-head">
@@ -139,10 +131,9 @@ include __DIR__ . '/include/header.php';
 	</div>
     </section>
 </div>
-
-<?php include __DIR__ . '/include/community.php'; ?>
-<?php include __DIR__ . '/include/widget.php'; ?>
-<?php include __DIR__ . '/include/footer.php'; ?>
+<?php require_once $root_path . 'include/community.php'; ?>
+<?php require_once $root_path . 'include/widget.php'; ?>
+<?php require_once $root_path . 'include/footer.php';?>
 
 <!-- Back to Top Button -->
 <button id="back-to-top" title="Back to top">
