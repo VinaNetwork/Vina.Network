@@ -12,7 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
-require_once $root_path . 'make-market/process/auth.php';
+require_once $root_path . 'make-market/security/auth.php';
 
 // Initialize security headers and authentication
 initialize_auth();
