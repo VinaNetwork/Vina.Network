@@ -1,5 +1,5 @@
 // ============================================================================
-// File: accounts/ui.js
+// File: accounts/js/ui.js
 // Description: JavaScript file for UI interactions (copy functionality) on Accounts page
 // Created by: Vina Network
 // ============================================================================
