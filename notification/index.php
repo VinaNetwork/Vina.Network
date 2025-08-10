@@ -43,6 +43,5 @@ include $root_path . 'include/header.php';
 
 <!-- Shared JavaScript files -->
 <script src="../js/vina.js"></script>
-<script src="../js/navbar.js"></script>
 </body>
 </html>
