@@ -25,23 +25,7 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 log_message("get-network.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'make-market.log', 'make-market', 'INFO');
 
-// Validate CSRF token for non-GET requests
-if ($request_method !== 'GET' && !validate_csrf_token($headers['X-CSRF-Token'] ?? $_POST['csrf_token'] ?? '')) {
-    log_message("Invalid CSRF token, session_id=$session_id", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// Check session validity
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['public_key'])) {
-    log_message("Session invalid: user_id=" . ($_SESSION['user_id'] ?? 'none') . ", public_key=" . ($_SESSION['public_key'] ?? 'none') . ", session_id=$session_id", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(401);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Invalid session'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// Perform authentication check
+// Check authentication (includes CSRF validation via perform_auth_check)
 if (!perform_auth_check()) {
     log_message("Authentication check failed, session_id=$session_id", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(401);
