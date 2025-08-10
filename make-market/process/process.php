@@ -13,6 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
+require_once $root_path . 'make-market/process/auth.php';
 require_once $root_path . '../vendor/autoload.php';
 
 use StephenHill\Base58;
@@ -66,11 +67,16 @@ if (!$user_public_key) {
 }
 
 // Validate CSRF token for non-GET requests
-if ($_SERVER['REQUEST_METHOD'] !== 'GET' && !validate_csrf_token($_POST['csrf_token'] ?? '')) {
-    log_message("Invalid CSRF token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-    exit;
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
+    if (!validate_csrf_token($csrf_token)) {
+        log_message("Invalid CSRF token, provided=$csrf_token, session=" . ($_SESSION['csrf_token'] ?? 'none') . ", session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+        header('Content-Type: application/json');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+    log_message("CSRF token validated: $csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO');
 }
 
 // Get transaction ID from query parameter or URL path
