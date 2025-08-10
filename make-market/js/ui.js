@@ -1,5 +1,5 @@
 // ============================================================================
-// File: make-market/ui.js
+// File: make-market/js/ui.js
 // Description: JavaScript file for UI interactions (copy functionality) on Make Market page
 // Created by: Vina Network
 // ============================================================================
