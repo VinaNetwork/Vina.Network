@@ -17,9 +17,10 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': window.CSRF_TOKEN || ''
         },
-        credentials: 'include', // Đảm bảo gửi cookie
+        credentials: 'include',
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
@@ -103,7 +104,7 @@ async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
                 errorDetails = `HTTP ${err.response.status}: ${JSON.stringify(err.response.data || {})}`;
                 if (err.response.status === 401) {
                     log_message(`Authentication failed: User not authenticated, redirecting to login, attempt ${attempt}/${maxRetries}`, 'make-market.log', 'make-market', 'ERROR');
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     throw new Error('User not authenticated');
                 }
             } else if (err.request) {
@@ -121,24 +122,29 @@ async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
 
 // Update transaction status
 async function updateTransactionStatus(status, error = null) {
-    const transactionId = window.location.pathname.split('/').pop();
+    const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     try {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
         log_message(`Updating transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ id: transactionId, status, error }),
+            body: JSON.stringify({ id: transactionId, status, error, csrf_token: window.CSRF_TOKEN }),
             credentials: 'include'
         });
         log_message(`Response from /make-market/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
         const result = await response.json();
@@ -160,18 +166,23 @@ async function cancelTransaction(transactionId) {
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
         log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/make-market/get-status/${transactionId}`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user' }),
+            body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user', csrf_token: window.CSRF_TOKEN }),
             credentials: 'include'
         });
         log_message(`Response from /make-market/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
         const result = await response.json();
@@ -205,7 +216,8 @@ async function getNetworkConfig() {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
         log_message(`Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch('/make-market/get-network', {
@@ -214,6 +226,11 @@ async function getNetworkConfig() {
             credentials: 'include'
         });
         log_message(`Response from /make-market/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        if (response.status === 401) {
+            log_message(`Unauthorized response from /make-market/get-network, redirecting to login`, 'make-market.log', 'make-market', 'ERROR');
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+        }
         let result;
         try {
             result = await response.json();
@@ -256,17 +273,19 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
                 headers: { 
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': window.CSRF_TOKEN || ''
                 }
             }).headers;
             log_message(`Requesting /make-market/get-decimals, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
             const response = await axios.post('/make-market/get-decimals', {
                 tokenMint,
-                network: solanaNetwork
+                network: solanaNetwork,
+                csrf_token: window.CSRF_TOKEN
             }, { 
                 headers, 
                 timeout: 15000,
-                withCredentials: true // Thêm để gửi cookie
+                withCredentials: true
             });
             log_message(`Response from /make-market/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
@@ -379,18 +398,23 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
         log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/make-market/process/create-tx/${transactionId}`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork }),
+            body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork, csrf_token: window.CSRF_TOKEN }),
             credentials: 'include'
         });
         log_message(`Response from /make-market/process/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
         const result = await response.json();
@@ -414,18 +438,23 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
         log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch('/make-market/swap', {
             method: 'POST',
             headers,
-            body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
+            body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork, csrf_token: window.CSRF_TOKEN }),
             credentials: 'include'
         });
         log_message(`Response from /make-market/swap: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                return;
+            }
             throw new Error(result.message || `HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
         const result = await response.json();
@@ -519,7 +548,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Main process
-    const transactionId = window.location.pathname.split('/').pop();
+    const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     if (!transactionId || isNaN(transactionId)) {
         showError('Invalid transaction ID');
         return;
@@ -531,7 +560,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
         log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/make-market/get-tx/${transactionId}`, {
@@ -539,6 +569,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             credentials: 'include'
         });
         log_message(`Response from /make-market/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        if (response.status === 401) {
+            log_message(`Unauthorized response from /make-market/get-tx/${transactionId}, redirecting to login`, 'make-market.log', 'make-market', 'ERROR');
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            return;
+        }
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
