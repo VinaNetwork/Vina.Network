@@ -153,14 +153,6 @@ $page_css = ['/make-market/process/process.css'];
         <div class="transaction-details">
             <table class="details-table">
                 <tr>
-                    <th>Transaction ID:</th>
-                    <td><?php echo htmlspecialchars($transaction_id); ?></td>
-                </tr>
-                <tr>
-                    <th>Process Name:</th>
-                    <td><?php echo htmlspecialchars($transaction['process_name']); ?></td>
-                </tr>
-                <tr>
                     <th>Wallet Address:</th>
                     <td>
                         <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?><?php echo EXPLORER_QUERY; ?>" target="_blank">
@@ -168,6 +160,10 @@ $page_css = ['/make-market/process/process.css'];
                         </a>
                         <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
                     </td>
+                </tr>
+                <tr>
+                    <th>Network:</th>
+                    <td><?php echo htmlspecialchars(ucfirst($transaction['network'])); ?></td>
                 </tr>
                 <tr>
                     <th>Token Address:</th>
@@ -181,6 +177,14 @@ $page_css = ['/make-market/process/process.css'];
                 <tr>
                     <th>Trade Direction:</th>
                     <td><?php echo htmlspecialchars(ucfirst($transaction['trade_direction'])); ?></td>
+                </tr>
+                <tr>
+                    <th>Transaction ID:</th>
+                    <td><?php echo htmlspecialchars($transaction_id); ?></td>
+                </tr>
+                <tr>
+                    <th>Process Name:</th>
+                    <td><?php echo htmlspecialchars($transaction['process_name']); ?></td>
                 </tr>
                 <tr>
                     <th>SOL Amount:</th>
@@ -209,10 +213,6 @@ $page_css = ['/make-market/process/process.css'];
                 <tr>
                     <th>Total Transactions:</th>
                     <td><?php echo htmlspecialchars($transaction['loop_count'] * $transaction['batch_size']); ?></td>
-                </tr>
-                <tr>
-                    <th>Network:</th>
-                    <td><?php echo htmlspecialchars(ucfirst($transaction['network'])); ?></td>
                 </tr>
                 <tr>
                     <th>Status:</th>
