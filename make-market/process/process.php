@@ -151,7 +151,6 @@ $page_css = ['/make-market/process/process.css'];
     <div class="process-content">
         <h1><i class="fas fa-cogs"></i> Make Market Process</h1>
         <div class="transaction-details">
-            <h2>Transaction Details</h2>
             <table class="details-table">
                 <tr>
                     <th>Transaction ID:</th>
