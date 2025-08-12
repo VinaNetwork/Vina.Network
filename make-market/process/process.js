@@ -88,8 +88,13 @@ function showSuccess(message, results = [], networkConfig) {
     }
 }
 
-// Retry initializeAuth with detailed logging
-async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
+// Retry initializeAuth with detailed logging (Đề xuất 3: Tối ưu hóa retry logic)
+async function ensureAuthInitialized(maxRetries = 2, retryDelay = 1000) {
+    // Kiểm tra nếu CSRF token đã tồn tại
+    if (window.CSRF_TOKEN) {
+        log_message(`CSRF token already initialized: ${window.CSRF_TOKEN}`, 'make-market.log', 'make-market', 'DEBUG');
+        return window.CSRF_TOKEN;
+    }
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -210,8 +215,8 @@ async function cancelTransaction(transactionId) {
     }
 }
 
-// Get network configuration
-async function getNetworkConfig() {
+// Đề xuất 2: Gộp các yêu cầu AJAX vào một endpoint duy nhất
+async function initializeTransaction(transactionId, tokenMint) {
     try {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
@@ -219,15 +224,15 @@ async function getNetworkConfig() {
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
-        log_message(`Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await fetch('/make-market/get-network', {
+        log_message(`Fetching transaction initialization data: ID=${transactionId}, tokenMint=${tokenMint}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
+        const response = await fetch(`/make-market/init-transaction/${transactionId}?tokenMint=${encodeURIComponent(tokenMint)}`, {
             method: 'GET',
             headers,
             credentials: 'include'
         });
-        log_message(`Response from /make-market/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        log_message(`Response from /make-market/init-transaction/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
         if (response.status === 401) {
-            log_message(`Unauthorized response from /make-market/get-network, redirecting to login`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Unauthorized response from /make-market/init-transaction/${transactionId}, redirecting to login`, 'make-market.log', 'make-market', 'ERROR');
             window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
             return;
         }
@@ -235,78 +240,28 @@ async function getNetworkConfig() {
         try {
             result = await response.json();
         } catch (e) {
-            log_message(`Failed to parse JSON from /make-market/get-network: ${e.message}, status=${response.status}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Failed to parse JSON from /make-market/init-transaction/${transactionId}: ${e.message}, status=${response.status}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`Invalid JSON response: ${e.message}`);
         }
         if (!response.ok) {
-            log_message(`HTTP error from /make-market/get-network: status=${response.status}, response=${JSON.stringify(result)}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`HTTP error from /make-market/init-transaction/${transactionId}: status=${response.status}, response=${JSON.stringify(result)}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
         if (result.status !== 'success') {
-            log_message(`Invalid response from /make-market/get-network: ${JSON.stringify(result)}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Invalid response from /make-market/init-transaction/${transactionId}: ${JSON.stringify(result)}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
         }
-        if (!result.network || !['testnet', 'mainnet', 'devnet'].includes(result.network)) {
-            log_message(`Invalid network in response: ${result.network || 'undefined'}`, 'make-market.log', 'make-market', 'ERROR');
-            throw new Error(`Invalid network: ${result.network || 'undefined'}`);
+        if (!result.network || !['testnet', 'mainnet', 'devnet'].includes(result.network) || !result.transaction || typeof result.decimals !== 'number') {
+            log_message(`Invalid data in response: network=${result.network || 'undefined'}, transaction=${result.transaction ? 'exists' : 'missing'}, decimals=${result.decimals}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
+            throw new Error(`Invalid initialization data: ${JSON.stringify(result)}`);
         }
-        log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.config.explorerUrl}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
-        console.log(`Network config fetched successfully:`, result);
+        log_message(`Transaction initialization data fetched successfully: network=${result.network}, decimals=${result.decimals}, transaction_id=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
+        console.log(`Transaction initialization data fetched successfully:`, result);
         return result;
     } catch (err) {
-        log_message(`Failed to fetch network config: ${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to fetch network config:', err.message);
+        log_message(`Failed to fetch transaction initialization data: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to fetch transaction initialization data:', err.message);
         throw err;
-    }
-}
-
-// Get token decimals
-async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
-    const maxRetries = 3;
-    let attempt = 0;
-    while (attempt < maxRetries) {
-        try {
-            log_message(`Attempting to get token decimals from server (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-            await ensureAuthInitialized();
-            const headers = addAxiosAuthHeaders({
-                timeout: 15000,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-Token': window.CSRF_TOKEN || ''
-                }
-            }).headers;
-            log_message(`Requesting /make-market/get-decimals, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-            const response = await axios.post('/make-market/get-decimals', {
-                tokenMint,
-                network: solanaNetwork,
-                csrf_token: window.CSRF_TOKEN
-            }, { 
-                headers, 
-                timeout: 15000,
-                withCredentials: true
-            });
-            log_message(`Response from /make-market/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-            if (response.status !== 200 || !response.data || response.data.status !== 'success') {
-                throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
-            }
-            const decimals = response.data.decimals || 9;
-            log_message(`Token decimals retrieved from server: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
-            console.log(`Token decimals retrieved from server: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
-            return decimals;
-        } catch (err) {
-            attempt++;
-            const errorMessage = err.response 
-                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/make-market/get-decimals'}`;
-            log_message(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}):`, errorMessage);
-            if (attempt === maxRetries) {
-                throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
-            }
-            await delay(1000 * attempt);
-        }
     }
 }
 
@@ -476,21 +431,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     log_message(`process.js loaded, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
-    // Initialize authentication
-    let networkConfig;
-    try {
-        await ensureAuthInitialized();
-        networkConfig = await getNetworkConfig();
-    } catch (err) {
-        showError('Failed to initialize authentication or network config: ' + err.message, err.message);
-        return;
-    }
-
-    // Warn if on mainnet
-    if (networkConfig.network === 'mainnet') {
-        alert('Warning: You are on Solana Mainnet. Transactions will use real funds.');
-    }
-
     // Main process
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     if (!transactionId || isNaN(transactionId)) {
@@ -498,36 +438,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Fetch transaction details
-    let transaction, publicKey;
+    // Initialize authentication and fetch transaction data (Đề xuất 2: Thay thế getNetworkConfig và getTokenDecimals)
+    let networkConfig, transaction, publicKey, tokenDecimals;
     try {
-        await ensureAuthInitialized();
-        const headers = addAuthHeaders({
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
-        });
-        log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await fetch(`/make-market/get-tx/${transactionId}`, {
-            headers,
-            credentials: 'include'
-        });
-        log_message(`Response from /make-market/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
-        if (response.status === 401) {
-            log_message(`Unauthorized response from /make-market/get-tx/${transactionId}, redirecting to login`, 'make-market.log', 'make-market', 'ERROR');
-            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-            return;
-        }
-        if (!response.ok) {
-            const result = await response.json().catch(() => ({}));
-            throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
-        }
-        const result = await response.json();
-        if (result.status !== 'success') {
-            throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
-        }
-        transaction = result.data;
+        const initData = await initializeTransaction(transactionId, null); // tokenMint sẽ được lấy từ transaction
+        networkConfig = initData.network;
+        transaction = initData.transaction;
+        tokenDecimals = initData.decimals;
         publicKey = transaction.public_key;
+        // Chuẩn hóa dữ liệu giao dịch
         transaction.loop_count = parseInt(transaction.loop_count) || 1;
         transaction.batch_size = parseInt(transaction.batch_size) || 1;
         transaction.slippage = parseFloat(transaction.slippage) || 0.5;
@@ -535,11 +454,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
         transaction.token_amount = parseFloat(transaction.token_amount) || 0;
         transaction.trade_direction = transaction.trade_direction || 'buy';
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Transaction fetched:', transaction);
+        log_message(`Transaction initialized: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, decimals=${tokenDecimals}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Transaction initialized:', initData);
     } catch (err) {
-        showError('Failed to retrieve transaction info: ' + err.message, err.message);
+        showError('Failed to initialize transaction: ' + err.message, err.message);
         return;
+    }
+
+    // Warn if on mainnet
+    if (networkConfig.network === 'mainnet') {
+        alert('Warning: You are on Solana Mainnet. Transactions will use real funds.');
     }
 
     // Validate transaction parameters
@@ -583,15 +507,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Update status to pending
     await updateTransactionStatus('pending');
-
-    // Fetch token decimals
-    let tokenDecimals;
-    try {
-        tokenDecimals = await getTokenDecimals(transaction.token_mint, null, networkConfig.network);
-    } catch (err) {
-        showError('Failed to retrieve token decimals: ' + err.message, err.message);
-        return;
-    }
 
     // Create sub-transaction records
     let subTransactionIds;
