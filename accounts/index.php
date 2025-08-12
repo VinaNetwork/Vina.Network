@@ -43,6 +43,10 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
 
+// Generate nonce for anti-replay
+$nonce = bin2hex(random_bytes(16));
+$_SESSION['login_nonce'] = $nonce;
+
 // SEO meta
 $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
@@ -69,6 +73,7 @@ $page_css = ['/accounts/acc.css'];
             <p><span id="status"></span></p>
         </div>
         <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+        <input type="hidden" id="login-nonce" value="<?php echo htmlspecialchars($nonce); ?>">
     </div>
 </div>
 <?php require_once $root_path . 'include/footer.php';?>
