@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/process/network.php
+// File: make-market/network.php
 // Description: Centralized network configuration for Solana devnet, testnet, and mainnet
 // Created by: Vina Network
 // ============================================================================
@@ -9,7 +9,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = __DIR__ . '/../../';
+$root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 
 // Validate SOLANA_NETWORK
