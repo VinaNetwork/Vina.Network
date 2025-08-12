@@ -14,9 +14,17 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
 require_once $root_path . 'make-market/security/auth.php';
 
+// Initialize logging context
+$log_context = [
+    'endpoint' => 'get-decimals',
+    'client_ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
+];
+
 // Perform authentication check (only AJAX and CSRF, no user auth)
 initialize_auth();
 if (!check_ajax_request() || !validate_csrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+    log_message("Invalid or missing CSRF token", 'make-market.log', 'make-market', 'WARNING', $log_context);
     exit;
 }
 
@@ -25,15 +33,31 @@ define('CACHE_FILE', CACHE_DIR . 'cache-decimals.json');
 define('CACHE_TTL', 24 * 60 * 60); // Cache TTL: 24 hours in seconds
 
 // Function to read from cache and clean up expired entries
-function read_from_cache($tokenMint, $network) {
+function read_from_cache($tokenMint, $network, $log_context) {
     if (!file_exists(CACHE_FILE)) {
-        log_message("Cache file does not exist: " . CACHE_FILE . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'WARNING');
+        log_message("Cache file does not exist", 'make-market.log', 'make-market', 'NOTICE', array_merge($log_context, [
+            'cache_file' => CACHE_FILE,
+            'network' => SOLANA_NETWORK
+        ]));
         return null;
     }
 
-    $cache_data = json_decode(file_get_contents(CACHE_FILE), true);
+    $cache_content = file_get_contents(CACHE_FILE);
+    if ($cache_content === false) {
+        log_message("Failed to read cache file", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+            'cache_file' => CACHE_FILE,
+            'error' => error_get_last()['message'] ?? 'Unknown error'
+        ]));
+        return null;
+    }
+
+    $cache_data = json_decode($cache_content, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("Failed to parse cache file: " . json_last_error_msg() . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        log_message("Failed to parse cache file", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+            'cache_file' => CACHE_FILE,
+            'json_error' => json_last_error_msg(),
+            'network' => SOLANA_NETWORK
+        ]));
         return null;
     }
 
@@ -47,11 +71,22 @@ function read_from_cache($tokenMint, $network) {
     // Write back cleaned cache if any entries were removed
     if (count($cache_data) !== $initial_count) {
         if (!ensure_directory_and_file(CACHE_DIR, CACHE_FILE)) {
-            log_message("Failed to ensure cache directory or file for cleanup: " . CACHE_FILE . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+            log_message("Failed to ensure cache directory or file for cleanup", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+                'cache_file' => CACHE_FILE,
+                'network' => SOLANA_NETWORK
+            ]));
         } elseif (file_put_contents(CACHE_FILE, json_encode($cache_data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
-            log_message("Failed to write cleaned cache file: " . CACHE_FILE . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+            log_message("Failed to write cleaned cache file", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+                'cache_file' => CACHE_FILE,
+                'network' => SOLANA_NETWORK,
+                'error' => error_get_last()['message'] ?? 'Unknown error'
+            ]));
         } else {
-            log_message("Cleaned up expired cache entries, removed " . ($initial_count - count($cache_data)) . " entries, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+            log_message("Cleaned up expired cache entries", 'make-market.log', 'make-market', 'INFO', array_merge($log_context, [
+                'removed_entries' => ($initial_count - count($cache_data)),
+                'remaining_entries' => count($cache_data),
+                'network' => SOLANA_NETWORK
+            ]));
         }
     }
 
@@ -64,11 +99,21 @@ function read_from_cache($tokenMint, $network) {
 }
 
 // Function to write to cache
-function write_to_cache($tokenMint, $network, $decimals) {
-    $cache_data = file_exists(CACHE_FILE) ? json_decode(file_get_contents(CACHE_FILE), true) : [];
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        $cache_data = [];
-        log_message("Failed to parse cache file for writing: " . json_last_error_msg() . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+function write_to_cache($tokenMint, $network, $decimals, $log_context) {
+    $cache_data = [];
+    if (file_exists(CACHE_FILE)) {
+        $cache_content = file_get_contents(CACHE_FILE);
+        if ($cache_content !== false) {
+            $cache_data = json_decode($cache_content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                log_message("Failed to parse existing cache file", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+                    'cache_file' => CACHE_FILE,
+                    'json_error' => json_last_error_msg(),
+                    'network' => SOLANA_NETWORK
+                ]));
+                $cache_data = [];
+            }
+        }
     }
 
     $cache_key = $tokenMint . '_' . $network;
@@ -78,46 +123,84 @@ function write_to_cache($tokenMint, $network, $decimals) {
     ];
 
     if (!ensure_directory_and_file(CACHE_DIR, CACHE_FILE)) {
-        log_message("Failed to ensure cache directory or file: " . CACHE_FILE . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        log_message("Failed to ensure cache directory or file", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+            'cache_file' => CACHE_FILE,
+            'network' => SOLANA_NETWORK
+        ]));
         return;
     }
 
-    if (file_put_contents(CACHE_FILE, json_encode($cache_data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
-        log_message("Failed to write to cache file: " . CACHE_FILE . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    $json_data = json_encode($cache_data, JSON_PRETTY_PRINT);
+    if ($json_data === false) {
+        log_message("Failed to encode cache data", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+            'cache_file' => CACHE_FILE,
+            'json_error' => json_last_error_msg(),
+            'network' => SOLANA_NETWORK
+        ]));
+        return;
+    }
+
+    if (file_put_contents(CACHE_FILE, $json_data, LOCK_EX) === false) {
+        log_message("Failed to write to cache file", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+            'cache_file' => CACHE_FILE,
+            'error' => error_get_last()['message'] ?? 'Unknown error',
+            'network' => SOLANA_NETWORK
+        ]));
     } else {
-        log_message("Cache updated for mint=$tokenMint, network=$network, decimals=$decimals, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+        log_message("Cache updated successfully", 'make-market.log', 'make-market', 'INFO', array_merge($log_context, [
+            'token_mint' => $tokenMint,
+            'network' => $network,
+            'decimals' => $decimals,
+            'server_network' => SOLANA_NETWORK,
+            'cache_size' => strlen($json_data)
+        ]));
     }
 }
 
+// Validate and process input
 $data = json_decode(file_get_contents('php://input'), true);
 if (!$data || !isset($data['tokenMint']) || !isset($data['network'])) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid or missing tokenMint or network'], JSON_UNESCAPED_UNICODE);
-    log_message("Invalid or missing tokenMint or network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    $response = ['status' => 'error', 'message' => 'Invalid or missing tokenMint or network'];
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    log_message("Invalid request data", 'make-market.log', 'make-market', 'WARNING', array_merge($log_context, [
+        'input_data' => json_encode($data),
+        'server_network' => SOLANA_NETWORK
+    ]));
     exit;
 }
 
 $tokenMint = $data['tokenMint'];
 $network = $data['network'];
+$log_context['token_mint'] = $tokenMint;
+$log_context['client_network'] = $network;
+
 if (!in_array($network, ['testnet', 'mainnet'])) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid network'], JSON_UNESCAPED_UNICODE);
-    log_message("Invalid network: $network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    $response = ['status' => 'error', 'message' => 'Invalid network'];
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    log_message("Invalid network specified", 'make-market.log', 'make-market', 'WARNING', array_merge($log_context, [
+        'server_network' => SOLANA_NETWORK
+    ]));
     exit;
 }
 
 // Check network consistency
 if ($network !== SOLANA_NETWORK) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => "Network mismatch: client ($network) vs server (" . SOLANA_NETWORK . ")"], JSON_UNESCAPED_UNICODE);
-    log_message("Network mismatch: client_network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    $response = ['status' => 'error', 'message' => "Network mismatch: client ($network) vs server (" . SOLANA_NETWORK . ")"];
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    log_message("Network mismatch", 'make-market.log', 'make-market', 'WARNING', $log_context);
     exit;
 }
 
 // Check cache first
-$cached_decimals = read_from_cache($tokenMint, $network);
+$cached_decimals = read_from_cache($tokenMint, $network, $log_context);
 if ($cached_decimals !== null) {
-    log_message("Cache hit for mint=$tokenMint, network=$network, decimals=$cached_decimals, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    log_message("Cache hit", 'make-market.log', 'make-market', 'INFO', array_merge($log_context, [
+        'decimals' => $cached_decimals,
+        'server_network' => SOLANA_NETWORK
+    ]));
     echo json_encode(['status' => 'success', 'decimals' => $cached_decimals]);
     exit;
 }
@@ -125,77 +208,148 @@ if ($cached_decimals !== null) {
 // Use RPC_ENDPOINT from network.php
 if (empty(RPC_ENDPOINT)) {
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing RPC endpoint'], JSON_UNESCAPED_UNICODE);
-    log_message("RPC_ENDPOINT is empty for network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    $response = ['status' => 'error', 'message' => 'Server configuration error: Missing RPC endpoint'];
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
+    log_message("RPC endpoint not configured", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
+        'server_network' => SOLANA_NETWORK
+    ]));
     exit;
 }
 
 $maxRetries = 5;
 $attempt = 0;
+$rpc_timeout = 15; // seconds
 
 while ($attempt < $maxRetries) {
-    log_message("Attempting to get token decimals (attempt " . ($attempt + 1) . "/$maxRetries): mint=$tokenMint, endpoint=" . RPC_ENDPOINT . ", network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    $attempt++;
+    $log_context['attempt'] = $attempt;
+    $log_context['max_retries'] = $maxRetries;
+    
+    log_message("Attempting to get token decimals from RPC", 'make-market.log', 'make-market', 'INFO', array_merge($log_context, [
+        'rpc_endpoint' => RPC_ENDPOINT,
+        'server_network' => SOLANA_NETWORK
+    ]));
 
-    $ch = curl_init(RPC_ENDPOINT);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    $request_data = [
         'jsonrpc' => '2.0',
         'id' => '1',
         'method' => 'getAccountInfo',
         'params' => [$tokenMint, ['encoding' => 'jsonParsed']]
-    ]));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    ];
+    $request_json = json_encode($request_data);
+    
+    $ch = curl_init(RPC_ENDPOINT);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $request_json,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($request_json)
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => $rpc_timeout,
+        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1
+    ]);
+    
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curl_error = curl_error($ch);
+    $curl_errno = curl_errno($ch);
     curl_close($ch);
 
+    // Log detailed request/response info
+    $rpc_log_context = array_merge($log_context, [
+        'http_code' => $http_code,
+        'request_data' => $request_data,
+        'response_length' => strlen($response),
+        'rpc_timeout' => $rpc_timeout
+    ]);
+
     if ($response === false) {
-        $attempt++;
-        log_message("Failed to get token decimals (attempt $attempt/$maxRetries): mint=$tokenMint, error=cURL error: $curl_error, network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        $rpc_log_context['curl_error'] = $curl_error;
+        $rpc_log_context['curl_errno'] = $curl_errno;
+        
+        log_message("RPC request failed", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
+        
         if ($attempt === $maxRetries) {
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => "Failed to retrieve token decimals after $maxRetries attempts: cURL error: $curl_error"], JSON_UNESCAPED_UNICODE);
-            log_message("Failed to retrieve token decimals after $maxRetries attempts: cURL error: $curl_error, network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+            $response = ['status' => 'error', 'message' => "Failed to retrieve token decimals after $maxRetries attempts: cURL error ($curl_errno): $curl_error"];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            log_message("Final RPC attempt failed", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
             exit;
         }
-        sleep($attempt); // Wait 1s, 2s, 3s, 4s, 5s
+        
+        sleep($attempt); // Exponential backoff
         continue;
     }
 
     if ($http_code !== 200) {
-        $attempt++;
-        log_message("Failed to get token decimals (attempt $attempt/$maxRetries): mint=$tokenMint, error=HTTP $http_code, network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        $rpc_log_context['response_body'] = substr($response, 0, 500); // Log first 500 chars of response
+        
+        log_message("RPC returned non-200 status", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
+        
         if ($attempt === $maxRetries) {
-            http_response_code($http_code);
-            echo json_encode(['status' => 'error', 'message' => "Failed to retrieve token decimals after $maxRetries attempts: HTTP $http_code"], JSON_UNESCAPED_UNICODE);
-            log_message("Failed to retrieve token decimals after $maxRetries attempts: HTTP $http_code, network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+            http_response_code(502); // Bad Gateway
+            $response = ['status' => 'error', 'message' => "Failed to retrieve token decimals after $maxRetries attempts: RPC returned HTTP $http_code"];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            log_message("Final RPC attempt failed with non-200 status", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
             exit;
         }
+        
         sleep($attempt);
         continue;
     }
 
     $result = json_decode($response, true);
-    log_message("Response from getAccountInfo: " . json_encode($result) . ", network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'DEBUG');
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $rpc_log_context['json_error'] = json_last_error_msg();
+        $rpc_log_context['response_sample'] = substr($response, 0, 200);
+        
+        log_message("Failed to decode RPC response", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
+        
+        if ($attempt === $maxRetries) {
+            http_response_code(502);
+            $response = ['status' => 'error', 'message' => "Failed to parse RPC response after $maxRetries attempts"];
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            log_message("Final RPC parse attempt failed", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
+            exit;
+        }
+        
+        sleep($attempt);
+        continue;
+    }
+
+    // Log successful response (debug level)
+    log_message("RPC response received", 'make-market.log', 'make-market', 'DEBUG', array_merge($rpc_log_context, [
+        'result_keys' => array_keys($result),
+        'has_value' => isset($result['result']['value'])
+    ]));
 
     if (!isset($result['result']['value']['data']['parsed']['type']) || $result['result']['value']['data']['parsed']['type'] !== 'mint') {
+        $error_type = isset($result['result']['value']['data']['parsed']['type']) ? 
+            "Invalid account type: " . $result['result']['value']['data']['parsed']['type'] : 
+            "No valid account data";
+        
+        log_message("Invalid token account data", 'make-market.log', 'make-market', 'ERROR', array_merge($rpc_log_context, [
+            'error_type' => $error_type
+        ]));
+        
         http_response_code(400);
-        $message = isset($result['result']['value'])
-            ? "Invalid account type: received type={$result['result']['value']['data']['parsed']['type']}, expected 'mint'"
-            : "Invalid response: no valid account data";
-        echo json_encode(['status' => 'error', 'message' => $message], JSON_UNESCAPED_UNICODE);
-        log_message("$message, mint=$tokenMint, endpoint=" . RPC_ENDPOINT . ", network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        $response = ['status' => 'error', 'message' => $error_type];
+        echo json_encode($response, JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     $decimals = $result['result']['value']['data']['parsed']['info']['decimals'] ?? 9;
-    log_message("Token decimals retrieved: mint=$tokenMint, decimals=$decimals, network=$network, server_network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    log_message("Successfully retrieved token decimals", 'make-market.log', 'make-market', 'INFO', array_merge($log_context, [
+        'decimals' => $decimals,
+        'final_attempt' => $attempt
+    ]));
 
     // Save to cache
-    write_to_cache($tokenMint, $network, $decimals);
+    write_to_cache($tokenMint, $network, $decimals, $log_context);
 
     echo json_encode(['status' => 'success', 'decimals' => $decimals]);
     exit;
