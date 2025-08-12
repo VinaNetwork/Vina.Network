@@ -239,8 +239,7 @@ $page_css = ['/make-market/process/process.css'];
 <script src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/make-market/js/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load ui.js')"></script>
-<script type="module" src="/make-market/process/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
+<script type="module" src="/make-market/security/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
 <!-- Pass environment to JavaScript -->
 <script>
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
