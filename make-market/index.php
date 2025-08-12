@@ -12,7 +12,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'make-market/security/auth.php';
 require_once $root_path . '../vendor/autoload.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
@@ -94,26 +93,17 @@ function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         log_message("Form submitted, is AJAX: " . (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? 'Yes' : 'No'), 'make-market.log', 'make-market', 'INFO');
-        
-        // Check authentication and CSRF for AJAX requests
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-            if (!perform_auth_check($pdo)) {
-                exit; // perform_auth_check() will handle error response
-            }
-        } else {
-            // Validate CSRF token for non-AJAX POST
-            $form_data = $_POST;
-            if (!validate_csrf_token($form_data['csrf_token'] ?? '')) {
-                log_message("Invalid CSRF token", 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-                exit;
-            }
-        }
-
         $form_data = $_POST;
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
             log_message("Form data: " . json_encode($form_data), 'make-market.log', 'make-market', 'DEBUG');
+        }
+
+        // Validate CSRF token
+        if (!validate_csrf_token($form_data['csrf_token'] ?? '')) {
+            log_message("Invalid CSRF token", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+            exit;
         }
 
         // Get form data
@@ -241,7 +231,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
             log_message("Calling get-balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount", 'make-market.log', 'make-market', 'INFO');
             try {
-                $csrf_token = generate_csrf_token(); // Generate CSRF token for get-balance.php
                 $curl = curl_init();
                 curl_setopt_array($curl, [
                     CURLOPT_URL => BASE_URL . "make-market/get-balance.php",
@@ -258,13 +247,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'sol_amount' => $solAmount,
                         'token_amount' => $tokenAmount,
                         'loop_count' => $loopCount,
-                        'batch_size' => $batchSize,
-                        'csrf_token' => $csrf_token // Add CSRF token
+                        'batch_size' => $batchSize
                     ], JSON_UNESCAPED_UNICODE),
                     CURLOPT_HTTPHEADER => [
                         "Content-Type: application/json; charset=utf-8",
-                        "X-Requested-With: XMLHttpRequest",
-                        "X-CSRF-Token: $csrf_token" // Add CSRF token to header
+                        "X-Requested-With: XMLHttpRequest"
                     ],
                 ]);
 
@@ -427,8 +414,8 @@ $defaultSlippage = 0.5;
         </div>
 
         <!-- Form Make Market -->
-        <form id="makeMarketForm" method="post" autocomplete="off">
-            <input type="hidden" name="csrf_token" id="csrf_token" value="">
+        <form id="makeMarketForm" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
             <label for="privateKey">🔑 Private Key (Base58):</label>
@@ -478,8 +465,8 @@ $defaultSlippage = 0.5;
 <script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/spl-token.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script defer src="/make-market/security/auth.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load auth.js')"></script>
-<script defer src="/make-market/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script defer src="/make-market/js/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script defer src="/make-market/js/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
