@@ -126,8 +126,6 @@ function generate_csrf_token() {
 // Validate CSRF token from session
 function validate_csrf_token($token) {
     if (isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token)) {
-        unset($_SESSION['csrf_token']); // Delete token after use
-        unset($_SESSION['csrf_token_time']);
         return true;
     }
     return false;
