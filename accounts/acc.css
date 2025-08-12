@@ -34,21 +34,22 @@ h1 {
 }
 
 /* Profile */
-#account-info {
+.acc-info {
     margin: 20px auto;
 }
-#account-info table {
+.acc-info table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
 }
-#account-info th, #account-info td {
+.acc-info th,
+.acc-info td {
     padding: 8px;
     border: 1px solid #ddd;
     text-align: left;
     color: #fff;
 }
-#account-info th {
+.acc-info th {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -97,5 +98,8 @@ h1 {
     .acc-content {
         max-width: 100%;
         margin: 1rem;
+    }
+    .acc-info {
+        margin: 20px 10px;
     }
 }
