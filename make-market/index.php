@@ -12,7 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'make-market/security/auth.php'; // Thêm auth.php
+require_once $root_path . 'make-market/security/auth.php';
 require_once $root_path . '../vendor/autoload.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
