@@ -11,9 +11,15 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'make-market/security/auth.php'; // Thêm auth.php để kiểm tra CSRF
 
 // Add Security Headers
 require_once $root_path . 'make-market/security/auth-headers.php';
+
+// Log request info
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message("get-balance.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+}
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
@@ -23,12 +29,7 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
     exit;
 }
 
-// Log request info
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("get-balance.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
-}
-
-// Get parameters from POST data
+// Check method and CSRF token
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     log_message("Invalid request method: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(405);
@@ -36,7 +37,32 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Check CSRF token
 $post_data = json_decode(file_get_contents('php://input'), true);
+if (isset($_SERVER['HTTP_X_CSRF_TOKEN'])) {
+    // For AJAX requests, use perform_auth_check()
+    if (!perform_auth_check()) {
+        log_message("CSRF validation failed for AJAX request", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+} elseif (isset($post_data['csrf_token'])) {
+    // For server-side cURL requests (from index.php), check csrf_token in body
+    if (!validate_csrf_token($post_data['csrf_token'])) {
+        log_message("Invalid CSRF token in request body", 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+        exit;
+    }
+} else {
+    log_message("No CSRF token provided", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'CSRF token required']);
+    exit;
+}
+
+// Get parameters from POST data
 $public_key = $post_data['public_key'] ?? '';
 $trade_direction = $post_data['trade_direction'] ?? 'buy';
 $sol_amount = floatval($post_data['sol_amount'] ?? 0);
