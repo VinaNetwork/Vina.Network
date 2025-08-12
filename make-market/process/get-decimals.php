@@ -14,6 +14,8 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'make-market/process/network.php';
 require_once $root_path . 'make-market/security/auth.php';
 
+ob_start(); // Start output buffering
+
 // Initialize logging context
 $log_context = [
     'endpoint' => 'get-decimals',
@@ -352,5 +354,6 @@ while ($attempt < $maxRetries) {
     write_to_cache($tokenMint, $network, $decimals, $log_context);
 
     echo json_encode(['status' => 'success', 'decimals' => $decimals]);
+    ob_end_flush();
     exit;
 }
