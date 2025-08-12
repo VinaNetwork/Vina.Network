@@ -1,10 +1,8 @@
 // ============================================================================
-// File: make-market/mm.js
+// File: make-market/js/mm.js
 // Description: JavaScript file for form handling and validation on Make Market page
 // Created by: Vina Network
 // ============================================================================
-
-import { initializeAuth, addAuthHeaders } from '/make-market/security/auth.js';
 
 // Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
@@ -43,18 +41,6 @@ function isValidTradeDirection(tradeDirection, solAmount, tokenAmount) {
     }
     return false;
 }
-
-// Initialize CSRF token on page load
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const csrfToken = await initializeAuth();
-        document.getElementById('csrf_token').value = csrfToken;
-        log_message(`CSRF token initialized and set in form: ${csrfToken}`, 'make-market.log', 'make-market', 'INFO');
-    } catch (error) {
-        log_message(`Failed to initialize CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Failed to initialize CSRF token. Please refresh the page.');
-    }
-});
 
 // Handle form submission
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
@@ -164,10 +150,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     }
 
     try {
-        // Submit form data with CSRF token in header
+        // Submit form data
         const response = await fetch('/make-market/', {
             method: 'POST',
-            headers: addAuthHeaders(),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
         });
         const responseText = await response.text();
@@ -241,40 +227,5 @@ document.addEventListener('DOMContentLoaded', () => {
             tokenAmountInput.required = true;
             log_message('SOL and Token amount inputs enabled for Both direction', 'make-market.log', 'make-market', 'INFO');
         }
-    });
-});
-
-// Copy functionality
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('mm.js loaded');
-    const copyIcons = document.querySelectorAll('.copy-icon');
-    
-    copyIcons.forEach(icon => {
-        icon.addEventListener('click', (e) => {
-            console.log('Copy icon clicked');
-
-            const fullAddress = icon.getAttribute('data-full');
-            const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
-            console.log(`Attempting to copy address: ${shortAddress}`);
-
-            navigator.clipboard.writeText(fullAddress).then(() => {
-                console.log('Copy successful');
-                icon.classList.add('copied');
-                const tooltip = document.createElement('span');
-                tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
-                const parent = icon.parentNode;
-                parent.style.position = 'relative';
-                parent.appendChild(tooltip);
-                setTimeout(() => {
-                    icon.classList.remove('copied');
-                    tooltip.remove();
-                    console.log('Copy feedback removed');
-                }, 2000);
-            }).catch(err => {
-                console.error('Clipboard API failed:', err.message);
-                showError(`Unable to copy: ${err.message}`);
-            });
-        });
     });
 });
