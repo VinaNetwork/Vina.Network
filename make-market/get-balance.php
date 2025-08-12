@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'make-market/security/auth.php'; // Thêm auth.php để kiểm tra CSRF
+require_once $root_path . 'make-market/security/auth.php';
 
 // Add Security Headers
 require_once $root_path . 'make-market/security/auth-headers.php';
