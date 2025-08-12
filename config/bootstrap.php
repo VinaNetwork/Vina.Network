@@ -27,6 +27,7 @@ define('ROOT_PATH', dirname(__DIR__) . '/');
 // Load configuration
 require_once ROOT_PATH . 'config/config.php';
 require_once ROOT_PATH . 'config/db.php';
+require_once ROOT_PATH . 'config/csrf.php';
 
 // Logs directory
 define('LOGS_PATH', ROOT_PATH . 'logs/');
