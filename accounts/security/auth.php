@@ -133,8 +133,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             if (strlen($public_key_bytes) !== 32) {
                 throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
             }
+
+            // Check if public key is on Ed25519 curve using conversion to X25519
+            try {
+                sodium_crypto_sign_ed25519_pk_to_curve25519($public_key_bytes);
+                // If no exception, key is valid on curve; no need to store the result
+            } catch (SodiumException $se) {
+                throw new Exception("Invalid public key: Not on Ed25519 curve - " . $se->getMessage());
+            }
+
             $duration = (microtime(true) - $start_time) * 1000;
-            log_message("Public key decoded: $short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+            log_message("Public key decoded and validated on curve: $short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             log_message("Public key hex: " . bin2hex($public_key_bytes), 'accounts.log', 'accounts', 'DEBUG');
         } catch (Exception $e) {
             throw new Exception("Public key decode error: " . $e->getMessage());
