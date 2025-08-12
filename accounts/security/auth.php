@@ -99,16 +99,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     log_message("Signature decoded length: " . strlen($signature) . " bytes", 'accounts.log', 'accounts', 'DEBUG');
 
     try {
-        // Check timestamp
-        if (!preg_match('/at (\d+)/', $message, $matches)) {
-            throw new Exception("Message does not contain timestamp!");
+        // Check nonce and timestamp in message
+        if (!preg_match('/with nonce (\w+) at (\d+)/', $message, $matches)) {
+            throw new Exception("Message does not contain nonce or timestamp!");
         }
-        $timestamp = $matches[1];
+        $extracted_nonce = $matches[1];
+        $timestamp = $matches[2];
+
+        if (!isset($_SESSION['login_nonce']) || $extracted_nonce !== $_SESSION['login_nonce']) {
+            throw new Exception("Invalid nonce!");
+        }
+
         $current_timestamp = time() * 1000;
         if (abs($current_timestamp - $timestamp) > 300000) {
             throw new Exception("Message has expired!");
         }
-        log_message("Valid timestamp: $timestamp, IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+        log_message("Valid timestamp: $timestamp and nonce: $extracted_nonce, IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
 
         // Check sodium library
         if (!function_exists('sodium_crypto_sign_verify_detached')) {
@@ -194,6 +200,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             log_message("Signature verification error: {$e->getMessage()} (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'ERROR');
             throw $e;
         }
+
+        // Consume nonce after successful verification
+        unset($_SESSION['login_nonce']);
 
         // Check and save to database
         $start_time = microtime(true);
