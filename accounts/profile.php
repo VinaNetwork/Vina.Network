@@ -127,7 +127,7 @@ $page_css = ['/accounts/acc.css'];
 <div class="acc-container">
     <div class="acc-content">
         <h1>Your Profile</h1>
-        <div id="account-info">
+        <div id="account-info" class="acc-info">
             <table>
                 <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr>
