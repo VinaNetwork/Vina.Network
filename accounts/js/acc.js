@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
             const csrfToken = document.getElementById('csrf-token').value;
+            const nonce = document.getElementById('login-nonce').value;
 
             // Double-check HTTPS
             if (!window.isSecureContext) {
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
-                    const message = `Verify login for Vina Network at ${timestamp}`;
+                    const message = `Verify login for Vina Network with nonce ${nonce} at ${timestamp}`;
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
