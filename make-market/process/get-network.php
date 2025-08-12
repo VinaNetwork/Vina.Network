@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'make-market/process/network.php';
+require_once $root_path . 'make-market/network.php';
 require_once $root_path . 'make-market/security/auth.php';
 
 // Add Security Headers (includes CORS handling)
