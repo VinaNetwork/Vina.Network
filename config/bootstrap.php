@@ -24,11 +24,6 @@ $csp_base = rtrim(BASE_URL, '/');
 // Website root directory
 define('ROOT_PATH', dirname(__DIR__) . '/');
 
-// Load configuration
-require_once ROOT_PATH . 'config/config.php';
-require_once ROOT_PATH . 'config/db.php';
-require_once ROOT_PATH . 'config/csrf.php';
-
 // Logs directory
 define('LOGS_PATH', ROOT_PATH . 'logs/');
 define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
@@ -131,4 +126,9 @@ function validate_csrf_token($token) {
 
 // Define environment
 define('ENVIRONMENT', 'development');
+
+// Load configuration
+require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'config/db.php';
+require_once ROOT_PATH . 'config/csrf.php';
 ?>
