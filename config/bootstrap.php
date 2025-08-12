@@ -117,18 +117,15 @@ function log_message($message, $log_file = 'accounts.log', $module = 'accounts',
 
 // Create CSRF token in session
 function generate_csrf_token() {
-    if (empty($_SESSION['csrf_token']) || (isset($_SESSION['csrf_token_time']) && time() - $_SESSION['csrf_token_time'] > 900)) {
+    if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        $_SESSION['csrf_token_time'] = time();
     }
     return $_SESSION['csrf_token'];
 }
+
 // Validate CSRF token from session
 function validate_csrf_token($token) {
-    if (isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token)) {
-        return true;
-    }
-    return false;
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 // Define environment
