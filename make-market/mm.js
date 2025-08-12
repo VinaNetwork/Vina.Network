@@ -4,6 +4,8 @@
 // Created by: Vina Network
 // ============================================================================
 
+import { initializeAuth, addAuthHeaders } from '/make-market/security/auth.js';
+
 // Log message function
 function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
@@ -41,6 +43,18 @@ function isValidTradeDirection(tradeDirection, solAmount, tokenAmount) {
     }
     return false;
 }
+
+// Initialize CSRF token on page load
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const csrfToken = await initializeAuth();
+        document.getElementById('csrf_token').value = csrfToken;
+        log_message(`CSRF token initialized and set in form: ${csrfToken}`, 'make-market.log', 'make-market', 'INFO');
+    } catch (error) {
+        log_message(`Failed to initialize CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Failed to initialize CSRF token. Please refresh the page.');
+    }
+});
 
 // Handle form submission
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
@@ -150,10 +164,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     }
 
     try {
-        // Submit form data
+        // Submit form data with CSRF token in header
         const response = await fetch('/make-market/', {
             method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            headers: addAuthHeaders(),
             body: formData
         });
         const responseText = await response.text();
