@@ -153,6 +153,14 @@ $page_css = ['/make-market/process/process.css'];
         <div class="transaction-details">
             <table class="details-table">
                 <tr>
+                    <th>Transaction ID:</th>
+                    <td><?php echo htmlspecialchars($transaction_id); ?></td>
+                </tr>
+                <tr>
+                    <th>Process Name:</th>
+                    <td><?php echo htmlspecialchars($transaction['process_name']); ?></td>
+                </tr>
+                <tr>
                     <th>Wallet Address:</th>
                     <td>
                         <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?><?php echo EXPLORER_QUERY; ?>" target="_blank">
@@ -177,14 +185,6 @@ $page_css = ['/make-market/process/process.css'];
                 <tr>
                     <th>Trade Direction:</th>
                     <td><?php echo htmlspecialchars(ucfirst($transaction['trade_direction'])); ?></td>
-                </tr>
-                <tr>
-                    <th>Transaction ID:</th>
-                    <td><?php echo htmlspecialchars($transaction_id); ?></td>
-                </tr>
-                <tr>
-                    <th>Process Name:</th>
-                    <td><?php echo htmlspecialchars($transaction['process_name']); ?></td>
                 </tr>
                 <tr>
                     <th>SOL Amount:</th>
