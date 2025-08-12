@@ -2,7 +2,7 @@ RewriteEngine On
 RewriteBase /make-market/
 
 # Rules for specific endpoints
-RewriteRule ^get-csrf$ process/get-csrf.php [L,NC]
+RewriteRule ^get-csrf$ security/get-csrf.php [L,NC]
 RewriteRule ^get-tx/([0-9]+)$ process/get-tx.php?id=$1 [L,NC]
 RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC]
 RewriteRule ^swap$ process/swap.php [L,NC]
