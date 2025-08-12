@@ -12,9 +12,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 
-// Determine Solana network
+// Determine Solana network (priority: ENV > default 'devnet')
 if (!defined('SOLANA_NETWORK')) {
-    define('SOLANA_NETWORK', getenv('SOLANA_NETWORK') ?: 'devnet'); 
+    $env_network = trim(getenv('SOLANA_NETWORK') ?: 'devnet');
+    define('SOLANA_NETWORK', $env_network);
 }
 
 // Validate SOLANA_NETWORK
@@ -34,34 +35,44 @@ if (!in_array(SOLANA_NETWORK, $valid_networks, true)) {
     exit;
 }
 
-// RPC endpoints
-define('RPC_ENDPOINT', match (SOLANA_NETWORK) {
-    'devnet'  => 'https://api.devnet.solana.com',
-    'testnet' => 'https://api.testnet.solana.com',
-    'mainnet' => (defined('HELIUS_API_KEY') && !empty(HELIUS_API_KEY))
-        ? 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY
-        : 'https://api.mainnet-beta.solana.com',
-});
+// Define RPC endpoint (only if not already defined)
+if (!defined('RPC_ENDPOINT')) {
+    define('RPC_ENDPOINT', match (SOLANA_NETWORK) {
+        'devnet'  => 'https://api.devnet.solana.com',
+        'testnet' => 'https://api.testnet.solana.com',
+        'mainnet' => (defined('HELIUS_API_KEY') && !empty(HELIUS_API_KEY))
+            ? 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY
+            : 'https://api.mainnet-beta.solana.com',
+    });
+}
 
-// Explorer URLs
-define('EXPLORER_URL', match (SOLANA_NETWORK) {
-    'devnet', 'testnet' => 'https://solana.fm/tx/',
-    'mainnet' => 'https://solscan.io/tx/',
-});
+// Define Explorer URL (only if not already defined)
+if (!defined('EXPLORER_URL')) {
+    define('EXPLORER_URL', match (SOLANA_NETWORK) {
+        'devnet', 'testnet' => 'https://solana.fm/tx/',
+        'mainnet' => 'https://solscan.io/tx/',
+    });
+}
 
-define('EXPLORER_QUERY', match (SOLANA_NETWORK) {
-    'devnet'  => '?cluster=devnet',
-    'testnet' => '?cluster=testnet',
-    default   => '',
-});
+// Define Explorer query string (only if not already defined)
+if (!defined('EXPLORER_QUERY')) {
+    define('EXPLORER_QUERY', match (SOLANA_NETWORK) {
+        'devnet'  => '?cluster=devnet',
+        'testnet' => '?cluster=testnet',
+        default   => '',
+    });
+}
 
-// Log loaded configuration
-log_message(
-    "Network config loaded: SOLANA_NETWORK=" . SOLANA_NETWORK .
-    ", RPC_ENDPOINT=" . RPC_ENDPOINT .
-    ", EXPLORER_URL=" . EXPLORER_URL . EXPLORER_QUERY,
-    'make-market.log',
-    'make-market',
-    'INFO'
-);
+// Log loaded configuration (only if first time loaded)
+if (!defined('NETWORK_CONFIG_LOGGED')) {
+    define('NETWORK_CONFIG_LOGGED', true);
+    log_message(
+        "Network config loaded: SOLANA_NETWORK=" . SOLANA_NETWORK .
+        ", RPC_ENDPOINT=" . RPC_ENDPOINT .
+        ", EXPLORER_URL=" . EXPLORER_URL . EXPLORER_QUERY,
+        'make-market.log',
+        'make-market',
+        'INFO'
+    );
+}
 ?>
