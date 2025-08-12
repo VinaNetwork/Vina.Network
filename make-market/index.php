@@ -427,7 +427,7 @@ $defaultSlippage = 0.5;
         </div>
 
         <!-- Form Make Market -->
-        <form id="makeMarketForm" autocomplete="off">
+        <form id="makeMarketForm" method="post" autocomplete="off">
             <input type="hidden" name="csrf_token" id="csrf_token" value="">
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
