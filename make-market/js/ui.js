@@ -4,14 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Show error message
-function showError(message) {
-    const resultDiv = document.getElementById('mm-result');
-    resultDiv.innerHTML = `<p>Error: ${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
-    resultDiv.classList.add('active');
-    document.querySelector('#makeMarketForm button').disabled = false;
-}
-
 // Copy functionality for public_key
 document.addEventListener('DOMContentLoaded', () => {
     console.log('ui.js loaded');
