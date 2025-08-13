@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 <?php
 // ============================================================================
 // File: index.php
@@ -5,13 +7,16 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
 $root_path = __DIR__ . '/';
-require_once $root_path . 'include/header.php';
+require_once $root_path . 'config/bootstrap.php';
 $page_css = ['css/home.css'];
+require_once $root_path . 'include/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="home-container">
