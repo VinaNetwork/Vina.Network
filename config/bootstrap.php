@@ -14,10 +14,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Dynamic Domain Name Definition
 // Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-$is_secure = $protocol === 'https://'; // Thêm định nghĩa $is_secure
-// Get the current domain (e.g., www.vina.network)
+$is_secure = $protocol === 'https://';
 $domain = $_SERVER['HTTP_HOST'];
-// Combine to form the base URL and define it as a constant
 define('BASE_URL', $protocol . $domain . '/');
 $csp_base = rtrim(BASE_URL, '/');
 
@@ -30,6 +28,7 @@ define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
 define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
+define('MAX_LOG_SIZE', 1024 * 1024); // 1MB max log file size
 
 // Load configuration
 require_once ROOT_PATH . 'config/csrf.php';
@@ -44,11 +43,11 @@ if (session_status() === PHP_SESSION_NONE) {
         'cookie_httponly' => true,
         'cookie_samesite' => 'Strict',
         'cookie_secure' => $is_secure,
-        'cookie_domain' => '.vina.network'
+        'cookie_domain' => $domain
     ]);
-    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=.vina.network", 'make-market.log', 'make-market', 'INFO');
+    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'INFO');
 } else {
-    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=.vina.network", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'DEBUG');
 }
 
 // PHP configuration
@@ -94,6 +93,20 @@ function ensure_directory_and_file($dir_path, $file_path) {
     }
 }
 
+// Rotate log file if it exceeds max size
+function rotate_log_file($log_path) {
+    if (file_exists($log_path) && filesize($log_path) > MAX_LOG_SIZE) {
+        $backup_path = $log_path . '.' . date('Y-m-d_H-i-s') . '.bak';
+        if (!rename($log_path, $backup_path)) {
+            error_log("Failed to rotate log file: $log_path");
+            return false;
+        }
+        file_put_contents($log_path, ''); // Create new empty log file
+        chmod($log_path, 0664);
+    }
+    return true;
+}
+
 // Write log entry to file
 function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
@@ -108,25 +121,13 @@ function log_message($message, $log_file = 'accounts.log', $module = 'accounts',
             error_log("Log setup failed for $log_path: $message");
             return;
         }
+        rotate_log_file($log_path);
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
         }
     } catch (Exception $e) {
         error_log("Log error: " . $e->getMessage());
     }
-}
-
-// Create CSRF token in session
-function generate_csrf_token() {
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
-}
-
-// Validate CSRF token from session
-function validate_csrf_token($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 // Define environment
