@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: accounts/wallet-login.php
+// File: accounts/wallet-auth.php
 // Description: API handles Solana wallet signature verification with rate limiting and session regeneration.
 // Created by: Vina Network
 // ============================================================================
