@@ -25,8 +25,10 @@ if (!defined('HELIUS_API_KEY')) {
 }
 
 // Solana Network Configuration
-if (!defined('SOLANA_NETWORK')) {
-    define('SOLANA_NETWORK', 'devnet'); // Set to 'mainnet' or 'devnet' or 'testnet'
+if (getenv('SOLANA_NETWORK') === false) {
+    $solana_network = 'devnet'; // devnet | testnet | mainnet
+    putenv("SOLANA_NETWORK={$solana_network}");
+    $_ENV['SOLANA_NETWORK'] = $solana_network;
 }
 
 // JWT Secret for encryption
