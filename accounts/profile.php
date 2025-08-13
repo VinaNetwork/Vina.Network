@@ -25,7 +25,7 @@ csrf_protect();
 
 // Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie", 'security.log', 'accounts', 'ERROR');
+    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
 }
 
 // Library Base58
@@ -33,7 +33,7 @@ use StephenHill\Base58;
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token", 'security.log', 'accounts', 'ERROR');
+    log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
 } else {
     log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 }
