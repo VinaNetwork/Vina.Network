@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'mm/header-auth.php'; // Security Headers
+require_once $root_path . 'mm/header-auth.php'; // Thêm tiêu đề bảo mật và CORS
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
@@ -42,7 +42,7 @@ $token_amount = floatval($post_data['token_amount'] ?? 0);
 $token_mint = $post_data['token_mint'] ?? '';
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
-$csrf_token = $post_data['csrf_token'] ?? ''; // Lấy CSRF token từ JSON
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $post_data['csrf_token'] ?? ''; // Kiểm tra token từ header hoặc body
 
 // Gán token vào $_POST để csrf_protect() sử dụng
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
