@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'mm/header-auth.php'; // Thêm tiêu đề bảo mật và CORS
+require_once $root_path . 'mm/header-auth.php';
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
@@ -42,7 +42,7 @@ $token_amount = floatval($post_data['token_amount'] ?? 0);
 $token_mint = $post_data['token_mint'] ?? '';
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $post_data['csrf_token'] ?? ''; // Kiểm tra token từ header hoặc body
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $post_data['csrf_token'] ?? '';
 
 // Gán token vào $_POST để csrf_protect() sử dụng
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
@@ -71,7 +71,7 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
     exit;
 }
 
-log_message("Parameters received: public_key=" . substr($public_key, 0, 4) . "..., sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size, csrf_token=$csrf_token", 'make-market.log', 'make-market', 'INFO');
+log_message("Parameters received: public_key=" . substr($public_key, 0, 4) . "..., sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'INFO');
 
 // Check balance using Helius getAssetsByOwner
 try {
@@ -111,7 +111,7 @@ try {
         ], JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => [
             "Content-Type: application/json; charset=utf-8",
-            "X-CSRF-Token: $csrf_token" // Thêm CSRF token vào header
+            "X-CSRF-Token: $csrf_token"
         ],
     ]);
 
@@ -120,15 +120,18 @@ try {
     $err = curl_error($curl);
     curl_close($curl);
 
+    // Ghi log chi tiết phản hồi từ Helius RPC
+    log_message("Helius RPC response: HTTP=$http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'DEBUG');
+
     if ($err) {
         log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $err]);
         exit;
     }
 
     if ($http_code !== 200) {
-        log_message("Helius RPC failed: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed: HTTP $http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
@@ -136,28 +139,28 @@ try {
 
     $data = json_decode($response, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
     if (isset($data['error'])) {
-        log_message("Helius RPC failed: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed: {$data['error']['message']}, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $data['error']['message']]);
         exit;
     }
 
     if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
-        log_message("Helius RPC failed: No nativeBalance or lamports in response", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed: No nativeBalance or lamports in response, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
     // Initialize variables
-    $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert from lamports to SOL
+    $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9;
     $totalTransactions = $loop_count * $batch_size;
     $requiredSolAmount = 0;
     $requiredTokenAmount = 0;
@@ -221,9 +224,9 @@ try {
         'balance' => $trade_direction === 'buy' ? $balanceInSol : ($trade_direction === 'sell' ? $tokenBalance : ['sol' => $balanceInSol, 'token' => $tokenBalance])
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Balance check failed: {$e->getMessage()}, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
     exit;
 }
 ?>
