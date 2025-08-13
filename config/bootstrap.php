@@ -25,7 +25,6 @@ $csp_base = rtrim(BASE_URL, '/');
 define('ROOT_PATH', dirname(__DIR__) . '/');
 
 // Load configuration
-require_once ROOT_PATH . 'config/csrf.php';
 require_once ROOT_PATH . 'config/db.php';
 require_once ROOT_PATH . 'config/config.php';
 
