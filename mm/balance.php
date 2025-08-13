@@ -34,15 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$post_data = json_decode(file_get_contents('php://input'), true);
-$public_key = $post_data['public_key'] ?? '';
-$trade_direction = $post_data['trade_direction'] ?? 'buy';
-$sol_amount = floatval($post_data['sol_amount'] ?? 0);
-$token_amount = floatval($post_data['token_amount'] ?? 0);
-$token_mint = $post_data['token_mint'] ?? '';
-$loop_count = intval($post_data['loop_count'] ?? 1);
-$batch_size = intval($post_data['batch_size'] ?? 5);
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $post_data['csrf_token'] ?? '';
+// Đọc từ $_POST thay vì php://input
+$public_key = $_POST['public_key'] ?? '';
+$trade_direction = $_POST['trade_direction'] ?? 'buy';
+$sol_amount = floatval($_POST['sol_amount'] ?? 0);
+$token_amount = floatval($_POST['token_amount'] ?? 0);
+$token_mint = $_POST['token_mint'] ?? '';
+$loop_count = intval($_POST['loop_count'] ?? 1);
+$batch_size = intval($_POST['batch_size'] ?? 5);
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
 
 // Gán token vào $_POST để csrf_protect() sử dụng
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
@@ -89,7 +89,7 @@ try {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 10, // Giảm timeout để tăng tốc
+        CURLOPT_TIMEOUT => 10,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "POST",
         CURLOPT_POSTFIELDS => json_encode([
