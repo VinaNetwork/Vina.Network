@@ -34,11 +34,11 @@ function ensure_session($max_attempts = 3) {
             if (session_status() !== PHP_SESSION_ACTIVE) {
                 $session_started = session_start($required_session_config);
                 if (!$session_started) {
-                    log_message("Failed to start session (attempt " . ($attempt + 1) . "): session_start failed", 'security.log', 'logs', 'ERROR');
+                    log_message("Failed to start session (attempt " . ($attempt + 1) . "): session_start failed", 'csrf.log', 'logs', 'ERROR');
                     $attempt++;
                     continue;
                 }
-                log_message("Session started with secure settings, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", domain=$domain", 'security.log', 'logs', 'INFO');
+                log_message("Session started with secure settings, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", domain=$domain", 'csrf.log', 'logs', 'INFO');
                 return true;
             }
 
@@ -63,20 +63,20 @@ function ensure_session($max_attempts = 3) {
             }
 
             if (!empty($errors)) {
-                log_message("Session validation failed (attempt " . ($attempt + 1) . "): " . implode("; ", $errors), 'security.log', 'logs', 'ERROR');
+                log_message("Session validation failed (attempt " . ($attempt + 1) . "): " . implode("; ", $errors), 'csrf.log', 'logs', 'ERROR');
                 session_destroy();
                 $attempt++;
                 continue;
             }
 
-            log_message("Session validated successfully, session_id=" . session_id(), 'security.log', 'logs', 'INFO');
+            log_message("Session validated successfully, session_id=" . session_id(), 'csrf.log', 'logs', 'INFO');
             return true;
         }
 
-        log_message("Failed to start or validate session after $max_attempts attempts", 'security.log', 'logs', 'CRITICAL');
+        log_message("Failed to start or validate session after $max_attempts attempts", 'csrf.log', 'logs', 'CRITICAL');
         return false;
     } catch (Exception $e) {
-        log_message("Error starting session for CSRF: " . $e->getMessage(), 'security.log', 'logs', 'ERROR');
+        log_message("Error starting session for CSRF: " . $e->getMessage(), 'csrf.log', 'logs', 'ERROR');
         return false;
     }
 }
@@ -90,11 +90,11 @@ function generate_csrf_token() {
 
         if (empty($_SESSION[CSRF_TOKEN_NAME])) {
             $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
-            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME], 'security.log', 'logs', 'INFO');
+            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME], 'csrf.log', 'logs', 'INFO');
         }
         return $_SESSION[CSRF_TOKEN_NAME];
     } catch (Exception $e) {
-        log_message("Error generating CSRF token: " . $e->getMessage(), 'security.log', 'logs', 'ERROR');
+        log_message("Error generating CSRF token: " . $e->getMessage(), 'csrf.log', 'logs', 'ERROR');
         return false;
     }
 }
@@ -108,21 +108,21 @@ function validate_csrf_token($token) {
     $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
 
     if (!ensure_session()) {
-        log_message("CSRF token validation failed: session not active, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'security.log', 'logs', 'CRITICAL');
+        log_message("CSRF token validation failed: session not active, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'CRITICAL');
         return false;
     }
 
     if (!isset($_SESSION[CSRF_TOKEN_NAME]) || empty($token)) {
-        log_message("CSRF token validation failed: token empty or session token missing, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'security.log', 'logs', 'CRITICAL');
+        log_message("CSRF token validation failed: token empty or session token missing, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'CRITICAL');
         return false;
     }
 
     if (!hash_equals($_SESSION[CSRF_TOKEN_NAME], $token)) {
-        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'security.log', 'logs', 'WARNING');
+        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'WARNING');
         return false;
     }
     
-    log_message("CSRF token validated successfully: $token, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'security.log', 'logs', 'INFO');
+    log_message("CSRF token validated successfully: $token, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'INFO');
     return true;
 }
 
@@ -191,7 +191,7 @@ function set_csrf_cookie() {
         );
     }
 
-    log_message("CSRF cookie set: $token", 'security.log', 'logs', 'INFO');
+    log_message("CSRF cookie set: $token", 'csrf.log', 'logs', 'INFO');
     return true;
 }
 ?>
