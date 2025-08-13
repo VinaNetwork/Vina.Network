@@ -7,17 +7,22 @@
 // Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
     console.log('mm.js loaded');
+    log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
+
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
             console.log('Copy icon clicked');
+            log_message('Copy icon clicked', 'make-market.log', 'make-market', 'INFO');
 
             const fullAddress = icon.getAttribute('data-full');
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
             console.log(`Attempting to copy address: ${shortAddress}`);
+            log_message(`Attempting to copy address: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
 
             navigator.clipboard.writeText(fullAddress).then(() => {
                 console.log('Copy successful');
+                log_message('Copy successful', 'make-market.log', 'make-market', 'INFO');
                 icon.classList.add('copied');
                 const tooltip = document.createElement('span');
                 tooltip.className = 'copy-tooltip';
@@ -29,9 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     icon.classList.remove('copied');
                     tooltip.remove();
                     console.log('Copy feedback removed');
+                    log_message('Copy feedback removed', 'make-market.log', 'make-market', 'DEBUG');
                 }, 2000);
             }).catch(err => {
                 console.error('Clipboard API failed:', err.message);
+                log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
                 showError(`Unable to copy: ${err.message}`);
             });
         });
@@ -43,7 +50,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    fetch('/make-market/log.php', {
+    fetch('/mm/log.php', { // Updated to use /mm/log.php
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, log_file, module, log_type })
@@ -60,6 +67,7 @@ function showError(message) {
     resultDiv.innerHTML = `<p>Error: ${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     resultDiv.classList.add('active');
     document.querySelector('#makeMarketForm button').disabled = false;
+    log_message(`Client-side error displayed: ${message}`, 'make-market.log', 'make-market', 'ERROR');
 }
 
 // Function to validate Trade Direction conditions
@@ -185,7 +193,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     try {
         // Submit form data
-        const response = await fetch('/make-market/', {
+        const response = await fetch('/mm/', {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
@@ -217,12 +225,13 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Form saved to database: transactionId=', result.transactionId);
         // Redirect to process page
-        const redirectUrl = result.redirect || `/make-market/process/${result.transactionId}`;
+        const redirectUrl = result.redirect || `/mm/process/${result.transactionId}`;
         log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Redirecting to', redirectUrl);
         setTimeout(() => {
             window.location.href = redirectUrl;
             console.log('Redirect executed to', redirectUrl);
+            log_message(`Redirect executed to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
         }, 100);
     } catch (error) {
         log_message(`Error submitting form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
