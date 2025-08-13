@@ -20,6 +20,12 @@ require_once $root_path . 'accounts/header-auth.php';
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
 
+// Protect POST requests with CSRF
+csrf_protect();
+
+// Set CSRF cookie for AJAX requests
+set_csrf_cookie();
+
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
     log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
