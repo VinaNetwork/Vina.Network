@@ -7,6 +7,20 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
 
+    // Function to get CSRF token from cookie
+    function getCsrfTokenFromCookie() {
+        const name = 'csrf_token_cookie=';
+        const decodedCookie = decodeURIComponent(document.cookie);
+        const cookies = decodedCookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.indexOf(name) === 0) {
+                return cookie.substring(name.length, cookie.length);
+            }
+        }
+        return null;
+    }
+
     // Copy functionality
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
@@ -84,8 +98,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
-            const csrfToken = document.getElementById('csrf-token').value;
+            let csrfToken = document.getElementById('csrf-token').value || getCsrfTokenFromCookie();
             const nonce = document.getElementById('login-nonce').value;
+
+            if (!csrfToken) {
+                logToServer('CSRF token not found in form or cookie', 'ERROR');
+                walletInfo.style.display = 'block';
+                statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
+                return;
+            }
 
             // Double-check HTTPS
             if (!window.isSecureContext) {
@@ -141,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (result.status === 'error' && result.message.includes('Signature verification failed')) {
                         statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
                     } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
-                        statusSpan.textContent = 'Error: Invalid CSRF token. Please try again.';
+                        statusSpan.textContent = 'Error: Invalid CSRF token. Please refresh the page.';
                     } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
                         statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
