@@ -26,16 +26,6 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
 }
 
 // Protect POST requests with CSRF
-csrf_protect();
-
-// Get parameters from POST data
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("Invalid request method: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(405);
-    echo json_encode(['status' => 'error', 'message' => 'Request method not supported']);
-    exit;
-}
-
 $post_data = json_decode(file_get_contents('php://input'), true);
 $public_key = $post_data['public_key'] ?? '';
 $trade_direction = $post_data['trade_direction'] ?? 'buy';
@@ -44,6 +34,19 @@ $token_amount = floatval($post_data['token_amount'] ?? 0);
 $token_mint = $post_data['token_mint'] ?? '';
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
+$csrf_token = $post_data['csrf_token'] ?? '';
+
+// Gán token vào $_POST để csrf_protect() sử dụng
+$_POST[CSRF_TOKEN_NAME] = $csrf_token;
+
+try {
+    csrf_protect();
+} catch (Exception $e) {
+    log_message("CSRF validation failed: {$e->getMessage()}, provided_token=$csrf_token", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+    exit;
+}
 
 // Validate minimal required inputs
 if (empty($public_key) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
@@ -59,7 +62,7 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
     exit;
 }
 
-log_message("Parameters received: public_key=" . substr($public_key, 0, 4) . "..., sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'INFO');
+log_message("Parameters received: public_key=" . substr($public_key, 0, 4) . "..., sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size, csrf_token=$csrf_token", 'make-market.log', 'make-market', 'INFO');
 
 // Check balance using Helius getAssetsByOwner
 try {
@@ -146,20 +149,20 @@ try {
     // Initialize variables
     $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9; // Convert from lamports to SOL
     $totalTransactions = $loop_count * $batch_size;
-    $requiredSolAmount = 0; // Initialize to 0
-    $requiredTokenAmount = 0; // Initialize to 0
+    $requiredSolAmount = 0;
+    $requiredTokenAmount = 0;
     $tokenBalance = 0;
-    $decimals = 9; // Default decimals
+    $decimals = 9;
     $errors = [];
 
     // Calculate required amounts based on trade direction
     if ($trade_direction === 'buy') {
-        $requiredSolAmount = ($sol_amount + 0.005) * $totalTransactions; // Case 1: Buy only
+        $requiredSolAmount = ($sol_amount + 0.005) * $totalTransactions;
     } elseif ($trade_direction === 'sell') {
-        $requiredTokenAmount = $token_amount * $totalTransactions; // Case 2: Sell only
+        $requiredTokenAmount = $token_amount * $totalTransactions;
     } elseif ($trade_direction === 'both') {
-        $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2); // Case 3: Both
-        $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Case 3: Both
+        $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2);
+        $requiredTokenAmount = $token_amount * ($totalTransactions / 2);
     }
 
     // Check SOL balance for 'buy' or 'both' transactions
