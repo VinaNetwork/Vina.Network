@@ -237,83 +237,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Check wallet balance by calling balance.php, unless skipped or trade direction conditions are not met
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
-            log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
-            try {
-                $curl = curl_init();
-                curl_setopt_array($curl, [
-                    CURLOPT_URL => BASE_URL . "mm/balance.php",
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_ENCODING => "",
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 60, // Tăng timeout lên 60 giây
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_CUSTOMREQUEST => "POST",
-                    CURLOPT_POSTFIELDS => json_encode([
-                        'public_key' => $transactionPublicKey,
-                        'token_mint' => $tokenMint,
-                        'trade_direction' => $tradeDirection,
-                        'sol_amount' => $solAmount,
-                        'token_amount' => $tokenAmount,
-                        'loop_count' => $loopCount,
-                        'batch_size' => $batchSize,
-                        'csrf_token' => $csrf_token
-                    ], JSON_UNESCAPED_UNICODE),
-                    CURLOPT_HTTPHEADER => [
-                        "Content-Type: application/json; charset=utf-8",
-                        "X-Requested-With: XMLHttpRequest",
-                        "X-CSRF-Token: $csrf_token",
-                        "Cookie: PHPSESSID=" . session_id()
-                    ],
-                ]);
+    log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
+    try {
+        // Đóng session để tránh khóa
+        session_write_close();
 
-                $response = curl_exec($curl);
-                $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-                $err = curl_error($curl);
-                curl_close($curl);
+        // Gọi balance.php trực tiếp thay vì cURL
+        ob_start();
+        $_POST = [
+            'public_key' => $transactionPublicKey,
+            'token_mint' => $tokenMint,
+            'trade_direction' => $tradeDirection,
+            'sol_amount' => $solAmount,
+            'token_amount' => $tokenAmount,
+            'loop_count' => $loopCount,
+            'batch_size' => $batchSize,
+            'csrf_token' => $csrf_token
+        ];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/mm/balance.php';
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+        $_COOKIE['PHPSESSID'] = session_id();
 
-                // Ghi log chi tiết phản hồi
-                log_message("balance.php response: HTTP=$http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'DEBUG');
+        // Gọi balance.php
+        include __DIR__ . '/balance.php';
+        $response = ob_get_clean();
 
-                if ($err) {
-                    log_message("Failed to call balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => 'Connection error while checking wallet balance: ' . $err]);
-                    exit;
-                }
+        // Khởi động lại session
+        session_start();
 
-                if ($http_code !== 200) {
-                    log_message("Failed to call balance.php: HTTP $http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
-                    $data = json_decode($response, true);
-                    $errorMessage = isset($data['message']) ? $data['message'] : 'Unknown error while checking wallet balance';
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => $errorMessage]);
-                    exit;
-                }
+        // Kiểm tra phản hồi
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
+            exit;
+        }
 
-                $data = json_decode($response, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
-                    exit;
-                }
+        if ($data['status'] !== 'success') {
+            log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => $data['message']]);
+            exit;
+        }
 
-                if ($data['status'] !== 'success') {
-                    log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
-                    exit;
-                }
-
-                log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
-            } catch (Exception $e) {
-                log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
-                exit;
-            }
-        } else {
-            log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
+        log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
+    } catch (Exception $e) {
+        // Khởi động lại session nếu có lỗi
+        if (!session_id()) {
+            session_start();
+        }
+        log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
+        exit;
+    }
+} else {
+    log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
         }
 
         // Check JWT_SECRET
