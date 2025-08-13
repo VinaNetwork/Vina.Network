@@ -40,7 +40,7 @@
                 <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/make-market" class="dropdown-link"><i class="fa-solid fa-right-left"></i> Make Market</a></li>
+                <li><a href="/mm" class="dropdown-link"><i class="fa-solid fa-right-left"></i> Make Market</a></li>
                 <li><a href="/notification" class="dropdown-link"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
                 <li><a href="/notification" class="dropdown-link"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
                 <li><a href="/notification" class="dropdown-link"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
