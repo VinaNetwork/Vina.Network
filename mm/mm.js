@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const fullAddress = icon.getAttribute('data-full');
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
             console.log(`Attempting to copy address: ${shortAddress}`);
-            log_message(`Attempting to copy address: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
+            log_message(`Attempting to copyaururess: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
 
             navigator.clipboard.writeText(fullAddress).then(() => {
                 console.log('Copy successful');
@@ -50,21 +50,19 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    fetch('/mm/log.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, log_file, module, log_type })
-    }).then(response => {
-        if (!response.ok) {
-            console.error(`Log failed: HTTP ${response.status}`);
-        }
+    axios.post('/mm/log.php', { message, log_file, module, log_type }, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
     }).catch(err => console.error('Log error:', err));
 }
 
 // Show error message
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
-    resultDiv.innerHTML = `<p>Error: ${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    if (message.includes('Insufficient SOL balance')) {
+        resultDiv.innerHTML = `<div class="error">${message}. Please deposit more SOL to your wallet and try again.</div><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    } else {
+        resultDiv.innerHTML = `<div class="error">${message}</div><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    }
     resultDiv.classList.add('active');
     document.querySelector('#makeMarketForm button').disabled = false;
     log_message(`Client-side error displayed: ${message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -92,6 +90,18 @@ function getCookie(name) {
     return null;
 }
 
+// Refresh CSRF token
+async function refreshCSRFToken() {
+    const response = await axios.get('/mm/refresh-csrf', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        withCredentials: true
+    });
+    if (response.status !== 200 || !response.data.csrf_token) {
+        throw new Error('Failed to refresh CSRF token');
+    }
+    return response.data.csrf_token;
+}
+
 // Handle form submission
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -105,35 +115,21 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     const formData = new FormData(e.target);
     const tokenAmountValue = formData.get('tokenAmount');
-    const csrfToken = formData.get('csrf_token');
+    let csrfToken = formData.get('csrf_token');
 
-    // Check CSRF cookie
-    const csrfCookie = getCookie('csrf_token_cookie');
-    if (!csrfCookie || csrfCookie !== csrfToken) {
-        log_message(`CSRF cookie issue: cookie=${csrfCookie || 'missing'}, form_token=${csrfToken}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('CSRF token is missing or invalid. Attempting to refresh...');
-        try {
-            const response = await fetch('/mm/refresh-csrf', {
-                method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            const result = await response.json();
-            if (result.status === 'success' && result.csrf_token) {
-                formData.set('csrf_token', result.csrf_token);
-                document.querySelector(`input[name="csrf_token"]`).value = result.csrf_token;
-                log_message(`New CSRF token fetched: ${result.csrf_token}`, 'make-market.log', 'make-market', 'INFO');
-            } else {
-                log_message(`Failed to refresh CSRF token: ${result.message || 'Unknown error'}`, 'make-market.log', 'make-market', 'ERROR');
-                showError('Failed to refresh CSRF token. Please reload the page.');
-                submitButton.disabled = false;
-                return;
-            }
-        } catch (error) {
-            log_message(`Error fetching new CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-            showError('Error fetching new CSRF token. Please reload the page.');
-            submitButton.disabled = false;
-            return;
-        }
+    // Refresh CSRF token before submitting
+    try {
+        csrfToken = await refreshCSRFToken();
+        formData.set('csrf_token', csrfToken);
+        document.querySelector(`input[name="csrf_token"]`).value = csrfToken;
+        log_message(`CSRF token refreshed before submit: ${csrfToken}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('CSRF token refreshed before submit:', csrfToken);
+    } catch (error) {
+        log_message(`Failed to refresh CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to refresh CSRF token:', error.message);
+        showError('Failed to refresh CSRF token. Please reload the page and try again.');
+        submitButton.disabled = false;
+        return;
     }
 
     const params = {
@@ -147,7 +143,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         delay: parseInt(formData.get('delay')) || 0,
         loopCount: parseInt(formData.get('loopCount')) || 1,
         batchSize: parseInt(formData.get('batchSize')) || 5,
-        csrf_token: formData.get('csrf_token'),
+        csrf_token: csrfToken,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
     };
     log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -242,41 +238,32 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     try {
         // Submit form data
-        const response = await fetch('/mm/', {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            body: formData
+        const response = await axios.post('/mm/', params, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfToken
+            },
+            withCredentials: true
         });
-        const responseText = await response.text();
-        log_message(`Form submission response: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Form submission response: HTTP', response.status, 'Response:', responseText);
-        if (!response.ok) {
-            log_message(`Form submission failed: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Form submission failed: HTTP', response.status, 'Response:', responseText);
+        log_message(`Form submission response: HTTP ${response.status}, Response: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Form submission response:', response);
+        if (response.status !== 200) {
+            log_message(`Form submission failed: HTTP ${response.status}, Response: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Form submission failed:', response.data);
             showError('Form submission failed. Please try again.');
             submitButton.disabled = false;
             return;
         }
-        let result;
-        try {
-            result = JSON.parse(responseText);
-        } catch (error) {
-            log_message(`Error parsing JSON response: ${error.message}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Error parsing JSON response:', error.message, 'Response:', responseText);
-            showError('Invalid response from server. Please try again.');
-            submitButton.disabled = false;
-            return;
-        }
+        const result = response.data;
         if (result.status !== 'success') {
             log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Form submission failed:', result.message);
-            showError(result.message); // Display detailed error message from server
+            showError(result.message);
             submitButton.disabled = false;
             return;
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Form saved to database: transactionId=', result.transactionId);
-        // Redirect to process page
         const redirectUrl = result.redirect || `/mm/process/${result.transactionId}`;
         log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Redirecting to', redirectUrl);
@@ -286,9 +273,9 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message(`Redirect executed to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
         }, 100);
     } catch (error) {
-        log_message(`Error submitting form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Error submitting form:', error.message);
-        showError(`Error submitting form: ${error.message}. Please try again.`);
+        log_message(`Error submitting form: ${error.message}, response=${JSON.stringify(error.response?.data || 'none')}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Error submitting form:', error.message, error.response ? error.response.data : '');
+        showError(`Error submitting form: ${error.response?.data?.message || error.message}. Please try again.`);
         submitButton.disabled = false;
     }
 });
