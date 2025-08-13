@@ -12,8 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'accounts/wallet-auth.php';
 require_once $root_path . 'accounts/header-auth.php';
+require_once $root_path . 'accounts/wallet-auth.php';
 
 // Session start & error reporting on config/bootstrap.php 
 
