@@ -28,6 +28,24 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
 }
 
+// Protect POST requests with CSRF
+csrf_protect();
+
+// Set CSRF cookie for potential AJAX requests
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'make-market.log', 'make-market', 'ERROR');
+} else {
+    log_message("CSRF cookie set successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+}
+
+// Generate CSRF token
+$csrf_token = generate_csrf_token();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token", 'make-market.log', 'make-market', 'ERROR');
+} else {
+    log_message("CSRF token generated successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+}
+
 // Database connection
 $start_time = microtime(true);
 try {
@@ -96,14 +114,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $form_data = $_POST;
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
             log_message("Form data: " . json_encode($form_data), 'make-market.log', 'make-market', 'DEBUG');
-        }
-
-        // Validate CSRF token
-        if (!validate_csrf_token($form_data['csrf_token'] ?? '')) {
-            log_message("Invalid CSRF token", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-            exit;
         }
 
         // Get form data
@@ -247,7 +257,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'sol_amount' => $solAmount,
                         'token_amount' => $tokenAmount,
                         'loop_count' => $loopCount,
-                        'batch_size' => $batchSize
+                        'batch_size' => $batchSize,
+                        'csrf_token' => $csrf_token // Include CSRF token for balance.php
                     ], JSON_UNESCAPED_UNICODE),
                     CURLOPT_HTTPHEADER => [
                         "Content-Type: application/json; charset=utf-8",
@@ -287,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($data['status'] !== 'success') {
                     log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
                     header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
+                    echo json_encode(['status' => 'error', 'message' => $data['message']);
                     exit;
                 }
 
@@ -412,8 +423,8 @@ $defaultSlippage = 0.5;
         </div>
 
         <!-- Form Make Market -->
-        <form id="makeMarketForm" autocomplete="off">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(generate_csrf_token()); ?>">
+        <form id="makeMarketForm" autocomplete="off" method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
             <label for="privateKey">🔑 Private Key (Base58):</label>
