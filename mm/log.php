@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: mm/log.php
-// Description: Handle logging from JavaScript to server-side log files
+// Description: Handle client-side logging for Make Market
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,29 +12,32 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 
-// Only accept POST requests
+// Check AJAX request
+if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
     exit;
 }
 
-// Read data from request
-$input = json_decode(file_get_contents('php://input'), true);
-if (!$input || !isset($input['message'], $input['log_file'], $input['module'], $input['log_type'])) {
+$data = json_decode(file_get_contents('php://input'), true);
+$message = $data['message'] ?? '';
+$log_file = $data['log_file'] ?? 'make-market.log';
+$module = $data['module'] ?? 'make-market';
+$log_type = $data['log_type'] ?? 'INFO';
+
+if (empty($message)) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid input']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing log message']);
     exit;
 }
 
-// Write log
-log_message(
-    $input['message'],
-    $input['log_file'],
-    $input['module'],
-    $input['log_type']
-);
-
+log_message($message, $log_file, $module, $log_type);
 http_response_code(200);
-echo json_encode(['status' => 'success']);
+echo json_encode(['status' => 'success', 'message' => 'Log recorded']);
 ?>
