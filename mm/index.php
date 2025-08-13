@@ -27,7 +27,8 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
 }
 
 // Protect POST requests with CSRF
-csrf_protect();
+// Tạm thời comment out
+// csrf_protect();
 
 // Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
