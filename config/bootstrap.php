@@ -14,7 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Dynamic Domain Name Definition
 // Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-$is_secure = $protocol === 'https://'; // Thêm định nghĩa $is_secure
+$is_secure = $protocol === 'https://';
 // Get the current domain (e.g., www.vina.network)
 $domain = $_SERVER['HTTP_HOST'];
 // Combine to form the base URL and define it as a constant
