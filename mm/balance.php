@@ -98,7 +98,7 @@ try {
             'params' => [
                 'ownerAddress' => $public_key,
                 'page' => 1,
-                'limit' => 50,
+                'limit' => 10, // Giảm limit xuống 10 để tăng tốc
                 'sortBy' => [
                     'sortBy' => 'created',
                     'sortDirection' => 'asc'
