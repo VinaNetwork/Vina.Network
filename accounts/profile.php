@@ -1,11 +1,11 @@
 <?php
-ob_start();
 // ============================================================================
 // File: accounts/profile.php
 // Description: Account information page.
 // Created by: Vina Network
 // ============================================================================
 
+ob_start();
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
@@ -15,7 +15,7 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
 
 // Add Security Headers
-require_once $root_path . 'accounts/security/auth-headers.php';
+require_once $root_path . 'accounts/headers.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
@@ -158,8 +158,7 @@ $page_css = ['/accounts/acc.css'];
 
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/js/ui.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/ui.js')"></script>
-<script src="/accounts/js/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
