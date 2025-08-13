@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteBase /mm/
+
+# Rules for specific endpoints
+RewriteRule ^get-csrf$ security/get-csrf.php [L,NC]
+RewriteRule ^get-tx/([0-9]+)$ process/get-tx.php?id=$1 [L,NC]
+RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC]
+RewriteRule ^swap$ process/swap.php [L,NC]
+RewriteRule ^get-decimals$ process/get-decimals.php [L,NC]
+RewriteRule ^get-network$ process/get-network.php [L,NC]
+RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC]
+RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC]
