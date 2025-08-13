@@ -112,8 +112,8 @@ function log_message($message, $log_file = 'accounts.log', $module = 'accounts',
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
         return;
     }
-    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : TOOLS_PATH));
-    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : TOOLS_PATH . $log_file));
+    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : ($module === 'logs' ? LOGS_PATH : TOOLS_PATH)));
+    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : ($module === 'logs' ? LOGS_PATH . $log_file : TOOLS_PATH . $log_file)));
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
     try {
