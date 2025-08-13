@@ -59,7 +59,9 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
     if (message.includes('Insufficient SOL balance')) {
-        resultDiv.innerHTML = `<div class="error">${message}. Please deposit more SOL to your wallet and try again.</div><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+        resultDiv.innerHTML = `<div class="error">${message}. Please deposit at least the required amount of SOL to your wallet or enable "Skip Balance Check" to proceed.</div><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    } else if (message.includes('Connection error while checking wallet balance')) {
+        resultDiv.innerHTML = `<div class="error">${message}. Please check your network connection or try again later.</div><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     } else {
         resultDiv.innerHTML = `<div class="error">${message}</div><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     }
