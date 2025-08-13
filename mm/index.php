@@ -18,7 +18,7 @@ use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
 // Add Security Headers
-require_once $root_path . 'mm/security/headers.php';
+require_once $root_path . 'mm/headers.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
@@ -261,14 +261,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 curl_close($curl);
 
                 if ($err) {
-                    log_message("Failed to call get-balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+                    log_message("Failed to call balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
                     header('Content-Type: application/json');
                     echo json_encode(['status' => 'error', 'message' => 'Connection error while checking wallet balance']);
                     exit;
                 }
 
                 if ($http_code !== 200) {
-                    log_message("Failed to call get-balance.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+                    log_message("Failed to call balance.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
                     $data = json_decode($response, true);
                     $errorMessage = isset($data['message']) ? $data['message'] : 'Unknown error while checking wallet balance';
                     header('Content-Type: application/json');
@@ -278,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $data = json_decode($response, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
-                    log_message("Failed to parse get-balance.php response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+                    log_message("Failed to parse balance.php response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
                     header('Content-Type: application/json');
                     echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
                     exit;
@@ -450,7 +450,7 @@ $defaultSlippage = 0.5;
 
         <!-- Link to Transaction History -->
         <div class="history-link">
-            <a href="/make-market/history/">View Transaction History</a>
+            <a href="/mm/history/">View Transaction History</a>
         </div>
     </div>
 </div>
@@ -463,7 +463,7 @@ $defaultSlippage = 0.5;
 <script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/spl-token.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script defer src="/mm/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load mm.js')"></script>
+<script defer src="/mm/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /mm/mm.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
