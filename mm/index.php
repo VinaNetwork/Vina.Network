@@ -13,12 +13,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
+require_once $root_path . 'mm/headers.php'; // Security Headers
 
 use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
-
-// Add Security Headers
-require_once $root_path . 'mm/headers.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
