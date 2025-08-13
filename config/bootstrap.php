@@ -34,7 +34,7 @@ define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 // Load configuration
 require_once ROOT_PATH . 'config/config.php';
 require_once ROOT_PATH . 'config/db.php';
-require_once ROOT_PATH . 'config/csrf.php';
+require_once ROOT_PATH . 'config/csrf-.php';
 
 // Define environment
 define('ENVIRONMENT', 'development');
