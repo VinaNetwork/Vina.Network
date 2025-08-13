@@ -15,7 +15,7 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
 
 // Add Security Headers
-require_once $root_path . 'accounts/headers.php';
+require_once $root_path . 'accounts/header-auth.php';
 
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
