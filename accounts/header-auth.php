@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: accounts/headers.php
+// File: accounts/header-auth.php
 // Description: Defines HTTP security headers to protect the Accounts
 // Created by: Vina Network
 // ============================================================================
