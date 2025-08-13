@@ -256,11 +256,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'token_amount' => $tokenAmount,
                         'loop_count' => $loopCount,
                         'batch_size' => $batchSize,
-                        'csrf_token' => $csrf_token // Include CSRF token for balance.php
+                        'csrf_token' => $csrf_token // Include CSRF token
                     ], JSON_UNESCAPED_UNICODE),
                     CURLOPT_HTTPHEADER => [
                         "Content-Type: application/json; charset=utf-8",
-                        "X-Requested-With: XMLHttpRequest"
+                        "X-Requested-With: XMLHttpRequest",
+                        "X-CSRF-Token: $csrf_token", // Thêm header X-CSRF-Token
+                        "Cookie: PHPSESSID=" . session_id() // Thêm header Cookie với session ID
                     ],
                 ]);
 
