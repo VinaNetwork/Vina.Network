@@ -72,15 +72,11 @@ try {
 }
 
 // Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'], $_POST['csrf_token'])) {
-    header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
+    // Protect POST requests with CSRF
+    csrf_protect();
 
-    // Validate CSRF token
-    if (!validate_csrf_token($_POST['csrf_token'])) {
-        log_message("Invalid CSRF token for login attempt from IP: $ip_address", 'accounts.log', 'accounts', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-        exit;
-    }
+    header('Content-Type: application/json');
 
     $public_key = $_POST['public_key'];
     $short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
@@ -143,7 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             // Check if public key is on Ed25519 curve using conversion to X25519
             try {
                 sodium_crypto_sign_ed25519_pk_to_curve25519($public_key_bytes);
-                // If no exception, key is valid on curve; no need to store the result
             } catch (SodiumException $se) {
                 throw new Exception("Invalid public key: Not on Ed25519 curve - " . $se->getMessage());
             }
