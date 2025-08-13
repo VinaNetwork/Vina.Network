@@ -1,9 +1,9 @@
 <?php
-/*
- * File: config/config.php
- * Description: Central configuration file for Vina Network.
- * Created by: Vina Network
- */
+// ============================================================================
+// File: config/config.php
+// Description: Central configuration file for Vina Network.
+// Created by: Vina Network
+// ============================================================================
 
 // Database Configuration
 if (!defined('DB_HOST')) {
