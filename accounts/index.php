@@ -24,7 +24,9 @@ require_once $root_path . 'accounts/header-auth.php';
 csrf_protect();
 
 // Set CSRF cookie for AJAX requests
-set_csrf_cookie();
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'security.log', 'logs', 'ERROR');
+}
 
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
@@ -48,6 +50,9 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token", 'security.log', 'logs', 'ERROR');
+}
 
 // Generate nonce for anti-replay
 $nonce = bin2hex(random_bytes(16));
@@ -78,7 +83,7 @@ $page_css = ['/accounts/acc.css'];
             <p><span id="public-key"></span></p>
             <p><span id="status"></span></p>
         </div>
-        <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+        <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
         <input type="hidden" id="login-nonce" value="<?php echo htmlspecialchars($nonce); ?>">
     </div>
 </div>
