@@ -25,7 +25,7 @@ csrf_protect();
 
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie", 'security.log', 'logs', 'ERROR');
+    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
 }
 
 // Check if user is already logged in
@@ -51,7 +51,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token", 'security.log', 'logs', 'ERROR');
+    log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
 }
 
 // Generate nonce for anti-replay
