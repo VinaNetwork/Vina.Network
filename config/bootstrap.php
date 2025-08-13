@@ -14,7 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Dynamic Domain Name Definition
 // Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-$is_secure = $protocol === 'https://';
+$is_secure = $protocol === 'https://'; // Thêm định nghĩa $is_secure
 // Get the current domain (e.g., www.vina.network)
 $domain = $_SERVER['HTTP_HOST'];
 // Combine to form the base URL and define it as a constant
@@ -25,11 +25,8 @@ $csp_base = rtrim(BASE_URL, '/');
 define('ROOT_PATH', dirname(__DIR__) . '/');
 
 // Load configuration
-require_once ROOT_PATH . 'config/db.php';
 require_once ROOT_PATH . 'config/config.php';
-
-// Define environment
-define('ENVIRONMENT', 'development');
+require_once ROOT_PATH . 'config/db.php';
 
 // Logs directory
 define('LOGS_PATH', ROOT_PATH . 'logs/');
@@ -117,4 +114,20 @@ function log_message($message, $log_file = 'accounts.log', $module = 'accounts',
         error_log("Log error: " . $e->getMessage());
     }
 }
+
+// Create CSRF token in session
+function generate_csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+// Validate CSRF token from session
+function validate_csrf_token($token) {
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+// Define environment
+define('ENVIRONMENT', 'development');
 ?>
