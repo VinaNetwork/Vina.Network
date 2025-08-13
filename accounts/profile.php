@@ -20,10 +20,25 @@ require_once $root_path . 'accounts/header-auth.php';
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
 
+// Protect POST requests with CSRF
+csrf_protect();
+
+// Set CSRF cookie for potential AJAX requests
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'security.log', 'logs', 'ERROR');
+    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR'); // Fallback to accounts.log
+}
+
 // Library Base58
 use StephenHill\Base58;
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token", 'security.log', 'logs', 'ERROR');
+    log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR'); // Fallback to accounts.log
+} else {
+    log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
+}
 
 // Database connection
 $start_time = microtime(true);
@@ -69,7 +84,7 @@ if ($short_public_key === 'Invalid address') {
     exit;
 }
 
-log_message("Profile.php - Short public_key: " . $short_public_key, 'accounts.log', 'accounts', 'DEBUG');
+log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 
 // Fetch account info
 try {
@@ -94,13 +109,8 @@ $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['cr
 $last_login = $account['last_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['last_login']) ? $account['last_login'] : 'Invalid date') : 'Never';
 
 // Handle logout
-if (isset($_POST['logout']) && isset($_POST['csrf_token'])) {
-    if (!validate_csrf_token($_POST['csrf_token'])) {
-        log_message("Invalid CSRF token for logout attempt", 'accounts.log', 'accounts', 'ERROR');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-        exit;
-    }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
@@ -149,7 +159,7 @@ $page_css = ['/accounts/acc.css'];
         </div>
         
         <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
     </div>
