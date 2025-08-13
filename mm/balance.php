@@ -11,6 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/csrf.php'; // Include CSRF protection
 // Add Security Headers
 require_once $root_path . 'mm/headers.php';
 
@@ -26,6 +27,9 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("balance.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
 }
+
+// Protect POST requests with CSRF
+csrf_protect();
 
 // Get parameters from POST data
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
