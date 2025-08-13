@@ -50,7 +50,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    fetch('/mm/log.php', { // Updated to use /mm/log.php
+    fetch('/mm/log.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, log_file, module, log_type })
@@ -84,6 +84,14 @@ function isValidTradeDirection(tradeDirection, solAmount, tokenAmount) {
     return false;
 }
 
+// Helper function to get cookie by name
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
 // Handle form submission
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -97,7 +105,37 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     const formData = new FormData(e.target);
     const tokenAmountValue = formData.get('tokenAmount');
-    log_message(`Raw tokenAmount value: ${tokenAmountValue}`, 'make-market.log', 'make-market', 'DEBUG');
+    const csrfToken = formData.get('csrf_token');
+
+    // Check CSRF cookie
+    const csrfCookie = getCookie('csrf_token_cookie');
+    if (!csrfCookie || csrfCookie !== csrfToken) {
+        log_message(`CSRF cookie issue: cookie=${csrfCookie || 'missing'}, form_token=${csrfToken}`, 'make-market.log', 'make-market', 'ERROR');
+        showError('CSRF token is missing or invalid. Attempting to refresh...');
+        try {
+            const response = await fetch('/mm/refresh-csrf', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const result = await response.json();
+            if (result.status === 'success' && result.csrf_token) {
+                formData.set('csrf_token', result.csrf_token);
+                document.querySelector(`input[name="csrf_token"]`).value = result.csrf_token;
+                log_message(`New CSRF token fetched: ${result.csrf_token}`, 'make-market.log', 'make-market', 'INFO');
+            } else {
+                log_message(`Failed to refresh CSRF token: ${result.message || 'Unknown error'}`, 'make-market.log', 'make-market', 'ERROR');
+                showError('Failed to refresh CSRF token. Please reload the page.');
+                submitButton.disabled = false;
+                return;
+            }
+        } catch (error) {
+            log_message(`Error fetching new CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+            showError('Error fetching new CSRF token. Please reload the page.');
+            submitButton.disabled = false;
+            return;
+        }
+    }
+
     const params = {
         processName: formData.get('processName'),
         privateKey: formData.get('privateKey'),
@@ -120,12 +158,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         log_message('Private key is empty or invalid format', 'make-market.log', 'make-market', 'ERROR');
         showError('Private key is empty or invalid format. Please check again.');
         console.error('Private key is empty or invalid format');
+        submitButton.disabled = false;
         return;
     }
     if (!params.tokenMint || !/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(params.tokenMint)) {
         log_message('Invalid token address', 'make-market.log', 'make-market', 'ERROR');
         showError('Invalid token address. Please check again.');
         console.error('Invalid token address');
+        submitButton.disabled = false;
         return;
     }
     if (params.tradeDirection === 'buy') {
@@ -133,12 +173,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message(`Invalid SOL amount for buy: ${params.solAmount}`, 'make-market.log', 'make-market', 'ERROR');
             showError('SOL amount must be greater than 0 for buy transactions.');
             console.error('Invalid SOL amount for buy');
+            submitButton.disabled = false;
             return;
         }
         if (params.tokenAmount !== 0) {
             log_message(`Invalid token amount for buy: ${params.tokenAmount}, must be exactly 0`, 'make-market.log', 'make-market', 'ERROR');
             showError('Token amount must be exactly 0 for buy transactions.');
             console.error('Invalid token amount for buy');
+            submitButton.disabled = false;
             return;
         }
     } else if (params.tradeDirection === 'sell') {
@@ -146,6 +188,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message(`Invalid token amount for sell: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
             showError('Token amount must be greater than 0 for sell transactions.');
             console.error('Invalid token amount for sell');
+            submitButton.disabled = false;
             return;
         }
     } else if (params.tradeDirection === 'both') {
@@ -153,36 +196,42 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message(`Invalid SOL amount for both: ${params.solAmount}`, 'make-market.log', 'make-market', 'ERROR');
             showError('SOL amount must be greater than 0 for both transactions.');
             console.error('Invalid SOL amount for both');
+            submitButton.disabled = false;
             return;
         }
         if (isNaN(params.tokenAmount) || params.tokenAmount <= 0) {
             log_message(`Invalid token amount for both: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
             showError('Token amount must be greater than 0 for both transactions.');
             console.error('Invalid token amount for both');
+            submitButton.disabled = false;
             return;
         }
     } else {
         log_message('Invalid trade direction', 'make-market.log', 'make-market', 'ERROR');
         showError('Please select a valid trade direction (Buy, Sell, or Both).');
         console.error('Invalid trade direction');
+        submitButton.disabled = false;
         return;
     }
     if (isNaN(params.slippage) || params.slippage < 0) {
         log_message(`Invalid slippage: ${params.slippage}`, 'make-market.log', 'make-market', 'ERROR');
         showError('Slippage must be non-negative.');
         console.error('Invalid slippage');
+        submitButton.disabled = false;
         return;
     }
     if (isNaN(params.loopCount) || params.loopCount < 1) {
         log_message(`Invalid loop count: ${params.loopCount}`, 'make-market.log', 'make-market', 'ERROR');
         showError('Loop count must be at least 1.');
         console.error('Invalid loop count');
+        submitButton.disabled = false;
         return;
     }
     if (isNaN(params.batchSize) || params.batchSize < 1 || params.batchSize > 10) {
         log_message(`Invalid batch size: ${params.batchSize}`, 'make-market.log', 'make-market', 'ERROR');
         showError('Batch size must be between 1 and 10.');
         console.error('Invalid batch size');
+        submitButton.disabled = false;
         return;
     }
 
@@ -205,6 +254,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message(`Form submission failed: HTTP ${response.status}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Form submission failed: HTTP', response.status, 'Response:', responseText);
             showError('Form submission failed. Please try again.');
+            submitButton.disabled = false;
             return;
         }
         let result;
@@ -214,12 +264,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             log_message(`Error parsing JSON response: ${error.message}, Response: ${responseText}`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Error parsing JSON response:', error.message, 'Response:', responseText);
             showError('Invalid response from server. Please try again.');
+            submitButton.disabled = false;
             return;
         }
         if (result.status !== 'success') {
             log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Form submission failed:', result.message);
             showError(result.message); // Display detailed error message from server
+            submitButton.disabled = false;
             return;
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
@@ -237,6 +289,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         log_message(`Error submitting form: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Error submitting form:', error.message);
         showError(`Error submitting form: ${error.message}. Please try again.`);
+        submitButton.disabled = false;
     }
 });
 
