@@ -23,10 +23,17 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("balance.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("balance.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, Session ID: " . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
 }
 
-// Protect POST requests with CSRF
+// Get parameters from POST data
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    log_message("Invalid request method: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Request method not supported']);
+    exit;
+}
+
 $post_data = json_decode(file_get_contents('php://input'), true);
 $public_key = $post_data['public_key'] ?? '';
 $trade_direction = $post_data['trade_direction'] ?? 'buy';
@@ -35,15 +42,16 @@ $token_amount = floatval($post_data['token_amount'] ?? 0);
 $token_mint = $post_data['token_mint'] ?? '';
 $loop_count = intval($post_data['loop_count'] ?? 1);
 $batch_size = intval($post_data['batch_size'] ?? 5);
-$csrf_token = $post_data['csrf_token'] ?? '';
+$csrf_token = $post_data['csrf_token'] ?? ''; // Lấy CSRF token từ JSON
 
 // Gán token vào $_POST để csrf_protect() sử dụng
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
 
+// Protect POST requests with CSRF
 try {
     csrf_protect();
 } catch (Exception $e) {
-    log_message("CSRF validation failed: {$e->getMessage()}, provided_token=$csrf_token", 'make-market.log', 'make-market', 'ERROR');
+    log_message("CSRF validation failed: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
@@ -102,7 +110,8 @@ try {
             ]
         ], JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => [
-            "Content-Type: application/json; charset=utf-8"
+            "Content-Type: application/json; charset=utf-8",
+            "X-CSRF-Token: $csrf_token" // Thêm CSRF token vào header
         ],
     ]);
 
