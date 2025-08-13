@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const fullAddress = icon.getAttribute('data-full');
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
             console.log(`Attempting to copy address: ${shortAddress}`);
-            log_message(`Attempting to copyaururess: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
+            log_message(`Attempting to copy address: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
 
             navigator.clipboard.writeText(fullAddress).then(() => {
                 console.log('Copy successful');
@@ -114,6 +114,11 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     console.log('Form submitted');
 
     const formData = new FormData(e.target);
+    let formDataObject = {};
+    for (let [key, value] of formData.entries()) {
+        formDataObject[key] = value;
+    }
+    log_message(`Raw FormData: ${JSON.stringify(formDataObject)}`, 'make-market.log', 'make-market', 'DEBUG');
     const tokenAmountValue = formData.get('tokenAmount');
     let csrfToken = formData.get('csrf_token');
 
@@ -121,6 +126,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     try {
         csrfToken = await refreshCSRFToken();
         formData.set('csrf_token', csrfToken);
+        formDataObject.csrf_token = csrfToken;
         document.querySelector(`input[name="csrf_token"]`).value = csrfToken;
         log_message(`CSRF token refreshed before submit: ${csrfToken}`, 'make-market.log', 'make-market', 'INFO');
         console.log('CSRF token refreshed before submit:', csrfToken);
@@ -133,10 +139,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     }
 
     const params = {
-        processName: formData.get('processName'),
-        privateKey: formData.get('privateKey'),
-        tokenMint: formData.get('tokenMint'),
-        tradeDirection: formData.get('tradeDirection'),
+        processName: formData.get('processName')?.trim() || '',
+        privateKey: formData.get('privateKey')?.trim() || '',
+        tokenMint: formData.get('tokenMint')?.trim() || '',
+        tradeDirection: formData.get('tradeDirection') || 'buy',
         solAmount: formData.get('tradeDirection') === 'sell' ? 0 : parseFloat(formData.get('solAmount')) || 0,
         tokenAmount: tokenAmountValue !== null && tokenAmountValue !== '' ? parseFloat(tokenAmountValue) : 0,
         slippage: parseFloat(formData.get('slippage')) || 0.5,
@@ -146,18 +152,39 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         csrf_token: csrfToken,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
     };
-    log_message(`Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
-    console.log('Form data:', params);
+    log_message(`Processed Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
+    console.log('Processed Form data:', params);
 
-    // Basic validation
-    if (!params.privateKey || typeof params.privateKey !== 'string' || !/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/.test(params.privateKey)) {
-        log_message('Private key is empty or invalid format', 'make-market.log', 'make-market', 'ERROR');
-        showError('Private key is empty or invalid format. Please check again.');
-        console.error('Private key is empty or invalid format');
+    // Client-side validation for required fields
+    if (!params.processName) {
+        log_message('Process name is empty', 'make-market.log', 'make-market', 'ERROR');
+        showError('Process name is required.');
+        console.error('Process name is empty');
         submitButton.disabled = false;
         return;
     }
-    if (!params.tokenMint || !/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(params.tokenMint)) {
+    if (!params.privateKey) {
+        log_message('Private key is empty', 'make-market.log', 'make-market', 'ERROR');
+        showError('Private key is required.');
+        console.error('Private key is empty');
+        submitButton.disabled = false;
+        return;
+    }
+    if (!params.tokenMint) {
+        log_message('Token mint is empty', 'make-market.log', 'make-market', 'ERROR');
+        showError('Token mint address is required.');
+        console.error('Token mint is empty');
+        submitButton.disabled = false;
+        return;
+    }
+    if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/.test(params.privateKey)) {
+        log_message('Private key is invalid format', 'make-market.log', 'make-market', 'ERROR');
+        showError('Private key is invalid format. Please check again.');
+        console.error('Private key is invalid format');
+        submitButton.disabled = false;
+        return;
+    }
+    if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(params.tokenMint)) {
         log_message('Invalid token address', 'make-market.log', 'make-market', 'ERROR');
         showError('Invalid token address. Please check again.');
         console.error('Invalid token address');
@@ -238,7 +265,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     try {
         // Submit form data
-        const response = await axios.post('/mm/', params, {
+        const response = await axios.post('/mm/', formData, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-Token': csrfToken
