@@ -298,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($data['status'] !== 'success') {
                     log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
                     header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => $data['message']);
+                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
                     exit;
                 }
 
