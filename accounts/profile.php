@@ -12,23 +12,16 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
+require_once $root_path . '../vendor/autoload.php';
+use StephenHill\Base58;
 
 // Add Security Headers
 require_once $root_path . 'accounts/header-auth.php';
 
-// Session start: in config/bootstrap.php
-// Error reporting: in config/bootstrap.php
-
-// Library Base58
-use StephenHill\Base58;
-// Generate CSRF token
-$csrf_token = generate_csrf_token();
-
 // Database connection
 $start_time = microtime(true);
 try {
-    $pdo = get_db_connection(); // Use the function from config/db.php
+    $pdo = get_db_connection();
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
@@ -47,7 +40,6 @@ if (!$public_key) {
     header('Location: /accounts');
     exit;
 }
-// Regenerate session ID for improved security
 session_regenerate_id(true);
 
 // Validate public_key format and compute short_public_key early
@@ -94,20 +86,18 @@ $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['cr
 $last_login = $account['last_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['last_login']) ? $account['last_login'] : 'Invalid date') : 'Never';
 
 // Handle logout
-if (isset($_POST['logout']) && isset($_POST['csrf_token'])) {
-    if (!validate_csrf_token($_POST['csrf_token'])) {
-        log_message("Invalid CSRF token for logout attempt", 'accounts.log', 'accounts', 'ERROR');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-        exit;
-    }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    csrf_protect(); // Check CSRF token
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
     exit;
 }
 
-// SEO meta - Use base variables and derive others for reduced redundancy
+// Set CSRF cookie for potential AJAX requests
+set_csrf_cookie();
+
+// SEO meta
 $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
 $page_url = BASE_URL . "accounts/profile.php";
@@ -149,7 +139,7 @@ $page_css = ['/accounts/acc.css'];
         </div>
         
         <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+            <?php echo get_csrf_field(); ?> <!-- Sử dụng get_csrf_field() -->
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
     </div>
