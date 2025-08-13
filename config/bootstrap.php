@@ -24,17 +24,17 @@ $csp_base = rtrim(BASE_URL, '/');
 // Website root directory
 define('ROOT_PATH', dirname(__DIR__) . '/');
 
-// Load configuration
-require_once ROOT_PATH . 'config/csrf.php';
-require_once ROOT_PATH . 'config/config.php';
-require_once ROOT_PATH . 'config/db.php';
-
 // Logs directory
 define('LOGS_PATH', ROOT_PATH . 'logs/');
 define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
 define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
+
+// Load configuration
+require_once ROOT_PATH . 'config/csrf.php';
+require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'config/db.php';
 
 // Initialize session with security options
 if (session_status() === PHP_SESSION_NONE) {
