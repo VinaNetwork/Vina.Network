@@ -15,9 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let cookie of cookies) {
             cookie = cookie.trim();
             if (cookie.indexOf(name) === 0) {
+                console.log('CSRF token found in cookie');
                 return cookie.substring(name.length, cookie.length);
             }
         }
+        console.warn('CSRF token not found in cookie');
         return null;
     }
 
@@ -107,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
                 return;
             }
+            await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
 
             // Double-check HTTPS
             if (!window.isSecureContext) {
@@ -152,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('csrf_token', csrfToken);
 
                     statusSpan.textContent = 'Sending data to server...';
-                    const responseServer = await fetch('index.php', {
+                    const responseServer = await fetch('wallet-auth.php', {
                         method: 'POST',
                         body: formData
                     });
