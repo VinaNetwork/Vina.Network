@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/headers.php
+// File: mm/header-auth.php
 // Description: Defines HTTP security headers to protect the Make Market
 // Created by: Vina Network
 // ============================================================================
