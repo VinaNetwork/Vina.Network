@@ -16,11 +16,32 @@ define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in form
 define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
 define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie'); // Name of the CSRF cookie (for AJAX requests)
 
+// Ensure session is active
+function ensure_session() {
+    try {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start([
+                'cookie_lifetime' => 0,
+                'use_strict_mode' => true,
+                'cookie_httponly' => true,
+                'cookie_samesite' => 'Strict',
+                'cookie_secure' => $GLOBALS['is_secure'],
+                'cookie_domain' => $_SERVER['HTTP_HOST']
+            ]);
+            log_message("Session restarted for CSRF, session_id=" . session_id(), 'security.log', 'logs', 'INFO');
+        }
+        return true;
+    } catch (Exception $e) {
+        log_message("Error starting session for CSRF: " . $e->getMessage(), 'security.log', 'logs', 'ERROR');
+        return false;
+    }
+}
+
 // Generate CSRF token and store in session
 function generate_csrf_token() {
     try {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            throw new Exception('Session not active');
+        if (!ensure_session()) {
+            throw new Exception('Failed to start session');
         }
 
         if (empty($_SESSION[CSRF_TOKEN_NAME])) {
@@ -36,8 +57,8 @@ function generate_csrf_token() {
 
 // Validate CSRF token against session
 function validate_csrf_token($token) {
-    if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION[CSRF_TOKEN_NAME]) {
-        log_message("CSRF token validation failed: session not active", 'security.log', 'logs', 'ERROR');
+    if (!ensure_session() || !isset($_SESSION[CSRF_TOKEN_NAME]) || empty($token)) {
+        log_message("CSRF token validation failed: session not active or token empty", 'security.log', 'logs', 'ERROR');
         return false;
     }
 
@@ -52,7 +73,7 @@ function validate_csrf_token($token) {
 
 // Regenerate CSRF token after successful validation
 function regenerate_csrf_token() {
-    if (session_status() === PHP_SESSION_ACTIVE) {
+    if (ensure_session()) {
         unset($_SESSION[CSRF_TOKEN_NAME]);
     }
     return generate_csrf_token();
@@ -69,9 +90,15 @@ function csrf_protect() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
         if (!validate_csrf_token($token)) {
-            http_response_code(403);
             log_message("CSRF protection triggered: Invalid token", 'security.log', 'logs', 'WARNING');
-            exit('Invalid CSRF token');
+            http_response_code(403);
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Invalid CSRF token']);
+            } else {
+                header('Location: /error?message=Invalid+CSRF+token');
+            }
+            exit;
         }
         regenerate_csrf_token(); // Regenerate token after successful validation
     }
@@ -79,7 +106,7 @@ function csrf_protect() {
 
 // Set CSRF token in a cookie for AJAX requests
 function set_csrf_cookie() {
-    global $is_secure; // bootstrap.php
+    global $is_secure;
     
     $token = generate_csrf_token();
     if ($token === false) {
@@ -89,7 +116,7 @@ function set_csrf_cookie() {
     $options = [
         'expires' => 0, // Session cookie
         'path' => '/',
-        'domain' => '.vina.network',
+        'domain' => $_SERVER['HTTP_HOST'],
         'secure' => $is_secure,
         'httponly' => true,
         'samesite' => 'Strict'
@@ -98,7 +125,6 @@ function set_csrf_cookie() {
     if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
         setcookie(CSRF_TOKEN_COOKIE, $token, $options);
     } else {
-        // PHP < 7.3
         setcookie(
             CSRF_TOKEN_COOKIE,
             $token,
