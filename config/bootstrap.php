@@ -14,7 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Dynamic Domain Name Definition
 // Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-$is_secure = $protocol === 'https://';
+$is_secure = $protocol === 'https://'; // Thêm định nghĩa $is_secure
 // Get the current domain (e.g., www.vina.network)
 $domain = $_SERVER['HTTP_HOST'];
 // Combine to form the base URL and define it as a constant
@@ -24,20 +24,16 @@ $csp_base = rtrim(BASE_URL, '/');
 // Website root directory
 define('ROOT_PATH', dirname(__DIR__) . '/');
 
+// Load configuration
+require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'config/db.php';
+
 // Logs directory
 define('LOGS_PATH', ROOT_PATH . 'logs/');
 define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
 define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
-
-// Load configuration
-require_once ROOT_PATH . 'config/config.php';
-require_once ROOT_PATH . 'config/db.php';
-require_once ROOT_PATH . 'config/csrf-.php';
-
-// Define environment
-define('ENVIRONMENT', 'development');
 
 // Initialize session with security options
 if (session_status() === PHP_SESSION_NONE) {
@@ -131,4 +127,7 @@ function generate_csrf_token() {
 function validate_csrf_token($token) {
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
+
+// Define environment
+define('ENVIRONMENT', 'development');
 ?>
