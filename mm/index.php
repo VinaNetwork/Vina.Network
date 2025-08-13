@@ -27,8 +27,9 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
 }
 
 // Protect POST requests with CSRF
-// Tạm thời comment out
-// csrf_protect();
+log_message("Before csrf_protect", 'make-market.log', 'make-market', 'DEBUG');
+csrf_protect();
+log_message("After csrf_protect", 'make-market.log', 'make-market', 'DEBUG');
 
 // Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
