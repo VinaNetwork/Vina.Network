@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
             console.log('Copy icon clicked');
+
             const fullAddress = icon.getAttribute('data-full');
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
             console.log(`Attempting to copy address: ${shortAddress}`);
@@ -46,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Error: This page must be loaded over HTTPS';
         }
-        return;
+        return; // Stop further execution
     }
 
     // Function to log to server
@@ -76,20 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Function to get CSRF token from cookie
-    function getCsrfTokenFromCookie() {
-        const name = 'csrf_token_cookie=';
-        const decodedCookie = decodeURIComponent(document.cookie);
-        const cookies = decodedCookie.split(';');
-        for (let cookie of cookies) {
-            cookie = cookie.trim();
-            if (cookie.indexOf(name) === 0) {
-                return cookie.substring(name.length, cookie.length);
-            }
-        }
-        return '';
-    }
-
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
@@ -97,8 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
+            const csrfToken = document.getElementById('csrf-token').value;
             const nonce = document.getElementById('login-nonce').value;
 
+            // Double-check HTTPS
             if (!window.isSecureContext) {
                 logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
                 walletInfo.style.display = 'block';
@@ -123,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
+                    // Sign message as raw bytes
                     const signature = await window.solana.signMessage(encodedMessage, 'utf8');
                     const signatureBytes = new Uint8Array(signature.signature);
                     if (signatureBytes.length !== 64) {
@@ -131,23 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
                     await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
+                    // Check message before sending
                     await logToServer(`Message sent: ${message}, hex: ${Array.from(new TextEncoder().encode(message)).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
                     const formData = new FormData();
                     formData.append('public_key', publicKey);
                     formData.append('signature', signatureBase64);
                     formData.append('message', message);
-                    const csrfToken = getCsrfTokenFromCookie();
-                    if (!csrfToken) {
-                        throw new Error('CSRF token not found in cookie');
-                    }
+                    formData.append('csrf_token', csrfToken);
 
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('index.php', {
                         method: 'POST',
-                        headers: {
-                            'X-CSRF-Token': csrfToken // Gửi CSRF token qua header
-                        },
                         body: formData
                     });
 
@@ -156,12 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (result.status === 'error' && result.message.includes('Signature verification failed')) {
                         statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
                     } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
-                        statusSpan.textContent = 'Error: Session token expired. Please refresh the page and try again.';
+                        statusSpan.textContent = 'Error: Invalid CSRF token. Please try again.';
                     } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
                         statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
-                        window.location.href = result.redirect;
+                        window.location.href = result.redirect; // Redirect to profile.php
                     } else {
                         statusSpan.textContent = result.message || 'Unknown error';
                     }

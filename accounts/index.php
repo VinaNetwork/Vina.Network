@@ -12,17 +12,20 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/csrf.php';
-require_once $root_path . 'accounts/header-auth.php';
 require_once $root_path . 'accounts/wallet-auth.php';
 
-// Session start & error reporting on config/bootstrap.php 
+// Add Security Headers
+require_once $root_path . 'accounts/header-auth.php';
+
+// Session start: in config/bootstrap.php
+// Error reporting: in config/bootstrap.php
 
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
     log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
+    // Redirect to referrer if set, otherwise to profile
     $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile.php';
-    unset($_SESSION['redirect_url']);
+    unset($_SESSION['redirect_url']); // Clear after use
     header("Location: $redirect_url");
     exit;
 }
@@ -30,18 +33,19 @@ if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
 // Store referrer URL if coming from another page
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $referrer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
+    // Validate referrer to prevent open redirect vulnerabilities
     if (strpos($referrer, '/make-market') === 0 || strpos($referrer, '/other-protected-page') === 0) {
         $_SESSION['redirect_url'] = $referrer;
         log_message("Stored referrer URL: $referrer", 'accounts.log', 'accounts', 'INFO');
     }
 }
 
+// Generate CSRF token
+$csrf_token = generate_csrf_token();
+
 // Generate nonce for anti-replay
 $nonce = bin2hex(random_bytes(16));
 $_SESSION['login_nonce'] = $nonce;
-
-// Set CSRF cookie for AJAX requests
-set_csrf_cookie();
 
 // SEO meta
 $page_title = "Connect Wallet to Vina Network";
@@ -68,14 +72,16 @@ $page_css = ['/accounts/acc.css'];
             <p><span id="public-key"></span></p>
             <p><span id="status"></span></p>
         </div>
-        <?php echo get_csrf_field(); ?> <!-- Sử dụng get_csrf_field() -->
+        <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token); ?>">
         <input type="hidden" id="login-nonce" value="<?php echo htmlspecialchars($nonce); ?>">
     </div>
 </div>
 <?php require_once $root_path . 'include/footer.php';?>
 
+<!-- Scripts - Internal library -->
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
+<!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
 </body>
