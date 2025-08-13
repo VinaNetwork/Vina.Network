@@ -14,12 +14,10 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
-// Session start: in config/bootstrap.php
-
 // Database connection
 $start_time = microtime(true);
 try {
-    $pdo = get_db_connection(); // Use the function from config/db.php
+    $pdo = get_db_connection();
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
@@ -30,6 +28,9 @@ try {
     exit;
 }
 
+// CSRF protection
+csrf_protect(); // Check CSRF token for POST request
+
 // Rate limiting
 $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 if ($ip_address === 'Unknown') {
@@ -38,16 +39,14 @@ if ($ip_address === 'Unknown') {
     echo json_encode(['status' => 'error', 'message' => 'Unable to process request: Invalid IP address']);
     exit;
 }
-$rate_limit = 5; // Maximum 5 attempts per minute
-$rate_limit_window = 60; // 1 minute in seconds
+$rate_limit = 5;
+$rate_limit_window = 60;
 
 try {
-    // Clean up old attempts
     $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE attempt_time < ?");
     $stmt->execute([date('Y-m-d H:i:s', time() - $rate_limit_window)]);
     log_message("Cleaned up old login attempts for IP: $ip_address", 'accounts.log', 'accounts', 'INFO');
 
-    // Count recent attempts
     $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
     $stmt->execute([$ip_address, date('Y-m-d H:i:s', time() - $rate_limit_window)]);
     $attempt_count = $stmt->fetchColumn();
@@ -60,7 +59,6 @@ try {
         exit;
     }
 
-    // Log the current attempt
     $stmt = $pdo->prepare("INSERT INTO login_attempts (ip_address, attempt_time) VALUES (?, ?)");
     $stmt->execute([$ip_address, date('Y-m-d H:i:s')]);
     log_message("Recorded login attempt for IP: $ip_address, attempt count: " . ($attempt_count + 1), 'accounts.log', 'accounts', 'INFO');
@@ -72,15 +70,8 @@ try {
 }
 
 // Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'], $_POST['csrf_token'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
     header('Content-Type: application/json');
-
-    // Validate CSRF token
-    if (!validate_csrf_token($_POST['csrf_token'])) {
-        log_message("Invalid CSRF token for login attempt from IP: $ip_address", 'accounts.log', 'accounts', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
-        exit;
-    }
 
     $public_key = $_POST['public_key'];
     $short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
@@ -140,10 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
                 throw new Exception("Invalid public key: Length is " . strlen($public_key_bytes) . " bytes, expected 32 bytes");
             }
 
-            // Check if public key is on Ed25519 curve using conversion to X25519
             try {
                 sodium_crypto_sign_ed25519_pk_to_curve25519($public_key_bytes);
-                // If no exception, key is valid on curve; no need to store the result
             } catch (SodiumException $se) {
                 throw new Exception("Invalid public key: Not on Ed25519 curve - " . $se->getMessage());
             }
@@ -224,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
 
         // Determine redirect URL
         $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile.php';
-        unset($_SESSION['redirect_url']); // Clear after use
+        unset($_SESSION['redirect_url']);
 
         if ($account) {
             $start_time = microtime(true);
