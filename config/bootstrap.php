@@ -14,7 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Dynamic Domain Name Definition
 // Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
-$is_secure = $protocol === 'https://'; // Thêm định nghĩa $is_secure
+$is_secure = $protocol === 'https://';
 // Get the current domain (e.g., www.vina.network)
 $domain = $_SERVER['HTTP_HOST'];
 // Combine to form the base URL and define it as a constant
@@ -27,6 +27,9 @@ define('ROOT_PATH', dirname(__DIR__) . '/');
 // Load configuration
 require_once ROOT_PATH . 'config/config.php';
 require_once ROOT_PATH . 'config/db.php';
+
+// Define environment
+define('ENVIRONMENT', 'development');
 
 // Logs directory
 define('LOGS_PATH', ROOT_PATH . 'logs/');
@@ -127,7 +130,4 @@ function generate_csrf_token() {
 function validate_csrf_token($token) {
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
-
-// Define environment
-define('ENVIRONMENT', 'development');
 ?>
