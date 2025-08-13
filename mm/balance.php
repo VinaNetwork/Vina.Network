@@ -58,12 +58,13 @@ try {
 }
 
 // Validate minimal required inputs
-if (empty($public_key) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $public_key)) {
-    log_message("Invalid public key: $public_key", 'make-market.log', 'make-market', 'ERROR');
+if (empty($public_key)) {
+    log_message("Missing public key", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid wallet address']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing wallet address']);
     exit;
 }
+
 if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $token_mint)) {
     log_message("Invalid token mint: $token_mint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
@@ -88,7 +89,7 @@ try {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 30,
+        CURLOPT_TIMEOUT => 10, // Giảm timeout để tăng tốc
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => "POST",
         CURLOPT_POSTFIELDS => json_encode([
@@ -98,7 +99,7 @@ try {
             'params' => [
                 'ownerAddress' => $public_key,
                 'page' => 1,
-                'limit' => 10, // Giảm limit xuống 10 để tăng tốc
+                'limit' => 10,
                 'sortBy' => [
                     'sortBy' => 'created',
                     'sortDirection' => 'asc'
