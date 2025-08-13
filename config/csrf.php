@@ -5,6 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+require_once __DIR__ . '/bootstrap.php';
+
 // CSRF Configuration
 define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
 define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
@@ -13,30 +19,42 @@ define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie'); // Name of the CSRF cookie (fo
 // Generate CSRF token and store in session
 function generate_csrf_token() {
     try {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            throw new Exception('Session not active');
+        }
+
         if (empty($_SESSION[CSRF_TOKEN_NAME])) {
             $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
-            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME], 'security.log', 'make-market', 'INFO');
+            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME], 'security.log', 'logs', 'INFO');
         }
         return $_SESSION[CSRF_TOKEN_NAME];
     } catch (Exception $e) {
-        log_message("Error generating CSRF token: " . $e->getMessage(), 'security.log', 'make-market', 'ERROR');
+        log_message("Error generating CSRF token: " . $e->getMessage(), 'security.log', 'logs', 'ERROR');
         return false;
     }
 }
 
 // Validate CSRF token against session
 function validate_csrf_token($token) {
-    if (!isset($_SESSION[CSRF_TOKEN_NAME]) || !hash_equals($_SESSION[CSRF_TOKEN_NAME], $token)) {
-        log_message("CSRF token validation failed: provided=$token, expected=" . ($_SESSION[CSRF_TOKEN_NAME] ?? 'none'), 'security.log', 'make-market', 'ERROR');
+    if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION[CSRF_TOKEN_NAME]) {
+        log_message("CSRF token validation failed: session not active", 'security.log', 'logs', 'ERROR');
         return false;
     }
-    log_message("CSRF token validated successfully: $token", 'security.log', 'make-market', 'INFO');
+
+    if (!hash_equals($_SESSION[CSRF_TOKEN_NAME], $token)) {
+        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME], 'security.log', 'logs', 'ERROR');
+        return false;
+    }
+    
+    log_message("CSRF token validated successfully: $token", 'security.log', 'logs', 'INFO');
     return true;
 }
 
 // Regenerate CSRF token after successful validation
 function regenerate_csrf_token() {
-    unset($_SESSION[CSRF_TOKEN_NAME]);
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        unset($_SESSION[CSRF_TOKEN_NAME]);
+    }
     return generate_csrf_token();
 }
 
@@ -52,7 +70,7 @@ function csrf_protect() {
         $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
         if (!validate_csrf_token($token)) {
             http_response_code(403);
-            log_message("CSRF protection triggered: Invalid token", 'security.log', 'make-market', 'WARNING');
+            log_message("CSRF protection triggered: Invalid token", 'security.log', 'logs', 'WARNING');
             exit('Invalid CSRF token');
         }
         regenerate_csrf_token(); // Regenerate token after successful validation
@@ -61,15 +79,38 @@ function csrf_protect() {
 
 // Set CSRF token in a cookie for AJAX requests
 function set_csrf_cookie() {
+    global $is_secure; // bootstrap.php
+    
     $token = generate_csrf_token();
-    setcookie(CSRF_TOKEN_COOKIE, $token, [
+    if ($token === false) {
+        return false;
+    }
+
+    $options = [
         'expires' => 0, // Session cookie
         'path' => '/',
         'domain' => '.vina.network',
-        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'secure' => $is_secure,
         'httponly' => true,
         'samesite' => 'Strict'
-    ]);
-    log_message("CSRF cookie set: $token", 'security.log', 'make-market', 'INFO');
+    ];
+
+    if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
+        setcookie(CSRF_TOKEN_COOKIE, $token, $options);
+    } else {
+        // PHP < 7.3
+        setcookie(
+            CSRF_TOKEN_COOKIE,
+            $token,
+            $options['expires'],
+            $options['path'],
+            $options['domain'],
+            $options['secure'],
+            $options['httponly']
+        );
+    }
+
+    log_message("CSRF cookie set: $token", 'security.log', 'logs', 'INFO');
+    return true;
 }
 ?>
