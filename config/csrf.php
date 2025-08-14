@@ -34,7 +34,8 @@ function ensure_session($max_attempts = 3) {
             if (session_status() !== PHP_SESSION_ACTIVE) {
                 $session_started = session_start($required_session_config);
                 if (!$session_started) {
-                    log_message("Failed to start session (attempt " . ($attempt + 1) . "): session_start failed", 'csrf.log', 'logs', 'ERROR');
+                    $error = error_get_last();
+                    log_message("Failed to start session (attempt " . ($attempt + 1) . "): session_start failed, error=" . json_encode($error), 'csrf.log', 'logs', 'ERROR');
                     $attempt++;
                     continue;
                 }
@@ -42,7 +43,6 @@ function ensure_session($max_attempts = 3) {
                 return true;
             }
 
-            // Verify existing session settings
             $session_params = session_get_cookie_params();
             $errors = [];
 
@@ -53,7 +53,7 @@ function ensure_session($max_attempts = 3) {
                 $errors[] = "Session cookie_httponly mismatch: expected true, got " . ($session_params['httponly'] ? 'true' : 'false');
             }
             if ($session_params['samesite'] !== $required_session_config['cookie_samesite']) {
-                $errors[] = "Session cookie_samesite mismatch: expected 'Strict', got " . $session_params['samesite'];
+                $errors[] = "Session cookie_samesite mismatch: expected 'Lax', got " . $session_params['samesite'];
             }
             if ($session_params['secure'] !== $required_session_config['cookie_secure']) {
                 $errors[] = "Session cookie_secure mismatch: expected " . ($is_secure ? 'true' : 'false') . ", got " . ($session_params['secure'] ? 'true' : 'false');
