@@ -12,10 +12,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/csrf.php';
 require_once $root_path . 'mm/network.php';
-require_once $root_path . 'config/csrf.php'; // Thêm file csrf.php
-require_once $root_path . '../vendor/autoload.php';
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
+require_once $root_path . '../vendor/autoload.php';
 
 use StephenHill\Base58;
 use Attestto\SolanaPhpSdk\Keypair;
