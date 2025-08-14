@@ -11,16 +11,16 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/csrf.php';
 require_once $root_path . 'mm/network.php';
-require_once $root_path . 'config/csrf.php'; // Sử dụng file csrf.php đúng đường dẫn
+require_once $root_path . 'mm/header-auth.php';
 require_once $root_path . '../vendor/autoload.php';
-require_once $root_path . 'mm/header-auth.php'; // Thêm header-auth.php cho CSP và CORS
 
+use StephenHill\Base58;
 use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\Keypair;
 use Attestto\SolanaPhpSdk\PublicKey;
 use Attestto\SolanaPhpSdk\Transaction;
-use StephenHill\Base58;
 
 // Khởi tạo session và kiểm tra CSRF cho yêu cầu POST
 if (!ensure_session()) {
