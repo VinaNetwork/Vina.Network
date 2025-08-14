@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 // ============================================================================
 // File: mm/process/get-network.php
 // Description: Endpoint to return network configuration for client-side use
@@ -14,8 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/csrf.php';
-require_once $root_path . 'mm/network.php';
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
+require_once $root_path . 'mm/network.php';
 
 // Log request details
 $session_id = session_id() ?: 'none';
