@@ -41,7 +41,7 @@ header("Pragma: no-cache");
 header("Content-Security-Policy: "
     . "default-src 'self'; "
     . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com; "
-    . "connect-src 'self' $csp_base https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://www.google-analytics.com wss://quote-api.jup.ag wss://api.mainnet-beta.solana.com wss://mainnet.helius-rpc.com; "
+    . "connect-src 'self' $csp_base https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://api.devnet.solana.com https://api.testnet.solana.com https://www.google-analytics.com wss://quote-api.jup.ag wss://api.mainnet-beta.solana.com wss://mainnet.helius-rpc.com wss://api.devnet.solana.com wss://api.testnet.solana.com; "
     . "img-src 'self' $csp_base data: https:; "
     . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     . "font-src 'self' https://fonts.gstatic.com; "
