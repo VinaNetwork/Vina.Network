@@ -15,12 +15,35 @@ require_once $root_path . 'config/csrf.php';
 require_once $root_path . 'mm/network.php';
 require_once $root_path . 'mm/header-auth.php';
 
+// Khởi tạo session và kiểm tra CSRF cho yêu cầu POST
+if (!ensure_session()) {
+    log_message("Failed to initialize session for CSRF, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Kiểm tra CSRF token
+try {
+    csrf_protect();
+} catch (Exception $e) {
+    log_message("CSRF validation failed: {$e->getMessage()}, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'CSRF validation failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Log request info
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message("get-status.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, user_id={$_SESSION['user_id'] ?? 'none'}, CSRF_TOKEN: " . ($_SESSION[CSRF_TOKEN_NAME] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
+}
+
 // Database connection
 try {
     $pdo = get_db_connection();
-    log_message("Database connection retrieved, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    log_message("Database connection retrieved, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
-    log_message("Database connection failed: {$e->getMessage()}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()}, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -34,20 +57,33 @@ $error = $input['error'] ?? null;
 
 // Validate input
 if ($transaction_id <= 0) {
-    log_message("Invalid or missing transaction ID, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid or missing transaction ID: $transaction_id, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 if (!in_array($status, ['pending', 'processing', 'failed', 'success', 'canceled'])) {
-    log_message("Invalid status: $status, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid status: $status, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid status'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// Perform authentication check with transaction ownership
-if (!perform_auth_check($pdo, $transaction_id)) {
+// Check transaction ownership
+try {
+    $stmt = $pdo->prepare("SELECT user_id FROM make_market WHERE id = ? AND network = ?");
+    $stmt->execute([$transaction_id, SOLANA_NETWORK]);
+    $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$transaction || $transaction['user_id'] != ($_SESSION['user_id'] ?? 0)) {
+        log_message("Transaction not found or unauthorized: ID=$transaction_id, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found or unauthorized'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+} catch (PDOException $e) {
+    log_message("Transaction ownership check failed: {$e->getMessage()}, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Error checking transaction ownership'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -55,10 +91,10 @@ if (!perform_auth_check($pdo, $transaction_id)) {
 try {
     $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ? AND network = ?");
     $stmt->execute([$status, $error, $transaction_id, SOLANA_NETWORK]);
-    log_message("Transaction status updated: ID=$transaction_id, status=$status, error=" . ($error ?? 'none') . ", network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction status updated: ID=$transaction_id, status=$status, error=" . ($error ?? 'none') . ", user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'INFO');
     echo json_encode(['status' => 'success']);
 } catch (PDOException $e) {
-    log_message("Database update failed: {$e->getMessage()}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database update failed: {$e->getMessage()}, user_id={$_SESSION['user_id'] ?? 'none'}, network=" . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error updating transaction'], JSON_UNESCAPED_UNICODE);
     exit;
