@@ -4,6 +4,97 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Hàm lấy CSRF token từ cookie
+function getCsrfTokenFromCookie() {
+    const name = 'csrf_token_cookie=';
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const cookies = decodedCookie.split(';');
+    for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name)) {
+            return cookie.substring(name.length);
+        }
+    }
+    return '';
+}
+
+// Initialize authentication and CSRF token
+async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            log_message(`Attempting to initialize authentication (attempt ${attempt + 1}/${maxRetries}), cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
+            const response = await fetch('/mm/get-csrf', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include'
+            });
+            log_message(`Response from /mm/get-csrf: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+            if (response.status === 401) {
+                log_message(`Authentication failed: User not authenticated, redirecting to login, attempt ${attempt}/${maxRetries}`, 'make-market.log', 'make-market', 'ERROR');
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                throw new Error('User not authenticated');
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const result = await response.json();
+            if (result.status !== 'success' || !result.csrf_token) {
+                throw new Error(result.message || 'Invalid CSRF token response');
+            }
+            window.CSRF_TOKEN = result.csrf_token;
+            log_message(`Authentication initialized successfully, CSRF token: ${window.CSRF_TOKEN}`, 'make-market.log', 'make-market', 'INFO');
+            return window.CSRF_TOKEN;
+        } catch (err) {
+            attempt++;
+            let errorDetails = err.message;
+            if (err.response) {
+                errorDetails = `HTTP ${err.response.status}: ${JSON.stringify(err.response.data || {})}`;
+            } else if (err.request) {
+                errorDetails = `No response received: ${err.message}, url=/mm/get-csrf`;
+            }
+            log_message(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}`);
+            if (attempt === maxRetries) {
+                throw new Error(`Failed to initialize authentication after ${maxRetries} attempts: ${errorDetails}`);
+            }
+            await delay(retryDelay * attempt);
+        }
+    }
+}
+
+// Thêm CSRF token vào headers
+function addAuthHeaders(headers = {}) {
+    const csrfToken = window.CSRF_TOKEN || getCsrfTokenFromCookie();
+    if (!csrfToken) {
+        console.warn('CSRF token is missing');
+        log_message('CSRF token is missing in addAuthHeaders', 'make-market.log', 'make-market', 'WARNING');
+    }
+    return {
+        ...headers,
+        'X-CSRF-Token': csrfToken
+    };
+}
+
+// Thêm CSRF token vào headers cho axios
+function addAxiosAuthHeaders(config = {}) {
+    const csrfToken = window.CSRF_TOKEN || getCsrfTokenFromCookie();
+    if (!csrfToken) {
+        console.warn('CSRF token is missing');
+        log_message('CSRF token is missing in addAxiosAuthHeaders', 'make-market.log', 'make-market', 'WARNING');
+    }
+    return {
+        ...config,
+        headers: {
+            ...config.headers,
+            'X-CSRF-Token': csrfToken
+        }
+    };
+}
+
 // Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
     console.log('process.js loaded');
@@ -11,11 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
             console.log('Copy icon clicked');
-
             const fullAddress = icon.getAttribute('data-full');
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
             console.log(`Attempting to copy address: ${shortAddress}`);
-
             navigator.clipboard.writeText(fullAddress).then(() => {
                 console.log('Copy successful');
                 icon.classList.add('copied');
@@ -36,6 +125,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
+    // Handle form submission for Cancel button
+    const cancelForm = document.getElementById('cancel-form');
+    if (cancelForm) {
+        cancelForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
+            log_message(`Cancel form submitted for transaction ID=${transactionId}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'INFO');
+            await cancelTransaction(transactionId);
+        });
+    }
 });
 
 // Log message function
@@ -44,14 +144,14 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
         return;
     }
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
-    const logMessage = `${message}, session_id=${session_id}, cookies=${document.cookie}`;
+    const csrfToken = window.CSRF_TOKEN || getCsrfTokenFromCookie();
+    const logMessage = `${message}, session_id=${session_id}, csrf_token=${csrfToken || 'none'}`;
     fetch('/mm/log.php', {
         method: 'POST',
-        headers: { 
+        headers: addAuthHeaders({
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
-        },
+            'X-Requested-With': 'XMLHttpRequest'
+        }),
         credentials: 'include',
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
@@ -120,38 +220,6 @@ function showSuccess(message, results = [], networkConfig) {
     }
 }
 
-// Retry initializeAuth with detailed logging
-async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
-    let attempt = 0;
-    while (attempt < maxRetries) {
-        try {
-            log_message(`Attempting to initialize authentication (attempt ${attempt + 1}/${maxRetries}), cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-            const token = await initializeAuth();
-            log_message(`Authentication initialized successfully, CSRF token: ${token}`, 'make-market.log', 'make-market', 'INFO');
-            return token;
-        } catch (err) {
-            attempt++;
-            let errorDetails = err.message;
-            if (err.response) {
-                errorDetails = `HTTP ${err.response.status}: ${JSON.stringify(err.response.data || {})}`;
-                if (err.response.status === 401) {
-                    log_message(`Authentication failed: User not authenticated, redirecting to login, attempt ${attempt}/${maxRetries}`, 'make-market.log', 'make-market', 'ERROR');
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                    throw new Error('User not authenticated');
-                }
-            } else if (err.request) {
-                errorDetails = `No response received: ${err.message}, url=${err.config?.url || '/mm/get-csrf'}`;
-            }
-            log_message(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}`);
-            if (attempt === maxRetries) {
-                throw new Error(`Failed to initialize authentication after ${maxRetries} attempts: ${errorDetails}`);
-            }
-            await delay(retryDelay * attempt);
-        }
-    }
-}
-
 // Update transaction status
 async function updateTransactionStatus(status, error = null) {
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
@@ -160,14 +228,13 @@ async function updateTransactionStatus(status, error = null) {
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
+            'X-Requested-With': 'XMLHttpRequest'
         });
         log_message(`Updating transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/mm/get-status/${transactionId}`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ id: transactionId, status, error, csrf_token: window.CSRF_TOKEN }),
+            body: JSON.stringify({ id: transactionId, status, error, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
         log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -198,14 +265,13 @@ async function cancelTransaction(transactionId) {
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
+            'X-Requested-With': 'XMLHttpRequest'
         });
         log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/mm/get-status/${transactionId}`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user', csrf_token: window.CSRF_TOKEN }),
+            body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user', csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
         log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -248,8 +314,7 @@ async function getNetworkConfig() {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
+            'X-Requested-With': 'XMLHttpRequest'
         });
         log_message(`Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch('/mm/get-network', {
@@ -302,20 +367,19 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
             await ensureAuthInitialized();
             const headers = addAxiosAuthHeaders({
                 timeout: 15000,
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-Token': window.CSRF_TOKEN || ''
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             }).headers;
             log_message(`Requesting /mm/get-decimals, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
             const response = await axios.post('/mm/get-decimals', {
                 tokenMint,
                 network: solanaNetwork,
-                csrf_token: window.CSRF_TOKEN
-            }, { 
-                headers, 
+                csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie()
+            }, {
+                headers,
                 timeout: 15000,
                 withCredentials: true
             });
@@ -329,7 +393,7 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
             return decimals;
         } catch (err) {
             attempt++;
-            const errorMessage = err.response 
+            const errorMessage = err.response
                 ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
                 : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-decimals'}`;
             log_message(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
@@ -355,8 +419,8 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
     }
     try {
         log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await axios.get(`${networkConfig.config.jupiterApi}/quote`, { 
-            params, 
+        const response = await axios.get(`${networkConfig.config.jupiterApi}/quote`, {
+            params,
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
@@ -368,7 +432,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         console.log('Quote retrieved:', response.data);
         return response.data;
     } catch (err) {
-        const errorMessage = err.response 
+        const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
             : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.config.jupiterApi}/quote`}`;
         log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
@@ -389,7 +453,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             testnet: networkConfig.network === 'testnet' || networkConfig.network === 'devnet'
         };
         log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await axios.post(`${networkConfig.config.jupiterApi}/swap`, requestBody, { 
+        const response = await axios.post(`${networkConfig.config.jupiterApi}/swap`, requestBody, {
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
@@ -402,7 +466,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
         console.log('Swap transaction prepared:', swapTransaction);
         return swapTransaction;
     } catch (err) {
-        const errorMessage = err.response 
+        const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
             : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.config.jupiterApi}/swap`}`;
         log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
@@ -430,14 +494,13 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
+            'X-Requested-With': 'XMLHttpRequest'
         });
         log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/mm/create-tx/${transactionId}`, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork, csrf_token: window.CSRF_TOKEN }),
+            body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
         log_message(`Response from /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
@@ -470,24 +533,45 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
         const headers = addAuthHeaders({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
+            'X-Requested-With': 'XMLHttpRequest'
         });
         log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch('/mm/swap', {
             method: 'POST',
             headers,
-            body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork, csrf_token: window.CSRF_TOKEN }),
+            body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
         log_message(`Response from /mm/swap: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
+            if (result.error === 'Invalid CSRF token') {
+                log_message(`CSRF validation failed for /mm/swap, attempting to refresh token`, 'make-market.log', 'make-market', 'WARNING');
+                await ensureAuthInitialized();
+                headers['X-CSRF-Token'] = window.CSRF_TOKEN || getCsrfTokenFromCookie();
+                const retryResponse = await fetch('/mm/swap', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
+                    credentials: 'include'
+                });
+                if (!retryResponse.ok) {
+                    const retryResult = await retryResponse.json().catch(() => ({}));
+                    if (retryResponse.status === 401) {
+                        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                        return;
+                    }
+                    throw new Error(`Retry HTTP ${retryResponse.status}: ${JSON.stringify(retryResult)}`);
+                }
+                const retryResult = await retryResponse.json();
+                log_message(`Retry swap transactions executed: status=${retryResult.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
+                return retryResult;
+            }
             if (response.status === 401) {
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
-            throw new Error(result.message || `HTTP ${response.status}: ${JSON.stringify(result)}`);
+            throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
         const result = await response.json();
         if (result.status !== 'success' && result.status !== 'partial') {
@@ -505,7 +589,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
 
 // Main process
 document.addEventListener('DOMContentLoaded', async () => {
-    log_message(`process.js loaded, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
+    log_message(`process.js loaded, cookies=${document.cookie}, csrf_token=${window.CSRF_TOKEN || 'none'}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
     // Initialize authentication
@@ -536,8 +620,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await ensureAuthInitialized();
         const headers = addAuthHeaders({
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': window.CSRF_TOKEN || ''
+            'X-Requested-With': 'XMLHttpRequest'
         });
         log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
         const response = await fetch(`/mm/get-tx/${transactionId}`, {
@@ -567,7 +650,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
         transaction.token_amount = parseFloat(transaction.token_amount) || 0;
         transaction.trade_direction = transaction.trade_direction || 'buy';
-        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
+        log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, csrf_token=${window.CSRF_TOKEN || 'none'}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Transaction fetched:', transaction);
     } catch (err) {
         showError('Failed to retrieve transaction info: ' + err.message, err.message);
@@ -601,16 +684,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (cancelBtn) {
             cancelBtn.style.display = 'none';
         }
-    }
-
-    // Handle Cancel button
-    const cancelBtn = document.getElementById('cancel-btn');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', async () => {
-            log_message(`Cancel button clicked for transaction ID=${transactionId}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
-            console.log(`Cancel button clicked for transaction ID=${transactionId}`);
-            await cancelTransaction(transactionId);
-        });
     }
 
     // Update status to pending
