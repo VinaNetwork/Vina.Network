@@ -52,7 +52,7 @@ try {
     log_message("Database connection retrieved (took {$duration}ms)", 'make-market.log', 'make-market', 'INFO');
 } catch (Exception $e) {
     $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()} (took {$duration}ms)", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
     exit;
@@ -85,7 +85,7 @@ try {
     $_SESSION['user_id'] = $account['id'];
     log_message("Session updated with user_id: {$account['id']}, public_key: $short_public_key", 'make-market.log', 'make-market', 'INFO');
 } catch (PDOException $e) {
-    log_message("Database query failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database query failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving account information']);
     exit;
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Validate inputs
         if (empty($processName) || empty($privateKey) || empty($tokenMint)) {
-            log_message("Missing required fields", 'make-market.log', 'make-market', 'ERROR');
+            log_message("Missing required fields: processName=" . ($processName ?: 'empty') . ", privateKey=" . ($privateKey ? 'provided' : 'empty') . ", tokenMint=" . ($tokenMint ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
             exit;
@@ -190,10 +190,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Invalid trade direction']);
             exit;
         }
-        if ($slippage < 0) {
-            log_message("Invalid slippage: $slippage", 'make-market.log', 'make-market', 'ERROR');
+        if ($slippage < 0 || $slippage > 999.99) {
+            log_message("Invalid slippage: $slippage, must be between 0 and 999.99", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Slippage must be non-negative']);
+            echo json_encode(['status' => 'error', 'message' => 'Slippage must be between 0 and 999.99']);
             exit;
         }
         if ($loopCount < 1) {
@@ -229,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             log_message("Private key validated: public_key=$transactionPublicKey", 'make-market.log', 'make-market', 'INFO');
         } catch (Exception $e) {
-            log_message("Invalid private key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            log_message("Invalid private key: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Invalid private key: ' . $e->getMessage()]);
             exit;
@@ -237,81 +237,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Check wallet balance by calling balance.php, unless skipped or trade direction conditions are not met
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
-    log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
-    try {
-        // Đóng session để tránh khóa
-        session_write_close();
+            log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
+            try {
+                // Đóng session để tránh khóa
+                session_write_close();
 
-        // Gọi balance.php trực tiếp thay vì cURL
-        ob_start();
-        $_POST = [
-            'public_key' => $transactionPublicKey,
-            'token_mint' => $tokenMint,
-            'trade_direction' => $tradeDirection,
-            'sol_amount' => $solAmount,
-            'token_amount' => $tokenAmount,
-            'loop_count' => $loopCount,
-            'batch_size' => $batchSize,
-            'csrf_token' => $csrf_token
-        ];
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['REQUEST_URI'] = '/mm/balance.php';
-        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
-        $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
-        $_COOKIE['PHPSESSID'] = session_id();
+                // Gọi balance.php trực tiếp thay vì cURL
+                ob_start();
+                $_POST = [
+                    'public_key' => $transactionPublicKey,
+                    'token_mint' => $tokenMint,
+                    'trade_direction' => $tradeDirection,
+                    'sol_amount' => $solAmount,
+                    'token_amount' => $tokenAmount,
+                    'loop_count' => $loopCount,
+                    'batch_size' => $batchSize,
+                    'csrf_token' => $csrf_token
+                ];
+                $_SERVER['REQUEST_METHOD'] = 'POST';
+                $_SERVER['REQUEST_URI'] = '/mm/balance.php';
+                $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+                $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+                $_COOKIE['PHPSESSID'] = session_id();
 
-        // Gọi balance.php
-        include __DIR__ . '/balance.php';
-        $response = ob_get_clean();
+                // Gọi balance.php
+                include __DIR__ . '/balance.php';
+                $response = ob_get_clean();
 
-        // Khởi động lại session
-        session_start();
+                // Khởi động lại session
+                session_start();
 
-        // Kiểm tra phản hồi
-        $data = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
-            exit;
-        }
+                // Kiểm tra phản hồi
+                $data = json_decode($response, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
+                    exit;
+                }
 
-        if ($data['status'] !== 'success') {
-            log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => $data['message']]);
-            exit;
-        }
+                if ($data['status'] !== 'success') {
+                    log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
+                    exit;
+                }
 
-        log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
-    } catch (Exception $e) {
-        // Khởi động lại session nếu có lỗi
-        if (!session_id()) {
-            session_start();
-        }
-        log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
-        exit;
-    }
-} else {
-    log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
+                log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
+            } catch (Exception $e) {
+                // Khởi động lại session nếu có lỗi
+                if (!session_id()) {
+                    session_start();
+                }
+                log_message("Balance check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
+                exit;
+            }
+        } else {
+            log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
         }
 
         // Check JWT_SECRET
-        if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
-            log_message("JWT_SECRET is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
+        if (!defined('JWT_SECRET') || strlen(JWT_SECRET) < 32) {
+            log_message("JWT_SECRET is invalid: length=" . (defined('JWT_SECRET') ? strlen(JWT_SECRET) : 0), 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing JWT_SECRET']);
+            echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Invalid JWT_SECRET']);
+            exit;
+        }
+
+        // Check SOLANA_NETWORK
+        if (!defined('SOLANA_NETWORK') || strlen(SOLANA_NETWORK) > 20) {
+            log_message("Invalid SOLANA_NETWORK: " . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Invalid SOLANA_NETWORK']);
             exit;
         }
 
         // Encrypt private key
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
         if ($encryptedPrivateKey === false) {
-            log_message("Failed to encrypt private key: OpenSSL error", 'make-market.log', 'make-market', 'ERROR');
+            $error = openssl_error_string();
+            log_message("Failed to encrypt private key: OpenSSL error - $error", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error encrypting private key']);
+            echo json_encode(['status' => 'error', 'message' => 'Error encrypting private key: ' . $error]);
+            exit;
+        }
+
+        // Check user_id exists in accounts table
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM accounts WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            if (!$stmt->fetch()) {
+                log_message("Invalid user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Invalid user ID']);
+                exit;
+            }
+        } catch (PDOException $e) {
+            log_message("Failed to verify user_id: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Error verifying user ID']);
             exit;
         }
 
@@ -341,11 +367,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
-            log_message("Form saved to database: transactionId=$transactionId", 'make-market.log', 'make-market', 'INFO');
         } catch (PDOException $e) {
-            log_message("Database insert failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            log_message("Database insert failed: {$e->getMessage()}, Code: {$e->getCode()}, Query: INSERT INTO make_market..., Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error saving transaction to database']);
+            echo json_encode(['status' => 'error', 'message' => 'Error saving transaction to database: ' . $e->getMessage()]);
+            exit;
+        }
+
+        // Check for headers sent before redirect
+        if (headers_sent($file, $line)) {
+            log_message("Headers already sent in $file at line $line", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Internal server error: Headers already sent']);
             exit;
         }
 
@@ -360,7 +393,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         exit;
     } catch (Exception $e) {
-        log_message("Error saving transaction: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Error saving transaction: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Error saving transaction: ' . $e->getMessage()]);
         exit;
