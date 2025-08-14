@@ -4,8 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-import { initializeAuth, addAuthHeaders, addAxiosAuthHeaders } from '/make-market/security/auth.js';
-
 // Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
     console.log('process.js loaded');
