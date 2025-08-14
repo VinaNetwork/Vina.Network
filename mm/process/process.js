@@ -140,7 +140,7 @@ async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
                     throw new Error('User not authenticated');
                 }
             } else if (err.request) {
-                errorDetails = `No response received: ${err.message}, url=${err.config?.url || '/make-market/get-csrf'}`;
+                errorDetails = `No response received: ${err.message}, url=${err.config?.url || '/mm/get-csrf'}`;
             }
             log_message(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
             console.error(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}`);
@@ -164,7 +164,7 @@ async function updateTransactionStatus(status, error = null) {
             'X-CSRF-Token': window.CSRF_TOKEN || ''
         });
         log_message(`Updating transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-        const response = await fetch(`/make-market/get-status/${transactionId}`, {
+        const response = await fetch(`/mm/get-status/${transactionId}`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ id: transactionId, status, error, csrf_token: window.CSRF_TOKEN }),
