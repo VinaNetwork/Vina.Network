@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 // ============================================================================
 // File: mm/process/get-status.php
 // Description: Update transaction status and error in make_market table
