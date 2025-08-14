@@ -13,6 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/network.php';
+require_once $root_path . 'config/csrf.php'; // Thêm file csrf.php
 require_once $root_path . '../vendor/autoload.php';
 
 use StephenHill\Base58;
@@ -23,12 +24,18 @@ use Attestto\SolanaPhpSdk\PublicKey;
 // Add Security Headers
 require_once $root_path . 'mm/header-auth.php';
 
-// Session start: in config/bootstrap.php
-// Error reporting: in config/bootstrap.php
+// Khởi tạo session và thiết lập CSRF token
+if (!ensure_session()) {
+    log_message("Failed to initialize session for CSRF", 'make-market.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Session initialization failed']);
+    exit;
+}
+set_csrf_cookie(); // Thiết lập CSRF cookie cho AJAX
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("process.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("process.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, CSRF_TOKEN: " . ($_SESSION[CSRF_TOKEN_NAME] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG');
 }
 
 // Database connection
@@ -197,7 +204,13 @@ $page_css = ['/mm/process/process.css'];
         <div id="process-result" class="status-box"></div>
         <div class="action-buttons">
             <?php if ($show_cancel_button): ?>
-                <button class="cta-button cancel-btn" id="cancel-btn" data-transaction-id="<?php echo htmlspecialchars($transaction_id); ?>">Cancel</button>
+                <form id="cancel-form" method="POST" action="/mm/get-status/<?php echo htmlspecialchars($transaction_id); ?>">
+                    <?php echo get_csrf_field(); ?>
+                    <input type="hidden" name="id" value="<?php echo htmlspecialchars($transaction_id); ?>">
+                    <input type="hidden" name="status" value="canceled">
+                    <input type="hidden" name="error" value="Transaction canceled by user">
+                    <button type="submit" class="cta-button cancel-btn" id="cancel-btn">Cancel</button>
+                </form>
             <?php endif; ?>
         </div>
     </div>
@@ -210,9 +223,10 @@ $page_css = ['/mm/process/process.css'];
 <script src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<!-- Pass environment to JavaScript -->
+<!-- Pass environment and CSRF token to JavaScript -->
 <script>
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
+    window.CSRF_TOKEN = '<?php echo htmlspecialchars(generate_csrf_token()); ?>';
 </script>
 <script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 </body>
