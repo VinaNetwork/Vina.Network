@@ -24,42 +24,28 @@ async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
     while (attempt < maxRetries) {
         try {
             log_message(`Attempting to initialize authentication (attempt ${attempt + 1}/${maxRetries}), cookies=${document.cookie}`, 'make-market.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/get-csrf', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'include'
-            });
-            log_message(`Response from /mm/get-csrf: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
-            if (response.status === 401) {
-                log_message(`Authentication failed: User not authenticated, redirecting to login, attempt ${attempt}/${maxRetries}`, 'make-market.log', 'make-market', 'ERROR');
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                throw new Error('User not authenticated');
+            
+            // Sử dụng window.CSRF_TOKEN nếu có
+            if (window.CSRF_TOKEN) {
+                log_message(`Using existing CSRF token from window.CSRF_TOKEN: ${window.CSRF_TOKEN}`, 'make-market.log', 'make-market', 'INFO');
+                return window.CSRF_TOKEN;
             }
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+
+            // Fallback: Lấy token từ cookie
+            const csrfToken = getCsrfTokenFromCookie();
+            if (csrfToken) {
+                window.CSRF_TOKEN = csrfToken;
+                log_message(`CSRF token retrieved from cookie: ${window.CSRF_TOKEN}`, 'make-market.log', 'make-market', 'INFO');
+                return window.CSRF_TOKEN;
             }
-            const result = await response.json();
-            if (result.status !== 'success' || !result.csrf_token) {
-                throw new Error(result.message || 'Invalid CSRF token response');
-            }
-            window.CSRF_TOKEN = result.csrf_token;
-            log_message(`Authentication initialized successfully, CSRF token: ${window.CSRF_TOKEN}`, 'make-market.log', 'make-market', 'INFO');
-            return window.CSRF_TOKEN;
+
+            throw new Error('CSRF token not found in window.CSRF_TOKEN or cookie');
         } catch (err) {
             attempt++;
-            let errorDetails = err.message;
-            if (err.response) {
-                errorDetails = `HTTP ${err.response.status}: ${JSON.stringify(err.response.data || {})}`;
-            } else if (err.request) {
-                errorDetails = `No response received: ${err.message}, url=/mm/get-csrf`;
-            }
-            log_message(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${errorDetails}`);
+            log_message(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error(`Failed to initialize authentication (attempt ${attempt}/${maxRetries}): ${err.message}`);
             if (attempt === maxRetries) {
-                throw new Error(`Failed to initialize authentication after ${maxRetries} attempts: ${errorDetails}`);
+                throw new Error(`Failed to initialize authentication after ${maxRetries} attempts: ${err.message}`);
             }
             await delay(retryDelay * attempt);
         }
