@@ -3,7 +3,6 @@ RewriteBase /mm/
 
 # Rules for specific endpoints
 RewriteRule ^refresh-csrf$ refresh-csrf.php [L,NC]
-RewriteRule ^get-csrf$ process/get-csrf.php [L,NC]
 RewriteRule ^get-tx/([0-9]+)$ process/get-tx.php?id=$1 [L,NC]
 RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC]
 RewriteRule ^swap$ process/swap.php [L,NC]
