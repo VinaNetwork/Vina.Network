@@ -110,8 +110,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         log_message("Form submitted, is AJAX: " . (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? 'Yes' : 'No'), 'make-market.log', 'make-market', 'INFO');
         $form_data = $_POST;
+        // Mask privateKey for logging
+        $form_data_for_log = $form_data;
+        if (isset($form_data_for_log['privateKey'])) {
+            $form_data_for_log['privateKey'] = '****' . substr($form_data_for_log['privateKey'], -4);
+        }
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Form data: " . json_encode($form_data), 'make-market.log', 'make-market', 'DEBUG');
+            log_message("Form data: " . json_encode($form_data_for_log), 'make-market.log', 'make-market', 'DEBUG');
         }
 
         // Get form data
@@ -129,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Log form data for debugging
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+            $maskedPrivateKey = '****' . substr($privateKey, -4);
             log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck", 'make-market.log', 'make-market', 'DEBUG');
         }
 
@@ -237,65 +243,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Check wallet balance by calling balance.php, unless skipped or trade direction conditions are not met
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
-    log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
-    try {
-        // Đóng session để tránh khóa
-        session_write_close();
+            log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
+            try {
+                // Đóng session để tránh khóa
+                session_write_close();
 
-        // Gọi balance.php trực tiếp thay vì cURL
-        ob_start();
-        $_POST = [
-            'public_key' => $transactionPublicKey,
-            'token_mint' => $tokenMint,
-            'trade_direction' => $tradeDirection,
-            'sol_amount' => $solAmount,
-            'token_amount' => $tokenAmount,
-            'loop_count' => $loopCount,
-            'batch_size' => $batchSize,
-            'csrf_token' => $csrf_token
-        ];
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['REQUEST_URI'] = '/mm/balance.php';
-        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
-        $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
-        $_COOKIE['PHPSESSID'] = session_id();
+                // Gọi balance.php trực tiếp thay vì cURL
+                ob_start();
+                $_POST = [
+                    'public_key' => $transactionPublicKey,
+                    'token_mint' => $tokenMint,
+                    'trade_direction' => $tradeDirection,
+                    'sol_amount' => $solAmount,
+                    'token_amount' => $tokenAmount,
+                    'loop_count' => $loopCount,
+                    'batch_size' => $batchSize,
+                    'csrf_token' => $csrf_token
+                ];
+                $_SERVER['REQUEST_METHOD'] = 'POST';
+                $_SERVER['REQUEST_URI'] = '/mm/balance.php';
+                $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+                $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+                $_COOKIE['PHPSESSID'] = session_id();
 
-        // Gọi balance.php
-        include __DIR__ . '/balance.php';
-        $response = ob_get_clean();
+                // Gọi balance.php
+                include __DIR__ . '/balance.php';
+                $response = ob_get_clean();
 
-        // Khởi động lại session
-        session_start();
+                // Khởi động lại session
+                session_start();
 
-        // Kiểm tra phản hồi
-        $data = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
-            exit;
-        }
+                // Kiểm tra phản hồi
+                $data = json_decode($response, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Error parsing response from wallet balance check']);
+                    exit;
+                }
 
-        if ($data['status'] !== 'success') {
-            log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => $data['message']]);
-            exit;
-        }
+                if ($data['status'] !== 'success') {
+                    log_message("Balance check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
+                    exit;
+                }
 
-        log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
-    } catch (Exception $e) {
-        // Khởi động lại session nếu có lỗi
-        if (!session_id()) {
-            session_start();
-        }
-        log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
-        exit;
-    }
-} else {
-    log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
+                log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
+            } catch (Exception $e) {
+                // Khởi động lại session nếu có lỗi
+                if (!session_id()) {
+                    session_start();
+                }
+                log_message("Balance check failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
+                exit;
+            }
+        } else {
+            log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
         }
 
         // Check JWT_SECRET
@@ -401,7 +407,7 @@ $defaultSlippage = 0.5;
                             <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
                         <?php else: ?>
                             <span>Invalid address</span>
-                        <?php endif; ?>
+                        <?endif; ?>
                     </td>
                 </tr>
             </table>
