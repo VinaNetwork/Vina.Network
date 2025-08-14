@@ -13,6 +13,7 @@ $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/csrf.php';
 require_once $root_path . 'mm/network.php';
+require_once $root_path . 'mm/header-auth.php'; // Thêm header-auth.php cho CSP và CORS
 
 ob_start(); // Start output buffering
 
@@ -23,11 +24,29 @@ $log_context = [
     'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown'
 ];
 
-// Perform authentication check (only AJAX and CSRF, no user auth)
-initialize_auth();
-if (!check_ajax_request() || !validate_csrf($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
-    log_message("Invalid or missing CSRF token", 'make-market.log', 'make-market', 'WARNING', $log_context);
+// Khởi tạo session và kiểm tra CSRF cho yêu cầu POST
+if (!ensure_session()) {
+    log_message("Failed to initialize session for CSRF, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
+    ob_end_flush();
     exit;
+}
+
+// Kiểm tra CSRF token
+try {
+    csrf_protect();
+} catch (Exception $e) {
+    log_message("CSRF validation failed: {$e->getMessage()}, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, user_id={$_SESSION['user_id'] ?? 'none'}", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'CSRF validation failed'], JSON_UNESCAPED_UNICODE);
+    ob_end_flush();
+    exit;
+}
+
+// Log request info
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message("get-decimals.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, user_id={$_SESSION['user_id'] ?? 'none'}, CSRF_TOKEN: " . ($_SESSION[CSRF_TOKEN_NAME] ?? 'none'), 'make-market.log', 'make-market', 'DEBUG', $log_context);
 }
 
 define('CACHE_DIR', MAKE_MARKET_PATH . 'cache/');
@@ -169,6 +188,7 @@ if (!$data || !isset($data['tokenMint']) || !isset($data['network'])) {
         'input_data' => json_encode($data),
         'server_network' => SOLANA_NETWORK
     ]));
+    ob_end_flush();
     exit;
 }
 
@@ -177,13 +197,14 @@ $network = $data['network'];
 $log_context['token_mint'] = $tokenMint;
 $log_context['client_network'] = $network;
 
-if (!in_array($network, ['testnet', 'mainnet'])) {
+if (!in_array($network, ['testnet', 'mainnet', 'devnet'])) {
     http_response_code(400);
     $response = ['status' => 'error', 'message' => 'Invalid network'];
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
     log_message("Invalid network specified", 'make-market.log', 'make-market', 'WARNING', array_merge($log_context, [
         'server_network' => SOLANA_NETWORK
     ]));
+    ob_end_flush();
     exit;
 }
 
@@ -193,6 +214,7 @@ if ($network !== SOLANA_NETWORK) {
     $response = ['status' => 'error', 'message' => "Network mismatch: client ($network) vs server (" . SOLANA_NETWORK . ")"];
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
     log_message("Network mismatch", 'make-market.log', 'make-market', 'WARNING', $log_context);
+    ob_end_flush();
     exit;
 }
 
@@ -204,6 +226,7 @@ if ($cached_decimals !== null) {
         'server_network' => SOLANA_NETWORK
     ]));
     echo json_encode(['status' => 'success', 'decimals' => $cached_decimals]);
+    ob_end_flush();
     exit;
 }
 
@@ -215,6 +238,7 @@ if (empty(RPC_ENDPOINT)) {
     log_message("RPC endpoint not configured", 'make-market.log', 'make-market', 'ERROR', array_merge($log_context, [
         'server_network' => SOLANA_NETWORK
     ]));
+    ob_end_flush();
     exit;
 }
 
@@ -280,6 +304,7 @@ while ($attempt < $maxRetries) {
             $response = ['status' => 'error', 'message' => "Failed to retrieve token decimals after $maxRetries attempts: cURL error ($curl_errno): $curl_error"];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             log_message("Final RPC attempt failed", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
+            ob_end_flush();
             exit;
         }
         
@@ -297,6 +322,7 @@ while ($attempt < $maxRetries) {
             $response = ['status' => 'error', 'message' => "Failed to retrieve token decimals after $maxRetries attempts: RPC returned HTTP $http_code"];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             log_message("Final RPC attempt failed with non-200 status", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
+            ob_end_flush();
             exit;
         }
         
@@ -316,6 +342,7 @@ while ($attempt < $maxRetries) {
             $response = ['status' => 'error', 'message' => "Failed to parse RPC response after $maxRetries attempts"];
             echo json_encode($response, JSON_UNESCAPED_UNICODE);
             log_message("Final RPC parse attempt failed", 'make-market.log', 'make-market', 'ERROR', $rpc_log_context);
+            ob_end_flush();
             exit;
         }
         
@@ -341,6 +368,7 @@ while ($attempt < $maxRetries) {
         http_response_code(400);
         $response = ['status' => 'error', 'message' => $error_type];
         echo json_encode($response, JSON_UNESCAPED_UNICODE);
+        ob_end_flush();
         exit;
     }
 
@@ -357,3 +385,4 @@ while ($attempt < $maxRetries) {
     ob_end_flush();
     exit;
 }
+?>
