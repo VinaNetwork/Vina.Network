@@ -120,7 +120,12 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     for (let [key, value] of formData.entries()) {
         formDataObject[key] = value;
     }
-    log_message(`Raw FormData: ${JSON.stringify(formDataObject)}`, 'make-market.log', 'make-market', 'DEBUG');
+    // Mask privateKey for logging
+    const formDataObjectForLog = { ...formDataObject };
+    if (formDataObjectForLog.privateKey) {
+        formDataObjectForLog.privateKey = '****' + formDataObjectForLog.privateKey.slice(-4);
+    }
+    log_message(`Raw FormData: ${JSON.stringify(formDataObjectForLog)}`, 'make-market.log', 'make-market', 'DEBUG');
     const tokenAmountValue = formData.get('tokenAmount');
     let csrfToken = formData.get('csrf_token');
 
@@ -154,8 +159,13 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         csrf_token: csrfToken,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
     };
-    log_message(`Processed Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
-    console.log('Processed Form data:', params);
+    // Mask privateKey for logging
+    const paramsForLog = { ...params };
+    if (paramsForLog.privateKey) {
+        paramsForLog.privateKey = '****' + params.privateKey.slice(-4);
+    }
+    log_message(`Processed Form data: ${JSON.stringify(paramsForLog)}`, 'make-market.log', 'make-market', 'DEBUG');
+    console.log('Processed Form data:', paramsForLog);
 
     // Client-side validation for required fields
     if (!params.processName) {
