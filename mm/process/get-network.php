@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 // ============================================================================
 // File: mm/process/get-network.php
 // Description: Endpoint to return network configuration for client-side use
