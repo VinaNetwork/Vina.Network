@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 // ============================================================================
 // File: mm/process/get-status.php
 // Description: Update transaction status and error in make_market table
@@ -14,8 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'config/csrf.php';
-require_once $root_path . 'mm/network.php';
 require_once $root_path . 'mm/header-auth.php';
+require_once $root_path . 'mm/network.php';
 
 // Khởi tạo session và kiểm tra CSRF cho yêu cầu POST
 if (!ensure_session()) {
