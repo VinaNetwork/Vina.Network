@@ -12,7 +12,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Dynamic Domain Name Definition
-// Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
 $is_secure = $protocol === 'https://';
 $domain = $_SERVER['HTTP_HOST'];
@@ -34,6 +33,9 @@ define('MAX_LOG_SIZE', 1024 * 1024); // 1MB max log file size
 require_once ROOT_PATH . 'config/csrf.php';
 require_once ROOT_PATH . 'config/config.php';
 require_once ROOT_PATH . 'config/db.php';
+
+// Define environment
+define('ENVIRONMENT', 'development');
 
 // Initialize session with security options
 if (session_status() === PHP_SESSION_NONE) {
@@ -129,7 +131,4 @@ function log_message($message, $log_file = 'accounts.log', $module = 'accounts',
         error_log("Log error: " . $e->getMessage());
     }
 }
-
-// Define environment
-define('ENVIRONMENT', 'development');
 ?>
