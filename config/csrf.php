@@ -174,7 +174,7 @@ function set_csrf_cookie() {
         'domain' => $_SERVER['HTTP_HOST'],
         'secure' => $is_secure,
         'httponly' => true,
-        'samesite' => 'Strict'
+        'samesite' => 'Lax'
     ];
 
     if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
