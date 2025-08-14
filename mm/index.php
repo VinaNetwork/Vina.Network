@@ -14,6 +14,7 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
+require_once $root_path . 'mm/network.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
