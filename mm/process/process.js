@@ -223,16 +223,22 @@ async function updateTransactionStatus(status, error = null) {
             body: JSON.stringify({ id: transactionId, status, error, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
-        log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseBody = await response.text();
+        log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const result = await response.json().catch(() => ({}));
+            let result;
+            try {
+                result = JSON.parse(responseBody);
+            } catch (e) {
+                result = {};
+            }
             if (response.status === 401) {
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
-        const result = await response.json();
+        const result = JSON.parse(responseBody);
         if (result.status !== 'success') {
             throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
         }
@@ -260,16 +266,22 @@ async function cancelTransaction(transactionId) {
             body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user', csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
-        log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseBody = await response.text();
+        log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const result = await response.json().catch(() => ({}));
+            let result;
+            try {
+                result = JSON.parse(responseBody);
+            } catch (e) {
+                result = {};
+            }
             if (response.status === 401) {
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
-        const result = await response.json();
+        const result = JSON.parse(responseBody);
         if (result.status !== 'success') {
             throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
         }
@@ -308,7 +320,8 @@ async function getNetworkConfig() {
             headers,
             credentials: 'include'
         });
-        log_message(`Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseBody = await response.text();
+        log_message(`Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'make-market.log', 'make-market', 'DEBUG');
         if (response.status === 401) {
             log_message(`Unauthorized response from /mm/get-network, redirecting to login`, 'make-market.log', 'make-market', 'ERROR');
             window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
@@ -316,9 +329,9 @@ async function getNetworkConfig() {
         }
         let result;
         try {
-            result = await response.json();
+            result = JSON.parse(responseBody);
         } catch (e) {
-            log_message(`Failed to parse JSON from /mm/get-network: ${e.message}, status=${response.status}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'ERROR');
+            log_message(`Failed to parse JSON from /mm/get-network: ${e.message}, status=${response.status}, response_body=${responseBody}`, 'make-market.log', 'make-market', 'ERROR');
             throw new Error(`Invalid JSON response: ${e.message}`);
         }
         if (!response.ok) {
@@ -489,16 +502,22 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
             body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
-        log_message(`Response from /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseBody = await response.text();
+        log_message(`Response from /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const result = await response.json().catch(() => ({}));
+            let result;
+            try {
+                result = JSON.parse(responseBody);
+            } catch (e) {
+                result = {};
+            }
             if (response.status === 401) {
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
-        const result = await response.json();
+        const result = JSON.parse(responseBody);
         if (result.status !== 'success') {
             throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
         }
@@ -528,9 +547,15 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
             credentials: 'include'
         });
-        log_message(`Response from /mm/swap: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseBody = await response.text();
+        log_message(`Response from /mm/swap: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'make-market.log', 'make-market', 'DEBUG');
         if (!response.ok) {
-            const result = await response.json().catch(() => ({}));
+            let result;
+            try {
+                result = JSON.parse(responseBody);
+            } catch (e) {
+                result = {};
+            }
             if (result.error === 'Invalid CSRF token') {
                 log_message(`CSRF validation failed for /mm/swap, attempting to refresh token`, 'make-market.log', 'make-market', 'WARNING');
                 await ensureAuthInitialized();
@@ -541,15 +566,22 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                     body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork, csrf_token: window.CSRF_TOKEN || getCsrfTokenFromCookie() }),
                     credentials: 'include'
                 });
+                const retryResponseBody = await retryResponse.text();
+                log_message(`Response from /mm/swap (retry): status=${retryResponse.status}, headers=${JSON.stringify([...retryResponse.headers.entries()])}, response_body=${retryResponseBody}`, 'make-market.log', 'make-market', 'DEBUG');
                 if (!retryResponse.ok) {
-                    const retryResult = await retryResponse.json().catch(() => ({}));
+                    let retryResult;
+                    try {
+                        retryResult = JSON.parse(retryResponseBody);
+                    } catch (e) {
+                        retryResult = {};
+                    }
                     if (retryResponse.status === 401) {
                         window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                         return;
                     }
                     throw new Error(`Retry HTTP ${retryResponse.status}: ${JSON.stringify(retryResult)}`);
                 }
-                const retryResult = await retryResponse.json();
+                const retryResult = JSON.parse(retryResponseBody);
                 log_message(`Retry swap transactions executed: status=${retryResult.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'make-market.log', 'make-market', 'INFO');
                 return retryResult;
             }
@@ -559,7 +591,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
-        const result = await response.json();
+        const result = JSON.parse(responseBody);
         if (result.status !== 'success' && result.status !== 'partial') {
             throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
         }
@@ -613,17 +645,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             headers,
             credentials: 'include'
         });
-        log_message(`Response from /mm/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${await response.clone().text()}`, 'make-market.log', 'make-market', 'DEBUG');
+        const responseBody = await response.text();
+        log_message(`Response from /mm/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'make-market.log', 'make-market', 'DEBUG');
         if (response.status === 401) {
             log_message(`Unauthorized response from /mm/get-tx/${transactionId}, redirecting to login`, 'make-market.log', 'make-market', 'ERROR');
             window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
             return;
         }
         if (!response.ok) {
-            const result = await response.json().catch(() => ({}));
+            let result;
+            try {
+                result = JSON.parse(responseBody);
+            } catch (e) {
+                result = {};
+            }
             throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
-        const result = await response.json();
+        const result = JSON.parse(responseBody);
         if (result.status !== 'success') {
             throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
         }
