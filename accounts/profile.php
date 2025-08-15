@@ -26,6 +26,9 @@ csrf_protect();
 // Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Failed to set CSRF cookie']);
+    exit;
 }
 
 // Library Base58
@@ -34,9 +37,11 @@ use StephenHill\Base58;
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-} else {
-    log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
+    exit;
 }
+log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 
 // Database connection
 $start_time = microtime(true);
@@ -109,8 +114,12 @@ $last_login = $account['last_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d
 // Handle logout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
-    log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
+    log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
+    // Set new CSRF cookie after logout
+    if (!set_csrf_cookie()) {
+        log_message("Failed to set CSRF cookie after logout", 'accounts.log', 'accounts', 'ERROR');
+    }
     header('Location: /accounts');
     exit;
 }
@@ -165,6 +174,10 @@ $page_css = ['/accounts/acc.css'];
 <?php require_once $root_path . 'include/footer.php';?>
 
 <script>console.log('Attempting to load JS files...');</script>
+<script>
+    // Expose CSRF_TOKEN_TTL for acc.js to refresh token
+    window.CSRF_TOKEN_TTL = <?php echo CSRF_TOKEN_TTL; ?>;
+</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
 </body>
