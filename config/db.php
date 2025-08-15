@@ -11,8 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-require_once __DIR__ . '/bootstrap.php';
-
 // Connect database
 function get_db_connection() {
     try {
