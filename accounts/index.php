@@ -11,7 +11,15 @@ define('VINANETWORK_ENTRY', true);
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'accounts/header-auth.php'; // Security Headers
-require_once $root_path . 'accounts/wallet-auth.php';
+
+// Check $domain and $is_secure
+global $domain, $is_secure;
+if (!isset($domain) || !isset($is_secure)) {
+    log_message("Server configuration error: \$domain or \$is_secure not defined", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+    exit;
+}
 
 // Protect POST requests with CSRF
 csrf_protect();
@@ -74,6 +82,7 @@ $page_css = ['/accounts/acc.css'];
 <?php require_once $root_path . 'include/header.php';?>
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
+
 <div class="acc-container">
     <div class="acc-content">
         <h1>Login with Phantom Wallet</h1>
@@ -86,6 +95,7 @@ $page_css = ['/accounts/acc.css'];
         <input type="hidden" id="login-nonce" value="<?php echo htmlspecialchars($nonce); ?>">
     </div>
 </div>
+
 <?php require_once $root_path . 'include/footer.php';?>
 
 <!-- Scripts - Internal library -->
@@ -97,7 +107,7 @@ $page_css = ['/accounts/acc.css'];
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
