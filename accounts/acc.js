@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function refreshCsrfToken() {
         try {
             console.log('Attempting to refresh CSRF token');
-            const response = await fetch('/config/csrf.php?action=refresh', {
+            const response = await fetch('/accounts/refresh-csrf.php?action=refresh', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
