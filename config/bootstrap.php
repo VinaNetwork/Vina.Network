@@ -115,13 +115,13 @@ function rotate_log_file($log_path) {
             return false;
         }
         file_put_contents($log_path, ''); // Create new empty log file
-        chmod($log_path, 0664);
+        chmod($file_path, 0664);
     }
     return true;
 }
 
 // Write log entry to file
-function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
+function log_message($message, $log_file = 'app.log', $module = 'logs', $log_type = 'INFO') {
     static $checked_paths = [];
 
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
