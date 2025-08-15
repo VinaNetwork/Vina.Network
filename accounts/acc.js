@@ -23,6 +23,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
+    // Function to refresh CSRF token
+    async function refreshCsrfToken() {
+        try {
+            console.log('Attempting to refresh CSRF token');
+            const response = await fetch('/config/csrf.php?action=refresh', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+            }
+            const result = await response.json();
+            if (result.status === 'success' && result.csrf_token) {
+                console.log('CSRF token refreshed:', result.csrf_token.substring(0, 4) + '...');
+                document.getElementById('csrf-token').value = result.csrf_token;
+                await logToServer(`CSRF token refreshed: ${result.csrf_token.substring(0, 4)}...`, 'INFO');
+                return result.csrf_token;
+            } else {
+                throw new Error(result.message || 'Failed to refresh CSRF token');
+            }
+        } catch (error) {
+            console.error('Failed to refresh CSRF token:', error.message);
+            await logToServer(`Failed to refresh CSRF token: ${error.message}`, 'ERROR');
+            return null;
+        }
+    }
+
+    // Schedule CSRF token refresh before expiration
+    if (window.CSRF_TOKEN_TTL) {
+        setTimeout(() => {
+            refreshCsrfToken();
+        }, (window.CSRF_TOKEN_TTL - 60) * 1000); // Refresh 60 seconds before expiration
+    }
+
     // Copy functionality
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
@@ -49,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2000);
             }).catch(err => {
                 console.error('Clipboard API failed:', err.message);
-                showError(`Unable to copy: ${err.message}`);
+                logToServer(`Clipboard API failed: ${err.message}`, 'ERROR');
             });
         });
     });
@@ -79,7 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Sending log to server: ${message}`);
             const response = await fetch('/accounts/log.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.getElementById('csrf-token').value || getCsrfTokenFromCookie() || ''
+                },
                 body: JSON.stringify(logData)
             });
             if (!response.ok) {
@@ -101,13 +140,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
             let csrfToken = document.getElementById('csrf-token').value || getCsrfTokenFromCookie();
-            const nonce = document.getElementById('login-nonce').value;
 
             if (!csrfToken) {
                 logToServer('CSRF token not found in form or cookie', 'ERROR');
-                walletInfo.style.display = 'block';
-                statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
-                return;
+                csrfToken = await refreshCsrfToken();
+                if (!csrfToken) {
+                    walletInfo.style.display = 'block';
+                    statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
+                    return;
+                }
             }
             await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
 
@@ -132,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
+                    const nonce = document.getElementById('login-nonce').value;
                     const message = `Verify login for Vina Network with nonce ${nonce} at ${timestamp}`;
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
@@ -157,6 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('wallet-auth.php', {
                         method: 'POST',
+                        headers: {
+                            'X-CSRF-Token': csrfToken
+                        },
                         body: formData
                     });
 
@@ -165,7 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (result.status === 'error' && result.message.includes('Signature verification failed')) {
                         statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
                     } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
-                        statusSpan.textContent = 'Error: Invalid CSRF token. Please refresh the page.';
+                        statusSpan.textContent = 'Error: Invalid CSRF token. Refreshing token...';
+                        csrfToken = await refreshCsrfToken();
+                        if (csrfToken) {
+                            statusSpan.textContent = 'CSRF token refreshed. Please try again.';
+                        } else {
+                            statusSpan.textContent = 'Error: Failed to refresh CSRF token. Please refresh the page.';
+                        }
                     } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
                         statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
