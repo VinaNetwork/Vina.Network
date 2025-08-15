@@ -29,6 +29,8 @@ define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 define('MAX_LOG_SIZE', 1024 * 1024); // 1MB max log file size
+// Define environment
+define('ENVIRONMENT', 'development');
 
 // Load configuration
 require_once ROOT_PATH . 'config/config.php';
@@ -108,7 +110,7 @@ function rotate_log_file($log_path) {
 }
 
 // Write log entry to file
-function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
+function log_message($message, $log_file = 'app.log', $module = 'logs', $log_type = 'INFO') {
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
         return;
     }
@@ -129,7 +131,4 @@ function log_message($message, $log_file = 'accounts.log', $module = 'accounts',
         error_log("Log error: " . $e->getMessage());
     }
 }
-
-// Define environment
-define('ENVIRONMENT', 'development');
 ?>
