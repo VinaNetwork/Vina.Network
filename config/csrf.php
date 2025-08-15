@@ -1,8 +1,8 @@
 <?php
 // ============================================================================
 // File: config/csrf.php
-// Description: CSRF protection configuration and utilities for Vina Network
-// Created by: Vina Network
+// Description: CSRF protection utilities + AJAX refresh endpoint
+// Author: Vina Network (Optimized version)
 // ============================================================================
 
 if (!defined('VINANETWORK_ENTRY')) {
@@ -11,187 +11,126 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 require_once __DIR__ . '/bootstrap.php';
 
-// CSRF Configuration
-define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
-define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
-define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie'); // Name of the CSRF cookie (for AJAX requests)
+// ==== CSRF CONFIG ====
+if (!defined('CSRF_TOKEN_NAME')) {
+    define('CSRF_TOKEN_NAME', 'csrf_token');
+    define('CSRF_TOKEN_LENGTH', 32); // bytes => 64 hex chars
+    define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie');
+    define('CSRF_TOKEN_TTL', 1200); // Token lifetime in seconds (20 min)
+}
 
-// Ensure session is active
+// ==== SESSION HANDLER ====
 function ensure_session($max_attempts = 3) {
-    try {
-        global $is_secure, $domain;
-        $required_session_config = [
-            'cookie_lifetime' => 0,
-            'use_strict_mode' => true,
-            'cookie_httponly' => true,
-            'cookie_samesite' => 'Lax',
-            'cookie_secure' => $is_secure,
-            'cookie_domain' => $domain
-        ];
+    global $is_secure, $domain;
+    $config = [
+        'cookie_lifetime' => 0,
+        'use_strict_mode' => true,
+        'cookie_httponly' => true,
+        'cookie_samesite' => 'Lax',
+        'cookie_secure' => $is_secure,
+        'cookie_domain' => $domain
+    ];
 
-        $attempt = 0;
-        while ($attempt < $max_attempts) {
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                $session_started = session_start($required_session_config);
-                if (!$session_started) {
-                    $error = error_get_last();
-                    log_message("Failed to start session (attempt " . ($attempt + 1) . "): session_start failed, error=" . json_encode($error), 'csrf.log', 'logs', 'ERROR');
-                    $attempt++;
-                    continue;
-                }
-                log_message("Session started with secure settings, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", domain=$domain", 'csrf.log', 'logs', 'INFO');
-                return true;
-            }
-
-            $session_params = session_get_cookie_params();
-            $errors = [];
-
-            if ($session_params['lifetime'] !== $required_session_config['cookie_lifetime']) {
-                $errors[] = "Session cookie_lifetime mismatch: expected 0, got " . $session_params['lifetime'];
-            }
-            if ($session_params['httponly'] !== $required_session_config['cookie_httponly']) {
-                $errors[] = "Session cookie_httponly mismatch: expected true, got " . ($session_params['httponly'] ? 'true' : 'false');
-            }
-            if ($session_params['samesite'] !== $required_session_config['cookie_samesite']) {
-                $errors[] = "Session cookie_samesite mismatch: expected 'Lax', got " . $session_params['samesite'];
-            }
-            if ($session_params['secure'] !== $required_session_config['cookie_secure']) {
-                $errors[] = "Session cookie_secure mismatch: expected " . ($is_secure ? 'true' : 'false') . ", got " . ($session_params['secure'] ? 'true' : 'false');
-            }
-            if ($session_params['domain'] !== $required_session_config['cookie_domain']) {
-                $errors[] = "Session cookie_domain mismatch: expected $domain, got " . $session_params['domain'];
-            }
-
-            if (!empty($errors)) {
-                log_message("Session validation failed (attempt " . ($attempt + 1) . "): " . implode("; ", $errors), 'csrf.log', 'logs', 'ERROR');
-                session_destroy();
-                $attempt++;
-                continue;
-            }
-
-            log_message("Session validated successfully, session_id=" . session_id(), 'csrf.log', 'logs', 'INFO');
-            return true;
+    for ($i = 0; $i < $max_attempts; $i++) {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            if (!session_start($config)) continue;
         }
-
-        log_message("Failed to start or validate session after $max_attempts attempts", 'csrf.log', 'logs', 'CRITICAL');
-        return false;
-    } catch (Exception $e) {
-        log_message("Error starting session for CSRF: " . $e->getMessage(), 'csrf.log', 'logs', 'ERROR');
-        return false;
+        return true;
     }
+    return false;
 }
 
-// Generate CSRF token and store in session
+// ==== TOKEN FUNCTIONS ====
 function generate_csrf_token() {
-    try {
-        if (!ensure_session()) {
-            throw new Exception('Failed to start session');
-        }
-
-        if (empty($_SESSION[CSRF_TOKEN_NAME])) {
-            $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
-            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME], 'csrf.log', 'logs', 'INFO');
-        }
-        return $_SESSION[CSRF_TOKEN_NAME];
-    } catch (Exception $e) {
-        log_message("Error generating CSRF token: " . $e->getMessage(), 'csrf.log', 'logs', 'ERROR');
-        return false;
+    if (!ensure_session()) return false;
+    $now = time();
+    if (
+        empty($_SESSION[CSRF_TOKEN_NAME]) ||
+        empty($_SESSION['csrf_token_time']) ||
+        ($now - $_SESSION['csrf_token_time']) > CSRF_TOKEN_TTL
+    ) {
+        $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
+        $_SESSION['csrf_token_time'] = $now;
     }
+    return $_SESSION[CSRF_TOKEN_NAME];
 }
 
-// Validate CSRF token against session
 function validate_csrf_token($token) {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
-    $method = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
-    $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest' ? 'yes' : 'no';
-    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-
-    if (!ensure_session()) {
-        log_message("CSRF token validation failed: session not active, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'CRITICAL');
-        return false;
-    }
-
-    if (!isset($_SESSION[CSRF_TOKEN_NAME]) || empty($token)) {
-        log_message("CSRF token validation failed: token empty or session token missing, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'CRITICAL');
-        return false;
-    }
-
-    if (!hash_equals($_SESSION[CSRF_TOKEN_NAME], $token)) {
-        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'WARNING');
-        return false;
-    }
-    
-    log_message("CSRF token validated successfully: $token, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'INFO');
-    return true;
+    if (!ensure_session()) return false;
+    if (empty($token) || empty($_SESSION[CSRF_TOKEN_NAME])) return false;
+    if (time() - $_SESSION['csrf_token_time'] > CSRF_TOKEN_TTL) return false;
+    return hash_equals($_SESSION[CSRF_TOKEN_NAME], $token);
 }
 
-// Regenerate CSRF token after successful validation
 function regenerate_csrf_token() {
     if (ensure_session()) {
-        unset($_SESSION[CSRF_TOKEN_NAME]);
+        unset($_SESSION[CSRF_TOKEN_NAME], $_SESSION['csrf_token_time']);
     }
     return generate_csrf_token();
 }
 
-// Generate hidden input field for CSRF token in forms
 function get_csrf_field() {
-    $token = generate_csrf_token();
-    return '<input type="hidden" name="' . CSRF_TOKEN_NAME . '" value="' . htmlspecialchars($token) . '">';
+    return '<input type="hidden" name="' . CSRF_TOKEN_NAME . '" value="' . htmlspecialchars(generate_csrf_token()) . '">';
 }
 
-// Middleware to protect POST requests with CSRF validation
 function csrf_protect() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
+        $token = $_POST[CSRF_TOKEN_NAME] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
         if (!validate_csrf_token($token)) {
-            log_message("CSRF protection triggered: Invalid token", 'security.log', 'logs', 'WARNING');
             http_response_code(403);
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-                header('Content-Type: application/json');
-                echo json_encode(['error' => 'Invalid CSRF token']);
-            } else {
-                header('Location: /error?message=Invalid+CSRF+token');
-            }
-            exit;
+            exit(json_encode(['error' => 'Invalid CSRF token']));
         }
-        regenerate_csrf_token(); // Regenerate token after successful validation
+        regenerate_csrf_token();
     }
 }
 
-// Set CSRF token in a cookie for AJAX requests
-function set_csrf_cookie() {
+function set_csrf_cookie($token = null) {
     global $is_secure;
-    
-    $token = generate_csrf_token();
-    if ($token === false) {
-        return false;
-    }
+    if (!$token) $token = generate_csrf_token();
+    if (!$token) return false;
 
-    $options = [
-        'expires' => 0, // Session cookie
+    setcookie(CSRF_TOKEN_COOKIE, $token, [
+        'expires' => 0,
         'path' => '/',
         'domain' => $_SERVER['HTTP_HOST'],
         'secure' => $is_secure,
         'httponly' => true,
         'samesite' => 'Lax'
-    ];
-
-    if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
-        setcookie(CSRF_TOKEN_COOKIE, $token, $options);
-    } else {
-        setcookie(
-            CSRF_TOKEN_COOKIE,
-            $token,
-            $options['expires'],
-            $options['path'],
-            $options['domain'],
-            $options['secure'],
-            $options['httponly']
-        );
-    }
-
-    log_message("CSRF cookie set: $token", 'csrf.log', 'logs', 'INFO');
+    ]);
     return true;
 }
-?>
+
+// ==== REFRESH TOKEN ENDPOINT ====
+if (
+    php_sapi_name() !== 'cli' &&
+    isset($_GET['action']) && $_GET['action'] === 'refresh'
+) {
+    header('Content-Type: application/json; charset=UTF-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+
+    // Chặn request từ domain khác
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    $allowed_host = $_SERVER['HTTP_HOST'];
+    if (
+        ($_SERVER['REQUEST_METHOD'] !== 'GET') ||
+        (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest') ||
+        ($origin && parse_url($origin, PHP_URL_HOST) !== $allowed_host) ||
+        ($referer && parse_url($referer, PHP_URL_HOST) !== $allowed_host)
+    ) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+        exit;
+    }
+
+    $token = regenerate_csrf_token();
+    if (!$token || !set_csrf_cookie($token)) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to refresh token']);
+        exit;
+    }
+
+    echo json_encode(['status' => 'success', 'csrf_token' => $token]);
+    exit;
+}
