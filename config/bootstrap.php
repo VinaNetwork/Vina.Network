@@ -50,12 +50,13 @@ if (session_status() === PHP_SESSION_NONE) {
         'cookie_domain' => $domain
     ])) {
         error_log("Failed to start session");
+        log_message("Failed to start session, domain=$domain, is_secure=" . ($is_secure ? 'true' : 'false'), 'error.txt', 'logs', 'ERROR');
         http_response_code(500);
         exit('Server configuration error');
     }
-    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'INFO');
+    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'bootstrap.log', 'logs', 'INFO');
 } else {
-    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'bootstrap.log', 'logs', 'DEBUG');
 }
 
 // PHP configuration
@@ -79,7 +80,10 @@ function ensure_directory_and_file($dir_path, $file_path) {
                 error_log("Failed to create directory: $dir_path");
                 return false;
             }
-            chmod($dir_path, 0755);
+            if (!chmod($dir_path, 0755)) {
+                error_log("Failed to set permissions for directory: $dir_path");
+                return false;
+            }
         }
         // Check dir writable
         if (!is_writable($dir_path)) {
@@ -92,7 +96,10 @@ function ensure_directory_and_file($dir_path, $file_path) {
                 error_log("Failed to create file: $file_path");
                 return false;
             }
-            chmod($file_path, 0664);
+            if (!chmod($file_path, 0664)) {
+                error_log("Failed to set permissions for file: $file_path");
+                return false;
+            }
         }
         // Check file writable
         if (!is_writable($file_path)) {
@@ -111,11 +118,17 @@ function rotate_log_file($log_path) {
     if (file_exists($log_path) && filesize($log_path) > MAX_LOG_SIZE) {
         $backup_path = $log_path . '.' . date('Y-m-d_H-i-s') . '.bak';
         if (!rename($log_path, $backup_path)) {
-            error_log("Failed to rotate log file: $log_path");
+            error_log("Failed to rotate log file: $log_path to $backup_path");
             return false;
         }
-        file_put_contents($log_path, ''); // Create new empty log file
-        chmod($file_path, 0664);
+        if (file_put_contents($log_path, '') === false) {
+            error_log("Failed to create new empty log file: $log_path");
+            return false;
+        }
+        if (!chmod($log_path, 0664)) {
+            error_log("Failed to set permissions for new log file: $log_path");
+            return false;
+        }
     }
     return true;
 }
@@ -128,8 +141,15 @@ function log_message($message, $log_file = 'app.log', $module = 'logs', $log_typ
         return;
     }
 
-    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : ($module === 'logs' ? LOGS_PATH : TOOLS_PATH)));
-    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : ($module === 'logs' ? LOGS_PATH . $log_file : TOOLS_PATH . $log_file)));
+    // Determine log directory based on module
+    $dir_path = match ($module) {
+        'accounts' => ACCOUNTS_PATH,
+        'make-market' => MAKE_MARKET_PATH,
+        'tools' => TOOLS_PATH,
+        default => LOGS_PATH,
+    };
+    // Determine log file path
+    $log_path = $dir_path . $log_file;
 
     // Cache directory/file check
     $cache_key = $dir_path . '|' . $log_path;
@@ -141,15 +161,24 @@ function log_message($message, $log_file = 'app.log', $module = 'logs', $log_typ
         $checked_paths[$cache_key] = true;
     }
 
-    rotate_log_file($log_path);
+    // Rotate log file if needed
+    if (!rotate_log_file($log_path)) {
+        error_log("Failed to rotate log file: $log_path");
+        return;
+    }
+
+    // Write log entry
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
     try {
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
+        } else {
+            // Debug: Confirm log write
+            error_log("Successfully wrote log to $log_path: $message");
         }
     } catch (Exception $e) {
-        error_log("Log error: " . $e->getMessage());
+        error_log("Log write error for $log_path: " . $e->getMessage());
     }
 }
 ?>
