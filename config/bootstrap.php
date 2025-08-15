@@ -41,14 +41,18 @@ if (!defined('ENVIRONMENT')) {
 
 // Initialize session with security options
 if (session_status() === PHP_SESSION_NONE) {
-    session_start([
+    if (!session_start([
         'cookie_lifetime' => 0,
         'use_strict_mode' => true,
         'cookie_httponly' => true,
         'cookie_samesite' => 'Lax',
         'cookie_secure' => $is_secure,
         'cookie_domain' => $domain
-    ]);
+    ])) {
+        error_log("Failed to start session");
+        http_response_code(500);
+        exit('Server configuration error');
+    }
     log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'INFO');
 } else {
     log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'DEBUG');
@@ -59,7 +63,12 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 ini_set('log_errors', true);
-ini_set('error_log', ERROR_LOG_PATH);
+// Ensure ERROR_LOG_PATH is writable
+if (!ensure_directory_and_file(LOGS_PATH, ERROR_LOG_PATH)) {
+    error_log("Cannot set error log path: " . ERROR_LOG_PATH);
+} else {
+    ini_set('error_log', ERROR_LOG_PATH);
+}
 
 // Check/create dir & file with correct permissions
 function ensure_directory_and_file($dir_path, $file_path) {
@@ -113,19 +122,29 @@ function rotate_log_file($log_path) {
 
 // Write log entry to file
 function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
+    static $checked_paths = [];
+
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
         return;
     }
+
     $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : ($module === 'logs' ? LOGS_PATH : TOOLS_PATH)));
     $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : ($module === 'logs' ? LOGS_PATH . $log_file : TOOLS_PATH . $log_file)));
-    $timestamp = date('Y-m-d H:i:s');
-    $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
-    try {
+
+    // Cache directory/file check
+    $cache_key = $dir_path . '|' . $log_path;
+    if (!isset($checked_paths[$cache_key])) {
         if (!ensure_directory_and_file($dir_path, $log_path)) {
             error_log("Log setup failed for $log_path: $message");
             return;
         }
-        rotate_log_file($log_path);
+        $checked_paths[$cache_key] = true;
+    }
+
+    rotate_log_file($log_path);
+    $timestamp = date('Y-m-d H:i:s');
+    $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
+    try {
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
         }
