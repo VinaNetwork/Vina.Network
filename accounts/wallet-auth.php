@@ -228,6 +228,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Login successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
+            // Set new CSRF cookie after successful login
+            if (!set_csrf_cookie()) {
+                log_message("Failed to set CSRF cookie after login", 'accounts.log', 'accounts', 'ERROR');
+            }
             echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => $redirect_url]);
         } else {
             $start_time = microtime(true);
@@ -236,6 +240,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             $duration = (microtime(true) - $start_time) * 1000;
             log_message("Registration successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
             $_SESSION['public_key'] = $public_key;
+            // Set new CSRF cookie after successful registration
+            if (!set_csrf_cookie()) {
+                log_message("Failed to set CSRF cookie after registration", 'accounts.log', 'accounts', 'ERROR');
+            }
             echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => $redirect_url]);
         }
     } catch (Exception $e) {
@@ -245,4 +253,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     }
     exit;
 }
-?>
