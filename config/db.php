@@ -12,7 +12,18 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Connect database
-function get_db_connection(string $network = 'testnet'): ?PDO {
+function get_db_connection(string $network = null): ?PDO {
+    // Use SOLANA_NETWORK if no network is provided
+    if ($network === null) {
+        if (!defined('SOLANA_NETWORK')) {
+            log_message('Missing SOLANA_NETWORK constant', 'database.log', 'logs', 'ERROR');
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+            exit;
+        }
+        $network = SOLANA_NETWORK;
+    }
+
     static $connections = [];
 
     $connection_key = $network;
@@ -60,7 +71,16 @@ function get_db_connection(string $network = 'testnet'): ?PDO {
 }
 
 // Close database connection (optional, for long-running processes)
-function close_db_connection(string $network = 'testnet'): void {
+function close_db_connection(string $network = null): void {
+    // Use SOLANA_NETWORK if no network is provided
+    if ($network === null) {
+        if (!defined('SOLANA_NETWORK')) {
+            log_message('Missing SOLANA_NETWORK constant', 'database.log', 'logs', 'ERROR');
+            return;
+        }
+        $network = SOLANA_NETWORK;
+    }
+
     static $connections = [];
     if (isset($connections[$network])) {
         unset($connections[$network]);
