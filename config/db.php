@@ -26,10 +26,10 @@ function get_db_connection() {
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
             ]
         );
-        log_message("Database connection established", 'make-market.log', 'make-market', 'INFO');
+        log_message("Database connection established", 'database.log', 'logs', 'INFO');
         return $pdo;
     } catch (PDOException $e) {
-        log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Database connection failed: {$e->getMessage()}", 'database.log', 'logs', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
         exit;
