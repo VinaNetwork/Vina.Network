@@ -145,7 +145,7 @@ function csrf_protect() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
         if (!validate_csrf_token($token)) {
-            log_message("CSRF protection triggered: Invalid token", 'security.log', 'logs', 'WARNING');
+            log_message("CSRF protection triggered: Invalid token", 'csrf.log', 'logs', 'WARNING');
             http_response_code(403);
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
