@@ -15,6 +15,15 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
 require_once $root_path . 'accounts/header-auth.php'; // Security Headers
 
+// Check $domain and $is_secure
+global $domain, $is_secure;
+if (!isset($domain) || !isset($is_secure)) {
+    log_message("Server configuration error: \$domain or \$is_secure not defined", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+    exit;
+}
+
 // Protect POST requests with CSRF
 csrf_protect();
 
@@ -136,6 +145,7 @@ $page_css = ['/accounts/acc.css'];
 <?php require_once $root_path . 'include/header.php';?>
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
+
 <div class="acc-container">
     <div class="acc-content">
         <h1>Your Profile</h1>
@@ -166,6 +176,7 @@ $page_css = ['/accounts/acc.css'];
         </form>
     </div>
 </div>
+
 <?php require_once $root_path . 'include/footer.php';?>
 
 <script>console.log('Attempting to load JS files...');</script>
@@ -173,8 +184,9 @@ $page_css = ['/accounts/acc.css'];
     // Expose CSRF_TOKEN_TTL for acc.js to refresh token
     window.CSRF_TOKEN_TTL = <?php echo CSRF_TOKEN_TTL; ?>;
 </script>
+<!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
