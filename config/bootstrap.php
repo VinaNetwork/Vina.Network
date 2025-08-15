@@ -135,50 +135,24 @@ function rotate_log_file($log_path) {
 
 // Write log entry to file
 function log_message($message, $log_file = 'app.log', $module = 'logs', $log_type = 'INFO') {
-    static $checked_paths = [];
-
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
         return;
     }
-
-    // Determine log directory based on module
-    $dir_path = match ($module) {
-        'accounts' => ACCOUNTS_PATH,
-        'make-market' => MAKE_MARKET_PATH,
-        'tools' => TOOLS_PATH,
-        default => LOGS_PATH,
-    };
-    // Determine log file path
-    $log_path = $dir_path . $log_file;
-
-    // Cache directory/file check
-    $cache_key = $dir_path . '|' . $log_path;
-    if (!isset($checked_paths[$cache_key])) {
+    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : ($module === 'logs' ? LOGS_PATH : TOOLS_PATH)));
+    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : ($module === 'logs' ? LOGS_PATH . $log_file : TOOLS_PATH . $log_file)));
+    $timestamp = date('Y-m-d H:i:s');
+    $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
+    try {
         if (!ensure_directory_and_file($dir_path, $log_path)) {
             error_log("Log setup failed for $log_path: $message");
             return;
         }
-        $checked_paths[$cache_key] = true;
-    }
-
-    // Rotate log file if needed
-    if (!rotate_log_file($log_path)) {
-        error_log("Failed to rotate log file: $log_path");
-        return;
-    }
-
-    // Write log entry
-    $timestamp = date('Y-m-d H:i:s');
-    $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
-    try {
+        rotate_log_file($log_path);
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
-        } else {
-            // Debug: Confirm log write
-            error_log("Successfully wrote log to $log_path: $message");
         }
     } catch (Exception $e) {
-        error_log("Log write error for $log_path: " . $e->getMessage());
+        error_log("Log error: " . $e->getMessage());
     }
 }
 ?>
