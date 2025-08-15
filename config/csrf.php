@@ -7,8 +7,10 @@
 
 declare(strict_types=1);
 
+// Kiểm tra truy cập qua bootstrap.php
 if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
+    http_response_code(403);
+    exit('No direct access allowed!');
 }
 
 require_once __DIR__ . '/bootstrap.php';
@@ -22,43 +24,10 @@ if (!defined('CSRF_TOKEN_NAME')) {
     define('CSRF_SESSION_PREFIX', 'csrf_');
 }
 
-// ==== SESSION HANDLER (Optimized) ====
-function ensure_session(): bool {
-    static $session_initialized = false;
-    
-    if ($session_initialized) {
-        return true;
-    }
-
-    global $is_secure, $domain;
-    
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        $session_initialized = true;
-        return true;
-    }
-
-    $config = [
-        'cookie_lifetime' => 0,
-        'use_strict_mode' => true,
-        'cookie_httponly' => true,
-        'cookie_samesite' => 'Lax',
-        'cookie_secure' => $is_secure,
-        'cookie_domain' => $domain,
-        'read_and_close' => false // Ensure we can write to session later
-    ];
-
-    if (!session_start($config)) {
-        error_log('CSRF Protection: Failed to start session');
-        return false;
-    }
-
-    $session_initialized = true;
-    return true;
-}
-
 // ==== TOKEN FUNCTIONS (Optimized) ====
 function generate_csrf_token(): string|false {
-    if (!ensure_session()) {
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        log_message('CSRF Protection: Session not active', 'csrf.log', 'logs', 'ERROR');
         return false;
     }
 
@@ -75,7 +44,7 @@ function generate_csrf_token(): string|false {
             $_SESSION[$token_key] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
             $_SESSION[$time_key] = $now;
         } catch (Exception $e) {
-            error_log('CSRF Token Generation Error: ' . $e->getMessage());
+            log_message('CSRF Token Generation Error: ' . $e->getMessage(), 'csrf.log', 'logs', 'ERROR');
             return false;
         }
     }
@@ -84,7 +53,8 @@ function generate_csrf_token(): string|false {
 }
 
 function validate_csrf_token(?string $token): bool {
-    if (!ensure_session() || empty($token)) {
+    if (session_status() !== PHP_SESSION_ACTIVE || empty($token)) {
+        log_message('CSRF Protection: Session not active or empty token', 'csrf.log', 'logs', 'ERROR');
         return false;
     }
 
@@ -107,7 +77,7 @@ function regenerate_csrf_token(): string|false {
     $token_key = CSRF_SESSION_PREFIX . CSRF_TOKEN_NAME;
     $time_key = CSRF_SESSION_PREFIX . 'token_time';
 
-    if (ensure_session()) {
+    if (session_status() === PHP_SESSION_ACTIVE) {
         unset($_SESSION[$token_key], $_SESSION[$time_key]);
     }
     
@@ -129,6 +99,7 @@ function csrf_protect(): void {
         if (!validate_csrf_token($token)) {
             http_response_code(403);
             header('Content-Type: application/json');
+            log_message('Invalid CSRF token', 'csrf.log', 'logs', 'ERROR');
             exit(json_encode(['error' => 'Invalid CSRF token']));
         }
         // Only regenerate if validation passed
@@ -137,8 +108,14 @@ function csrf_protect(): void {
 }
 
 function set_csrf_cookie(?string $token = null): bool {
-    global $is_secure;
-    
+    global $is_secure, $domain;
+
+    // Kiểm tra sự tồn tại của biến
+    if (!isset($is_secure) || !isset($domain)) {
+        log_message('CSRF Protection: $is_secure or $domain not defined', 'csrf.log', 'logs', 'ERROR');
+        return false;
+    }
+
     if (!$token) {
         $token = generate_csrf_token();
     }
@@ -150,7 +127,7 @@ function set_csrf_cookie(?string $token = null): bool {
     $options = [
         'expires' => 0,
         'path' => '/',
-        'domain' => $_SERVER['HTTP_HOST'],
+        'domain' => $domain,
         'secure' => $is_secure,
         'httponly' => true,
         'samesite' => 'Lax'
@@ -174,7 +151,15 @@ if (
     header('X-Frame-Options: DENY');
 
     // Validate request
-    $allowed_host = $_SERVER['HTTP_HOST'];
+    global $domain;
+    if (!isset($domain)) {
+        log_message('CSRF Refresh: $domain not defined', 'csrf.log', 'logs', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+        exit;
+    }
+
+    $allowed_host = $domain;
     $origin = parse_url($_SERVER['HTTP_ORIGIN'] ?? '', PHP_URL_HOST);
     $referer = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_HOST);
     
@@ -186,6 +171,7 @@ if (
 
     if (!$is_valid_request) {
         http_response_code(403);
+        log_message('CSRF Refresh: Invalid request', 'csrf.log', 'logs', 'ERROR');
         echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
         exit;
     }
@@ -203,10 +189,11 @@ if (
             'expires_in' => CSRF_TOKEN_TTL - (time() - ($_SESSION[CSRF_SESSION_PREFIX . 'token_time'] ?? 0))
         ]);
     } catch (Exception $e) {
-        error_log('CSRF Refresh Error: ' . $e->getMessage());
+        log_message('CSRF Refresh Error: ' . $e->getMessage(), 'csrf.log', 'logs', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Failed to refresh token']);
     }
     
     exit;
 }
+?>
