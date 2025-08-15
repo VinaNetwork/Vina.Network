@@ -128,8 +128,29 @@ function log_message($message, $log_file = 'app.log', $module = 'logs', $log_typ
         return;
     }
 
-    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : ($module === 'logs' ? LOGS_PATH : TOOLS_PATH)));
-    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : ($module === 'logs' ? LOGS_PATH . $log_file : TOOLS_PATH . $log_file)));
+    // Determine log directory based on module
+    switch ($module) {
+        case 'accounts':
+            $dir_path = ACCOUNTS_PATH;
+            break;
+        case 'make-market':
+            $dir_path = MAKE_MARKET_PATH;
+            break;
+        case 'tools':
+            $dir_path = TOOLS_PATH;
+            break;
+        default:
+            $dir_path = LOGS_PATH;
+            break;
+    }
+
+    // Ensure log file path does not add extra 'logs/' directory
+    $log_path = $dir_path . (str_contains($log_file, '/') ? basename($log_file) : $log_file);
+
+    // Avoid recursive logging for debug logs
+    if ($log_file !== 'bootstrap.log' && $log_file !== 'error.txt') {
+        error_log("Attempting to log to: $log_path, module: $module, file: $log_file");
+    }
 
     // Cache directory/file check
     $cache_key = $dir_path . '|' . $log_path;
@@ -139,17 +160,30 @@ function log_message($message, $log_file = 'app.log', $module = 'logs', $log_typ
             return;
         }
         $checked_paths[$cache_key] = true;
+        if ($log_file !== 'bootstrap.log' && $log_file !== 'error.txt') {
+            error_log("Log setup successful for $log_path");
+        }
     }
 
-    rotate_log_file($log_path);
+    // Rotate log file if needed
+    if (!rotate_log_file($log_path)) {
+        error_log("Failed to rotate log file: $log_path");
+        return;
+    }
+
+    // Write log entry
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
     try {
         if (file_put_contents($log_path, $log_entry, FILE_APPEND | LOCK_EX) === false) {
             error_log("Failed to write log to $log_path: $message");
+        } else {
+            if ($log_file !== 'bootstrap.log' && $log_file !== 'error.txt') {
+                error_log("Successfully wrote log to $log_path: $message");
+            }
         }
     } catch (Exception $e) {
-        error_log("Log error: " . $e->getMessage());
+        error_log("Log write error for $log_path: " . $e->getMessage());
     }
 }
 ?>
