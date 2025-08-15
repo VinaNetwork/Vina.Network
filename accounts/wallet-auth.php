@@ -14,7 +14,14 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
-// Session start: in config/bootstrap.php
+// Check $domain and $is_secure
+global $domain, $is_secure;
+if (!isset($domain) || !isset($is_secure)) {
+    log_message("Server configuration error: \$domain or \$is_secure not defined", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+    exit;
+}
 
 // Database connection
 $start_time = microtime(true);
@@ -253,3 +260,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     }
     exit;
 }
+?>
