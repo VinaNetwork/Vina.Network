@@ -31,8 +31,8 @@ define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 define('MAX_LOG_SIZE', 1024 * 1024); // 1MB max log file size
 
 // Load configuration
-require_once ROOT_PATH . 'config/csrf.php';
 require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'config/csrf.php';
 require_once ROOT_PATH . 'config/db.php';
 
 // Initialize session with security options
