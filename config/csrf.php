@@ -13,8 +13,6 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-require_once __DIR__ . '/bootstrap.php';
-
 // ==== CSRF CONFIG ====
 if (!defined('CSRF_TOKEN_NAME')) {
     define('CSRF_TOKEN_NAME', 'csrf_token');
@@ -100,7 +98,8 @@ function csrf_protect(): void {
             http_response_code(403);
             header('Content-Type: application/json');
             log_message('Invalid CSRF token', 'csrf.log', 'logs', 'ERROR');
-            exit(json_encode(['error' => 'Invalid CSRF token']));
+            echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+            exit;
         }
         // Only regenerate if validation passed
         regenerate_csrf_token();
@@ -108,9 +107,12 @@ function csrf_protect(): void {
 }
 
 function set_csrf_cookie(?string $token = null): bool {
-    global $is_secure, $domain;
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        log_message('CSRF Protection: Session not active for cookie', 'csrf.log', 'logs', 'ERROR');
+        return false;
+    }
 
-    // Kiểm tra sự tồn tại của biến
+    global $is_secure, $domain;
     if (!isset($is_secure) || !isset($domain)) {
         log_message('CSRF Protection: $is_secure or $domain not defined', 'csrf.log', 'logs', 'ERROR');
         return false;
@@ -151,22 +153,22 @@ if (
     header('X-Frame-Options: DENY');
 
     // Validate request
-    global $domain;
-    if (!isset($domain)) {
-        log_message('CSRF Refresh: $domain not defined', 'csrf.log', 'logs', 'ERROR');
+    global $is_secure, $domain;
+    if (!isset($domain) || !isset($is_secure)) {
+        log_message('CSRF Refresh: $domain or $is_secure not defined', 'csrf.log', 'logs', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
         exit;
     }
 
     $allowed_host = $domain;
-    $origin = parse_url($_SERVER['HTTP_ORIGIN'] ?? '', PHP_URL_HOST);
-    $referer = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_HOST);
+    $origin = parse_url($_SERVER['HTTP_ORIGIN'] ?? '', PHP_URL_HOST) ?? '';
+    $referer = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_HOST) ?? '';
     
     $is_valid_request = (
         ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest' &&
-        (!$origin || $origin === $allowed_host) &&
-        (!$referer || $referer === $allowed_host)
+        ($origin === '' || $origin === $allowed_host) &&
+        ($referer === '' || $referer === $allowed_host)
     );
 
     if (!$is_valid_request) {
