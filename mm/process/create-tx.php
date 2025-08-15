@@ -15,6 +15,13 @@ require_once $root_path . 'config/csrf.php';
 require_once $root_path . 'mm/network.php';
 require_once $root_path . 'mm/header-auth.php';
 
+// Initialize logging context
+$log_context = [
+    'endpoint' => 'create-tx',
+    'client_ip' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown',
+    'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown'
+];
+
 // Log request details
 $session_id = session_id() ?: 'none';
 $headers = apache_request_headers();
@@ -23,24 +30,32 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     $csrf_token = isset($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : 'none';
-    log_message("create-tx.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("create-tx.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'make-market.log', 'make-market', 'DEBUG', $log_context);
 }
 
-// Khởi tạo session và kiểm tra CSRF cho yêu cầu POST
+// Kiểm tra phương thức POST
+if ($request_method !== 'POST') {
+    log_message("Invalid request method: $request_method, uri=$request_uri, session_id=$session_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    header('Content-Type: application/json');
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Khởi tạo session và kiểm tra CSRF
 if (!ensure_session()) {
-    log_message("Failed to initialize session for CSRF, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Failed to initialize session, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// Kiểm tra CSRF token
 try {
     csrf_protect();
 } catch (Exception $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("CSRF validation failed: " . $e->getMessage() . ", method=$request_method, uri=$request_uri, session_id=$session_id, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
+    log_message("CSRF validation failed: " . $e->getMessage() . ", method=$request_method, uri=$request_uri, session_id=$session_id, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'CSRF validation failed'], JSON_UNESCAPED_UNICODE);
@@ -52,10 +67,12 @@ $input = json_decode(file_get_contents('php://input'), true);
 $transaction_id = isset($input['id']) ? intval($input['id']) : 0;
 $sub_transactions = isset($input['sub_transactions']) ? $input['sub_transactions'] : null;
 $client_network = isset($input['network']) ? $input['network'] : null;
+$log_context['transaction_id'] = $transaction_id;
+$log_context['client_network'] = $client_network;
 
 if ($transaction_id <= 0 || !is_array($sub_transactions) || !in_array($client_network, ['testnet', 'mainnet', 'devnet'])) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Invalid input: transaction_id=$transaction_id, sub_transactions=" . json_encode($sub_transactions) . ", client_network=$client_network, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid input: transaction_id=$transaction_id, sub_transactions=" . json_encode($sub_transactions) . ", client_network=$client_network, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction data or network'], JSON_UNESCAPED_UNICODE);
@@ -65,7 +82,7 @@ if ($transaction_id <= 0 || !is_array($sub_transactions) || !in_array($client_ne
 // Check network consistency
 if ($client_network !== SOLANA_NETWORK) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Network mismatch: client_network=$client_network, server_network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Network mismatch: client_network=$client_network, server_network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => "Network mismatch: client ($client_network) vs server (" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ")"], JSON_UNESCAPED_UNICODE);
@@ -76,10 +93,10 @@ if ($client_network !== SOLANA_NETWORK) {
 try {
     $pdo = get_db_connection();
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Database connection retrieved, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'INFO');
+    log_message("Database connection retrieved, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'INFO', $log_context);
 } catch (Exception $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Database connection failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database connection failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Database connection error'], JSON_UNESCAPED_UNICODE);
@@ -94,17 +111,16 @@ try {
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
         header('Content-Type: application/json');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Transaction fetched: ID=$transaction_id, trade_direction={$transaction['trade_direction']}, loop_count={$transaction['loop_count']}, batch_size={$transaction['batch_size']}, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'make-market.log', 'make-market', 'INFO');
+    log_message("Transaction fetched: ID=$transaction_id, trade_direction={$transaction['trade_direction']}, loop_count={$transaction['loop_count']}, batch_size={$transaction['batch_size']}, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'make-market.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction'], JSON_UNESCAPED_UNICODE);
@@ -117,7 +133,7 @@ $expected_count = $transaction['trade_direction'] === 'both'
     : $transaction['loop_count'] * $transaction['batch_size'];
 if (count($sub_transactions) !== $expected_count) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Sub-transaction count mismatch: expected=$expected_count, received=" . count($sub_transactions) . ", user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Sub-transaction count mismatch: expected=$expected_count, received=" . count($sub_transactions) . ", user_id=$user_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Sub-transaction count mismatch'], JSON_UNESCAPED_UNICODE);
@@ -135,7 +151,7 @@ try {
         $direction = isset($sub_tx['direction']) && in_array($sub_tx['direction'], ['buy', 'sell']) ? $sub_tx['direction'] : null;
         if ($loop <= 0 || $batch_index < 0 || !$direction) {
             $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-            log_message("Invalid sub-transaction data: loop=$loop, batch_index=$batch_index, direction=$direction, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR');
+            log_message("Invalid sub-transaction data: loop=$loop, batch_index=$batch_index, direction=$direction, user_id=$user_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
             $pdo->rollBack();
             header('Content-Type: application/json');
             http_response_code(400);
@@ -147,11 +163,11 @@ try {
     }
     $pdo->commit();
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Created " . count($sub_transaction_ids) . " sub-transactions for transaction ID=$transaction_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'make-market.log', 'make-market', 'INFO');
+    log_message("Created " . count($sub_transaction_ids) . " sub-transactions for transaction ID=$transaction_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'make-market.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $pdo->rollBack();
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Failed to create sub-transactions: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Failed to create sub-transactions: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error creating sub-transactions'], JSON_UNESCAPED_UNICODE);
