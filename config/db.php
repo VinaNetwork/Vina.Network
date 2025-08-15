@@ -12,11 +12,19 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Connect database
-function get_db_connection() {
-    static $pdo = null;
+function get_db_connection(string $network = 'testnet'): ?PDO {
+    static $connections = [];
 
-    if ($pdo !== null) {
-        return $pdo;
+    $connection_key = $network;
+    if (isset($connections[$connection_key]) && $connections[$connection_key] instanceof PDO) {
+        // Check if connection is still alive
+        try {
+            $connections[$connection_key]->query('SELECT 1');
+            return $connections[$connection_key];
+        } catch (PDOException $e) {
+            log_message("Database connection lost for $network: {$e->getMessage()}", 'database.log', 'logs', 'ERROR');
+            unset($connections[$connection_key]);
+        }
     }
 
     // Check required database constants
@@ -31,7 +39,7 @@ function get_db_connection() {
     }
 
     try {
-        $pdo = new PDO(
+        $connections[$connection_key] = new PDO(
             "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
             DB_USER,
             DB_PASS,
@@ -41,13 +49,22 @@ function get_db_connection() {
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
             ]
         );
-        log_message("Database connection established", 'database.log', 'logs', 'INFO');
-        return $pdo;
+        log_message("Database connection established for $network", 'database.log', 'logs', 'INFO');
+        return $connections[$connection_key];
     } catch (PDOException $e) {
-        log_message("Database connection failed: {$e->getMessage()}", 'database.log', 'logs', 'ERROR');
+        log_message("Database connection failed for $network: {$e->getMessage()}", 'database.log', 'logs', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
         exit;
+    }
+}
+
+// Close database connection (optional, for long-running processes)
+function close_db_connection(string $network = 'testnet'): void {
+    static $connections = [];
+    if (isset($connections[$network])) {
+        unset($connections[$network]);
+        log_message("Database connection closed for $network", 'database.log', 'logs', 'INFO');
     }
 }
 ?>
