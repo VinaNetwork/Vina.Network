@@ -13,6 +13,23 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // Connect database
 function get_db_connection() {
+    static $pdo = null;
+
+    if ($pdo !== null) {
+        return $pdo;
+    }
+
+    // Check required database constants
+    $required_constants = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'];
+    foreach ($required_constants as $const) {
+        if (!defined($const)) {
+            log_message("Missing database configuration constant: $const", 'database.log', 'logs', 'ERROR');
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
+            exit;
+        }
+    }
+
     try {
         $pdo = new PDO(
             "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
