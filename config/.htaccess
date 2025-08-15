@@ -1,6 +1,5 @@
 # This .htaccess file only works on Apache servers. 
 # Ensure that 'AllowOverride All' is enabled in your Apache configuration 
-# for these rules to take effect.
 
 # Deny all access to this directory
 <IfModule mod_authz_core.c>
