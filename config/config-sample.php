@@ -5,6 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
+if (!defined('VINANETWORK_ENTRY')) {
+    http_response_code(403);
+    exit('No direct access allowed!');
+}
+
 // Database Configuration
 if (!defined('DB_HOST')) {
     define('DB_HOST', 'localhost');
