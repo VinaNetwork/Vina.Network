@@ -19,6 +19,9 @@ csrf_protect();
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Failed to set CSRF cookie']);
+    exit;
 }
 
 // Check if user is already logged in
@@ -45,6 +48,9 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
+    exit;
 }
 
 // Generate nonce for anti-replay
@@ -84,6 +90,10 @@ $page_css = ['/accounts/acc.css'];
 
 <!-- Scripts - Internal library -->
 <script>console.log('Attempting to load JS files...');</script>
+<script>
+    // Expose CSRF_TOKEN_TTL for acc.js to refresh token
+    window.CSRF_TOKEN_TTL = <?php echo CSRF_TOKEN_TTL; ?>;
+</script>
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
