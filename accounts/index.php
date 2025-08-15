@@ -6,17 +6,14 @@
 // ============================================================================
 
 ob_start();
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
+define('VINANETWORK_ENTRY', true);
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'accounts/wallet-auth.php';
 require_once $root_path . 'accounts/header-auth.php'; // Security Headers
+require_once $root_path . 'accounts/wallet-auth.php';
 
-// Session start: in config/bootstrap.php
-// Error reporting: in config/bootstrap.php
+// Session start and Error reporting: in config/bootstrap.php
 
 // Protect POST requests with CSRF
 csrf_protect();
