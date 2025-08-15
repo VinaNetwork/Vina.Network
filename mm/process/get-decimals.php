@@ -35,9 +35,19 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("get-decimals.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'make-market.log', 'make-market', 'DEBUG', $log_context);
 }
 
-// Khởi tạo session và kiểm tra CSRF cho yêu cầu POST
+// Kiểm tra phương thức POST
+if ($request_method !== 'POST') {
+    log_message("Invalid request method: $request_method, uri=$request_uri, session_id=$session_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    header('Content-Type: application/json');
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
+    ob_end_flush();
+    exit;
+}
+
+// Khởi tạo session và kiểm tra CSRF
 if (!ensure_session()) {
-    log_message("Failed to initialize session for CSRF, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Failed to initialize session, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'make-market.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
@@ -45,7 +55,6 @@ if (!ensure_session()) {
     exit;
 }
 
-// Kiểm tra CSRF token
 try {
     csrf_protect();
 } catch (Exception $e) {
