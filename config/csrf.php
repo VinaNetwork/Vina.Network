@@ -9,8 +9,6 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/bootstrap.php';
-
 // CSRF Configuration
 define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
 define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
