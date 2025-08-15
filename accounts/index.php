@@ -6,20 +6,17 @@
 // ============================================================================
 
 ob_start();
-define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'accounts/wallet-auth.php';
 require_once $root_path . 'accounts/header-auth.php'; // Security Headers
 
-// Check $domain and $is_secure
-global $domain, $is_secure;
-if (!isset($domain) || !isset($is_secure)) {
-    log_message("Server configuration error: \$domain or \$is_secure not defined", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
-    exit;
-}
+// Session start: in config/bootstrap.php
+// Error reporting: in config/bootstrap.php
 
 // Protect POST requests with CSRF
 csrf_protect();
@@ -27,9 +24,6 @@ csrf_protect();
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Failed to set CSRF cookie']);
-    exit;
 }
 
 // Check if user is already logged in
@@ -56,9 +50,6 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
-    exit;
 }
 
 // Generate nonce for anti-replay
@@ -82,7 +73,6 @@ $page_css = ['/accounts/acc.css'];
 <?php require_once $root_path . 'include/header.php';?>
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
-
 <div class="acc-container">
     <div class="acc-content">
         <h1>Login with Phantom Wallet</h1>
@@ -95,19 +85,14 @@ $page_css = ['/accounts/acc.css'];
         <input type="hidden" id="login-nonce" value="<?php echo htmlspecialchars($nonce); ?>">
     </div>
 </div>
-
 <?php require_once $root_path . 'include/footer.php';?>
 
 <!-- Scripts - Internal library -->
 <script>console.log('Attempting to load JS files...');</script>
-<script>
-    // Expose CSRF_TOKEN_TTL for acc.js to refresh token
-    window.CSRF_TOKEN_TTL = <?php echo CSRF_TOKEN_TTL; ?>;
-</script>
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>

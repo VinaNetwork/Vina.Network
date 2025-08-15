@@ -13,16 +13,12 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php'; // Load composer for stephenhill/base58
-require_once $root_path . 'accounts/header-auth.php'; // Security Headers
 
-// Check $domain and $is_secure
-global $domain, $is_secure;
-if (!isset($domain) || !isset($is_secure)) {
-    log_message("Server configuration error: \$domain or \$is_secure not defined", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Server configuration error']);
-    exit;
-}
+// Add Security Headers
+require_once $root_path . 'accounts/header-auth.php';
+
+// Session start: in config/bootstrap.php
+// Error reporting: in config/bootstrap.php
 
 // Protect POST requests with CSRF
 csrf_protect();
@@ -30,9 +26,6 @@ csrf_protect();
 // Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Failed to set CSRF cookie']);
-    exit;
 }
 
 // Library Base58
@@ -41,11 +34,9 @@ use StephenHill\Base58;
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
-    exit;
+} else {
+    log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 }
-log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 
 // Database connection
 $start_time = microtime(true);
@@ -118,12 +109,8 @@ $last_login = $account['last_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d
 // Handle logout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
-    session_destroy();
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
-    // Set new CSRF cookie after logout
-    if (!set_csrf_cookie()) {
-        log_message("Failed to set CSRF cookie after logout", 'accounts.log', 'accounts', 'ERROR');
-    }
+    session_destroy();
     header('Location: /accounts');
     exit;
 }
@@ -145,7 +132,6 @@ $page_css = ['/accounts/acc.css'];
 <?php require_once $root_path . 'include/header.php';?>
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
-
 <div class="acc-container">
     <div class="acc-content">
         <h1>Your Profile</h1>
@@ -176,17 +162,11 @@ $page_css = ['/accounts/acc.css'];
         </form>
     </div>
 </div>
-
 <?php require_once $root_path . 'include/footer.php';?>
 
 <script>console.log('Attempting to load JS files...');</script>
-<script>
-    // Expose CSRF_TOKEN_TTL for acc.js to refresh token
-    window.CSRF_TOKEN_TTL = <?php echo CSRF_TOKEN_TTL; ?>;
-</script>
-<!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
