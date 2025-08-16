@@ -12,7 +12,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Dynamic Domain Name Definition
-// Determine the protocol: https or http
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
 $is_secure = $protocol === 'https://';
 $domain = $_SERVER['HTTP_HOST'];
