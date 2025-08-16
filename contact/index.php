@@ -22,7 +22,7 @@ $page_og_title = "Vina Network - Contact Us";
 $page_og_description = "Contact Vina Network via X, Telegram, or Email. Join our community today!";
 $page_og_url = BASE_URL . "contact/";
 $page_canonical = BASE_URL . "contact/";
-$page_css = ['contact/contact.css'];
+$page_css = ['/contact/contact.css'];
 include $root_path . 'include/header.php';
 ?>
 
