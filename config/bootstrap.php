@@ -13,8 +13,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // Website root directory
 define('ROOT_PATH', dirname(__DIR__) . '/');
-define('CONFIG_PATH', ROOT_PATH . 'config/');
 // Load configuration
+define('CONFIG_PATH', ROOT_PATH . 'config/');
 require_once CONFIG_PATH . 'constants.php';
 require_once CONFIG_PATH . 'logging.php';
 require_once CONFIG_PATH . 'config.php';
