@@ -5,7 +5,14 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
+if (!defined('VINANETWORK_ENTRY')) {
+    http_response_code(403);
+    exit('No direct access allowed!');
+}
+
 // Initialize session with security options
+$is_secure = $protocol === 'https://';
 if (!defined('SESSION_STARTED')) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start([
