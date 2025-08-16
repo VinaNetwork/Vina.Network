@@ -20,10 +20,17 @@ $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTT
 $allowed_origin = 'https://' . $_SERVER['HTTP_HOST'];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
 
-if (!$is_ajax || !$origin || strpos($origin, $allowed_origin) !== 0) {
+// Nới lỏng kiểm tra origin: chỉ yêu cầu AJAX và origin (nếu có) phải khớp
+if (!$is_ajax) {
     log_message("Invalid request to refresh-csrf: AJAX=$is_ajax, Origin=$origin, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request or origin'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if ($origin && strpos($origin, $allowed_origin) !== 0) {
+    log_message("Invalid origin for refresh-csrf: Origin=$origin, Expected=$allowed_origin, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid origin'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -32,7 +39,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method === 'POST') {
     $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
     if (!validate_csrf_token($token)) {
-        log_message("Invalid CSRF token for refresh: $token, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
+        log_message("Invalid CSRF token for refresh: " . ($token ? substr($token, 0, 8) . '...' : 'none') . ", IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
         http_response_code(403);
         echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
         exit;
@@ -64,7 +71,7 @@ if (!set_csrf_cookie()) {
 
 // Return token and expiration time
 $expires = $_SESSION[CSRF_TOKEN_NAME . '_expires'] ?? null;
-log_message("CSRF token refreshed successfully: $token, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'INFO');
+log_message("CSRF token refreshed successfully: " . substr($token, 0, 8) . "... , IP=$ip, URI=$uri", 'csrf.log', 'logs', 'INFO');
 echo json_encode([
     'status' => 'success',
     'csrf_token' => $token,
