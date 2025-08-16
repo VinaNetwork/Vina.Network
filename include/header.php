@@ -59,7 +59,7 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>img/favicon.ico">
     
     <!-- Core Stylesheets -->
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/vina.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL . 'css/vina.css'; ?>">
     
     <?php if (!empty($page_css) && is_array($page_css)): ?>
         <?php foreach ($page_css as $css): ?>
