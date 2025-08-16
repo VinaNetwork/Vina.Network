@@ -19,7 +19,7 @@ class Database {
     private function __construct() {
         // Validate configuration constants
         if (!defined('DB_HOST') || !defined('DB_NAME') || !defined('DB_USER') || !defined('DB_PASS')) {
-            log_message("Database configuration constants are missing", 'database.log', 'logs', 'ERROR');
+            log_message("Database configuration constants are missing", 'bootstrap.log', 'logs', 'ERROR');
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Database configuration is incomplete']);
             exit;
@@ -38,9 +38,9 @@ class Database {
                     PDO::ATTR_TIMEOUT => 5 // Set connection timeout to 5 seconds
                 ]
             );
-            log_message("Database connection established", 'database.log', 'logs', 'INFO');
+            log_message("Database connection established", 'bootstrap.log', 'logs', 'INFO');
         } catch (PDOException $e) {
-            log_message("Database connection failed: {$e->getMessage()}", 'database.log', 'logs', 'ERROR');
+            log_message("Database connection failed: {$e->getMessage()}", 'bootstrap.log', 'logs', 'ERROR');
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
             exit;
