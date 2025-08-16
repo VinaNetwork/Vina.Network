@@ -17,8 +17,8 @@ define('ROOT_PATH', dirname(__DIR__) . '/');
 require_once ROOT_PATH . 'config/constants.php';
 require_once ROOT_PATH . 'config/logging.php';
 require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'config/error.php';
 require_once ROOT_PATH . 'config/session.php';
 require_once ROOT_PATH . 'config/csrf.php';
 require_once ROOT_PATH . 'config/db.php';
-require_once ROOT_PATH . 'config/error.php';
 ?>
