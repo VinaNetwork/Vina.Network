@@ -38,7 +38,4 @@ $base_path   = ($script_name === '/' || $script_name === '.') ? '' : $script_nam
 // Define constants
 define('BASE_URL', $protocol . $host_full . $base_path . '/');
 define('CSP_BASE', rtrim(BASE_URL, '/'));
-
-// Optional: define project root dir (filesystem path)
-define('ROOT_DIR', realpath(__DIR__ . '/../') . '/');
 ?>
