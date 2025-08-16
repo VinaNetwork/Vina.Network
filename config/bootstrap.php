@@ -14,7 +14,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 // Dynamic Domain Name Definition
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
 $is_secure = $protocol === 'https://';
-$domain = $_SERVER['HTTP_HOST'];
+$domain = filter_var($_SERVER['HTTP_HOST'], FILTER_SANITIZE_URL) ?: 'localhost'; // Sanitize HTTP_HOST
 define('BASE_URL', $protocol . $domain . '/');
 $csp_base = rtrim(BASE_URL, '/');
 
