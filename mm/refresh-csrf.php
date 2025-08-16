@@ -11,6 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/csrf.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
     log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
