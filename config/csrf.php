@@ -24,7 +24,7 @@ function ensure_session($max_attempts = 3) {
             'cookie_lifetime' => 0,
             'use_strict_mode' => true,
             'cookie_httponly' => true,
-            'cookie_samesite' => 'Strict',
+            'cookie_samesite' => 'Lax',
             'cookie_secure' => $is_secure,
             'cookie_domain' => $domain
         ];
