@@ -7,22 +7,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
 
-    // Function to get CSRF token from cookie
-    function getCsrfTokenFromCookie() {
-        const name = 'csrf_token_cookie=';
-        const decodedCookie = decodeURIComponent(document.cookie);
-        const cookies = decodedCookie.split(';');
-        for (let cookie of cookies) {
-            cookie = cookie.trim();
-            if (cookie.indexOf(name) === 0) {
-                console.log('CSRF token found in cookie');
-                return cookie.substring(name.length, cookie.length);
-            }
-        }
-        console.warn('CSRF token not found in cookie');
-        return null;
-    }
-
     // Copy functionality
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
@@ -53,6 +37,22 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
+    // Function to get CSRF token from cookie
+    function getCsrfTokenFromCookie() {
+        const name = 'csrf_token_cookie=';
+        const decodedCookie = decodeURIComponent(document.cookie);
+        const cookies = decodedCookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.indexOf(name) === 0) {
+                console.log('CSRF token found in cookie');
+                return cookie.substring(name.length, cookie.length);
+            }
+        }
+        console.warn('CSRF token not found in cookie');
+        return null;
+    }
 
     // Check if running in a secure context (HTTPS)
     if (!window.isSecureContext) {
