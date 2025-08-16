@@ -49,22 +49,22 @@ if (!defined('SESSION_STARTED')) {
         ]);
         define('SESSION_STARTED', true); // Mark session as started
         log_message(
-            "Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain",
+            "Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
             'bootstrap.log',
             'logs',
             'INFO'
         );
     } else {
         log_message(
-            "Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain",
+            "Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
             'bootstrap.log',
             'logs',
-            'WARNING' // Changed to WARNING to highlight potential issues
+            'WARNING'
         );
     }
 } else {
     log_message(
-        "Attempt to start session ignored, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain",
+        "Attempt to start session ignored, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
         'bootstrap.log',
         'logs',
         'WARNING'
