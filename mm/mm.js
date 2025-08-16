@@ -13,17 +13,23 @@ function getCookie(name) {
 }
 
 // Log message function
-function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
+async function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    axios.post('/mm/log.php', { message, log_file, module, log_type }, {
-        headers: { 
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': getCookie('csrf_token_cookie') || ''
-        },
-        withCredentials: true
-    }).catch(err => console.error('Log error:', err));
+    try {
+        const csrfToken = await ensureValidCSRFToken();
+        await axios.post('/mm/log.php', { message, log_file, module, log_type }, {
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfToken
+            },
+            withCredentials: true
+        });
+    } catch (err) {
+        console.error('Log error:', err);
+        console.warn('Failed to log message:', message);
+    }
 }
 
 // Show error message
@@ -57,18 +63,24 @@ function isValidTradeDirection(tradeDirection, solAmount, tokenAmount) {
 
 // Refresh CSRF token
 async function refreshCSRFToken() {
-    const csrfCookie = getCookie('csrf_token_cookie');
-    const response = await axios.get('/mm/refresh-csrf', {
-        headers: { 
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-Token': csrfCookie || ''
-        },
-        withCredentials: true
-    });
-    if (response.status !== 200 || !response.data.csrf_token) {
-        throw new Error('Failed to refresh CSRF token');
+    const csrfCookie = getCookie('csrf_token_cookie') || '';
+    try {
+        const response = await axios.get('/mm/refresh-csrf', {
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfCookie
+            },
+            withCredentials: true
+        });
+        if (response.status !== 200 || !response.data.csrf_token) {
+            throw new Error('Failed to refresh CSRF token');
+        }
+        document.cookie = `csrf_token_cookie=${response.data.csrf_token}; path=/; secure; samesite=strict`;
+        return { token: response.data.csrf_token, expires_at: response.data.expires_at };
+    } catch (error) {
+        log_message(`Failed to refresh CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        throw error;
     }
-    return { token: response.data.csrf_token, expires_at: response.data.expires_at };
 }
 
 // Check CSRF token expiration and refresh if needed
@@ -82,7 +94,7 @@ async function ensureValidCSRFToken() {
             csrfToken = token;
             localStorage.setItem('csrf_expires_at', expires_at);
             document.querySelector(`input[name="csrf_token"]`).value = csrfToken;
-            log_message(`CSRF token refreshed: ${csrfToken}, expires_at=${expires_at}`, 'make-market.log', 'make-market', 'INFO');
+            log_message(`CSRF token refreshed: ${csrfToken.substring(0, 8)}..., expires_at=${expires_at}`, 'make-market.log', 'make-market', 'INFO');
             return csrfToken;
         } catch (error) {
             log_message(`Failed to refresh CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
