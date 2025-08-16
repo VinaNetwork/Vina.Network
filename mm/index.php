@@ -303,14 +303,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Check SOLANA_NETWORK
-        if (!defined('SOLANA_NETWORK') || strlen(SOLANA_NETWORK) > 20) {
-            log_message("Invalid SOLANA_NETWORK: " . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Invalid SOLANA_NETWORK']);
-            exit;
-        }
-
         // Encrypt private key
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
         if ($encryptedPrivateKey === false) {
@@ -360,7 +352,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $delay,
                 $loopCount,
                 $batchSize,
-                SOLANA_NETWORK
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
