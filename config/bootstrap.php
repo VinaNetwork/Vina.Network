@@ -37,18 +37,38 @@ require_once ROOT_PATH . 'config/csrf.php';
 require_once ROOT_PATH . 'config/db.php';
 
 // Initialize session with security options
-if (session_status() === PHP_SESSION_NONE) {
-    session_start([
-        'cookie_lifetime' => 0,
-        'use_strict_mode' => true,
-        'cookie_httponly' => true,
-        'cookie_samesite' => 'Lax',
-        'cookie_secure' => $is_secure,
-        'cookie_domain' => $domain
-    ]);
-    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'bootstrap.log', 'logs', 'INFO');
+if (!defined('SESSION_STARTED')) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start([
+            'cookie_lifetime' => 0,
+            'use_strict_mode' => true,
+            'cookie_httponly' => true,
+            'cookie_samesite' => 'Lax',
+            'cookie_secure' => $is_secure,
+            'cookie_domain' => $domain
+        ]);
+        define('SESSION_STARTED', true); // Mark session as started
+        log_message(
+            "Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain",
+            'bootstrap.log',
+            'logs',
+            'INFO'
+        );
+    } else {
+        log_message(
+            "Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain",
+            'bootstrap.log',
+            'logs',
+            'WARNING' // Changed to WARNING to highlight potential issues
+        );
+    }
 } else {
-    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'bootstrap.log', 'logs', 'DEBUG');
+    log_message(
+        "Attempt to start session ignored, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain",
+        'bootstrap.log',
+        'logs',
+        'WARNING'
+    );
 }
 
 // PHP configuration
