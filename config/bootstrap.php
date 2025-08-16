@@ -47,9 +47,9 @@ if (session_status() === PHP_SESSION_NONE) {
         'cookie_secure' => $is_secure,
         'cookie_domain' => $domain
     ]);
-    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'INFO');
+    log_message("Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'bootstrap.log', 'logs', 'INFO');
 } else {
-    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("Session already started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain", 'bootstrap.log', 'logs', 'DEBUG');
 }
 
 // PHP configuration
