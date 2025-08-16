@@ -42,7 +42,7 @@ if (session_status() === PHP_SESSION_NONE) {
         'cookie_lifetime' => 0,
         'use_strict_mode' => true,
         'cookie_httponly' => true,
-        'cookie_samesite' => 'Strict',
+        'cookie_samesite' => 'Lax',
         'cookie_secure' => $is_secure,
         'cookie_domain' => $domain
     ]);
@@ -58,13 +58,25 @@ error_reporting(E_ALL);
 ini_set('log_errors', true);
 ini_set('error_log', ERROR_LOG_PATH);
 
+// Cache for directory/file checks
+$checked_paths = [];
+
 // Check/create dir & file with correct permissions
 function ensure_directory_and_file($dir_path, $file_path) {
+    global $checked_paths;
+    $cache_key = $dir_path . '|' . $file_path;
+
+    // Check cache first
+    if (isset($checked_paths[$cache_key])) {
+        return $checked_paths[$cache_key];
+    }
+
     try {
         // Create dir if missing
         if (!is_dir($dir_path)) {
             if (!mkdir($dir_path, 0755, true)) {
                 error_log("Failed to create directory: $dir_path");
+                $checked_paths[$cache_key] = false;
                 return false;
             }
             chmod($dir_path, 0755);
@@ -72,12 +84,14 @@ function ensure_directory_and_file($dir_path, $file_path) {
         // Check dir writable
         if (!is_writable($dir_path)) {
             error_log("Directory not writable: $dir_path");
+            $checked_paths[$cache_key] = false;
             return false;
         }
         // Create file if missing
         if (!file_exists($file_path)) {
             if (file_put_contents($file_path, '') === false) {
                 error_log("Failed to create file: $file_path");
+                $checked_paths[$cache_key] = false;
                 return false;
             }
             chmod($file_path, 0664);
@@ -85,11 +99,14 @@ function ensure_directory_and_file($dir_path, $file_path) {
         // Check file writable
         if (!is_writable($file_path)) {
             error_log("File not writable: $file_path");
+            $checked_paths[$cache_key] = false;
             return false;
         }
+        $checked_paths[$cache_key] = true;
         return true;
     } catch (Exception $e) {
         error_log("Error in ensure_directory_and_file: " . $e->getMessage());
+        $checked_paths[$cache_key] = false;
         return false;
     }
 }
