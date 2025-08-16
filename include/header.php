@@ -72,8 +72,8 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
         <?php endforeach; ?>
     <?php endif; ?>
     
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/poppins.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/all.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL . 'css/poppins.css'; ?>">
+    <link rel="stylesheet" href="<?php echo BASE_URL . 'css/all.css'; ?>">
     
     <!-- Font Preloading (Performance Optimization) -->
     <link rel="preload" href="<?php echo BASE_URL; ?>webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
