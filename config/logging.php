@@ -10,8 +10,6 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-// Website root directory
-define('ROOT_PATH', dirname(__DIR__) . '/');
 // Logs directory
 define('LOGS_PATH', ROOT_PATH . 'logs/');
 define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
