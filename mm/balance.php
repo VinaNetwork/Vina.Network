@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Đọc từ $_POST thay vì php://input
+// Read from $_POST
 $public_key = $_POST['public_key'] ?? '';
 $trade_direction = $_POST['trade_direction'] ?? 'buy';
 $sol_amount = floatval($_POST['sol_amount'] ?? 0);
@@ -44,7 +44,7 @@ $loop_count = intval($_POST['loop_count'] ?? 1);
 $batch_size = intval($_POST['batch_size'] ?? 5);
 $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
 
-// Gán token vào $_POST để csrf_protect() sử dụng
+// Assign token to $_POST for csrf_protect() to use
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
 
 // Protect POST requests with CSRF
@@ -121,7 +121,7 @@ try {
     $err = curl_error($curl);
     curl_close($curl);
 
-    // Ghi log chi tiết phản hồi từ Helius RPC
+    // Log detailed responses from Helius RPC
     log_message("Helius RPC response: HTTP=$http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'DEBUG');
 
     if ($err) {
