@@ -12,6 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // Initialize session with security options
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
 $is_secure = $protocol === 'https://';
 if (!defined('SESSION_STARTED')) {
     if (session_status() === PHP_SESSION_NONE) {
