@@ -21,14 +21,6 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
     exit;
 }
 
-// Check session
-if (!ensure_session()) {
-    log_message("Session not active", 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Session not active']);
-    exit;
-}
-
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("balance.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, Session ID: " . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
@@ -42,8 +34,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Get CSRF token from header, POST, or cookie
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
+// Đọc từ $_POST thay vì php://input
+$public_key = $_POST['public_key'] ?? '';
+$trade_direction = $_POST['trade_direction'] ?? 'buy';
+$sol_amount = floatval($_POST['sol_amount'] ?? 0);
+$token_amount = floatval($_POST['token_amount'] ?? 0);
+$token_mint = $_POST['token_mint'] ?? '';
+$loop_count = intval($_POST['loop_count'] ?? 1);
+$batch_size = intval($_POST['batch_size'] ?? 5);
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
+
+// Gán token vào $_POST để csrf_protect() sử dụng
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
 
 // Protect POST requests with CSRF
@@ -55,15 +56,6 @@ try {
     echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
 }
-
-// Get POST data
-$public_key = $_POST['public_key'] ?? '';
-$trade_direction = $_POST['trade_direction'] ?? 'buy';
-$sol_amount = floatval($_POST['sol_amount'] ?? 0);
-$token_amount = floatval($_POST['token_amount'] ?? 0);
-$token_mint = $_POST['token_mint'] ?? '';
-$loop_count = intval($_POST['loop_count'] ?? 1);
-$batch_size = intval($_POST['batch_size'] ?? 5);
 
 // Validate minimal required inputs
 if (empty($public_key)) {

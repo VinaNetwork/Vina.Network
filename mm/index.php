@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
+require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
 require_once $root_path . 'mm/network.php';
@@ -19,19 +19,30 @@ require_once $root_path . 'mm/network.php';
 use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
+// Session start: in config/bootstrap.php
+// Error reporting: in config/bootstrap.php
+
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_id=" . session_id(), 'make-market.log', 'make-market', 'DEBUG');
+    log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
 }
 
 // Protect POST requests with CSRF
 csrf_protect();
 
-// Check session timeout and regenerate if needed
-if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > 1800)) {
-    session_regenerate_id(true);
-    $_SESSION['last_activity'] = time();
-    log_message("Session regenerated due to timeout, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
+// Set CSRF cookie for potential AJAX requests
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'make-market.log', 'make-market', 'ERROR');
+} else {
+    log_message("CSRF cookie set successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+}
+
+// Generate CSRF token
+$csrf_token = generate_csrf_token();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token", 'make-market.log', 'make-market', 'ERROR');
+} else {
+    log_message("CSRF token generated successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
 }
 
 // Database connection
@@ -52,7 +63,7 @@ try {
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("Session public_key: $short_public_key, session_id=" . session_id(), 'make-market.log', 'make-market', 'DEBUG');
+    log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
 }
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
@@ -116,7 +127,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 5);
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
-        $csrf_token = $form_data['csrf_token'] ?? '';
 
         // Log form data for debugging
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
@@ -230,64 +240,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
             log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
             try {
-                // Làm mới CSRF token và lưu vào session
-                $csrf_token = regenerate_csrf_token();
-                if ($csrf_token === false) {
-                    log_message("Failed to regenerate CSRF token for cURL request", 'make-market.log', 'make-market', 'ERROR');
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
-                    exit;
-                }
-                set_csrf_cookie();
-                log_message("CSRF token regenerated for cURL: " . substr($csrf_token, 0, 8) . "...", 'make-market.log', 'make-market', 'INFO');
-
-                // Lưu session ID trước khi đóng
-                $session_id = session_id();
                 // Đóng session để tránh khóa
                 session_write_close();
 
-                // Gọi balance.php qua cURL
-                $curl = curl_init();
-                curl_setopt_array($curl, [
-                    CURLOPT_URL => BASE_URL . 'mm/balance.php',
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_POST => true,
-                    CURLOPT_POSTFIELDS => http_build_query([
-                        'public_key' => $transactionPublicKey,
-                        'token_mint' => $tokenMint,
-                        'trade_direction' => $tradeDirection,
-                        'sol_amount' => $solAmount,
-                        'token_amount' => $tokenAmount,
-                        'loop_count' => $loopCount,
-                        'batch_size' => $batchSize,
-                        'csrf_token' => $csrf_token
-                    ]),
-                    CURLOPT_HTTPHEADER => [
-                        'Content-Type: application/x-www-form-urlencoded',
-                        'X-Requested-With: XMLHttpRequest',
-                        'X-CSRF-Token: ' . $csrf_token,
-                        'Cookie: PHPSESSID=' . $session_id . '; csrf_token_cookie=' . $csrf_token,
-                        'User-Agent: VinaNetwork/1.0'
-                    ],
-                    CURLOPT_TIMEOUT => 10
-                ]);
+                // Gọi balance.php trực tiếp thay vì cURL
+                ob_start();
+                $_POST = [
+                    'public_key' => $transactionPublicKey,
+                    'token_mint' => $tokenMint,
+                    'trade_direction' => $tradeDirection,
+                    'sol_amount' => $solAmount,
+                    'token_amount' => $tokenAmount,
+                    'loop_count' => $loopCount,
+                    'batch_size' => $batchSize,
+                    'csrf_token' => $csrf_token
+                ];
+                $_SERVER['REQUEST_METHOD'] = 'POST';
+                $_SERVER['REQUEST_URI'] = '/mm/balance.php';
+                $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+                $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+                $_COOKIE['PHPSESSID'] = session_id();
 
-                $response = curl_exec($curl);
-                $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-                $err = curl_error($curl);
-                curl_close($curl);
+                // Gọi balance.php
+                include __DIR__ . '/balance.php';
+                $response = ob_get_clean();
 
                 // Khởi động lại session
-                session_start(['cookie_lifetime' => 0, 'sid' => $session_id]);
-                $_SESSION['last_activity'] = time();
+                session_start();
 
-                if ($err || $http_code !== 200) {
-                    log_message("Balance check failed: cURL error=$err, HTTP=$http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
-                    exit;
-                }
-
+                // Kiểm tra phản hồi
                 $data = json_decode($response, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
@@ -305,8 +286,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
             } catch (Exception $e) {
+                // Khởi động lại session nếu có lỗi
                 if (!session_id()) {
-                    session_start(['cookie_lifetime' => 0]);
+                    session_start();
                 }
                 log_message("Balance check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
@@ -430,12 +412,6 @@ $page_canonical = BASE_URL . "mm/";
 $page_css = ['/mm/mm.css'];
 // Slippage
 $defaultSlippage = 0.5;
-// Generate CSRF token for form
-$csrf_token = generate_csrf_token();
-if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token for form", 'make-market.log', 'make-market', 'ERROR');
-    $csrf_token = '';
-}
 ?>
 
 <!DOCTYPE html>
@@ -467,7 +443,7 @@ if ($csrf_token === false) {
 
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off" method="POST">
-            <?php echo get_csrf_field(); ?>
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
             <label for="privateKey">🔑 Private Key (Base58):</label>
