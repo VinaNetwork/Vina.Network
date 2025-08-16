@@ -11,16 +11,12 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
 require_once $root_path . '../vendor/autoload.php';
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
-require_once $root_path . 'mm/network.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
-
-// Session start: in config/bootstrap.php
-// Error reporting: in config/bootstrap.php
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
