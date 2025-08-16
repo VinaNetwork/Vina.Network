@@ -75,8 +75,6 @@ async function refreshCSRFToken() {
         if (response.status !== 200 || !response.data.csrf_token) {
             throw new Error('Failed to refresh CSRF token');
         }
-        // Sử dụng samesite=Lax để đồng bộ với config/session.php và config/csrf.php
-        document.cookie = `csrf_token_cookie=${response.data.csrf_token}; path=/; secure; samesite=lax`;
         return { token: response.data.csrf_token, expires_at: response.data.expires_at };
     } catch (error) {
         log_message(`Failed to refresh CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
