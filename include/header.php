@@ -60,11 +60,18 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
     
     <!-- Core Stylesheets -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/vina.css">
-    <?php if (!empty($page_css)): ?>
+    
+    <?php if (!empty($page_css) && is_array($page_css)): ?>
         <?php foreach ($page_css as $css): ?>
-            <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
+            <?php 
+                $css_url = (preg_match('#^(https?:)?/#', $css)) 
+                    ? $css 
+                    : BASE_URL . ltrim($css, '/');
+            ?>
+            <link rel="stylesheet" href="<?php echo htmlspecialchars($css_url); ?>">
         <?php endforeach; ?>
     <?php endif; ?>
+    
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/poppins.css">
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/all.css">
     
