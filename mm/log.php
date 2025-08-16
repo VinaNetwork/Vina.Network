@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/logging.php';
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
