@@ -21,7 +21,7 @@ use StephenHill\Base58;
 
 // Log request info
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, session_id=" . session_id(), 'make-market.log', 'make-market', 'DEBUG');
 }
 
 // Protect POST requests with CSRF
@@ -52,7 +52,7 @@ try {
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
+    log_message("Session public_key: $short_public_key, session_id=" . session_id(), 'make-market.log', 'make-market', 'DEBUG');
 }
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
@@ -230,10 +230,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
             log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
             try {
-                // Close session to avoid locking
+                // Làm mới CSRF token và lưu vào session
+                $csrf_token = regenerate_csrf_token();
+                if ($csrf_token === false) {
+                    log_message("Failed to regenerate CSRF token for cURL request", 'make-market.log', 'make-market', 'ERROR');
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
+                    exit;
+                }
+                set_csrf_cookie();
+                log_message("CSRF token regenerated for cURL: " . substr($csrf_token, 0, 8) . "...", 'make-market.log', 'make-market', 'INFO');
+
+                // Lưu session ID trước khi đóng
+                $session_id = session_id();
+                // Đóng session để tránh khóa
                 session_write_close();
 
-                // Call balance.php via cURL
+                // Gọi balance.php qua cURL
                 $curl = curl_init();
                 curl_setopt_array($curl, [
                     CURLOPT_URL => BASE_URL . 'mm/balance.php',
@@ -253,7 +266,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'Content-Type: application/x-www-form-urlencoded',
                         'X-Requested-With: XMLHttpRequest',
                         'X-CSRF-Token: ' . $csrf_token,
-                        'Cookie: PHPSESSID=' . session_id() . '; csrf_token_cookie=' . $csrf_token
+                        'Cookie: PHPSESSID=' . $session_id . '; csrf_token_cookie=' . $csrf_token,
+                        'User-Agent: VinaNetwork/1.0'
                     ],
                     CURLOPT_TIMEOUT => 10
                 ]);
@@ -263,8 +277,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $err = curl_error($curl);
                 curl_close($curl);
 
-                // Restart session
-                session_start();
+                // Khởi động lại session
+                session_start(['cookie_lifetime' => 0, 'sid' => $session_id]);
+                $_SESSION['last_activity'] = time();
 
                 if ($err || $http_code !== 200) {
                     log_message("Balance check failed: cURL error=$err, HTTP=$http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
@@ -290,9 +305,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
             } catch (Exception $e) {
-                // Khởi động lại session nếu có lỗi
                 if (!session_id()) {
-                    session_start();
+                    session_start(['cookie_lifetime' => 0]);
                 }
                 log_message("Balance check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
