@@ -19,8 +19,8 @@ if (!defined('SESSION_STARTED')) {
             'use_strict_mode' => true,
             'cookie_httponly' => true,
             'cookie_samesite' => 'Lax',
-            'cookie_secure' => $is_secure,
-            'cookie_domain' => $domain
+            'cookie_secure' => $is_secure, // Configured in the config/constants.php
+            'cookie_domain' => $domain     // Configured in the config/constants.php
         ]);
         define('SESSION_STARTED', true); // Mark session as started
         log_message(
