@@ -150,8 +150,17 @@ function log_message($message, $log_file = 'app.log', $module = 'logs', $log_typ
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
         return;
     }
-    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : ($module === 'logs' ? LOGS_PATH : TOOLS_PATH)));
-    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : ($module === 'logs' ? LOGS_PATH . $log_file : TOOLS_PATH . $log_file)));
+
+    // Simplified module-to-path mapping
+    $module_paths = [
+        'accounts' => ACCOUNTS_PATH,
+        'make-market' => MAKE_MARKET_PATH,
+        'tools' => TOOLS_PATH,
+        'logs' => LOGS_PATH
+    ];
+    $dir_path = $module_paths[$module] ?? LOGS_PATH;
+    $log_path = empty($module) ? ERROR_LOG_PATH : $dir_path . $log_file;
+
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
     try {
