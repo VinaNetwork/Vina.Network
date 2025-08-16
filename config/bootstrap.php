@@ -11,15 +11,11 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-// Website root directory
-define('ROOT_PATH', dirname(__DIR__) . '/');
-// Load configuration
-define('CONFIG_PATH', ROOT_PATH . 'config/');
-require_once CONFIG_PATH . 'constants.php';
-require_once CONFIG_PATH . 'logging.php';
-require_once CONFIG_PATH . 'config.php';
-require_once CONFIG_PATH . 'error.php';
-require_once CONFIG_PATH . 'session.php';
-require_once CONFIG_PATH . 'csrf.php';
-require_once CONFIG_PATH . 'db.php';
+require_once __DIR__ . '/constants.php';
+require_once __DIR__ . '/logging.php';
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/error.php';
+require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/db.php';
 ?>
