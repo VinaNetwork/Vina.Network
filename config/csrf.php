@@ -22,7 +22,7 @@ function ensure_session() {
     try {
         // Check if session is already started by bootstrap.php
         if (defined('SESSION_STARTED') && session_status() === PHP_SESSION_ACTIVE) {
-            log_message("Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", domain=$domain", 'csrf.log', 'logs', 'INFO');
+            log_message("Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", domain=$domain", 'bootstrap.log', 'logs', 'INFO');
             return true;
         }
 
@@ -42,21 +42,21 @@ function ensure_session() {
                 define('SESSION_STARTED', true);
                 log_message(
                     "Session started with secure settings, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
-                    'csrf.log',
+                    'bootstrap.log',
                     'logs',
                     'INFO'
                 );
                 return true;
             } else {
-                log_message("Failed to start session: session_start failed, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
+                log_message("Failed to start session: session_start failed, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'ERROR');
                 return false;
             }
         }
 
-        log_message("Session not active and failed to start, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'CRITICAL');
+        log_message("Session not active and failed to start, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'CRITICAL');
         return false;
     } catch (Exception $e) {
-        log_message("Error starting session for CSRF: " . $e->getMessage() . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
+        log_message("Error starting session for CSRF: " . $e->getMessage() . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'ERROR');
         return false;
     }
 }
@@ -70,11 +70,11 @@ function generate_csrf_token() {
 
         if (empty($_SESSION[CSRF_TOKEN_NAME])) {
             $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
-            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME] . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'INFO');
+            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME] . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'INFO');
         }
         return $_SESSION[CSRF_TOKEN_NAME];
     } catch (Exception $e) {
-        log_message("Error generating CSRF token: " . $e->getMessage() . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
+        log_message("Error generating CSRF token: " . $e->getMessage() . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'ERROR');
         return false;
     }
 }
@@ -88,21 +88,21 @@ function validate_csrf_token($token) {
     $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
 
     if (!ensure_session()) {
-        log_message("CSRF token validation failed: session not active, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'CRITICAL');
+        log_message("CSRF token validation failed: session not active, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'CRITICAL');
         return false;
     }
 
     if (!isset($_SESSION[CSRF_TOKEN_NAME]) || empty($token)) {
-        log_message("CSRF token validation failed: token empty or session token missing, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'CRITICAL');
+        log_message("CSRF token validation failed: token empty or session token missing, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'CRITICAL');
         return false;
     }
 
     if (!hash_equals($_SESSION[CSRF_TOKEN_NAME], $token)) {
-        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'WARNING');
+        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'WARNING');
         return false;
     }
     
-    log_message("CSRF token validated successfully: $token, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'csrf.log', 'logs', 'INFO');
+    log_message("CSRF token validated successfully: $token, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'INFO');
     return true;
 }
 
@@ -125,7 +125,7 @@ function csrf_protect() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
         if (!validate_csrf_token($token)) {
-            log_message("CSRF protection triggered: Invalid token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'WARNING');
+            log_message("CSRF protection triggered: Invalid token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'WARNING');
             http_response_code(403);
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
@@ -154,7 +154,7 @@ function set_csrf_cookie() {
         'domain' => $_SERVER['HTTP_HOST'],
         'secure' => $is_secure,
         'httponly' => true,
-        'samesite' => 'Lax' // Match bootstrap.php
+        'samesite' => 'Lax'
     ];
 
     if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
@@ -171,7 +171,7 @@ function set_csrf_cookie() {
         );
     }
 
-    log_message("CSRF cookie set: $token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'INFO');
+    log_message("CSRF cookie set: $token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'INFO');
     return true;
 }
 ?>
