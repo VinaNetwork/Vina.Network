@@ -10,13 +10,13 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/logging.php';
 
 // Set response header
 header('Content-Type: application/json');
 
-// Validate POST request
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+// Validate POST request and AJAX
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
     exit;
 }
