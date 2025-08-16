@@ -59,21 +59,14 @@ $page_canonical = isset($page_canonical) ? $page_canonical : $page_og_url;
     <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>img/favicon.ico">
     
     <!-- Core Stylesheets -->
-    <link rel="stylesheet" href="<?php echo BASE_URL . 'css/vina.css'; ?>">
-    
-    <?php if (!empty($page_css) && is_array($page_css)): ?>
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/vina.css">
+    <?php if (!empty($page_css)): ?>
         <?php foreach ($page_css as $css): ?>
-            <?php 
-                $css_url = (preg_match('#^(https?:)?/#', $css)) 
-                    ? $css 
-                    : BASE_URL . ltrim($css, '/');
-            ?>
-            <link rel="stylesheet" href="<?php echo htmlspecialchars($css_url); ?>">
+            <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
         <?php endforeach; ?>
     <?php endif; ?>
-    
-    <link rel="stylesheet" href="<?php echo BASE_URL . 'css/poppins.css'; ?>">
-    <link rel="stylesheet" href="<?php echo BASE_URL . 'css/all.css'; ?>">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/poppins.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/all.css">
     
     <!-- Font Preloading (Performance Optimization) -->
     <link rel="preload" href="<?php echo BASE_URL; ?>webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
