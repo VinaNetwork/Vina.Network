@@ -28,6 +28,7 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
             window.CSRF_TOKEN = result.csrf_token;
+            window.CSRF_TOKEN_TIMESTAMP = Date.now();
             log_message(`CSRF token retrieved: ${window.CSRF_TOKEN}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`CSRF token retrieved: ${window.CSRF_TOKEN}`);
             return window.CSRF_TOKEN;
@@ -46,29 +47,19 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
 // Initialize authentication and CSRF token
 async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
     if (window.CSRF_TOKEN) {
-        // Check if the current CSRF token is still valid by making a test request
-        try {
-            const response = await fetch('/mm/validate-csrf', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': window.CSRF_TOKEN,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'include'
-            });
-            const responseBody = await response.text();
-            const result = JSON.parse(responseBody);
-            if (response.ok && result.status === 'success') {
-                log_message(`Existing CSRF token is valid: ${window.CSRF_TOKEN}`, 'process.log', 'make-market', 'INFO');
-                return window.CSRF_TOKEN;
-            }
-            log_message(`Existing CSRF token is invalid or expired: ${window.CSRF_TOKEN}, response=${responseBody}`, 'process.log', 'make-market', 'WARNING');
-        } catch (err) {
-            log_message(`Failed to validate CSRF token: ${err.message}, token=${window.CSRF_TOKEN}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+        const tokenAge = Date.now() - (window.CSRF_TOKEN_TIMESTAMP || 0);
+        if (tokenAge > 25 * 60 * 1000) { // Làm mới nếu mã cũ hơn 25 phút
+            log_message(`CSRF token potentially expired (age=${tokenAge/1000}s), refreshing`, 'process.log', 'make-market', 'INFO');
+            window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
+            window.CSRF_TOKEN_TIMESTAMP = Date.now();
+            return window.CSRF_TOKEN;
         }
+        log_message(`Using existing CSRF token: ${window.CSRF_TOKEN}`, 'process.log', 'make-market', 'INFO');
+        return window.CSRF_TOKEN;
     }
-    return await getCsrfToken(maxRetries, retryDelay);
+    window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
+    window.CSRF_TOKEN_TIMESTAMP = Date.now();
+    return window.CSRF_TOKEN;
 }
 
 // Thêm CSRF token vào headers
@@ -173,6 +164,9 @@ function delay(ms) {
 
 // Show error message
 function showError(message, detailedError = null) {
+    if (detailedError?.includes('Invalid or expired CSRF token')) {
+        message = 'Phiên của bạn đã hết hạn. Vui lòng làm mới trang để tiếp tục.';
+    }
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
@@ -464,7 +458,7 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
                 : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-decimals'}`;
             log_message(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
             console.error(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}):`, errorMessage);
-            if (response.status === 403 && err.response?.data?.error === 'Invalid or expired CSRF token') {
+            if (err.response?.status === 403 && err.response?.data?.error === 'Invalid or expired CSRF token') {
                 log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
                 if (attempt === maxRetries) {
                     throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
@@ -842,6 +836,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const swapTransactions = [];
 
         for (let loop = 1; loop <= loopCount; loop++) {
+            await ensureAuthInitialized(); // Kiểm tra và làm mới CSRF trước mỗi vòng lặp
             document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
