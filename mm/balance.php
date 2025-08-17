@@ -141,6 +141,11 @@ try {
         log_message("Helius RPC failed in balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $err]);
+        // Clear session decimals after cURL error
+        if (isset($_SESSION['decimals_' . $token_mint])) {
+            unset($_SESSION['decimals_' . $token_mint]);
+            log_message("Cleared session decimals for token_mint=$token_mint after cURL error", 'make-market.log', 'make-market', 'INFO');
+        }
         exit;
     }
 
@@ -148,6 +153,11 @@ try {
         log_message("Helius RPC failed in balance.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
+        // Clear session decimals after HTTP error
+        if (isset($_SESSION['decimals_' . $token_mint])) {
+            unset($_SESSION['decimals_' . $token_mint]);
+            log_message("Cleared session decimals for token_mint=$token_mint after HTTP error", 'make-market.log', 'make-market', 'INFO');
+        }
         exit;
     }
 
@@ -156,6 +166,11 @@ try {
         log_message("Helius RPC failed in balance.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
+        // Clear session decimals after JSON error
+        if (isset($_SESSION['decimals_' . $token_mint])) {
+            unset($_SESSION['decimals_' . $token_mint]);
+            log_message("Cleared session decimals for token_mint=$token_mint after JSON error", 'make-market.log', 'make-market', 'INFO');
+        }
         exit;
     }
 
@@ -163,6 +178,11 @@ try {
         log_message("Helius RPC failed in balance.php: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $data['error']['message']]);
+        // Clear session decimals after RPC error
+        if (isset($_SESSION['decimals_' . $token_mint])) {
+            unset($_SESSION['decimals_' . $token_mint]);
+            log_message("Cleared session decimals for token_mint=$token_mint after RPC error", 'make-market.log', 'make-market', 'INFO');
+        }
         exit;
     }
 
@@ -170,6 +190,11 @@ try {
         log_message("Helius RPC failed in balance.php: No nativeBalance or lamports found for public_key=$short_public_key", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
+        // Clear session decimals after balance error
+        if (isset($_SESSION['decimals_' . $token_mint])) {
+            unset($_SESSION['decimals_' . $token_mint]);
+            log_message("Cleared session decimals for token_mint=$token_mint after balance error", 'make-market.log', 'make-market', 'INFO');
+        }
         exit;
     }
 
@@ -232,6 +257,11 @@ try {
             'status' => 'error',
             'message' => implode("; ", $errors)
         ], JSON_UNESCAPED_UNICODE);
+        // Clear session decimals after error
+        if (isset($_SESSION['decimals_' . $token_mint])) {
+            unset($_SESSION['decimals_' . $token_mint]);
+            log_message("Cleared session decimals for token_mint=$token_mint after error", 'make-market.log', 'make-market', 'INFO');
+        }
         exit;
     }
 
@@ -241,10 +271,20 @@ try {
         'message' => 'Wallet balance is sufficient to perform the transaction',
         'balance' => $trade_direction === 'buy' ? $balanceInSol : ($trade_direction === 'sell' ? $tokenBalance : ['sol' => $balanceInSol, 'token' => $tokenBalance])
     ], JSON_UNESCAPED_UNICODE);
+    // Clear session decimals after success
+    if (isset($_SESSION['decimals_' . $token_mint])) {
+        unset($_SESSION['decimals_' . $token_mint]);
+        log_message("Cleared session decimals for token_mint=$token_mint after success", 'make-market.log', 'make-market', 'INFO');
+    }
 } catch (Exception $e) {
     log_message("Balance check failed in balance.php: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
+    // Clear session decimals after exception
+    if (isset($_SESSION['decimals_' . $token_mint])) {
+        unset($_SESSION['decimals_' . $token_mint]);
+        log_message("Cleared session decimals for token_mint=$token_mint after exception", 'make-market.log', 'make-market', 'INFO');
+    }
     exit;
 }
 ?>
