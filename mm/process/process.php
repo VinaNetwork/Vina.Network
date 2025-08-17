@@ -108,8 +108,21 @@ try {
     $stmt->execute([$transaction_id, $user_id, SOLANA_NETWORK]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
-        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
+        // Kiểm tra từng điều kiện riêng lẻ để xác định nguyên nhân
+        $stmt_check_id = $pdo->prepare("SELECT COUNT(*) FROM make_market WHERE id = ?");
+        $stmt_check_id->execute([$transaction_id]);
+        $id_exists = $stmt_check_id->fetchColumn();
+
+        $stmt_check_user = $pdo->prepare("SELECT COUNT(*) FROM make_market WHERE id = ? AND user_id = ?");
+        $stmt_check_user->execute([$transaction_id, $user_id]);
+        $user_matches = $stmt_check_user->fetchColumn();
+
+        $stmt_check_network = $pdo->prepare("SELECT COUNT(*) FROM make_market WHERE id = ? AND network = ?");
+        $stmt_check_network->execute([$transaction_id, SOLANA_NETWORK]);
+        $network_matches = $stmt_check_network->fetchColumn();
+
+        $error_message = "Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", id_exists=$id_exists, user_matches=$user_matches, network_matches=$network_matches";
+        log_message($error_message, 'process.log', 'make-market', 'ERROR', $log_context);
         header('Content-Type: application/json');
         http_response_code(404);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
