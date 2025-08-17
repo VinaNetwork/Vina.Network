@@ -356,13 +356,13 @@ async function getNetworkConfig() {
     }
 }
 
-// Get token decimals
-async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
+// Get token decimals from database
+async function getTokenDecimals(tokenMint, solanaNetwork) {
     const maxRetries = 3;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            log_message(`Attempting to get token decimals from server (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Attempting to get token decimals from database (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             await ensureAuthInitialized();
             const headers = addAxiosAuthHeaders({
                 timeout: 15000,
@@ -385,17 +385,17 @@ async function getTokenDecimals(tokenMint, heliusApiKey, solanaNetwork) {
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
             }
-            const decimals = response.data.decimals || 9;
-            log_message(`Token decimals retrieved from server: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log(`Token decimals retrieved from server: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
+            const decimals = parseInt(response.data.decimals) || 9;
+            log_message(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
             return decimals;
         } catch (err) {
             attempt++;
             const errorMessage = err.response
                 ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
                 : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-decimals'}`;
-            log_message(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error(`Failed to get token decimals from server (attempt ${attempt}/${maxRetries}):`, errorMessage);
+            log_message(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}):`, errorMessage);
             if (attempt === maxRetries) {
                 throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
             }
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Fetch token decimals
     let tokenDecimals;
     try {
-        tokenDecimals = await getTokenDecimals(transaction.token_mint, null, networkConfig.network);
+        tokenDecimals = await getTokenDecimals(transaction.token_mint, networkConfig.network);
     } catch (err) {
         showError('Failed to retrieve token decimals: ' + err.message, err.message);
         return;
