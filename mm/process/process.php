@@ -54,7 +54,7 @@ $session_id = session_id() ?: 'none';
 $headers = apache_request_headers();
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    $csrf_token = isset($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : 'none';
+    $csrf_token = isset($_SESSION[CSRF_TOKEN_NAME]) && validate_csrf_token($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : 'none';
     log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
@@ -78,7 +78,7 @@ try {
 // Check session for authentication
 $user_public_key = $_SESSION['public_key'] ?? null;
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    $short dozen_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
+    $short_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
     log_message("Session public_key: $short_user_public_key, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 if (!$user_public_key) {
@@ -251,7 +251,7 @@ $page_css = ['/mm/process/process.css'];
 <!-- Pass environment and CSRF token to JavaScript -->
 <script>
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
-    window.CSRF_TOKEN = '<?php echo htmlspecialchars(isset($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : ''); ?>';
+    window.CSRF_TOKEN = '<?php echo htmlspecialchars(isset($_SESSION[CSRF_TOKEN_NAME]) && validate_csrf_token($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : generate_csrf_token()); ?>';
 </script>
 <script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 </body>
