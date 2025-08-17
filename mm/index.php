@@ -236,9 +236,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
             log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
             try {
-                // Đóng session để tránh khóa
-                session_write_close();
-
                 // Gọi balance.php trực tiếp thay vì cURL
                 ob_start();
                 $_POST = [
@@ -257,11 +254,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
 
-                // Gọi balance.php
+                // Call balance.php
                 include __DIR__ . '/balance.php';
                 $response = ob_get_clean();
 
-                // Khởi động lại session
+                session_write_close();
                 session_start();
 
                 // Kiểm tra phản hồi
