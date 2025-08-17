@@ -126,7 +126,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Log form data for debugging
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck", 'make-market.log', 'make-market', 'DEBUG');
+            $obfuscatedPrivateKey = substr($privateKey, 0, 4) . '...' . substr($privateKey, -4);
+            $logFormData = $form_data;
+            unset($logFormData['privateKey']);
+            $logFormData['privateKey_obfuscated'] = $obfuscatedPrivateKey;
+            log_message("Form data: " . json_encode($logFormData), 'make-market.log', 'make-market', 'DEBUG');
+            log_message(
+                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_obfuscated=$obfuscatedPrivateKey, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck",
+                'make-market.log',
+                'make-market',
+                'DEBUG'
+            );
+        } else {
+            log_message(
+                 "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, skipBalanceCheck=$skipBalanceCheck",
+                 'make-market.log',
+                 'make-market',
+                 'INFO'
+            );
         }
 
         // Validate inputs
