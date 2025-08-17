@@ -250,8 +250,9 @@ $page_css = ['/mm/process/process.css'];
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <!-- Pass environment and CSRF token to JavaScript -->
 <script>
-    window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'production'; ?>';
+    window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'development'; ?>';
     window.CSRF_TOKEN = '<?php echo htmlspecialchars(isset($_SESSION[CSRF_TOKEN_NAME]) && validate_csrf_token($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : generate_csrf_token()); ?>';
+    window.CSRF_TOKEN_TIMESTAMP = <?php echo isset($_SESSION[CSRF_TOKEN_NAME . '_created']) ? $_SESSION[CSRF_TOKEN_NAME . '_created'] * 1000 : 'Date.now()'; ?>;
 </script>
 <script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 </body>
