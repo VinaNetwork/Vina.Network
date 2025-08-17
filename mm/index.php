@@ -14,6 +14,7 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
 require_once $root_path . '../vendor/autoload.php';
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
+require_once $root_path . 'mm/network.php'; // Include network configuration
 
 use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
@@ -119,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 5);
+        $network = $form_data['network'] ?? SOLANA_NETWORK; // Lấy network từ form hoặc mặc định từ SOLANA_NETWORK
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
         // Log form data an toàn
@@ -129,14 +131,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $logFormData['privateKey_obfuscated'] = $obfuscatedPrivateKey;
             log_message("Form data: " . json_encode($logFormData), 'make-market.log', 'make-market', 'DEBUG');
             log_message(
-                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, privateKey_obfuscated=$obfuscatedPrivateKey, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck",
+                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, privateKey_obfuscated=$obfuscatedPrivateKey, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck",
                 'make-market.log',
                 'make-market',
                 'DEBUG'
             );
         } else {
             log_message(
-                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, skipBalanceCheck=$skipBalanceCheck",
+                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipBalanceCheck=$skipBalanceCheck",
                 'make-market.log',
                 'make-market',
                 'INFO'
@@ -219,6 +221,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Batch size must be between 1 and 10']);
             exit;
         }
+        // Validate network
+        $valid_networks = ['devnet', 'testnet', 'mainnet'];
+        if (!in_array($network, $valid_networks, true)) {
+            log_message("Invalid network: $network", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid network selected']);
+            exit;
+        }
 
         // Gọi decimals.php để lấy decimals của token mint
         log_message("Calling decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
@@ -226,6 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ob_start();
             $_POST = [
                 'token_mint' => $tokenMint,
+                'network' => $network, // Thêm network vào yêu cầu decimals.php
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -304,9 +315,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Check wallet balance by calling balance.php, unless skipped or trade direction conditions are not met
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
-            log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
+            log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, network=$network, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
             try {
-                // Gọi balance.php trực tiếp thay vì cURL
                 ob_start();
                 $_POST = [
                     'public_key' => $transactionPublicKey,
@@ -316,6 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'token_amount' => $tokenAmount,
                     'loop_count' => $loopCount,
                     'batch_size' => $batchSize,
+                    'network' => $network, // Thêm network vào yêu cầu balance.php
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -356,7 +367,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 log_message("Balance check passed: {$data['message']}, balance=" . json_encode($data['balance']), 'make-market.log', 'make-market', 'INFO');
             } catch (Exception $e) {
-                // Khởi động lại session nếu có lỗi
                 if (!session_id()) {
                     session_start();
                 }
@@ -427,10 +437,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $loopCount,
                 $batchSize,
                 $decimals,
-                'mainnet'
+                $network // Sử dụng giá trị network từ form
             ]);
             $transactionId = $pdo->lastInsertId();
-            log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
+            log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "..., network=$network", 'make-market.log', 'make-market', 'INFO');
         } catch (PDOException $e) {
             log_message("Database insert failed: {$e->getMessage()}, Code: {$e->getCode()}, Query: INSERT INTO make_market..., Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
@@ -507,6 +517,12 @@ $defaultSlippage = 0.5;
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off" method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
+            <label for="network">🌐 Network:</label>
+            <select name="network" id="network" required>
+                <option value="devnet" <?php echo SOLANA_NETWORK === 'devnet' ? 'selected' : ''; ?>>Devnet</option>
+                <option value="testnet" <?php echo SOLANA_NETWORK === 'testnet' ? 'selected' : ''; ?>>Testnet</option>
+                <option value="mainnet" <?php echo SOLANA_NETWORK === 'mainnet' ? 'selected' : ''; ?>>Mainnet</option>
+            </select>
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
             <label for="privateKey">🔑 Private Key (Base58):</label>
