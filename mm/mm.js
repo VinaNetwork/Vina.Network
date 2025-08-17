@@ -109,7 +109,7 @@ async function refreshCSRFToken() {
 // Get SOLANA_NETWORK from server
 async function getSolanaNetwork() {
     try {
-        const response = await axios.get('/mm/get-network.php', {
+        const response = await axios.get('/mm/get-network', {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             withCredentials: true
         });
