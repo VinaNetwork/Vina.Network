@@ -13,6 +13,11 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/header-auth.php';
 
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Check AJAX request (though called via include, for consistency)
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
     log_message("Non-AJAX request rejected in decimals.php", 'make-market.log', 'make-market', 'ERROR');
@@ -138,6 +143,9 @@ try {
     }
 
     $decimals = intval($data['result']['value']['data']['parsed']['info']['decimals']);
+
+    // Store decimals in session
+    $_SESSION['decimals_' . $token_mint] = $decimals;
 
     log_message("Decimals fetched successfully: $decimals for token_mint=$token_mint", 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
