@@ -21,11 +21,6 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
     exit;
 }
 
-// Log request info
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("decimals.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, Session ID: " . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
-}
-
 // Get parameters from POST data
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     log_message("Invalid request method in decimals.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
@@ -101,8 +96,10 @@ try {
     $err = curl_error($curl);
     curl_close($curl);
 
-    // Log detailed responses from Helius RPC
-    log_message("Helius RPC response in decimals.php: HTTP=$http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'DEBUG');
+    // Log HTTP status and error (if any)
+    if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+        log_message("Helius RPC response in decimals.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
+    }
 
     if ($err) {
         log_message("Helius RPC failed in decimals.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
@@ -112,7 +109,7 @@ try {
     }
 
     if ($http_code !== 200) {
-        log_message("Helius RPC failed in decimals.php: HTTP $http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in decimals.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
@@ -120,21 +117,21 @@ try {
 
     $data = json_decode($response, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("Helius RPC failed in decimals.php: Invalid JSON response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in decimals.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
     }
 
     if (isset($data['error'])) {
-        log_message("Helius RPC failed in decimals.php: {$data['error']['message']}, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in decimals.php: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $data['error']['message']]);
         exit;
     }
 
     if (!isset($data['result']['value']) || !isset($data['result']['value']['data']['parsed']['info']['decimals'])) {
-        log_message("Helius RPC failed in decimals.php: No decimals found, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in decimals.php: No decimals found for token_mint=$token_mint", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Invalid token mint or not a fungible token']);
         exit;
@@ -142,14 +139,14 @@ try {
 
     $decimals = intval($data['result']['value']['data']['parsed']['info']['decimals']);
 
-    log_message("Decimals fetched successfully: $decimals for token_mint $token_mint", 'make-market.log', 'make-market', 'INFO');
+    log_message("Decimals fetched successfully: $decimals for token_mint=$token_mint", 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
         'status' => 'success',
         'message' => 'Token decimals fetched successfully',
         'decimals' => $decimals
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    log_message("Decimals fetch failed in decimals.php: {$e->getMessage()}, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Decimals fetch failed in decimals.php: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $e->getMessage()]);
     exit;
