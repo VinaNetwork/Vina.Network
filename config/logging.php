@@ -18,7 +18,9 @@ define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
 define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
-define('MAX_LOG_SIZE', 1024 * 1024); // 1MB max log file size
+define('MAX_LOG_SIZE', 1024 * 1024);
+// Application environment (development, staging, production)
+define('ENVIRONMENT', 'development');
 
 // Cache for directory/file checks
 $checked_paths = [];
