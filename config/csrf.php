@@ -15,6 +15,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
 define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
 define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie'); // Name of the CSRF cookie (for AJAX requests)
+define('CSRF_TOKEN_TTL', 1800); // Token time-to-live in seconds (30 minutes)
 
 // Ensure session is active
 function ensure_session() {
@@ -61,7 +62,7 @@ function ensure_session() {
     }
 }
 
-// Generate CSRF token and store in session
+// Generate CSRF token and store in session with TTL
 function generate_csrf_token() {
     try {
         if (!ensure_session()) {
@@ -70,7 +71,8 @@ function generate_csrf_token() {
 
         if (empty($_SESSION[CSRF_TOKEN_NAME])) {
             $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
-            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME] . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'INFO');
+            $_SESSION[CSRF_TOKEN_NAME . '_created'] = time(); // Store creation time
+            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME] . ", created_at=" . $_SESSION[CSRF_TOKEN_NAME . '_created'] . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'INFO');
         }
         return $_SESSION[CSRF_TOKEN_NAME];
     } catch (Exception $e) {
@@ -79,7 +81,7 @@ function generate_csrf_token() {
     }
 }
 
-// Validate CSRF token against session
+// Validate CSRF token against session with TTL check
 function validate_csrf_token($token) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
@@ -97,12 +99,18 @@ function validate_csrf_token($token) {
         return false;
     }
 
+    // Check TTL
+    if (isset($_SESSION[CSRF_TOKEN_NAME . '_created']) && (time() - $_SESSION[CSRF_TOKEN_NAME . '_created']) > CSRF_TOKEN_TTL) {
+        log_message("CSRF token validation failed: token expired, provided=$token, created_at=" . $_SESSION[CSRF_TOKEN_NAME . '_created'] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'WARNING');
+        return false;
+    }
+
     if (!hash_equals($_SESSION[CSRF_TOKEN_NAME], $token)) {
         log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'WARNING');
         return false;
     }
     
-    log_message("CSRF token validated successfully: $token, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'INFO');
+    log_message("CSRF token validated successfully: $token, created_at=" . $_SESSION[CSRF_TOKEN_NAME . '_created'] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'bootstrap.log', 'logs', 'INFO');
     return true;
 }
 
@@ -110,6 +118,7 @@ function validate_csrf_token($token) {
 function regenerate_csrf_token() {
     if (ensure_session()) {
         unset($_SESSION[CSRF_TOKEN_NAME]);
+        unset($_SESSION[CSRF_TOKEN_NAME . '_created']); // Remove creation time
     }
     return generate_csrf_token();
 }
@@ -125,13 +134,13 @@ function csrf_protect() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
         if (!validate_csrf_token($token)) {
-            log_message("CSRF protection triggered: Invalid token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'WARNING');
+            log_message("CSRF protection triggered: Invalid or expired token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'WARNING');
             http_response_code(403);
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
-                echo json_encode(['error' => 'Invalid CSRF token']);
+                echo json_encode(['error' => 'Invalid or expired CSRF token']);
             } else {
-                header('Location: /error?message=Invalid+CSRF+token');
+                header('Location: /error?message=Invalid+or+expired+CSRF+token');
             }
             exit;
         }
