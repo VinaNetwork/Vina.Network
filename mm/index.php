@@ -220,6 +220,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Gọi decimals.php để lấy decimals của token mint
+        log_message("Calling decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
+        try {
+            ob_start();
+            $_POST = [
+                'token_mint' => $tokenMint,
+                'csrf_token' => $csrf_token
+            ];
+            $_SERVER['REQUEST_METHOD'] = 'POST';
+            $_SERVER['REQUEST_URI'] = '/mm/decimals.php';
+            $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+            $_COOKIE['PHPSESSID'] = session_id();
+
+            // Refresh CSRF nếu cần
+            $csrf_token = generate_csrf_token();
+            log_message("CSRF token refreshed before calling decimals.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+            $_POST['csrf_token'] = $csrf_token;
+            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+
+            // Call decimals.php
+            include __DIR__ . '/decimals.php';
+            $response = ob_get_clean();
+
+            // Close Session
+            session_write_close();
+            session_start();
+
+            // Kiểm tra phản hồi
+            $data = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                log_message("Failed to parse decimals.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error parsing response from token decimals check']);
+                exit;
+            }
+
+            if ($data['status'] !== 'success') {
+                log_message("Decimals check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => $data['message']]);
+                exit;
+            }
+
+            $decimals = intval($data['decimals']);
+            log_message("Decimals check passed: decimals=$decimals", 'make-market.log', 'make-market', 'INFO');
+        } catch (Exception $e) {
+            if (!session_id()) {
+                session_start();
+            }
+            log_message("Decimals check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Error checking token decimals: ' . $e->getMessage()]);
+            exit;
+        }
+
         // Validate private key using SolanaPhpSdk and derive transactionPublicKey
         try {
             $base58 = new Base58();
@@ -354,8 +410,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INSERT INTO make_market (
                     user_id, public_key, process_name, private_key, token_mint, 
                     trade_direction, sol_amount, token_amount, slippage, delay_seconds, 
-                    loop_count, batch_size, status, network
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)
+                    loop_count, batch_size, decimals, status, network
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)
             ");
             $stmt->execute([
                 $_SESSION['user_id'],
@@ -370,6 +426,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $delay,
                 $loopCount,
                 $batchSize,
+                $decimals,
+                'mainnet'
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "...", 'make-market.log', 'make-market', 'INFO');
