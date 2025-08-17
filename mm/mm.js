@@ -106,6 +106,23 @@ async function refreshCSRFToken() {
     return response.data.csrf_token;
 }
 
+// Get SOLANA_NETWORK from server
+async function getSolanaNetwork() {
+    try {
+        const response = await axios.get('/mm/get-network.php', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            withCredentials: true
+        });
+        if (response.status === 200 && response.data.network) {
+            return response.data.network;
+        }
+        throw new Error('Failed to fetch SOLANA_NETWORK');
+    } catch (error) {
+        log_message(`Failed to fetch SOLANA_NETWORK: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        throw error;
+    }
+}
+
 // Handle form submission
 document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -142,6 +159,31 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         return;
     }
 
+    // Get SOLANA_NETWORK
+    let network;
+    try {
+        network = await getSolanaNetwork();
+        log_message(`Fetched SOLANA_NETWORK: ${network}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Fetched SOLANA_NETWORK:', network);
+    } catch (error) {
+        showError('Failed to fetch network configuration. Please reload the page.');
+        submitButton.disabled = false;
+        return;
+    }
+
+    // Warn if mainnet is selected
+    if (network === 'mainnet') {
+        const proceed = confirm('Warning: You are on Solana Mainnet. Transactions will use real funds. Do you want to proceed?');
+        if (!proceed) {
+            log_message('User canceled mainnet transaction', 'make-market.log', 'make-market', 'INFO');
+            console.log('User canceled mainnet transaction');
+            submitButton.disabled = false;
+            resultDiv.innerHTML = '';
+            resultDiv.classList.remove('active');
+            return;
+        }
+    }
+
     const params = {
         processName: formData.get('processName')?.trim() || '',
         privateKey: formData.get('privateKey')?.trim() || '',
@@ -153,7 +195,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         delay: parseInt(formData.get('delay')) || 0,
         loopCount: parseInt(formData.get('loopCount')) || 1,
         batchSize: parseInt(formData.get('batchSize')) || 5,
-        network: formData.get('network') || 'devnet', // Thêm network
         csrf_token: csrfToken,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
     };
@@ -262,28 +303,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         submitButton.disabled = false;
         return;
     }
-    // Validate network
-    const validNetworks = ['devnet', 'testnet', 'mainnet'];
-    if (!validNetworks.includes(params.network)) {
-        log_message(`Invalid network: ${params.network}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Please select a valid network (Devnet, Testnet, or Mainnet).');
-        console.error('Invalid network');
-        submitButton.disabled = false;
-        return;
-    }
-    // Warn if mainnet is selected
-    if (params.network === 'mainnet') {
-        const proceed = confirm('Warning: You are on Solana Mainnet. Transactions will use real funds. Do you want to proceed?');
-        if (!proceed) {
-            log_message('User canceled mainnet transaction', 'make-market.log', 'make-market', 'INFO');
-            console.log('User canceled mainnet transaction');
-            submitButton.disabled = false;
-            resultDiv.innerHTML = '';
-            resultDiv.classList.remove('active');
-            return;
-        }
-    }
-
     // Log if balance check is skipped due to invalid trade direction or user choice
     if (params.skipBalanceCheck || !isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)) {
         log_message(`Balance check skipped: skipBalanceCheck=${params.skipBalanceCheck}, validTradeDirection=${isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)}`, 'make-market.log', 'make-market', 'INFO');
