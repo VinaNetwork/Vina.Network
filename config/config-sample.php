@@ -11,6 +11,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
+// Application environment (development, staging, production)
+define('ENVIRONMENT', 'development');
+
 // Database Configuration
 if (!defined('DB_HOST')) {
     define('DB_HOST', 'localhost');
