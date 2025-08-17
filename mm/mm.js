@@ -62,6 +62,8 @@ function showError(message) {
         resultDiv.innerHTML = `<p>${message}. Please deposit at least the required amount of SOL to your wallet or enable "Skip Balance Check" to proceed.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     } else if (message.includes('Connection error while checking wallet balance')) {
         resultDiv.innerHTML = `<p>${message}. Please check your network connection or try again later.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    } else if (message.includes('Error checking token decimals')) {
+        resultDiv.innerHTML = `<p>${message}. Please verify the token mint address and try again.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     } else {
         resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     }
