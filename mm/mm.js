@@ -153,6 +153,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         delay: parseInt(formData.get('delay')) || 0,
         loopCount: parseInt(formData.get('loopCount')) || 1,
         batchSize: parseInt(formData.get('batchSize')) || 5,
+        network: formData.get('network') || 'devnet', // Thêm network
         csrf_token: csrfToken,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
     };
@@ -260,6 +261,27 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         console.error('Invalid batch size');
         submitButton.disabled = false;
         return;
+    }
+    // Validate network
+    const validNetworks = ['devnet', 'testnet', 'mainnet'];
+    if (!validNetworks.includes(params.network)) {
+        log_message(`Invalid network: ${params.network}`, 'make-market.log', 'make-market', 'ERROR');
+        showError('Please select a valid network (Devnet, Testnet, or Mainnet).');
+        console.error('Invalid network');
+        submitButton.disabled = false;
+        return;
+    }
+    // Warn if mainnet is selected
+    if (params.network === 'mainnet') {
+        const proceed = confirm('Warning: You are on Solana Mainnet. Transactions will use real funds. Do you want to proceed?');
+        if (!proceed) {
+            log_message('User canceled mainnet transaction', 'make-market.log', 'make-market', 'INFO');
+            console.log('User canceled mainnet transaction');
+            submitButton.disabled = false;
+            resultDiv.innerHTML = '';
+            resultDiv.classList.remove('active');
+            return;
+        }
     }
 
     // Log if balance check is skipped due to invalid trade direction or user choice
