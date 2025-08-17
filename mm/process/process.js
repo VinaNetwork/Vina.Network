@@ -4,13 +4,13 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Hàm lấy CSRF token từ endpoint /mm/get-csrf
+// Hàm lấy CSRF token từ endpoint /mm/refresh-csrf
 async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            log_message(`Attempting to fetch CSRF token from /mm/get-csrf (attempt ${attempt + 1}/${maxRetries}), cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/get-csrf', {
+            log_message(`Attempting to fetch CSRF token from /mm/refresh-csrf (attempt ${attempt + 1}/${maxRetries}), cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const response = await fetch('/mm/refresh-csrf', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
@@ -19,7 +19,7 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/get-csrf: status=${response.status}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Response from /mm/refresh-csrf: status=${response.status}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${responseBody}`);
             }
