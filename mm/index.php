@@ -254,10 +254,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
 
+                // Refresh CSRF
+                $csrf_token = generate_csrf_token();
+                log_message("CSRF token refreshed before calling balance.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+                $_POST['csrf_token'] = $csrf_token;
+                $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+                
                 // Call balance.php
                 include __DIR__ . '/balance.php';
                 $response = ob_get_clean();
 
+                // Close Session
                 session_write_close();
                 session_start();
 
