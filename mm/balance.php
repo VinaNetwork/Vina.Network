@@ -15,20 +15,15 @@ require_once $root_path . 'mm/header-auth.php';
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Non-AJAX request rejected", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Non-AJAX request rejected in balance.php", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
     exit;
 }
 
-// Log request info
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("balance.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}, Session ID: " . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
-}
-
 // Get parameters from POST data
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("Invalid request method: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid request method in balance.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Request method not supported']);
     exit;
@@ -51,7 +46,7 @@ $_POST[CSRF_TOKEN_NAME] = $csrf_token;
 try {
     csrf_protect();
 } catch (Exception $e) {
-    log_message("CSRF validation failed: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("CSRF validation failed in balance.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
@@ -59,25 +54,26 @@ try {
 
 // Validate minimal required inputs
 if (empty($public_key)) {
-    log_message("Missing public key", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Missing public key in balance.php", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Missing wallet address']);
     exit;
 }
 
 if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $token_mint)) {
-    log_message("Invalid token mint: $token_mint", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid token mint in balance.php: $token_mint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address']);
     exit;
 }
 
-log_message("Parameters received: public_key=" . substr($public_key, 0, 4) . "..., sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'INFO');
+$short_public_key = substr($public_key, 0, 4) . '...';
+log_message("Parameters received: public_key=$short_public_key, sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'INFO');
 
 // Check balance using Helius getAssetsByOwner
 try {
     if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
-        log_message("HELIUS_API_KEY is not defined or empty", 'make-market.log', 'make-market', 'ERROR');
+        log_message("HELIUS_API_KEY is not defined or empty in balance.php", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing HELIUS_API_KEY']);
         exit;
@@ -121,18 +117,20 @@ try {
     $err = curl_error($curl);
     curl_close($curl);
 
-    // Log detailed responses from Helius RPC
-    log_message("Helius RPC response: HTTP=$http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'DEBUG');
+    // Log HTTP status and error (if any)
+    if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+        log_message("Helius RPC response in balance.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
+    }
 
     if ($err) {
-        log_message("Helius RPC failed: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in balance.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $err]);
         exit;
     }
 
     if ($http_code !== 200) {
-        log_message("Helius RPC failed: HTTP $http_code, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in balance.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
@@ -140,21 +138,21 @@ try {
 
     $data = json_decode($response, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("Helius RPC failed: Invalid JSON response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in balance.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
     }
 
     if (isset($data['error'])) {
-        log_message("Helius RPC failed: {$data['error']['message']}, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in balance.php: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $data['error']['message']]);
         exit;
     }
 
     if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
-        log_message("Helius RPC failed: No nativeBalance or lamports in response, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Helius RPC failed in balance.php: No nativeBalance or lamports found for public_key=$short_public_key", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
         exit;
@@ -179,6 +177,11 @@ try {
         $requiredTokenAmount = $token_amount * ($totalTransactions / 2);
     }
 
+    // Log balance information
+    if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+        log_message("SOL balance for public_key=$short_public_key: $balanceInSol SOL, required=$requiredSolAmount SOL", 'make-market.log', 'make-market', 'DEBUG');
+    }
+
     // Check SOL balance for 'buy' or 'both' transactions
     if ($trade_direction === 'buy' || $trade_direction === 'both') {
         if ($balanceInSol < $requiredSolAmount) {
@@ -199,7 +202,7 @@ try {
         }
 
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Token balance for $public_key (mint: $token_mint): $tokenBalance tokens (decimals: $decimals)", 'make-market.log', 'make-market', 'DEBUG');
+            log_message("Token balance for public_key=$short_public_key, token_mint=$token_mint: $tokenBalance tokens (decimals: $decimals)", 'make-market.log', 'make-market', 'DEBUG');
         }
 
         if ($tokenBalance < $requiredTokenAmount) {
@@ -225,7 +228,7 @@ try {
         'balance' => $trade_direction === 'buy' ? $balanceInSol : ($trade_direction === 'sell' ? $tokenBalance : ['sol' => $balanceInSol, 'token' => $tokenBalance])
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    log_message("Balance check failed: {$e->getMessage()}, response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Balance check failed in balance.php: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
     exit;
