@@ -13,6 +13,11 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/header-auth.php';
 
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
     log_message("Non-AJAX request rejected in balance.php", 'make-market.log', 'make-market', 'ERROR');
@@ -69,6 +74,16 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
 
 $short_public_key = substr($public_key, 0, 4) . '...';
 log_message("Parameters received: public_key=$short_public_key, sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size", 'make-market.log', 'make-market', 'INFO');
+
+// Get decimals from session (set by decimals.php)
+$decimals = isset($_SESSION['decimals_' . $token_mint]) ? intval($_SESSION['decimals_' . $token_mint]) : 9;
+if ($trade_direction === 'sell' || $trade_direction === 'both') {
+    if (!isset($_SESSION['decimals_' . $token_mint])) {
+        log_message("Decimals not found in session for token_mint=$token_mint, using default=$decimals", 'make-market.log', 'make-market', 'INFO');
+    } else {
+        log_message("Decimals retrieved from session: $decimals for token_mint=$token_mint", 'make-market.log', 'make-market', 'INFO');
+    }
+}
 
 // Check balance using Helius getAssetsByOwner
 try {
@@ -164,17 +179,17 @@ try {
     $requiredSolAmount = 0;
     $requiredTokenAmount = 0;
     $tokenBalance = 0;
-    $decimals = 9;
     $errors = [];
 
     // Calculate required amounts based on trade direction
     if ($trade_direction === 'buy') {
-        $requiredSolAmount = ($sol_amount + 0.005) * $totalTransactions;
+        $requiredSolAmount = ($sol_amount * $loop_count) + (0.000005 * $totalTransactions) + 0.00203928; // SOL amount + tx fees + ATA creation
     } elseif ($trade_direction === 'sell') {
         $requiredTokenAmount = $token_amount * $totalTransactions;
+        $requiredSolAmount = (0.000005 * $totalTransactions); // Only tx fees for sell
     } elseif ($trade_direction === 'both') {
-        $requiredSolAmount = ($sol_amount + 0.005) * ($totalTransactions / 2);
-        $requiredTokenAmount = $token_amount * ($totalTransactions / 2);
+        $requiredSolAmount = ($sol_amount * ($loop_count / 2)) + (0.000005 * $totalTransactions) + 0.00203928; // Half for buy + tx fees + ATA
+        $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Half for sell
     }
 
     // Log balance information
@@ -194,8 +209,7 @@ try {
         if (isset($data['result']['items']) && is_array($data['result']['items'])) {
             foreach ($data['result']['items'] as $item) {
                 if ($item['interface'] === 'FungibleToken' && isset($item['id']) && $item['id'] === $token_mint) {
-                    $tokenBalance = floatval($item['token_info']['balance'] ?? 0) / pow(10, $item['token_info']['decimals'] ?? 9);
-                    $decimals = $item['token_info']['decimals'] ?? 9;
+                    $tokenBalance = floatval($item['token_info']['balance'] ?? 0) / pow(10, $decimals);
                     break;
                 }
             }
