@@ -11,10 +11,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'config/csrf.php';
-require_once $root_path . 'mm/network.php';
+require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
+require_once $root_path . 'mm/network.php';
 require_once $root_path . '../vendor/autoload.php';
 
 use StephenHill\Base58;
@@ -33,7 +32,7 @@ $log_context = [
 $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 if ($request_method !== 'GET') {
-    log_message("Invalid request method: $request_method, uri=$request_uri", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Invalid request method: $request_method, uri=$request_uri", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
@@ -42,7 +41,7 @@ if ($request_method !== 'GET') {
 
 // Khởi tạo session và thiết lập CSRF cookie
 if (!ensure_session()) {
-    log_message("Failed to initialize session, method=$request_method, uri=$request_uri", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Failed to initialize session, method=$request_method, uri=$request_uri", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
@@ -56,7 +55,7 @@ $headers = apache_request_headers();
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     $csrf_token = isset($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : 'none';
-    log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'make-market.log', 'make-market', 'DEBUG', $log_context);
+    log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
 // Database connection
@@ -65,11 +64,11 @@ try {
     $pdo = get_db_connection();
     $duration = (microtime(true) - $start_time) * 1000;
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Database connection retrieved (took {$duration}ms), user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'INFO', $log_context);
+    log_message("Database connection retrieved (took {$duration}ms), user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (Exception $e) {
     $duration = (microtime(true) - $start_time) * 1000;
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Database connection failed: " . $e->getMessage() . " (took {$duration}ms), user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Database connection failed: " . $e->getMessage() . " (took {$duration}ms), user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed'], JSON_UNESCAPED_UNICODE);
@@ -80,11 +79,11 @@ try {
 $user_public_key = $_SESSION['public_key'] ?? null;
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     $short dozen_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
-    log_message("Session public_key: $short_user_public_key, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'make-market.log', 'make-market', 'DEBUG', $log_context);
+    log_message("Session public_key: $short_user_public_key, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 if (!$user_public_key) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("No public key in session, redirecting to login, user_id=$user_id", 'make-market.log', 'make-market', 'INFO', $log_context);
+    log_message("No public key in session, redirecting to login, user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
     $_SESSION['redirect_url'] = '/mm/process';
     header('Location: /accounts');
     exit;
@@ -95,7 +94,7 @@ $transaction_id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['
 $log_context['transaction_id'] = $transaction_id;
 if ($transaction_id <= 0) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Invalid or missing transaction ID from query parameter: id={$_GET['id']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Invalid or missing transaction ID from query parameter: id={$_GET['id']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID'], JSON_UNESCAPED_UNICODE);
@@ -110,16 +109,16 @@ try {
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
+        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
         header('Content-Type: application/json');
         http_response_code(404);
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'INFO', $log_context);
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction'], JSON_UNESCAPED_UNICODE);
@@ -151,13 +150,6 @@ $page_css = ['/mm/process/process.css'];
 <?php include $root_path . 'include/header.php'; ?>
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
-
-<?php if (SOLANA_NETWORK === 'mainnet'): ?>
-<div class="alert alert-warning">
-    <strong>Warning:</strong> You are operating on Solana Mainnet. Transactions will use real SOL and tokens. Please verify all details before proceeding.
-</div>
-<?php endif; ?>
-
 <div class="process-container">
     <div class="process-content">
         <h1><i class="fas fa-cogs"></i> Make Market Process</h1>
