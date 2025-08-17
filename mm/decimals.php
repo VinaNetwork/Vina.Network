@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: mm/decimals.php
-// Description: Fetch decimals for a given token mint using Helius RPC getTokenMetadata
+// Description: Fetch decimals for a given token mint using Solana RPC getAccountInfo
 // Created by: Vina Network
 // ============================================================================
 
@@ -13,7 +13,7 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/header-auth.php';
 
-// Check AJAX request (though called via include, but for consistency)
+// Check AJAX request (though called via include, for consistency)
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
     log_message("Non-AJAX request rejected in decimals.php", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
@@ -61,7 +61,7 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
 
 log_message("Fetching decimals for token_mint: $token_mint", 'make-market.log', 'make-market', 'INFO');
 
-// Fetch decimals using Helius getTokenMetadata
+// Fetch decimals using Solana getAccountInfo
 try {
     if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
         log_message("HELIUS_API_KEY is not defined or empty in decimals.php", 'make-market.log', 'make-market', 'ERROR');
@@ -82,11 +82,12 @@ try {
         CURLOPT_POSTFIELDS => json_encode([
             'jsonrpc' => '2.0',
             'id' => '1',
-            'method' => 'getTokenMetadata',
+            'method' => 'getAccountInfo',
             'params' => [
-                'mintAccounts' => [$token_mint],
-                'includeOffChain' => true,
-                'disableCache' => false
+                $token_mint,
+                [
+                    'encoding' => 'jsonParsed'
+                ]
             ]
         ], JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => [
@@ -132,14 +133,14 @@ try {
         exit;
     }
 
-    if (!isset($data['result']) || empty($data['result']) || !isset($data['result'][0]['legacyMetadata']['decimals'])) {
-        log_message("Helius RPC failed in decimals.php: No metadata or decimals found, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
+    if (!isset($data['result']['value']) || !isset($data['result']['value']['data']['parsed']['info']['decimals'])) {
+        log_message("Helius RPC failed in decimals.php: No decimals found, response=" . json_encode($data), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Invalid token mint or not a fungible token']);
         exit;
     }
 
-    $decimals = intval($data['result'][0]['legacyMetadata']['decimals']);
+    $decimals = intval($data['result']['value']['data']['parsed']['info']['decimals']);
 
     log_message("Decimals fetched successfully: $decimals for token_mint $token_mint", 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
