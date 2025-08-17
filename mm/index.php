@@ -106,12 +106,9 @@ function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         log_message("Form submitted, is AJAX: " . (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? 'Yes' : 'No'), 'make-market.log', 'make-market', 'INFO');
-        $form_data = $_POST;
-        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Form data: " . json_encode($form_data), 'make-market.log', 'make-market', 'DEBUG');
-        }
-
+        
         // Get form data
+        $form_data = $_POST;
         $processName = $form_data['processName'] ?? '';
         $privateKey = trim($form_data['privateKey'] ?? '');
         $tokenMint = $form_data['tokenMint'] ?? '';
@@ -124,11 +121,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $batchSize = intval($form_data['batchSize'] ?? 5);
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
-        // Log form data for debugging
+        // Log form data an toàn
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            $obfuscatedPrivateKey = substr($privateKey, 0, 4) . '...' . substr($privateKey, -4);
+            $obfuscatedPrivateKey = $privateKey ? substr($privateKey, 0, 4) . '...' . substr($privateKey, -4) : 'empty';
             $logFormData = $form_data;
-            unset($logFormData['privateKey']);
+            unset($logFormData['privateKey']); // Xóa privateKey khỏi log JSON
             $logFormData['privateKey_obfuscated'] = $obfuscatedPrivateKey;
             log_message("Form data: " . json_encode($logFormData), 'make-market.log', 'make-market', 'DEBUG');
             log_message(
@@ -139,10 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
         } else {
             log_message(
-                 "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, skipBalanceCheck=$skipBalanceCheck",
-                 'make-market.log',
-                 'make-market',
-                 'INFO'
+                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, skipBalanceCheck=$skipBalanceCheck",
+                'make-market.log',
+                'make-market',
+                'INFO'
             );
         }
 
