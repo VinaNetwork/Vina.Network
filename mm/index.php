@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 5);
-        $network = $form_data['network'] ?? SOLANA_NETWORK; // Lấy network từ form hoặc mặc định từ SOLANA_NETWORK
+        $network = SOLANA_NETWORK; // Sử dụng trực tiếp SOLANA_NETWORK
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
         // Log form data an toàn
@@ -221,14 +221,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Batch size must be between 1 and 10']);
             exit;
         }
-        // Validate network
-        $valid_networks = ['devnet', 'testnet', 'mainnet'];
-        if (!in_array($network, $valid_networks, true)) {
-            log_message("Invalid network: $network", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid network selected']);
-            exit;
-        }
 
         // Gọi decimals.php để lấy decimals của token mint
         log_message("Calling decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
@@ -236,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ob_start();
             $_POST = [
                 'token_mint' => $tokenMint,
-                'network' => $network, // Thêm network vào yêu cầu decimals.php
+                'network' => $network, // Sử dụng SOLANA_NETWORK
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -326,7 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'token_amount' => $tokenAmount,
                     'loop_count' => $loopCount,
                     'batch_size' => $batchSize,
-                    'network' => $network, // Thêm network vào yêu cầu balance.php
+                    'network' => $network, // Sử dụng SOLANA_NETWORK
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -437,7 +429,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $loopCount,
                 $batchSize,
                 $decimals,
-                $network // Sử dụng giá trị network từ form
+                $network // Sử dụng SOLANA_NETWORK
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "..., network=$network", 'make-market.log', 'make-market', 'INFO');
@@ -513,16 +505,13 @@ $defaultSlippage = 0.5;
                 </tr>
             </table>
         </div>
+        <div>
+            <p><strong>Network:</strong> <?php echo htmlspecialchars(SOLANA_NETWORK); ?></p>
+        </div>
 
         <!-- Form Make Market -->
         <form id="makeMarketForm" autocomplete="off" method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
-            <label for="network">🌐 Network:</label>
-            <select name="network" id="network" required>
-                <option value="devnet" <?php echo SOLANA_NETWORK === 'devnet' ? 'selected' : ''; ?>>Devnet</option>
-                <option value="testnet" <?php echo SOLANA_NETWORK === 'testnet' ? 'selected' : ''; ?>>Testnet</option>
-                <option value="mainnet" <?php echo SOLANA_NETWORK === 'mainnet' ? 'selected' : ''; ?>>Mainnet</option>
-            </select>
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
             <label for="privateKey">🔑 Private Key (Base58):</label>
