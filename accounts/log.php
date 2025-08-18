@@ -10,18 +10,14 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
+require_once $root_path . 'config/logging.php';
 
 // Set response header
 header('Content-Type: application/json');
 
-// Protect POST requests with CSRF and origin check
-csrf_protect();
-
-// Validate AJAX request
-if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
-    log_message("Invalid request: Not an AJAX request, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method'], JSON_UNESCAPED_UNICODE);
+// Validate POST request and AJAX
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
     exit;
 }
 
@@ -30,8 +26,7 @@ $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
 if (!$data || !isset($data['message'], $data['level'])) {
-    log_message("Invalid log data received, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid log data'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid log data']);
     exit;
 }
 
@@ -43,8 +38,7 @@ $max_size = 10 * 1024 * 1024; // 10MB in bytes
 // Ensure log directory exists
 if (!is_dir($log_dir)) {
     if (!mkdir($log_dir, 0755, true)) {
-        log_message("Failed to create log directory: $log_dir, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Failed to create log directory'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to create log directory']);
         exit;
     }
 }
@@ -53,8 +47,7 @@ if (!is_dir($log_dir)) {
 if (file_exists($log_file) && filesize($log_file) >= $max_size) {
     $new_log_file = $log_dir . 'accounts-' . date('YmdHis') . '.log';
     if (!rename($log_file, $new_log_file)) {
-        log_message("Failed to rotate log file to $new_log_file, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
-        echo json_encode(['status' => 'error', 'message' => 'Failed to rotate log file'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to rotate log file']);
         exit;
     }
     log_message("Rotated log file to $new_log_file due to size limit (10MB)", 'accounts.log', 'accounts', 'INFO');
@@ -66,6 +59,6 @@ $level = strtoupper($data['level']);
 $message = "[IP:$ip_address] [URL:{$data['url']}] [UA:{$data['userAgent']}] {$data['message']}";
 log_message($message, 'accounts.log', 'accounts', $level);
 
-echo json_encode(['status' => 'success', 'message' => 'Log recorded'], JSON_UNESCAPED_UNICODE);
+echo json_encode(['status' => 'success', 'message' => 'Log recorded']);
 exit;
 ?>
