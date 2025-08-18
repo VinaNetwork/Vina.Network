@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/network.php
+// File: mm/network/network.php
 // Description: Centralized network configuration for Solana devnet, testnet, and mainnet
 // Created by: Vina Network
 // ============================================================================
