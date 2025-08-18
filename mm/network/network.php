@@ -10,7 +10,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php';
+// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
+require_once $root_path . 'mm/bootstrap.php';
 
 // Determine Solana network (priority: ENV > default 'devnet')
 if (!defined('SOLANA_NETWORK')) {
