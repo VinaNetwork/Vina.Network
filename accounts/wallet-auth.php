@@ -11,6 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'accounts/csrf/csrf.php';
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
