@@ -68,10 +68,18 @@ function check_request_origin() {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
+    $host = $_SERVER['HTTP_HOST'] ?? '';
 
-    // Nếu không có Origin hoặc Referer, từ chối yêu cầu
+    // Cho phép yêu cầu GET từ cùng domain nếu thiếu Origin hoặc Referer
+    if ($method === 'GET' && empty($origin) && in_array('https://' . $host, $allowed_origins)) {
+        log_message("Origin check bypassed for GET request from same domain: host=$host, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'INFO');
+        return true;
+    }
+
+    // Nếu không có Origin hoặc Referer cho các phương thức khác (POST, AJAX), từ chối yêu cầu
     if (empty($origin)) {
-        log_message("Invalid request: No Origin or Referer header, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
+        log_message("Invalid request: No Origin or Referer header, IP=$ip, URI=$uri, Method=$method", 'bootstrap.log', 'logs', 'ERROR');
         return false;
     }
 
@@ -85,12 +93,12 @@ function check_request_origin() {
     foreach ($allowed_origins as $allowed) {
         $parsed_allowed = rtrim($allowed, '/');
         if ($parsed_origin === $parsed_allowed) {
-            log_message("Origin validated: $parsed_origin, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'INFO');
+            log_message("Origin validated: $parsed_origin, IP=$ip, URI=$uri, Method=$method", 'bootstrap.log', 'logs', 'INFO');
             return true;
         }
     }
 
-    log_message("Invalid request: Origin/Referer ($parsed_origin) not allowed, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
+    log_message("Invalid request: Origin/Referer ($parsed_origin) not allowed, IP=$ip, URI=$uri, Method=$method", 'bootstrap.log', 'logs', 'ERROR');
     return false;
 }
 
