@@ -10,9 +10,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'accounts/csrf/csrf.php';
-require_once $root_path . '../vendor/autoload.php';
+// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php | vendor/autoload.php
+require_once $root_path . 'accounts/bootstrap.php';
 use StephenHill\Base58;
 
 // Database connection
