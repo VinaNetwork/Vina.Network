@@ -14,6 +14,7 @@ $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
 require_once $root_path . 'mm/header-auth.php'; // Security Headers
 require_once $root_path . 'mm/network/network.php'; // Devnet | Testnet | Mainnet
+require_once $root_path . 'mm/csrf/csrf.php';
 require_once $root_path . '../vendor/autoload.php';
 
 use StephenHill\Base58;
