@@ -14,6 +14,8 @@ require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . '../vendor/autoload.php';
 use StephenHill\Base58;
 
+// Session start: in config/bootstrap.php
+
 // Database connection
 $start_time = microtime(true);
 try {
