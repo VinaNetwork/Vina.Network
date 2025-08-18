@@ -62,46 +62,6 @@ function ensure_session() {
     }
 }
 
-// Check request origin
-function check_request_origin() {
-    global $allowed_origins;
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
-    $method = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-
-    // Cho phép yêu cầu GET từ cùng domain nếu thiếu Origin hoặc Referer
-    if ($method === 'GET' && empty($origin) && in_array('https://' . $host, $allowed_origins)) {
-        log_message("Origin check bypassed for GET request from same domain: host=$host, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'INFO');
-        return true;
-    }
-
-    // Nếu không có Origin hoặc Referer cho các phương thức khác (POST, AJAX), từ chối yêu cầu
-    if (empty($origin)) {
-        log_message("Invalid request: No Origin or Referer header, IP=$ip, URI=$uri, Method=$method", 'bootstrap.log', 'logs', 'ERROR');
-        return false;
-    }
-
-    // Chuẩn hóa Origin/Referer bằng cách lấy domain (loại bỏ đường dẫn)
-    $parsed_origin = parse_url($origin, PHP_URL_SCHEME) . '://' . parse_url($origin, PHP_URL_HOST);
-    if (parse_url($origin, PHP_URL_PORT)) {
-        $parsed_origin .= ':' . parse_url($origin, PHP_URL_PORT);
-    }
-
-    // Kiểm tra xem nguồn gốc có trong danh sách được phép không
-    foreach ($allowed_origins as $allowed) {
-        $parsed_allowed = rtrim($allowed, '/');
-        if ($parsed_origin === $parsed_allowed) {
-            log_message("Origin validated: $parsed_origin, IP=$ip, URI=$uri, Method=$method", 'bootstrap.log', 'logs', 'INFO');
-            return true;
-        }
-    }
-
-    log_message("Invalid request: Origin/Referer ($parsed_origin) not allowed, IP=$ip, URI=$uri, Method=$method", 'bootstrap.log', 'logs', 'ERROR');
-    return false;
-}
-
 // Generate CSRF token and store in session with TTL
 function generate_csrf_token() {
     try {
@@ -171,19 +131,6 @@ function get_csrf_field() {
 
 // Middleware to protect POST requests with CSRF validation
 function csrf_protect() {
-    // Kiểm tra nguồn gốc
-    if (!check_request_origin()) {
-        log_message("CSRF protect: Invalid request or unauthorized origin, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'ERROR');
-        http_response_code(403);
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
-        } else {
-            header('Location: /error?message=Invalid+request+or+unauthorized+origin');
-        }
-        exit;
-    }
-
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
         if (!validate_csrf_token($token)) {
@@ -191,7 +138,7 @@ function csrf_protect() {
             http_response_code(403);
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token'], JSON_UNESCAPED_UNICODE);
+                echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token']);
             } else {
                 header('Location: /error?message=Invalid+or+expired+CSRF+token');
             }
