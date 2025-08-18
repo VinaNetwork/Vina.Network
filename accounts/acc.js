@@ -93,6 +93,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Function to refresh CSRF token
+    async function refreshCsrfToken() {
+        try {
+            const response = await fetch('/accounts/profile.php?action=refresh-csrf', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'include'
+            });
+            const result = await response.json();
+            if (result.status === 'success' && result.csrf_token) {
+                logToServer(`CSRF token refreshed: ${result.csrf_token.substring(0, 4)}...`, 'DEBUG');
+                return result.csrf_token;
+            } else {
+                logToServer(`Failed to refresh CSRF token: ${result.message}`, 'ERROR');
+                throw new Error(result.message || 'Failed to refresh CSRF token');
+            }
+        } catch (error) {
+            logToServer(`Error refreshing CSRF token: ${error.message}`, 'ERROR');
+            throw error;
+        }
+    }
+
+    // Handle logout form submission
+    const logoutForm = document.getElementById('logout-form');
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const csrfToken = await refreshCsrfToken();
+                document.getElementById('csrf-token').value = csrfToken;
+                logToServer('CSRF token updated for logout form', 'INFO');
+                logoutForm.submit(); // Submit form after updating token
+            } catch (error) {
+                showError('Error: Failed to refresh CSRF token. Please try again.');
+            }
+        });
+    }
+
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
