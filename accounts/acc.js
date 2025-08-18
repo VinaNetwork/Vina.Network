@@ -12,11 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
             console.log('Copy icon clicked');
-
             const fullAddress = icon.getAttribute('data-full');
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
             console.log(`Attempting to copy address: ${shortAddress}`);
-
             navigator.clipboard.writeText(fullAddress).then(() => {
                 console.log('Copy successful');
                 icon.classList.add('copied');
@@ -46,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let cookie of cookies) {
             cookie = cookie.trim();
             if (cookie.indexOf(name) === 0) {
-                console.log('CSRF token found in cookie');
+                console.log('CSRF token found in cookie:', cookie.substring(name.length, name.length + 4) + '...');
                 return cookie.substring(name.length, cookie.length);
             }
         }
@@ -56,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to refresh CSRF token
     async function refreshCsrfToken() {
+        console.log('Attempting to refresh CSRF token');
         try {
             const response = await fetch('/accounts/refresh-csrf.php', {
                 method: 'GET',
@@ -64,12 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             const result = await response.json();
+            console.log('Refresh CSRF response:', result);
             if (result.status === 'success' && result.csrf_token) {
                 console.log('CSRF token refreshed:', result.csrf_token.substring(0, 4) + '...');
-                // Update CSRF token in form
                 const csrfInput = document.querySelector('input[name="csrf_token"]');
                 if (csrfInput) {
                     csrfInput.value = result.csrf_token;
+                    console.log('Updated CSRF token in form');
+                } else {
+                    console.error('CSRF input not found in form');
+                    logToServer('CSRF input not found in form', 'ERROR');
                 }
                 return result.csrf_token;
             } else {
@@ -84,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to show error messages
     function showError(message) {
+        console.log('Showing error:', message);
         const statusSpan = document.getElementById('status') || document.createElement('span');
         statusSpan.textContent = message;
         statusSpan.style.color = 'red';
@@ -95,64 +99,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle logout form submission
     const logoutForm = document.querySelector('#logout-form');
     if (logoutForm) {
+        console.log('Logout form found, attaching submit event');
         logoutForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Prevent default form submission
+            console.log('Logout form submitted');
             let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
 
             if (!csrfToken) {
+                console.warn('CSRF token not found, attempting to refresh');
                 logToServer('CSRF token not found, attempting to refresh', 'WARNING');
+                event.preventDefault(); // Prevent form submission
                 csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
                     showError('Unable to refresh CSRF token. Please refresh the page.');
                     return;
                 }
-            }
-
-            // Send logout request with CSRF token
-            try {
-                const formData = new FormData(logoutForm);
-                const response = await fetch(logoutForm.action || window.location.href, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken
-                    }
-                });
-
-                if (!response.ok) {
-                    if (response.status === 403) {
-                        // Token may be expired, try refreshing and resending
-                        logToServer('CSRF token invalid or expired, attempting to refresh', 'WARNING');
-                        csrfToken = await refreshCsrfToken();
-                        if (csrfToken) {
-                            formData.set('csrf_token', csrfToken);
-                            const retryResponse = await fetch(logoutForm.action || window.location.href, {
-                                method: 'POST',
-                                body: formData,
-                                headers: {
-                                    'X-CSRF-TOKEN': csrfToken
-                                }
-                            });
-                            if (retryResponse.ok) {
-                                window.location.href = '/accounts';
-                                return;
-                            }
-                        }
-                        showError('Invalid or expired CSRF token. Please refresh the page.');
-                    } else {
-                        showError('Logout failed: HTTP ' + response.status);
-                    }
-                    return;
-                }
-
-                // If successful, redirect to login page
-                window.location.href = '/accounts';
-            } catch (error) {
-                console.error('Logout error:', error.message);
-                logToServer('Logout error: ' + error.message, 'ERROR');
-                showError('Logout failed: ' + error.message);
+                // Update CSRF token and allow form submission
+                document.querySelector('input[name="csrf_token"]').value = csrfToken;
+                console.log('CSRF token updated, submitting form');
+                logoutForm.submit(); // Submit form directly
             }
         });
+    } else {
+        console.error('Logout form not found');
+        logToServer('Logout form not found', 'ERROR');
+        showError('Logout form not found. Please refresh the page.');
     }
 
     // Check if running in a secure context (HTTPS)
@@ -164,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             walletInfo.style.display = 'block';
             statusSpan.textContent = 'Error: This page must be loaded over HTTPS';
         }
-        return; // Stop further execution
+        return;
     }
 
     // Function to log to server
@@ -212,7 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
 
-            // Double-check HTTPS
             if (!window.isSecureContext) {
                 logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
                 walletInfo.style.display = 'block';
@@ -237,7 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
-                    // Sign message as raw bytes
                     const signature = await window.solana.signMessage(encodedMessage, 'utf8');
                     const signatureBytes = new Uint8Array(signature.signature);
                     if (signatureBytes.length !== 64) {
@@ -246,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
                     await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
-                    // Check message before sending
                     await logToServer(`Message sent: ${message}, hex: ${Array.from(new TextEncoder().encode(message)).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
                     const formData = new FormData();
@@ -271,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
-                        window.location.href = result.redirect; // Redirect to profile.php
+                        window.location.href = result.redirect;
                     } else {
                         statusSpan.textContent = result.message || 'Unknown error';
                     }
