@@ -12,10 +12,49 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
+// List of allowed sources (config/constants.php)
+$allowed_origins = ALLOWED_ORIGINS;
+
+// Hàm kiểm tra nguồn gốc
+function check_request_origin() {
+    global $allowed_origins;
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
+
+    // Nếu không có Origin hoặc Referer, từ chối yêu cầu
+    if (empty($origin)) {
+        log_message("Invalid request to refresh-csrf: No Origin or Referer header, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
+        return false;
+    }
+
+    // Chuẩn hóa Origin/Referer bằng cách lấy domain (loại bỏ đường dẫn)
+    $parsed_origin = parse_url($origin, PHP_URL_SCHEME) . '://' . parse_url($origin, PHP_URL_HOST);
+    if (parse_url($origin, PHP_URL_PORT)) {
+        $parsed_origin .= ':' . parse_url($origin, PHP_URL_PORT);
+    }
+
+    // Kiểm tra xem nguồn gốc có trong danh sách được phép không
+    foreach ($allowed_origins as $allowed) {
+        $parsed_allowed = rtrim($allowed, '/');
+        if ($parsed_origin === $parsed_allowed) {
+            log_message("Origin validated: $parsed_origin, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'INFO');
+            return true;
+        }
+    }
+
+    log_message("Invalid request to refresh-csrf: Origin/Referer ($parsed_origin) not allowed, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
+    return false;
+}
+
+// Kiểm tra phương thức, AJAX và nguồn gốc
+if ($_SERVER['REQUEST_METHOD'] !== 'GET' || 
+    !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
+    $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest' ||
+    !check_request_origin()) {
     log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
