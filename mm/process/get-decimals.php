@@ -35,16 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get parameters from POST data
-$input = json_decode(file_get_contents('php://input'), true);
-$token_mint = $input['tokenMint'] ?? '';
-$network = $input['network'] ?? 'mainnet';
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+$token_mint = $_POST['tokenMint'] ?? '';
+$network = $_POST['network'] ?? 'mainnet';
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
 
-// Validate CSRF token
-if (!validate_csrf_token($csrf_token)) {
-    log_message("CSRF validation failed in get-decimals.php: provided_token=$csrf_token, expected_token=" . ($_SESSION[CSRF_TOKEN_NAME] ?? 'none') . ", session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+// Assign token to $_POST for csrf_protect()
+$_POST[CSRF_TOKEN_NAME] = $csrf_token;
+
+// Protect POST requests with CSRF
+try {
+    csrf_protect();
+} catch (Exception $e) {
+    log_message("CSRF validation failed in get-decimals.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
 }
 
@@ -93,11 +97,6 @@ try {
 
     $decimals = intval($row['decimals']);
     log_message("Decimals retrieved from make_market table: $decimals for token_mint=$token_mint, network=$network, user_id={$_SESSION['user_id']}, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO');
-
-    // Chỉ làm mới token nếu gần hết TTL
-    if (isset($_SESSION[CSRF_TOKEN_NAME . '_created']) && (time() - $_SESSION[CSRF_TOKEN_NAME . '_created']) > (CSRF_TOKEN_TTL - 300)) {
-        regenerate_csrf_token();
-    }
 
     http_response_code(200);
     echo json_encode([
