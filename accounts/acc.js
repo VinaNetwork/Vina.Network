@@ -97,33 +97,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Handle logout form submission
-    const logoutForm = document.querySelector('#logout-form');
-    if (logoutForm) {
-        console.log('Logout form found, attaching submit event');
-        logoutForm.addEventListener('submit', async (event) => {
-            console.log('Logout form submitted');
-            let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
+    const checkForm = () => {
+        const logoutForm = document.querySelector('#logout-form');
+        if (logoutForm) {
+            console.log('Logout form found, attaching submit event');
+            logoutForm.addEventListener('submit', async (event) => {
+                console.log('Logout form submitted');
+                let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
 
-            if (!csrfToken) {
-                console.warn('CSRF token not found, attempting to refresh');
-                logToServer('CSRF token not found, attempting to refresh', 'WARNING');
-                event.preventDefault(); // Prevent form submission
-                csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
-                    showError('Unable to refresh CSRF token. Please refresh the page.');
-                    return;
+                    console.warn('CSRF token not found, attempting to refresh');
+                    logToServer('CSRF token not found, attempting to refresh', 'WARNING');
+                    event.preventDefault(); // Prevent form submission
+                    csrfToken = await refreshCsrfToken();
+                    if (!csrfToken) {
+                        showError('Unable to refresh CSRF token. Please refresh the page.');
+                        return;
+                    }
+                    // Update CSRF token and allow form submission
+                    document.querySelector('input[name="csrf_token"]').value = csrfToken;
+                    console.log('CSRF token updated, submitting form');
+                    logoutForm.submit(); // Submit form directly
                 }
-                // Update CSRF token and allow form submission
-                document.querySelector('input[name="csrf_token"]').value = csrfToken;
-                console.log('CSRF token updated, submitting form');
-                logoutForm.submit(); // Submit form directly
-            }
-        });
-    } else {
-        console.error('Logout form not found');
-        logToServer('Logout form not found', 'ERROR');
-        showError('Logout form not found. Please refresh the page.');
-    }
+            });
+        } else {
+            console.warn('Logout form not found, retrying in 100ms');
+            setTimeout(checkForm, 100); // Retry after 100ms
+        }
+    };
+
+    checkForm(); // Initial check for logout form
 
     // Check if running in a secure context (HTTPS)
     if (!window.isSecureContext) {
