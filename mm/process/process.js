@@ -4,6 +4,9 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Biến khóa để ngăn làm mới CSRF token đồng thời
+let csrfLock = false;
+
 // Hàm lấy CSRF token từ endpoint /mm/refresh-csrf
 async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
     let attempt = 0;
@@ -17,7 +20,7 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'include'
-            }, 10000); // Tăng timeout lên 10 giây
+            }, 10000);
             const responseBody = await response.text();
             log_message(`Response from /mm/refresh-csrf: status=${response.status}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
@@ -61,22 +64,38 @@ async function fetchWithTimeout(url, options, timeout = 10000) {
     }
 }
 
-// Initialize authentication and CSRF token
+// Initialize authentication and CSRF token với cơ chế khóa
 async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
+    if (csrfLock) {
+        log_message('CSRF token refresh in progress, waiting...', 'process.log', 'make-market', 'DEBUG');
+        await delay(500); // Chờ 0.5 giây và thử lại
+        return ensureAuthInitialized(maxRetries, retryDelay);
+    }
     if (window.CSRF_TOKEN) {
         const tokenAge = Date.now() - (window.CSRF_TOKEN_TIMESTAMP || 0);
         if (tokenAge > 25 * 60 * 1000) { // Làm mới nếu mã cũ hơn 25 phút
             log_message(`CSRF token potentially expired (age=${tokenAge/1000}s), refreshing`, 'process.log', 'make-market', 'INFO');
-            window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
-            window.CSRF_TOKEN_TIMESTAMP = Date.now();
-            return window.CSRF_TOKEN;
+            csrfLock = true;
+            try {
+                window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
+                window.CSRF_TOKEN_TIMESTAMP = Date.now();
+                return window.CSRF_TOKEN;
+            } finally {
+                csrfLock = false;
+            }
         }
         log_message(`Using existing CSRF token: ${window.CSRF_TOKEN}`, 'process.log', 'make-market', 'INFO');
         return window.CSRF_TOKEN;
     }
-    window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
-    window.CSRF_TOKEN_TIMESTAMP = Date.now();
-    return window.CSRF_TOKEN;
+    log_message('No CSRF token found, fetching new one', 'process.log', 'make-market', 'INFO');
+    csrfLock = true;
+    try {
+        window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
+        window.CSRF_TOKEN_TIMESTAMP = Date.now();
+        return window.CSRF_TOKEN;
+    } finally {
+        csrfLock = false;
+    }
 }
 
 // Thêm CSRF token vào headers
@@ -106,6 +125,67 @@ function addAxiosAuthHeaders(config = {}) {
             'X-CSRF-Token': csrfToken || ''
         }
     };
+}
+
+// Get token decimals from database
+async function getTokenDecimals(tokenMint, solanaNetwork) {
+    if (!tokenMint || typeof tokenMint !== 'string' || !/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(tokenMint)) {
+        const errorMessage = `Invalid token mint: ${tokenMint || 'undefined'}`;
+        log_message(errorMessage, 'process.log', 'make-market', 'ERROR');
+        throw new Error(errorMessage);
+    }
+    const maxRetries = 3;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            log_message(`Attempting to get token decimals from database (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            await ensureAuthInitialized();
+            const headers = addAxiosAuthHeaders({
+                timeout: 20000, // Tăng timeout lên 20 giây
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).headers;
+            log_message(`Requesting /mm/get-decimals, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const response = await axios.post('/mm/get-decimals', {
+                tokenMint,
+                network: solanaNetwork
+            }, {
+                headers,
+                timeout: 20000,
+                withCredentials: true
+            });
+            log_message(`Response from /mm/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            if (response.status !== 200 || !response.data || response.data.status !== 'success') {
+                throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
+            }
+            const decimals = parseInt(response.data.decimals) || 9;
+            log_message(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
+            return decimals;
+        } catch (err) {
+            attempt++;
+            const errorMessage = err.response
+                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-decimals'}`;
+            log_message(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}):`, errorMessage);
+            if (err.response?.status === 403 && err.response?.data?.error === 'Invalid or expired CSRF token') {
+                log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
+                if (attempt === maxRetries) {
+                    throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
+                }
+                await getCsrfToken();
+                continue;
+            }
+            if (attempt === maxRetries) {
+                throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
+            }
+            await delay(1000 * attempt);
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -393,7 +473,7 @@ async function getNetworkConfig() {
                 method: 'GET',
                 headers,
                 credentials: 'include'
-            }, 10000); // Tăng timeout lên 10 giây
+            }, 10000);
             const responseBody = await response.text();
             log_message(`Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status === 401) {
@@ -441,62 +521,6 @@ async function getNetworkConfig() {
                 throw err;
             }
             attempt++;
-            await delay(1000 * attempt);
-        }
-    }
-}
-
-// Get token decimals from database
-async function getTokenDecimals(tokenMint, solanaNetwork) {
-    const maxRetries = 3;
-    let attempt = 0;
-    while (attempt < maxRetries) {
-        try {
-            log_message(`Attempting to get token decimals from database (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            await ensureAuthInitialized();
-            const headers = addAxiosAuthHeaders({
-                timeout: 15000,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            }).headers;
-            log_message(`Requesting /mm/get-decimals, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await axios.post('/mm/get-decimals', {
-                tokenMint,
-                network: solanaNetwork
-            }, {
-                headers,
-                timeout: 15000,
-                withCredentials: true
-            });
-            log_message(`Response from /mm/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            if (response.status !== 200 || !response.data || response.data.status !== 'success') {
-                throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
-            }
-            const decimals = parseInt(response.data.decimals) || 9;
-            log_message(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
-            return decimals;
-        } catch (err) {
-            attempt++;
-            const errorMessage = err.response
-                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-decimals'}`;
-            log_message(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}):`, errorMessage);
-            if (err.response?.status === 403 && err.response?.data?.error === 'Invalid or expired CSRF token') {
-                log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                if (attempt === maxRetries) {
-                    throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
-                }
-                await getCsrfToken();
-                continue;
-            }
-            if (attempt === maxRetries) {
-                throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
-            }
             await delay(1000 * attempt);
         }
     }
