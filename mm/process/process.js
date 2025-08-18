@@ -48,7 +48,7 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
 async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
     if (window.CSRF_TOKEN) {
         const tokenAge = Date.now() - (window.CSRF_TOKEN_TIMESTAMP || 0);
-        if (tokenAge > 25 * 60 * 1000) { // Làm mới nếu mã cũ hơn 25 phút
+        if (tokenAge > 25 * 60 * 1000) {
             log_message(`CSRF token potentially expired (age=${tokenAge/1000}s), refreshing`, 'process.log', 'make-market', 'INFO');
             window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
             window.CSRF_TOKEN_TIMESTAMP = Date.now();
@@ -198,9 +198,9 @@ function showSuccess(message, results = [], networkConfig) {
         html += '<ul>';
         results.forEach(result => {
             html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
-                result.status === 'success' 
-                    ? `<a href="${networkConfig.config.explorerUrl}${result.txid}${networkConfig.config.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
-                    : `Failed - ${result.message}`
+                result.status === 'success' && result.explorerUrl 
+                    ? `<a href="${result.explorerUrl}" target="_blank">Success (txid: ${result.txid})</a>`
+                    : `Failed - ${result.message || 'No transaction ID'}`
             }</li>`;
         });
         html += '</ul>';
@@ -267,15 +267,17 @@ async function updateTransactionStatus(status, error = null) {
             if (result.status !== 'success') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Transaction status updated: ID=${transactionId}, status=${status}, error=${error || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Transaction status updated: ID=${transactionId}, status=${status}, error=${error || 'none'}, explorer_url=${result.transaction.explorerUrl || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Transaction status updated: ID=${transactionId}, status=${status}, error=${error || 'none'}`);
-            return;
+            return result.transaction;
         } catch (err) {
             log_message(`Failed to update transaction status: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
             console.error('Failed to update transaction status:', err.message);
             if (attempt === maxRetries - 1) {
                 showError('Failed to update transaction status: ' + err.message, err.message);
             }
+            attempt++;
+            await delay(1000 * attempt);
         }
     }
 }
@@ -349,6 +351,8 @@ async function cancelTransaction(transactionId) {
             if (attempt === maxRetries - 1) {
                 showError('Failed to cancel transaction: ' + err.message, err.message);
             }
+            attempt++;
+            await delay(1000 * attempt);
         }
     }
 }
@@ -664,7 +668,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             if (result.status !== 'success' && result.status !== 'partial') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, results=${JSON.stringify(result.results)}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Swap transactions executed:`, result);
             return result;
         } catch (err) {
@@ -802,10 +806,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (cancelBtn) {
             cancelBtn.style.display = 'none';
         }
+        showError('Transaction is not in a valid state for processing: ' + transaction.status);
+        return;
     }
 
     // Update status to pending
-    await updateTransactionStatus('pending');
+    let statusResult;
+    try {
+        statusResult = await updateTransactionStatus('pending');
+    } catch (err) {
+        showError('Failed to update transaction status to pending: ' + err.message, err.message);
+        return;
+    }
 
     // Fetch token decimals
     let tokenDecimals;
@@ -836,7 +848,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const swapTransactions = [];
 
         for (let loop = 1; loop <= loopCount; loop++) {
-            await ensureAuthInitialized(); // Kiểm tra và làm mới CSRF trước mỗi vòng lặp
+            await ensureAuthInitialized();
             document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
