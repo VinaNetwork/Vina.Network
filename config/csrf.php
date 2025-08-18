@@ -132,13 +132,13 @@ function get_csrf_field() {
 // Middleware to protect POST requests with CSRF validation
 function csrf_protect() {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $token = $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
+        $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
         if (!validate_csrf_token($token)) {
             log_message("CSRF protection triggered: Invalid or expired token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'WARNING');
             http_response_code(403);
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
-                echo json_encode(['error' => 'Invalid or expired CSRF token']);
+                echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token']);
             } else {
                 header('Location: /error?message=Invalid+or+expired+CSRF+token');
             }
