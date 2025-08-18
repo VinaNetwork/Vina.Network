@@ -95,8 +95,9 @@ function getCookie(name) {
 }
 
 // Refresh CSRF token
-async function refreshCSRFToken() {
-    const response = await axios.get('/mm/refresh-csrf', {
+async function refreshCSRFToken(transactionId = null) {
+    const url = transactionId ? `/mm/refresh-csrf?transactionId=${encodeURIComponent(transactionId)}` : '/mm/refresh-csrf';
+    const response = await axios.get(url, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         withCredentials: true
     });
@@ -142,22 +143,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     log_message(`Raw FormData: ${JSON.stringify(formDataObject)}`, 'make-market.log', 'make-market', 'DEBUG');
     const tokenAmountValue = formData.get('tokenAmount');
     let csrfToken = formData.get('csrf_token');
-
-    // Refresh CSRF token before submitting
-    try {
-        csrfToken = await refreshCSRFToken();
-        formData.set('csrf_token', csrfToken);
-        formDataObject.csrf_token = csrfToken;
-        document.querySelector(`input[name="csrf_token"]`).value = csrfToken;
-        log_message(`CSRF token refreshed before submit: ${csrfToken}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('CSRF token refreshed before submit:', csrfToken);
-    } catch (error) {
-        log_message(`Failed to refresh CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        console.error('Failed to refresh CSRF token:', error.message);
-        showError('Failed to refresh CSRF token. Please reload the page and try again.');
-        submitButton.disabled = false;
-        return;
-    }
 
     // Get SOLANA_NETWORK
     let network;
@@ -334,11 +319,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             submitButton.disabled = false;
             return;
         }
-        log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
-        console.log('Form saved to database: transactionId=', result.transactionId);
+        log_message(`Form saved to database: transactionId=${result.transactionId}, csrf_token=${result.csrf_token}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('Form saved to database: transactionId=', result.transactionId, 'csrf_token=', result.csrf_token);
         const redirectUrl = result.redirect || `/mm/process/${result.transactionId}`;
         log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Redirecting to', redirectUrl);
+        // Store transactionId and csrf_token for subsequent requests
+        sessionStorage.setItem('transactionId', result.transactionId);
+        sessionStorage.setItem('csrf_token', result.csrf_token);
         setTimeout(() => {
             window.location.href = redirectUrl;
             console.log('Redirect executed to', redirectUrl);
@@ -347,6 +335,11 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     } catch (error) {
         log_message(`Error submitting form: ${error.message}, response=${JSON.stringify(error.response?.data || 'none')}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Error submitting form:', error.message, error.response ? error.response.data : '');
+        if (error.response?.data?.new_csrf_token) {
+            formData.set('csrf_token', error.response.data.new_csrf_token);
+            document.querySelector(`input[name="csrf_token"]`).value = error.response.data.new_csrf_token;
+            log_message(`CSRF token updated after failure: ${error.response.data.new_csrf_token}`, 'make-market.log', 'make-market', 'INFO');
+        }
         showError(`Error submitting form: ${error.response?.data?.message || error.message}. Please try again.`);
         submitButton.disabled = false;
     }
