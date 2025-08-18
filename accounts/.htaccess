@@ -3,3 +3,5 @@ RewriteBase /accounts/
 
 # Rules for specific endpoints
 RewriteRule ^refresh-csrf$ refresh-csrf.php [L,NC]
+RewriteRule ^log$ log.php [L,NC]
+RewriteRule ^wallet-auth$ wallet-auth.php [L,NC]
