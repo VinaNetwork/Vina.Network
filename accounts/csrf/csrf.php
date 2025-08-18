@@ -10,7 +10,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php';
+// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php
+require_once $root_path . 'accounts/bootstrap.php';
 
 // CSRF Configuration
 define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
