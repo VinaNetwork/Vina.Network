@@ -20,6 +20,33 @@ require_once $root_path . 'accounts/header-auth.php';
 // Session start: in config/bootstrap.php
 // Error reporting: in config/bootstrap.php
 
+// Handle AJAX request to refresh CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'refresh-csrf') {
+    if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
+        log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+        exit;
+    }
+    $token = generate_csrf_token();
+    if ($token === false) {
+        log_message("Failed to generate new CSRF token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
+        exit;
+    }
+    if (!set_csrf_cookie()) {
+        log_message("Failed to set CSRF cookie, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to set CSRF cookie']);
+        exit;
+    }
+    session_write_close(); // Ensure session is saved
+    log_message("CSRF token refreshed successfully: $token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'INFO');
+    echo json_encode(['status' => 'success', 'csrf_token' => $token]);
+    exit;
+}
+
 // Protect POST requests with CSRF
 csrf_protect();
 
@@ -131,7 +158,7 @@ $page_css = ['/accounts/acc.css'];
 <html lang="en">
 <?php require_once $root_path . 'include/header.php';?>
 <body>
-<?php require_once $root_path . 'include/navbar.php';?>
+<?php require_once $root_path . 'include/nav.php';?>
 <div class="acc-container">
     <div class="acc-content">
         <h1>Your Profile</h1>
@@ -156,8 +183,8 @@ $page_css = ['/accounts/acc.css'];
             </table>
         </div>
         
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
+        <form method="POST" id="logout-form">
+            <input type="hidden" name="csrf_token" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
     </div>
