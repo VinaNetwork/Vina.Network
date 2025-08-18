@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }).catch(err => {
                 console.error('Clipboard API failed:', err.message);
                 showError(`Unable to copy: ${err.message}`);
+                logToServer(`Clipboard API failed: ${err.message}`, 'ERROR');
             });
         });
     });
@@ -53,36 +54,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Function to refresh CSRF token
-    async function refreshCsrfToken() {
+    async function refreshCsrfToken(maxRetries = 3, retryDelay = 1000) {
         console.log('Attempting to refresh CSRF token');
-        try {
-            const response = await fetch('/accounts/refresh-csrf', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            const result = await response.json();
-            console.log('Refresh CSRF response:', result);
-            if (result.status === 'success' && result.csrf_token) {
-                console.log('CSRF token refreshed:', result.csrf_token.substring(0, 4) + '...');
-                const csrfInput = document.querySelector('input[name="csrf_token"]');
-                if (csrfInput) {
-                    csrfInput.value = result.csrf_token;
-                    console.log('Updated CSRF token in form');
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const response = await fetch('/accounts/refresh-csrf', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                console.log('Refresh CSRF response:', result);
+                if (response.ok && result.status === 'success' && result.csrf_token) {
+                    console.log('CSRF token refreshed:', result.csrf_token.substring(0, 4) + '...');
+                    const csrfInput = document.querySelector('input[name="csrf_token"]');
+                    if (csrfInput) {
+                        csrfInput.value = result.csrf_token;
+                        console.log('Updated CSRF token in form');
+                    } else {
+                        console.error('CSRF input not found in form');
+                        logToServer('CSRF input not found in form', 'ERROR');
+                    }
+                    return result.csrf_token;
                 } else {
-                    console.error('CSRF input not found in form');
-                    logToServer('CSRF input not found in form', 'ERROR');
+                    throw new Error(result.message || 'Unknown error');
                 }
-                return result.csrf_token;
-            } else {
-                throw new Error('Failed to refresh CSRF token: ' + (result.message || 'Unknown error'));
+            } catch (error) {
+                console.error(`Attempt ${attempt} failed to refresh CSRF token: ${error.message}`);
+                if (attempt < maxRetries) {
+                    console.log(`Retrying in ${retryDelay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                } else {
+                    console.error('Max retries reached for CSRF token refresh');
+                    logToServer(`Failed to refresh CSRF token after ${maxRetries} attempts: ${error.message}`, 'ERROR');
+                    return null;
+                }
             }
-        } catch (error) {
-            console.error('Error refreshing CSRF token:', error.message);
-            logToServer('Error refreshing CSRF token: ' + error.message, 'ERROR');
-            return null;
         }
+    }
+
+    // Function to ensure CSRF token is available
+    async function ensureCsrfToken(maxRetries = 3, retryDelay = 1000) {
+        let csrfToken = getCsrfTokenFromCookie() || window.CSRF_TOKEN;
+        if (csrfToken) {
+            const tokenAge = Date.now() - (window.CSRF_TOKEN_TIMESTAMP || 0);
+            if (tokenAge > 25 * 60 * 1000) {
+                console.log(`CSRF token potentially expired (age=${tokenAge/1000}s), refreshing`);
+                csrfToken = await refreshCsrfToken(maxRetries, retryDelay);
+                if (csrfToken) {
+                    window.CSRF_TOKEN = csrfToken;
+                    window.CSRF_TOKEN_TIMESTAMP = Date.now();
+                }
+            } else {
+                console.log(`Using existing CSRF token: ${csrfToken.substring(0, 4)}...`);
+            }
+        } else {
+            console.log('No CSRF token found, refreshing');
+            csrfToken = await refreshCsrfToken(maxRetries, retryDelay);
+            if (csrfToken) {
+                window.CSRF_TOKEN = csrfToken;
+                window.CSRF_TOKEN_TIMESTAMP = Date.now();
+            }
+        }
+        return csrfToken;
     }
 
     // Function to show error messages
@@ -103,21 +139,40 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Logout form found, attaching submit event');
             logoutForm.addEventListener('submit', async (event) => {
                 console.log('Logout form submitted');
+                event.preventDefault(); // Prevent default form submission
                 let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
 
                 if (!csrfToken) {
                     console.warn('CSRF token not found, attempting to refresh');
                     logToServer('CSRF token not found, attempting to refresh', 'WARNING');
-                    event.preventDefault(); // Prevent form submission
-                    csrfToken = await refreshCsrfToken();
+                    csrfToken = await ensureCsrfToken();
                     if (!csrfToken) {
                         showError('Unable to refresh CSRF token. Please refresh the page.');
                         return;
                     }
-                    // Update CSRF token and allow form submission
                     document.querySelector('input[name="csrf_token"]').value = csrfToken;
-                    console.log('CSRF token updated, submitting form');
-                    logoutForm.submit(); // Submit form directly
+                }
+
+                const formData = new FormData(logoutForm);
+                try {
+                    const response = await fetch('/accounts/profile.php', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: formData
+                    });
+                    const result = await response.json();
+                    logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
+                    if (result.status === 'success') {
+                        window.location.href = '/accounts';
+                    } else {
+                        showError(result.message || 'Logout failed');
+                    }
+                } catch (error) {
+                    logToServer(`Logout error: ${error.message}`, 'ERROR');
+                    showError('Logout error: ' + error.message);
                 }
             });
         } else {
@@ -143,6 +198,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to log to server
     async function logToServer(message, level = 'INFO') {
         try {
+            const csrfToken = await ensureCsrfToken();
+            if (!csrfToken) {
+                console.error('Cannot log to server: CSRF token unavailable');
+                return;
+            }
             const logData = {
                 timestamp: new Date().toISOString(),
                 level: level,
@@ -153,15 +213,19 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Sending log to server: ${message}`);
             const response = await fetch('/accounts/log', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': csrfToken
+                },
+                credentials: 'include',
                 body: JSON.stringify(logData)
             });
-            if (!response.ok) {
-                console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
-                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-            }
             const result = await response.json();
             console.log(`Log server response: ${JSON.stringify(result)}`);
+            if (!response.ok) {
+                throw new Error(result.message || `HTTP ${response.status}`);
+            }
         } catch (error) {
             console.error(`Failed to send log to server: ${error.message}`);
         }
@@ -175,13 +239,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
             let csrfToken = document.getElementById('csrf-token').value || getCsrfTokenFromCookie();
-            const nonce = document.getElementById('login-nonce').value;
 
             if (!csrfToken) {
                 logToServer('CSRF token not found in form or cookie', 'ERROR');
-                walletInfo.style.display = 'block';
-                statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
-                return;
+                csrfToken = await ensureCsrfToken();
+                if (!csrfToken) {
+                    walletInfo.style.display = 'block';
+                    statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
+                    return;
+                }
             }
             await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
 
@@ -205,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
+                    const nonce = document.getElementById('login-nonce').value;
                     const message = `Verify login for Vina Network with nonce ${nonce} at ${timestamp}`;
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
@@ -228,17 +295,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('/accounts/wallet-auth', {
                         method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        credentials: 'include',
                         body: formData
                     });
 
                     const result = await responseServer.json();
                     await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
-                    if (result.status === 'error' && result.message.includes('Signature verification failed')) {
-                        statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
-                    } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
-                        statusSpan.textContent = 'Error: Invalid CSRF token. Please refresh the page.';
-                    } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
-                        statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
+                    if (result.status === 'error') {
+                        if (result.message.includes('Invalid request or unauthorized origin')) {
+                            statusSpan.textContent = 'Error: Request blocked due to invalid origin. Please contact support.';
+                        } else if (result.message.includes('Signature verification failed')) {
+                            statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
+                        } else if (result.message.includes('Invalid CSRF token')) {
+                            statusSpan.textContent = 'Error: Invalid CSRF token. Please refresh the page.';
+                        } else if (result.message.includes('Too many login attempts')) {
+                            statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
+                        } else {
+                            statusSpan.textContent = 'Error: ' + (result.message || 'Unknown error');
+                        }
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
                         window.location.href = result.redirect;
