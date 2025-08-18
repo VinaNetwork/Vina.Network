@@ -15,6 +15,19 @@ require_once $root_path . 'config/bootstrap.php'; // constants | logging | confi
 require_once $root_path . '../vendor/autoload.php';
 require_once $root_path . 'accounts/header-auth.php'; // Security Headers
 
+// Kiểm tra nguồn gốc cho tất cả các yêu cầu
+if (!check_request_origin()) {
+    log_message("Profile access denied: Invalid request or unauthorized origin, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    http_response_code(403);
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
+    } else {
+        header('Location: /error?message=Invalid+request+or+unauthorized+origin');
+    }
+    exit;
+}
+
 // Protect POST requests with CSRF
 csrf_protect();
 
