@@ -54,6 +54,107 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
+    // Function to refresh CSRF token
+    async function refreshCsrfToken() {
+        try {
+            const response = await fetch('/accounts/refresh-csrf.php', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const result = await response.json();
+            if (result.status === 'success' && result.csrf_token) {
+                console.log('CSRF token refreshed:', result.csrf_token.substring(0, 4) + '...');
+                // Update CSRF token in form
+                const csrfInput = document.querySelector('input[name="csrf_token"]');
+                if (csrfInput) {
+                    csrfInput.value = result.csrf_token;
+                }
+                return result.csrf_token;
+            } else {
+                throw new Error('Failed to refresh CSRF token: ' + (result.message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error refreshing CSRF token:', error.message);
+            logToServer('Error refreshing CSRF token: ' + error.message, 'ERROR');
+            return null;
+        }
+    }
+
+    // Function to show error messages
+    function showError(message) {
+        const statusSpan = document.getElementById('status') || document.createElement('span');
+        statusSpan.textContent = message;
+        statusSpan.style.color = 'red';
+        const walletInfo = document.getElementById('wallet-info') || document.createElement('div');
+        walletInfo.style.display = 'block';
+        walletInfo.appendChild(statusSpan);
+    }
+
+    // Handle logout form submission
+    const logoutForm = document.querySelector('#logout-form');
+    if (logoutForm) {
+        logoutForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default form submission
+            let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
+
+            if (!csrfToken) {
+                logToServer('CSRF token not found, attempting to refresh', 'WARNING');
+                csrfToken = await refreshCsrfToken();
+                if (!csrfToken) {
+                    showError('Unable to refresh CSRF token. Please refresh the page.');
+                    return;
+                }
+            }
+
+            // Send logout request with CSRF token
+            try {
+                const formData = new FormData(logoutForm);
+                const response = await fetch(logoutForm.action || window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        // Token may be expired, try refreshing and resending
+                        logToServer('CSRF token invalid or expired, attempting to refresh', 'WARNING');
+                        csrfToken = await refreshCsrfToken();
+                        if (csrfToken) {
+                            formData.set('csrf_token', csrfToken);
+                            const retryResponse = await fetch(logoutForm.action || window.location.href, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken
+                                }
+                            });
+                            if (retryResponse.ok) {
+                                window.location.href = '/accounts';
+                                return;
+                            }
+                        }
+                        showError('Invalid or expired CSRF token. Please refresh the page.');
+                    } else {
+                        showError('Logout failed: HTTP ' + response.status);
+                    }
+                    return;
+                }
+
+                // If successful, redirect to login page
+                window.location.href = '/accounts';
+            } catch (error) {
+                console.error('Logout error:', error.message);
+                logToServer('Logout error: ' + error.message, 'ERROR');
+                showError('Logout failed: ' + error.message);
+            }
+        });
+    }
+
     // Check if running in a secure context (HTTPS)
     if (!window.isSecureContext) {
         logToServer('Page not loaded over HTTPS, secure context unavailable', 'ERROR');
