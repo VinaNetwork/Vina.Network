@@ -35,9 +35,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get parameters from POST data
-$token_mint = $_POST['tokenMint'] ?? '';
-$network = $_POST['network'] ?? 'mainnet';
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
+$input = json_decode(file_get_contents('php://input'), true);
+$token_mint = $input['tokenMint'] ?? '';
+$network = $input['network'] ?? 'mainnet';
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+
+// Validate CSRF token
+if (!validate_csrf_token($csrf_token)) {
+    log_message("CSRF validation failed in get-decimals.php: provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token']);
+    exit;
+}
 
 // Assign token to $_POST for csrf_protect()
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
