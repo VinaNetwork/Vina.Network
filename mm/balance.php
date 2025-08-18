@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: mm/balance.php
-// Description: Check wallet balance for SOL and Token using Solana RPC getAssetsByOwner
+// Description: Check wallet balance for SOL and Token using Solana RPC
 // Created by: Vina Network
 // ============================================================================
 
@@ -12,7 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/header-auth.php';
-require_once $root_path . 'mm/network/network.php'; // Include network configuration
+require_once $root_path . 'mm/network/network.php';
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
@@ -87,15 +87,36 @@ if ($trade_direction === 'sell' || $trade_direction === 'both') {
     }
 }
 
-// Check balance using Solana getAssetsByOwner
+// Check balance using Solana RPC
 try {
-    $rpc_endpoint = RPC_ENDPOINT; // Use RPC_ENDPOINT from mm/network.php
+    $rpc_endpoint = RPC_ENDPOINT;
     if (empty($rpc_endpoint)) {
         log_message("RPC_ENDPOINT is not defined or empty in balance.php, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing RPC endpoint']);
         exit;
     }
+
+    // Use getAssetsByOwner for mainnet with Helius, getTokenAccountsByOwner for devnet/testnet
+    $is_helius = strpos($rpc_endpoint, 'helius-rpc.com') !== false;
+    $method = $is_helius ? 'getAssetsByOwner' : 'getTokenAccountsByOwner';
+    $params = $is_helius ? [
+        'ownerAddress' => $public_key,
+        'page' => 1,
+        'limit' => 10,
+        'sortBy' => [
+            'sortBy' => 'created',
+            'sortDirection' => 'asc'
+        ],
+        'options' => [
+            'showNativeBalance' => true,
+            'showFungible' => true
+        ]
+    ] : [
+        $public_key,
+        ['programId' => 'TokenkegQfeZyiNwAJbNbGK7y5Z'],
+        ['encoding' => 'jsonParsed']
+    ];
 
     $curl = curl_init();
     curl_setopt_array($curl, [
@@ -109,20 +130,8 @@ try {
         CURLOPT_POSTFIELDS => json_encode([
             'jsonrpc' => '2.0',
             'id' => '1',
-            'method' => 'getAssetsByOwner',
-            'params' => [
-                'ownerAddress' => $public_key,
-                'page' => 1,
-                'limit' => 10,
-                'sortBy' => [
-                    'sortBy' => 'created',
-                    'sortDirection' => 'asc'
-                ],
-                'options' => [
-                    'showNativeBalance' => true,
-                    'showFungible' => true
-                ]
-            ]
+            'method' => $method,
+            'params' => $params
         ], JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => [
             "Content-Type: application/json; charset=utf-8",
@@ -137,14 +146,13 @@ try {
 
     // Log HTTP status and error (if any)
     if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-        log_message("RPC response in balance.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
+        log_message("RPC response in balance.php: HTTP=$http_code, method=$method, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
     }
 
     if ($err) {
-        log_message("RPC failed in balance.php: cURL error: $err, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in balance.php: cURL error: $err, method=$method, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $err]);
-        // Clear session decimals after cURL error
         if (isset($_SESSION['decimals_' . $token_mint])) {
             unset($_SESSION['decimals_' . $token_mint]);
             log_message("Cleared session decimals for token_mint=$token_mint after cURL error", 'make-market.log', 'make-market', 'INFO');
@@ -153,10 +161,9 @@ try {
     }
 
     if ($http_code !== 200) {
-        log_message("RPC failed in balance.php: HTTP $http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in balance.php: HTTP $http_code, method=$method, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
-        // Clear session decimals after HTTP error
         if (isset($_SESSION['decimals_' . $token_mint])) {
             unset($_SESSION['decimals_' . $token_mint]);
             log_message("Cleared session decimals for token_mint=$token_mint after HTTP error", 'make-market.log', 'make-market', 'INFO');
@@ -169,7 +176,6 @@ try {
         log_message("RPC failed in balance.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
-        // Clear session decimals after JSON error
         if (isset($_SESSION['decimals_' . $token_mint])) {
             unset($_SESSION['decimals_' . $token_mint]);
             log_message("Cleared session decimals for token_mint=$token_mint after JSON error", 'make-market.log', 'make-market', 'INFO');
@@ -178,10 +184,9 @@ try {
     }
 
     if (isset($data['error'])) {
-        log_message("RPC failed in balance.php: {$data['error']['message']}, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in balance.php: {$data['error']['message']}, method=$method, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $data['error']['message']]);
-        // Clear session decimals after RPC error
         if (isset($_SESSION['decimals_' . $token_mint])) {
             unset($_SESSION['decimals_' . $token_mint]);
             log_message("Cleared session decimals for token_mint=$token_mint after RPC error", 'make-market.log', 'make-market', 'INFO');
@@ -189,40 +194,121 @@ try {
         exit;
     }
 
-    if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
-        log_message("RPC failed in balance.php: No nativeBalance or lamports found for public_key=$short_public_key, network=$network", 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
-        // Clear session decimals after balance error
-        if (isset($_SESSION['decimals_' . $token_mint])) {
-            unset($_SESSION['decimals_' . $token_mint]);
-            log_message("Cleared session decimals for token_mint=$token_mint after balance error", 'make-market.log', 'make-market', 'INFO');
-        }
-        exit;
-    }
-
     // Initialize variables
-    $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9;
-    $totalTransactions = $loop_count * $batch_size;
-    $requiredSolAmount = 0;
-    $requiredTokenAmount = 0;
+    $balanceInSol = 0;
     $tokenBalance = 0;
     $errors = [];
 
+    // Handle response based on RPC method
+    if ($is_helius) {
+        if (!isset($data['result']['nativeBalance']) || !isset($data['result']['nativeBalance']['lamports'])) {
+            log_message("RPC failed in balance.php: No nativeBalance or lamports found for public_key=$short_public_key, method=$method, network=$network", 'make-market.log', 'make-market', 'ERROR');
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance']);
+            if (isset($_SESSION['decimals_' . $token_mint])) {
+                unset($_SESSION['decimals_' . $token_mint]);
+                log_message("Cleared session decimals for token_mint=$token_mint after balance error", 'make-market.log', 'make-market', 'INFO');
+            }
+            exit;
+        }
+        $balanceInSol = floatval($data['result']['nativeBalance']['lamports']) / 1e9;
+        if ($trade_direction === 'sell' || $trade_direction === 'both') {
+            if (isset($data['result']['items']) && is_array($data['result']['items'])) {
+                foreach ($data['result']['items'] as $item) {
+                    if ($item['interface'] === 'FungibleToken' && isset($item['id']) && $item['id'] === $token_mint) {
+                        $tokenBalance = floatval($item['token_info']['balance'] ?? 0) / pow(10, $decimals);
+                        break;
+                    }
+                }
+            }
+        }
+    } else {
+        // Use getAccountInfo to get SOL balance
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $rpc_endpoint,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode([
+                'jsonrpc' => '2.0',
+                'id' => '2',
+                'method' => 'getBalance',
+                'params' => [$public_key]
+            ], JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER => [
+                "Content-Type: application/json; charset=utf-8",
+                "X-CSRF-Token: $csrf_token"
+            ],
+        ]);
+
+        $sol_response = curl_exec($curl);
+        $sol_http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $sol_err = curl_error($curl);
+        curl_close($curl);
+
+        if ($sol_err || $sol_http_code !== 200) {
+            log_message("RPC getBalance failed in balance.php: cURL error=$sol_err, HTTP=$sol_http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Error checking SOL balance']);
+            if (isset($_SESSION['decimals_' . $token_mint])) {
+                unset($_SESSION['decimals_' . $token_mint]);
+                log_message("Cleared session decimals for token_mint=$token_mint after SOL balance error", 'make-market.log', 'make-market', 'INFO');
+            }
+            exit;
+        }
+
+        $sol_data = json_decode($sol_response, true);
+        if (isset($sol_data['result']['value'])) {
+            $balanceInSol = floatval($sol_data['result']['value']) / 1e9;
+        } else {
+            log_message("RPC getBalance failed in balance.php: No balance found for public_key=$short_public_key, network=$network", 'make-market.log', 'make-market', 'ERROR');
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Error checking SOL balance']);
+            if (isset($_SESSION['decimals_' . $token_mint])) {
+                unset($_SESSION['decimals_' . $token_mint]);
+                log_message("Cleared session decimals for token_mint=$token_mint after SOL balance error", 'make-market.log', 'make-market', 'INFO');
+            }
+            exit;
+        }
+
+        // Process token balance
+        if ($trade_direction === 'sell' || $trade_direction === 'both') {
+            if (isset($data['result']['value']) && is_array($data['result']['value'])) {
+                foreach ($data['result']['value'] as $account) {
+                    if (isset($account['account']['data']['parsed']['info']['mint']) && $account['account']['data']['parsed']['info']['mint'] === $token_mint) {
+                        $tokenBalance = floatval($account['account']['data']['parsed']['info']['tokenAmount']['uiAmount'] ?? 0);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    $totalTransactions = $loop_count * $batch_size;
+    $requiredSolAmount = 0;
+    $requiredTokenAmount = 0;
+
     // Calculate required amounts based on trade direction
     if ($trade_direction === 'buy') {
-        $requiredSolAmount = ($sol_amount * $loop_count) + (0.000005 * $totalTransactions) + 0.00203928; // SOL amount + tx fees + ATA creation
+        $requiredSolAmount = ($sol_amount * $loop_count) + (0.000005 * $totalTransactions) + 0.00203928;
     } elseif ($trade_direction === 'sell') {
         $requiredTokenAmount = $token_amount * $totalTransactions;
-        $requiredSolAmount = (0.000005 * $totalTransactions); // Only tx fees for sell
+        $requiredSolAmount = (0.000005 * $totalTransactions);
     } elseif ($trade_direction === 'both') {
-        $requiredSolAmount = ($sol_amount * ($loop_count / 2)) + (0.000005 * $totalTransactions) + 0.00203928; // Half for buy + tx fees + ATA
-        $requiredTokenAmount = $token_amount * ($totalTransactions / 2); // Half for sell
+        $requiredSolAmount = ($sol_amount * ($loop_count / 2)) + (0.000005 * $totalTransactions) + 0.00203928;
+        $requiredTokenAmount = $token_amount * ($totalTransactions / 2);
     }
 
     // Log balance information
     if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
         log_message("SOL balance for public_key=$short_public_key: $balanceInSol SOL, required=$requiredSolAmount SOL, network=$network", 'make-market.log', 'make-market', 'DEBUG');
+        if ($trade_direction === 'sell' || $trade_direction === 'both') {
+            log_message("Token balance for public_key=$short_public_key, token_mint=$token_mint: $tokenBalance tokens (decimals: $decimals), network=$network", 'make-market.log', 'make-market', 'DEBUG');
+        }
     }
 
     // Check SOL balance for 'buy' or 'both' transactions
@@ -234,19 +320,6 @@ try {
 
     // Check token balance for 'sell' or 'both' transactions
     if ($trade_direction === 'sell' || $trade_direction === 'both') {
-        if (isset($data['result']['items']) && is_array($data['result']['items'])) {
-            foreach ($data['result']['items'] as $item) {
-                if ($item['interface'] === 'FungibleToken' && isset($item['id']) && $item['id'] === $token_mint) {
-                    $tokenBalance = floatval($item['token_info']['balance'] ?? 0) / pow(10, $decimals);
-                    break;
-                }
-            }
-        }
-
-        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message("Token balance for public_key=$short_public_key, token_mint=$token_mint: $tokenBalance tokens (decimals: $decimals), network=$network", 'make-market.log', 'make-market', 'DEBUG');
-        }
-
         if ($tokenBalance < $requiredTokenAmount) {
             $errors[] = "Insufficient token balance: $tokenBalance tokens available, required=$requiredTokenAmount tokens";
         }
@@ -260,7 +333,6 @@ try {
             'status' => 'error',
             'message' => implode("; ", $errors)
         ], JSON_UNESCAPED_UNICODE);
-        // Clear session decimals after error
         if (isset($_SESSION['decimals_' . $token_mint])) {
             unset($_SESSION['decimals_' . $token_mint]);
             log_message("Cleared session decimals for token_mint=$token_mint after error", 'make-market.log', 'make-market', 'INFO');
@@ -274,16 +346,14 @@ try {
         'message' => 'Wallet balance is sufficient to perform the transaction',
         'balance' => $trade_direction === 'buy' ? $balanceInSol : ($trade_direction === 'sell' ? $tokenBalance : ['sol' => $balanceInSol, 'token' => $tokenBalance])
     ], JSON_UNESCAPED_UNICODE);
-    // Clear session decimals after success
     if (isset($_SESSION['decimals_' . $token_mint])) {
         unset($_SESSION['decimals_' . $token_mint]);
         log_message("Cleared session decimals for token_mint=$token_mint after success", 'make-market.log', 'make-market', 'INFO');
     }
 } catch (Exception $e) {
-    log_message("Balance check failed in balance.php: {$e->getMessage()}, network=$network", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Balance check failed in balance.php: {$e->getMessage()}, method=$method, network=$network", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error checking wallet balance: ' . $e->getMessage()]);
-    // Clear session decimals after exception
     if (isset($_SESSION['decimals_' . $token_mint])) {
         unset($_SESSION['decimals_' . $token_mint]);
         log_message("Cleared session decimals for token_mint=$token_mint after exception", 'make-market.log', 'make-market', 'INFO');
