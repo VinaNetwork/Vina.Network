@@ -10,14 +10,14 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
     while (attempt < maxRetries) {
         try {
             log_message(`Attempting to fetch CSRF token from /mm/refresh-csrf (attempt ${attempt + 1}/${maxRetries}), cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/refresh-csrf', {
+            const response = await fetchWithTimeout('/mm/refresh-csrf', {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'include'
-            });
+            }, 10000); // Tăng timeout lên 10 giây
             const responseBody = await response.text();
             log_message(`Response from /mm/refresh-csrf: status=${response.status}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
@@ -41,6 +41,23 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
             }
             await delay(retryDelay * attempt);
         }
+    }
+}
+
+// Hàm fetch với timeout
+async function fetchWithTimeout(url, options, timeout = 10000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        if (error.name === 'AbortError') {
+            throw new Error(`Request to ${url} timed out after ${timeout}ms`);
+        }
+        throw error;
     }
 }
 
@@ -143,7 +160,7 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
     const csrfToken = window.CSRF_TOKEN || 'none';
     const logMessage = `${message}, session_id=${session_id}, csrf_token=${csrfToken}`;
-    fetch('/mm/log.php', {
+    fetchWithTimeout('/mm/log.php', {
         method: 'POST',
         headers: addAuthHeaders({
             'Content-Type': 'application/json',
@@ -151,7 +168,7 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
         }),
         credentials: 'include',
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
-    }).then(response => {
+    }, 10000).then(response => {
         if (!response.ok) {
             console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}, response=${response.statusText}`);
         }
@@ -190,6 +207,12 @@ function showError(message, detailedError = null) {
 
 // Show success message
 function showSuccess(message, results = [], networkConfig) {
+    if (!networkConfig || !networkConfig.explorerUrl) {
+        console.error('Network config or explorerUrl is undefined');
+        log_message('Network config or explorerUrl is undefined in showSuccess', 'process.log', 'make-market', 'ERROR');
+        showError('Network configuration error: explorerUrl is undefined');
+        return;
+    }
     const resultDiv = document.getElementById('process-result');
     let html = `
         <div class="alert alert-${results.some(r => r.status === 'error') ? 'warning' : 'success'}">
@@ -200,7 +223,7 @@ function showSuccess(message, results = [], networkConfig) {
         results.forEach(result => {
             html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
                 result.status === 'success' 
-                    ? `<a href="${networkConfig.config.explorerUrl}${result.txid}${networkConfig.config.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
+                    ? `<a href="${networkConfig.explorerUrl}${result.txid}${networkConfig.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
                     : `Failed - ${result.message}`
             }</li>`;
         });
@@ -234,12 +257,12 @@ async function updateTransactionStatus(status, error = null) {
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Updating transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/get-status/${transactionId}`, {
+            const response = await fetchWithTimeout(`/mm/get-status/${transactionId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ id: transactionId, status, error }),
                 credentials: 'include'
-            });
+            }, 10000);
             const responseBody = await response.text();
             log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
@@ -294,12 +317,12 @@ async function cancelTransaction(transactionId) {
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/get-status/${transactionId}`, {
+            const response = await fetchWithTimeout(`/mm/get-status/${transactionId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user' }),
                 credentials: 'include'
-            });
+            }, 10000);
             const responseBody = await response.text();
             log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
@@ -366,11 +389,11 @@ async function getNetworkConfig() {
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/get-network', {
+            const response = await fetchWithTimeout('/mm/get-network', {
                 method: 'GET',
                 headers,
                 credentials: 'include'
-            });
+            }, 10000); // Tăng timeout lên 10 giây
             const responseBody = await response.text();
             log_message(`Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status === 401) {
@@ -404,7 +427,11 @@ async function getNetworkConfig() {
                 log_message(`Invalid network in response: ${result.network || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
                 throw new Error(`Invalid network: ${result.network || 'undefined'}`);
             }
-            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.config.explorerUrl}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            if (!result.explorerUrl) {
+                log_message(`Missing explorerUrl in network config response: ${JSON.stringify(result)}`, 'process.log', 'make-market', 'ERROR');
+                throw new Error('Missing explorerUrl in network config');
+            }
+            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.explorerUrl}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Network config fetched successfully:`, result);
             return result;
         } catch (err) {
@@ -488,12 +515,12 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
     }
     try {
         log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.get(`${networkConfig.config.jupiterApi}/quote`, {
+        const response = await axios.get(`${networkConfig.explorerUrl}/quote`, {
             params,
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        log_message(`Response from ${networkConfig.config.jupiterApi}/quote: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(`Response from ${networkConfig.explorerUrl}/quote: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to retrieve quote from Jupiter API');
         }
@@ -503,7 +530,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
     } catch (err) {
         const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.config.jupiterApi}/quote`}`;
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.explorerUrl}/quote`}`;
         log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Failed to get quote:', errorMessage);
         throw new Error(errorMessage);
@@ -518,15 +545,15 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             userPublicKey: publicKey,
             wrapAndUnwrapSol: true,
             dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: networkConfig.config.prioritizationFeeLamports,
+            prioritizationFeeLamports: networkConfig.prioritizationFeeLamports,
             testnet: networkConfig.network === 'testnet' || networkConfig.network === 'devnet'
         };
         log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.post(`${networkConfig.config.jupiterApi}/swap`, requestBody, {
+        const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        log_message(`Response from ${networkConfig.config.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
         }
@@ -537,7 +564,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
     } catch (err) {
         const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.config.jupiterApi}/swap`}`;
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
         log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Swap transaction failed:', errorMessage);
         throw new Error(errorMessage);
@@ -569,12 +596,12 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/create-tx/${transactionId}`, {
+            const response = await fetchWithTimeout(`/mm/create-tx/${transactionId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork }),
                 credentials: 'include'
-            });
+            }, 10000);
             const responseBody = await response.text();
             log_message(`Response from /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
@@ -631,12 +658,12 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/swap', {
+            const response = await fetchWithTimeout('/mm/swap', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
                 credentials: 'include'
-            });
+            }, 10000);
             const responseBody = await response.text();
             log_message(`Response from /mm/swap: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
@@ -690,6 +717,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await ensureAuthInitialized();
         networkConfig = await getNetworkConfig();
+        console.log('Network config initialized:', networkConfig);
     } catch (err) {
         showError('Failed to initialize authentication or network config: ' + err.message, err.message);
         return;
@@ -719,10 +747,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/get-tx/${transactionId}`, {
+            const response = await fetchWithTimeout(`/mm/get-tx/${transactionId}`, {
                 headers,
                 credentials: 'include'
-            });
+            }, 10000);
             const responseBody = await response.text();
             log_message(`Response from /mm/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status === 401) {
@@ -829,7 +857,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Process swaps
     try {
-        const solMint = networkConfig.config.solMint;
+        const solMint = networkConfig.solMint;
         const solAmount = transaction.sol_amount * 1e9;
         const tokenAmount = transaction.token_amount * Math.pow(10, tokenDecimals);
         const slippageBps = Math.floor(transaction.slippage * 100);
