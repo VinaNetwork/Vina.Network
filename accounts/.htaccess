@@ -1,0 +1,5 @@
+RewriteEngine On
+RewriteBase /accounts/
+
+# Rules for specific endpoints
+RewriteRule ^refresh-csrf$ refresh-csrf.php [L,NC]
