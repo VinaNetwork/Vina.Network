@@ -5,13 +5,11 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
+    http_response_code(403);
+    exit('No direct access allowed!');
 }
-
-$root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'mm/csrf/csrf.php';
 
 // List of allowed sources (config/constants.php)
 $allowed_origins = ALLOWED_ORIGINS;
