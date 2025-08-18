@@ -12,6 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/header-auth.php';
+require_once $root_path . 'mm/network.php'; // Include network configuration
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
@@ -36,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // Read from $_POST
 $token_mint = $_POST['token_mint'] ?? '';
+$network = $_POST['network'] ?? SOLANA_NETWORK;
 $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
 
 // Assign token to $_POST for csrf_protect() to use
@@ -59,20 +61,21 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
     exit;
 }
 
-log_message("Fetching decimals for token_mint: $token_mint", 'make-market.log', 'make-market', 'INFO');
+log_message("Fetching decimals for token_mint: $token_mint, network: $network", 'make-market.log', 'make-market', 'INFO');
 
 // Fetch decimals using Solana getAccountInfo
 try {
-    if (!defined('HELIUS_API_KEY') || empty(HELIUS_API_KEY)) {
-        log_message("HELIUS_API_KEY is not defined or empty in decimals.php", 'make-market.log', 'make-market', 'ERROR');
+    $rpc_endpoint = RPC_ENDPOINT; // Use RPC_ENDPOINT from mm/network.php
+    if (empty($rpc_endpoint)) {
+        log_message("RPC_ENDPOINT is not defined or empty in decimals.php, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing HELIUS_API_KEY']);
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing RPC endpoint']);
         exit;
     }
 
     $curl = curl_init();
     curl_setopt_array($curl, [
-        CURLOPT_URL => "https://mainnet.helius-rpc.com/?api-key=" . HELIUS_API_KEY,
+        CURLOPT_URL => $rpc_endpoint,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => "",
         CURLOPT_MAXREDIRS => 10,
@@ -103,18 +106,18 @@ try {
 
     // Log HTTP status and error (if any)
     if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-        log_message("Helius RPC response in decimals.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
+        log_message("RPC response in decimals.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
     }
 
     if ($err) {
-        log_message("Helius RPC failed in decimals.php: cURL error: $err", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: cURL error: $err, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $err]);
         exit;
     }
 
     if ($http_code !== 200) {
-        log_message("Helius RPC failed in decimals.php: HTTP $http_code", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: HTTP $http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
@@ -122,21 +125,21 @@ try {
 
     $data = json_decode($response, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("Helius RPC failed in decimals.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
     }
 
     if (isset($data['error'])) {
-        log_message("Helius RPC failed in decimals.php: {$data['error']['message']}", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: {$data['error']['message']}, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $data['error']['message']]);
         exit;
     }
 
     if (!isset($data['result']['value']) || !isset($data['result']['value']['data']['parsed']['info']['decimals'])) {
-        log_message("Helius RPC failed in decimals.php: No decimals found for token_mint=$token_mint", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: No decimals found for token_mint=$token_mint, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Invalid token mint or not a fungible token']);
         exit;
@@ -147,14 +150,14 @@ try {
     // Store decimals in session
     $_SESSION['decimals_' . $token_mint] = $decimals;
 
-    log_message("Decimals fetched successfully: $decimals for token_mint=$token_mint", 'make-market.log', 'make-market', 'INFO');
+    log_message("Decimals fetched successfully: $decimals for token_mint=$token_mint, network=$network", 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
         'status' => 'success',
         'message' => 'Token decimals fetched successfully',
         'decimals' => $decimals
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    log_message("Decimals fetch failed in decimals.php: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Decimals fetch failed in decimals.php: {$e->getMessage()}, network=$network", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $e->getMessage()]);
     exit;
