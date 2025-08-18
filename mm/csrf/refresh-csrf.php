@@ -59,45 +59,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET' ||
     exit;
 }
 
-// Check for transactionId in query parameters
-$transactionId = $_GET['transactionId'] ?? null;
-$token = null;
-
-if ($transactionId) {
-    try {
-        $pdo = get_db_connection();
-        $stmt = $pdo->prepare("SELECT csrf_token FROM make_market WHERE id = ? AND status != 'completed'");
-        $stmt->execute([$transactionId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && $row['csrf_token']) {
-            $token = $row['csrf_token'];
-            // Store in session for consistency
-            $_SESSION['csrf_token_' . $transactionId] = $token;
-            log_message("CSRF token retrieved for transaction $transactionId: $token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
-        }
-    } catch (PDOException $e) {
-        log_message("Failed to retrieve CSRF token for transaction $transactionId: {$e->getMessage()}, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
-    }
+$token = generate_csrf_token();
+if ($token === false) {
+    log_message("Failed to generate new CSRF token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-// If no valid token found, generate a new one
-if (!$token) {
-    $token = generate_csrf_token($transactionId);
-    if ($token === false) {
-        log_message("Failed to generate new CSRF token, transactionId=$transactionId, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-}
-
-if (!set_csrf_cookie($token, $transactionId)) {
-    log_message("Failed to set CSRF cookie, transactionId=$transactionId, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Failed to set CSRF cookie'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-log_message("CSRF token refreshed successfully: $token, transactionId=$transactionId, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
+log_message("CSRF token refreshed successfully: $token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
 echo json_encode(['status' => 'success', 'csrf_token' => $token], JSON_UNESCAPED_UNICODE);
 ?>
