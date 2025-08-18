@@ -16,7 +16,6 @@ require_once $root_path . 'config/bootstrap.php';
 define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
 define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
 define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie'); // Name of the CSRF cookie (for AJAX requests)
-define('CSRF_TOKEN_TTL', 1800); // Token time-to-live in seconds (30 minutes)
 
 // Ensure session is active
 function ensure_session() {
@@ -63,27 +62,27 @@ function ensure_session() {
     }
 }
 
-// Generate CSRF token and store in session with TTL
-function generate_csrf_token() {
+// Generate CSRF token and store in session, optionally tied to transactionId
+function generate_csrf_token($transactionId = null) {
     try {
         if (!ensure_session()) {
             throw new Exception('Failed to start session');
         }
 
-        if (empty($_SESSION[CSRF_TOKEN_NAME])) {
-            $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
-            $_SESSION[CSRF_TOKEN_NAME . '_created'] = time(); // Store creation time
-            log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME] . ", created_at=" . $_SESSION[CSRF_TOKEN_NAME . '_created'] . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
+        $sessionKey = $transactionId ? 'csrf_token_' . $transactionId : CSRF_TOKEN_NAME;
+        if (empty($_SESSION[$sessionKey])) {
+            $_SESSION[$sessionKey] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
+            log_message("CSRF token generated for " . ($transactionId ? "transaction $transactionId" : "session") . ": " . $_SESSION[$sessionKey] . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
         }
-        return $_SESSION[CSRF_TOKEN_NAME];
+        return $_SESSION[$sessionKey];
     } catch (Exception $e) {
-        log_message("Error generating CSRF token: " . $e->getMessage() . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Error generating CSRF token: " . $e->getMessage() . ", transactionId=$transactionId, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
         return false;
     }
 }
 
-// Validate CSRF token against session with TTL check
-function validate_csrf_token($token) {
+// Validate CSRF token against session or database
+function validate_csrf_token($token, $transactionId = null) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
     $method = $_SERVER['REQUEST_METHOD'] ?? 'unknown';
@@ -95,65 +94,105 @@ function validate_csrf_token($token) {
         return false;
     }
 
-    if (!isset($_SESSION[CSRF_TOKEN_NAME]) || empty($token)) {
-        log_message("CSRF token validation failed: token empty or session token missing, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'CRITICAL');
+    $sessionKey = $transactionId ? 'csrf_token_' . $transactionId : CSRF_TOKEN_NAME;
+    if (!isset($_SESSION[$sessionKey]) || empty($token)) {
+        // Fallback to database for transaction-specific token
+        if ($transactionId) {
+            try {
+                $pdo = get_db_connection();
+                $stmt = $pdo->prepare("SELECT csrf_token FROM make_market WHERE id = ? AND status != 'completed'");
+                $stmt->execute([$transactionId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && $row['csrf_token'] && hash_equals($row['csrf_token'], $token)) {
+                    log_message("CSRF token validated via database for transaction $transactionId: $token, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'INFO');
+                    return true;
+                }
+            } catch (PDOException $e) {
+                log_message("Database error during CSRF validation for transaction $transactionId: {$e->getMessage()}, IP=$ip, URI=$uri", 'make-market.log', 'make-market', 'ERROR');
+            }
+        }
+        log_message("CSRF token validation failed: token empty or session token missing, transactionId=$transactionId, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'CRITICAL');
         return false;
     }
 
-    // Check TTL
-    if (isset($_SESSION[CSRF_TOKEN_NAME . '_created']) && (time() - $_SESSION[CSRF_TOKEN_NAME . '_created']) > CSRF_TOKEN_TTL) {
-        log_message("CSRF token validation failed: token expired, provided=$token, created_at=" . $_SESSION[CSRF_TOKEN_NAME . '_created'] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'WARNING');
-        return false;
-    }
-
-    if (!hash_equals($_SESSION[CSRF_TOKEN_NAME], $token)) {
-        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[CSRF_TOKEN_NAME] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'WARNING');
+    if (!hash_equals($_SESSION[$sessionKey], $token)) {
+        log_message("CSRF token validation failed: provided=$token, expected=" . $_SESSION[$sessionKey] . ", transactionId=$transactionId, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'WARNING');
         return false;
     }
     
-    log_message("CSRF token validated successfully: $token, created_at=" . $_SESSION[CSRF_TOKEN_NAME . '_created'] . ", IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'INFO');
+    log_message("CSRF token validated successfully: $token, transactionId=$transactionId, IP=$ip, URI=$uri, Method=$method, AJAX=$is_ajax, User-Agent=$user_agent", 'make-market.log', 'make-market', 'INFO');
     return true;
 }
 
-// Regenerate CSRF token after successful validation
-function regenerate_csrf_token() {
-    if (ensure_session()) {
-        unset($_SESSION[CSRF_TOKEN_NAME]);
-        unset($_SESSION[CSRF_TOKEN_NAME . '_created']); // Remove creation time
+// Clear CSRF token for a specific transaction
+function clear_csrf_token($transactionId) {
+    if (!ensure_session()) {
+        log_message("Failed to clear CSRF token: session not active, transactionId=$transactionId, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
+        return false;
     }
-    return generate_csrf_token();
+
+    $sessionKey = 'csrf_token_' . $transactionId;
+    if (isset($_SESSION[$sessionKey])) {
+        unset($_SESSION[$sessionKey]);
+        log_message("CSRF token cleared from session for transaction $transactionId", 'make-market.log', 'make-market', 'INFO');
+    }
+
+    try {
+        $pdo = get_db_connection();
+        $stmt = $pdo->prepare("UPDATE make_market SET csrf_token = NULL WHERE id = ?");
+        $stmt->execute([$transactionId]);
+        log_message("CSRF token cleared from database for transaction $transactionId", 'make-market.log', 'make-market', 'INFO');
+        return true;
+    } catch (PDOException $e) {
+        log_message("Failed to clear CSRF token from database for transaction $transactionId: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+        return false;
+    }
+}
+
+// Regenerate CSRF token after successful validation
+function regenerate_csrf_token($transactionId = null) {
+    if (ensure_session()) {
+        $sessionKey = $transactionId ? 'csrf_token_' . $transactionId : CSRF_TOKEN_NAME;
+        unset($_SESSION[$sessionKey]);
+    }
+    return generate_csrf_token($transactionId);
 }
 
 // Generate hidden input field for CSRF token in forms
-function get_csrf_field() {
-    $token = generate_csrf_token();
+function get_csrf_field($transactionId = null) {
+    $token = generate_csrf_token($transactionId);
     return '<input type="hidden" name="' . CSRF_TOKEN_NAME . '" value="' . htmlspecialchars($token) . '">';
 }
 
 // Middleware to protect POST requests with CSRF validation
-function csrf_protect() {
+function csrf_protect($transactionId = null) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST[CSRF_TOKEN_NAME] ?? $_COOKIE[CSRF_TOKEN_COOKIE] ?? '';
-        if (!validate_csrf_token($token)) {
-            log_message("CSRF protection triggered: Invalid or expired token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'WARNING');
+        if (!validate_csrf_token($token, $transactionId)) {
+            log_message("CSRF protection triggered: Invalid token, transactionId=$transactionId, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'WARNING');
             http_response_code(403);
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token']);
+                echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token', 'new_csrf_token' => generate_csrf_token($transactionId)]);
             } else {
-                header('Location: /error?message=Invalid+or+expired+CSRF+token');
+                header('Location: /error?message=Invalid+CSRF+token');
             }
             exit;
         }
-        regenerate_csrf_token(); // Regenerate token after successful validation
+        // Chỉ regenerate token nếu không gắn với transactionId
+        if (!$transactionId) {
+            regenerate_csrf_token();
+        }
     }
 }
 
 // Set CSRF token in a cookie for AJAX requests
-function set_csrf_cookie() {
+function set_csrf_cookie($token = null, $transactionId = null) {
     global $is_secure;
     
-    $token = generate_csrf_token();
+    if (!$token) {
+        $token = generate_csrf_token($transactionId);
+    }
     if ($token === false) {
         return false;
     }
@@ -181,7 +220,7 @@ function set_csrf_cookie() {
         );
     }
 
-    log_message("CSRF cookie set: $token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
+    log_message("CSRF cookie set: $token, transactionId=$transactionId, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
     return true;
 }
 ?>
