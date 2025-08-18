@@ -158,7 +158,7 @@ $page_css = ['/accounts/acc.css'];
 <html lang="en">
 <?php require_once $root_path . 'include/header.php';?>
 <body>
-<?php require_once $root_path . 'include/nav.php';?>
+<?php require_once $root_path . 'include/navbar.php';?>
 <div class="acc-container">
     <div class="acc-content">
         <h1>Your Profile</h1>
