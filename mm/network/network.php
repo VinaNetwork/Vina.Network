@@ -11,7 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'mm/csrf/csrf.php';
 
 // Determine Solana network (priority: ENV > default 'devnet')
 if (!defined('SOLANA_NETWORK')) {
@@ -22,12 +21,7 @@ if (!defined('SOLANA_NETWORK')) {
 // Validate SOLANA_NETWORK
 $valid_networks = ['devnet', 'testnet', 'mainnet'];
 if (!in_array(SOLANA_NETWORK, $valid_networks, true)) {
-    log_message(
-        "Invalid SOLANA_NETWORK: " . SOLANA_NETWORK,
-        'make-market.log',
-        'make-market',
-        'ERROR'
-    );
+    log_message("Invalid SOLANA_NETWORK: " . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode([
         'status'  => 'error',
