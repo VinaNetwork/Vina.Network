@@ -91,9 +91,10 @@ function addAxiosAuthHeaders(config = {}) {
     };
 }
 
-// Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
     console.log('process.js loaded');
+
+    // Copy functionality
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
