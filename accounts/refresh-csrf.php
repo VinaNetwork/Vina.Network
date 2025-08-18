@@ -15,44 +15,44 @@ require_once $root_path . 'config/bootstrap.php';
 // List of allowed sources (config/constants.php)
 $allowed_origins = ALLOWED_ORIGINS;
 
-// Hàm kiểm tra nguồn gốc
+// Origin check function
 function check_request_origin() {
     global $allowed_origins;
     $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
 
-    // Nếu không có Origin hoặc Referer, từ chối yêu cầu
+    // If there is no Origin or Referer, reject the request.
     if (empty($origin)) {
-        log_message("Invalid request to refresh-csrf: No Origin or Referer header, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
+        log_message("Invalid request to refresh-csrf: No Origin or Referer header, IP=$ip, URI=$uri", 'accounts.log', 'accounts', 'ERROR');
         return false;
     }
 
-    // Chuẩn hóa Origin/Referer bằng cách lấy domain (loại bỏ đường dẫn)
+    // Normalize Origin/Referer by getting domain (remove path)
     $parsed_origin = parse_url($origin, PHP_URL_SCHEME) . '://' . parse_url($origin, PHP_URL_HOST);
     if (parse_url($origin, PHP_URL_PORT)) {
         $parsed_origin .= ':' . parse_url($origin, PHP_URL_PORT);
     }
 
-    // Kiểm tra xem nguồn gốc có trong danh sách được phép không
+    // Check if the origin is in the allowed list
     foreach ($allowed_origins as $allowed) {
         $parsed_allowed = rtrim($allowed, '/');
         if ($parsed_origin === $parsed_allowed) {
-            log_message("Origin validated: $parsed_origin, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'INFO');
+            log_message("Origin validated: $parsed_origin, IP=$ip, URI=$uri", 'accounts.log', 'accounts', 'INFO');
             return true;
         }
     }
 
-    log_message("Invalid request to refresh-csrf: Origin/Referer ($parsed_origin) not allowed, IP=$ip, URI=$uri", 'csrf.log', 'logs', 'ERROR');
+    log_message("Invalid request to refresh-csrf: Origin/Referer ($parsed_origin) not allowed, IP=$ip, URI=$uri", 'accounts.log', 'accounts', 'ERROR');
     return false;
 }
 
-// Kiểm tra phương thức, AJAX và nguồn gốc
+// Test methods, AJAX and origins
 if ($_SERVER['REQUEST_METHOD'] !== 'GET' || 
     !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
     $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest' ||
     !check_request_origin()) {
-    log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
+    log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -60,19 +60,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET' ||
 
 $token = generate_csrf_token();
 if ($token === false) {
-    log_message("Failed to generate new CSRF token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
+    log_message("Failed to generate new CSRF token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'csrf.log', 'logs', 'ERROR');
+    log_message("Failed to set CSRF cookie, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Failed to set CSRF cookie'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-log_message("CSRF token refreshed successfully: $token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'csrf.log', 'logs', 'INFO');
+log_message("CSRF token refreshed successfully: $token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'INFO');
 echo json_encode(['status' => 'success', 'csrf_token' => $token], JSON_UNESCAPED_UNICODE);
 ?>
