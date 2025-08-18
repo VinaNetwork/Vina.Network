@@ -23,4 +23,5 @@ require_once $root_path . 'config/db.php'; 				      // Database connection mana
 require_once $root_path . 'accounts/header-auth.php'; 	// Security Headers
 require_once $root_path . 'accounts/csrf/csrf.php'; 	  // CSRF Token
 require_once $root_path . 'accounts/wallet-auth.php'; 	// API handles Solana wallet signature verification
+require_once $root_path . '../vendor/autoload.php'; 	// Solana Library
 ?>
