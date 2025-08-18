@@ -12,12 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 
-// Danh sách các nguồn gốc được phép dựa trên BASE_URL từ constants.php
-$allowed_origins = [
-    BASE_URL, // Từ constants.php (ví dụ: https://yourdomain.com/)
-    'http://localhost', // Cho môi trường phát triển
-    'http://localhost:8080' // Thêm các cổng khác nếu cần
-];
+// List of allowed sources (config/constants.php)
+$allowed_origins = ALLOWED_ORIGINS;
 
 // Hàm kiểm tra nguồn gốc
 function check_request_origin() {
