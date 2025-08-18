@@ -35,7 +35,7 @@ if (!set_csrf_cookie()) {
     log_message("CSRF cookie set successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
 }
 
-// Generate CSRF token
+// Generate CSRF token (for non-transaction-specific requests)
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'make-market.log', 'make-market', 'ERROR');
@@ -238,12 +238,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
 
-            // Refresh CSRF nếu cần
-            $csrf_token = generate_csrf_token();
-            log_message("CSRF token refreshed before calling decimals.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
-            $_POST['csrf_token'] = $csrf_token;
-            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
-
             // Call decimals.php
             include __DIR__ . '/decimals.php';
             $response = ob_get_clean();
@@ -327,12 +321,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
-
-                // Refresh CSRF
-                $csrf_token = generate_csrf_token();
-                log_message("CSRF token refreshed before calling balance.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
-                $_POST['csrf_token'] = $csrf_token;
-                $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call balance.php
                 include __DIR__ . '/balance.php';
@@ -407,15 +395,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Insert transaction into database with status 'new'
+        // Insert transaction into database with status 'new' and CSRF token
         try {
             $stmt = $pdo->prepare("
                 INSERT INTO make_market (
                     user_id, public_key, process_name, private_key, token_mint, 
                     trade_direction, sol_amount, token_amount, slippage, delay_seconds, 
-                    loop_count, batch_size, decimals, status, network
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?)
+                    loop_count, batch_size, decimals, status, network, csrf_token
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)
             ");
+            $transaction_csrf_token = generate_csrf_token(); // Tạo token mới để lưu vào database
             $stmt->execute([
                 $_SESSION['user_id'],
                 $transactionPublicKey,
@@ -430,10 +419,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $loopCount,
                 $batchSize,
                 $decimals,
-                $network // Sử dụng SOLANA_NETWORK
+                $network, // Sử dụng SOLANA_NETWORK
+                $transaction_csrf_token
             ]);
             $transactionId = $pdo->lastInsertId();
-            log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "..., network=$network", 'make-market.log', 'make-market', 'INFO');
+            log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "..., network=$network, csrf_token=$transaction_csrf_token", 'make-market.log', 'make-market', 'INFO');
         } catch (PDOException $e) {
             log_message("Database insert failed: {$e->getMessage()}, Code: {$e->getCode()}, Query: INSERT INTO make_market..., Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
@@ -454,7 +444,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]);
+            echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'csrf_token' => $transaction_csrf_token, 'redirect' => $redirect_url]);
         } else {
             header("Location: $redirect_url");
         }
