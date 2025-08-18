@@ -13,6 +13,7 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/header-auth.php';
 require_once $root_path . 'mm/network/network.php'; // Include network configuration
+require_once $root_path . 'mm/csrf/csrf.php';
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
