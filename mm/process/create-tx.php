@@ -10,10 +10,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
-require_once $root_path . 'mm/header-auth.php';
-require_once $root_path . 'mm/network/network.php'; // Devnet | Testnet | Mainnet
-require_once $root_path . 'mm/csrf/csrf.php';
+// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
+require_once $root_path . 'mm/bootstrap.php';
 
 // Initialize logging context
 $log_context = [
