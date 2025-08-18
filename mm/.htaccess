@@ -2,7 +2,7 @@ RewriteEngine On
 RewriteBase /mm/
 
 # Rules for specific endpoints
-RewriteRule ^refresh-csrf$ refresh-csrf.php [L,NC]
+RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC]
 RewriteRule ^get-network$ network/get-network.php [L,NC]
 RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC]
 RewriteRule ^get-tx/([0-9]+)$ process/get-tx.php?id=$1 [L,NC]
