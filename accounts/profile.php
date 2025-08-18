@@ -156,10 +156,13 @@ $page_css = ['/accounts/acc.css'];
             </table>
         </div>
         
-        <form method="POST">
+        <form method="POST" id="logout-form">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
+        <div id="wallet-info" style="display: none;">
+            <span id="status"></span>
+        </div>
     </div>
 </div>
 <?php require_once $root_path . 'include/footer.php';?>
