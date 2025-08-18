@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: mm/network/get-network.php
-// Description: API endpoint to return SOLANA_NETWORK and related configurations
+// Description: API endpoint to return SOLANA_NETWORK value
 // Created by: Vina Network
 // ============================================================================
 
@@ -16,16 +16,11 @@ require_once $root_path . 'mm/network/network.php';
 // Protect endpoint with CSRF
 csrf_protect();
 
-// Return network configuration
+// Return SOLANA_NETWORK
 header('Content-Type: application/json');
 echo json_encode([
     'status' => 'success',
-    'network' => SOLANA_NETWORK,
-    'explorerUrl' => EXPLORER_URL,
-    'explorerQuery' => EXPLORER_QUERY,
-    'jupiterApi' => defined('JUPITER_API') ? JUPITER_API : 'https://quote-api.jup.ag/v6',
-    'solMint' => 'So11111111111111111111111111111111111111112',
-    'prioritizationFeeLamports' => defined('PRIORITIZATION_FEE_LAMPORTS') ? PRIORITIZATION_FEE_LAMPORTS : 10000
+    'network' => SOLANA_NETWORK
 ], JSON_UNESCAPED_UNICODE);
 exit;
 ?>
