@@ -12,6 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'config/bootstrap.php';
 require_once $root_path . 'mm/network/network.php';
+require_once $root_path . 'mm/csrf/csrf.php';
 
 // Protect endpoint with CSRF
 csrf_protect();
