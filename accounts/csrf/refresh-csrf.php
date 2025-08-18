@@ -10,8 +10,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php';
-require_once $root_path . 'accounts/csrf/csrf.php';
+// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php
+require_once $root_path . 'accounts/bootstrap.php';
 
 // List of allowed sources (config/constants.php)
 $allowed_origins = ALLOWED_ORIGINS;
