@@ -39,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Read from $_POST
 $token_mint = $_POST['token_mint'] ?? '';
 $network = $_POST['network'] ?? SOLANA_NETWORK;
-$transactionId = $_POST['transactionId'] ?? null; // Lấy transactionId nếu có
 $csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
 
 // Assign token to $_POST for csrf_protect() to use
@@ -47,10 +46,9 @@ $_POST[CSRF_TOKEN_NAME] = $csrf_token;
 
 // Protect POST requests with CSRF
 try {
-    csrf_protect($transactionId); // Gọi với transactionId nếu có
-    log_message("CSRF validation passed in decimals.php: token=$csrf_token" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'INFO');
+    csrf_protect();
 } catch (Exception $e) {
-    log_message("CSRF validation failed in decimals.php: {$e->getMessage()}, provided_token=$csrf_token, transactionId=" . ($transactionId ?? 'none') . ", session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("CSRF validation failed in decimals.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
@@ -64,7 +62,7 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
     exit;
 }
 
-log_message("Fetching decimals for token_mint: $token_mint, network: $network" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'INFO');
+log_message("Fetching decimals for token_mint: $token_mint, network: $network", 'make-market.log', 'make-market', 'INFO');
 
 // Fetch decimals using Solana getAccountInfo
 try {
@@ -109,18 +107,18 @@ try {
 
     // Log HTTP status and error (if any)
     if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-        log_message("RPC response in decimals.php: HTTP=$http_code, error=" . ($err ?: 'none') . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'DEBUG');
+        log_message("RPC response in decimals.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
     }
 
     if ($err) {
-        log_message("RPC failed in decimals.php: cURL error: $err, network=$network" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: cURL error: $err, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $err]);
         exit;
     }
 
     if ($http_code !== 200) {
-        log_message("RPC failed in decimals.php: HTTP $http_code, network=$network" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: HTTP $http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
@@ -128,21 +126,21 @@ try {
 
     $data = json_decode($response, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("RPC failed in decimals.php: Invalid JSON response: " . json_last_error_msg() . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
     }
 
     if (isset($data['error'])) {
-        log_message("RPC failed in decimals.php: {$data['error']['message']}, network=$network" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: {$data['error']['message']}, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $data['error']['message']]);
         exit;
     }
 
     if (!isset($data['result']['value']) || !isset($data['result']['value']['data']['parsed']['info']['decimals'])) {
-        log_message("RPC failed in decimals.php: No decimals found for token_mint=$token_mint, network=$network" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in decimals.php: No decimals found for token_mint=$token_mint, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Invalid token mint or not a fungible token']);
         exit;
@@ -153,14 +151,14 @@ try {
     // Store decimals in session
     $_SESSION['decimals_' . $token_mint] = $decimals;
 
-    log_message("Decimals fetched successfully: $decimals for token_mint=$token_mint, network=$network" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'INFO');
+    log_message("Decimals fetched successfully: $decimals for token_mint=$token_mint, network=$network", 'make-market.log', 'make-market', 'INFO');
     echo json_encode([
         'status' => 'success',
         'message' => 'Token decimals fetched successfully',
         'decimals' => $decimals
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    log_message("Decimals fetch failed in decimals.php: {$e->getMessage()}, network=$network" . ($transactionId ? ", transactionId=$transactionId" : ""), 'make-market.log', 'make-market', 'ERROR');
+    log_message("Decimals fetch failed in decimals.php: {$e->getMessage()}, network=$network", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $e->getMessage()]);
     exit;

@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/log.php
+// File: accounts/log.php
 // Description: Handles client-side logging with size limitation.
 // Created by: Vina Network
 // ============================================================================
@@ -11,10 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'config/logging.php';
-require_once $root_path . 'mm/csrf/csrf.php';
-
-// Protect POST requests with CSRF
-csrf_protect();
 
 // Set response header
 header('Content-Type: application/json');
