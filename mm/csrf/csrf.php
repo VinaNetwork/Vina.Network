@@ -5,12 +5,11 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
+    http_response_code(403);
+    exit('No direct access allowed!');
 }
-
-$root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php';
 
 // CSRF Configuration
 define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
