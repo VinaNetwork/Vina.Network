@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: mm/process/get-status.php
-// Description: Fetch and update transaction status in make_market table
+// Description: Update transaction status and error in make_market table
 // Created by: Vina Network
 // ============================================================================
 
@@ -10,9 +10,9 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'config/bootstrap.php'; // constants | logging | config | error | session | csrf | database
 require_once $root_path . 'mm/header-auth.php';
-require_once $root_path . 'mm/network/network.php';
+require_once $root_path . 'mm/network/network.php'; // Devnet | Testnet | Mainnet
 
 // Initialize logging context
 $log_context = [
@@ -79,7 +79,7 @@ if ($transaction_id <= 0) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-if (!in_array($status, ['pending', 'processing', 'failed', 'success', 'canceled', 'partial'])) {
+if (!in_array($status, ['pending', 'processing', 'failed', 'success', 'canceled'])) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Invalid status: $status, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
@@ -102,9 +102,9 @@ try {
     exit;
 }
 
-// Check transaction ownership and fetch details
+// Check transaction ownership
 try {
-    $stmt = $pdo->prepare("SELECT user_id, process_name, status, error, signature, network FROM make_market WHERE id = ? AND network = ?");
+    $stmt = $pdo->prepare("SELECT user_id FROM make_market WHERE id = ? AND network = ?");
     $stmt->execute([$transaction_id, SOLANA_NETWORK]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction || $transaction['user_id'] != (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0)) {
@@ -128,25 +128,10 @@ try {
 try {
     $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ? AND network = ?");
     $stmt->execute([$status, $error, $transaction_id, SOLANA_NETWORK]);
-
-    // Build explorer URL
-    $explorer_url = $transaction['signature'] ? EXPLORER_URL . $transaction['signature'] . EXPLORER_QUERY : '';
-
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Transaction status updated: ID=$transaction_id, status=$status, error=" . ($error !== null ? $error : 'none') . ", signature=" . ($transaction['signature'] ?: 'none') . ", explorer_url=$explorer_url, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
-    
+    log_message("Transaction status updated: ID=$transaction_id, status=$status, error=" . ($error !== null ? $error : 'none') . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
     header('Content-Type: application/json');
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Transaction status fetched',
-        'transaction' => [
-            'id' => $transaction_id,
-            'process_name' => $transaction['process_name'],
-            'status' => $status,
-            'error' => $error !== null ? $error : '',
-            'explorerUrl' => $explorer_url
-        ]
-    ], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'success']);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database update failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
