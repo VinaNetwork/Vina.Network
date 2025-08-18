@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function refreshCsrfToken() {
         console.log('Attempting to refresh CSRF token');
         try {
-            const response = await fetch('/accounts/refresh-csrf.php', {
+            const response = await fetch('/accounts/refresh-csrf', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 url: window.location.href
             };
             console.log(`Sending log to server: ${message}`);
-            const response = await fetch('/accounts/log.php', {
+            const response = await fetch('/accounts/log', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(logData)
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('csrf_token', csrfToken);
 
                     statusSpan.textContent = 'Sending data to server...';
-                    const responseServer = await fetch('wallet-auth.php', {
+                    const responseServer = await fetch('/accounts/wallet-auth', {
                         method: 'POST',
                         body: formData
                     });
