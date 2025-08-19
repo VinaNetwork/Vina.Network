@@ -5,8 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+$root_path = __DIR__ . '/../../';
+require_once $root_path . 'tools/bootstrap.php';
 
 $formatted_data = $_SESSION['wallet_analysis_data'] ?? null;
 $walletAddress = $formatted_data['wallet_address'] ?? null;
