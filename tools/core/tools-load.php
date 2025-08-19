@@ -5,6 +5,13 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+$root_path = __DIR__ . '/../';
+require_once $root_path . 'tools/bootstrap.php';
+
 $tool = isset($_GET['tool']) ? trim($_GET['tool']) : '';
 $tab = isset($_GET['tab']) ? trim($_GET['tab']) : '';
 
