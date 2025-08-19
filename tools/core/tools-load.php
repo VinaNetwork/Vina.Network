@@ -17,7 +17,7 @@ $tab = isset($_GET['tab']) ? trim($_GET['tab']) : '';
 
 log_message("load-tool: Request received - tool=$tool, tab=$tab, method={$_SERVER['REQUEST_METHOD']}", 'tools-load.log', 'tools', 'INFO');
 
-$valid_tools = ['nft-info', 'nft-holders', 'nft-transactions', 'wallet-creators', 'wallet-analysis', 'token-burn'];
+$valid_tools = ['nft-info', 'nft-holders', 'nft-transactions', 'nft-creator', 'wallet-analysis'];
 if (!in_array($tool, $valid_tools)) {
     log_message("load-tool: Invalid tool parameter - tool=$tool", 'tools-load.log', 'tools', 'ERROR');
     http_response_code(400);
@@ -26,12 +26,11 @@ if (!in_array($tool, $valid_tools)) {
 }
 
 $tool_files = [
-    'nft-info' => 'nft-info/nft-info.php',
-    'nft-holders' => 'nft-holders/nft-holders.php',
-    'nft-transactions' => 'nft-transactions/nft-transactions.php',
-    'wallet-creators' => 'wallet-creators/wallet-creators.php',
-    'wallet-analysis' => 'wallet-analysis/wallet-analysis.php',
-    'token-burn' => 'token-burn/token-burn.php'
+    'nft-info' => '../nft-info/nft-info.php',
+    'nft-holders' => '../nft-holders/nft-holders.php',
+    'nft-transactions' => '../nft-transactions/nft-transactions.php',
+    'nft-creator' => '../nft-creator/nft-creator.php',
+    'wallet-analysis' => '../wallet-analysis/wallet-analysis.php'
 ];
 
 if ($tool === 'wallet-analysis' && $tab) {
@@ -42,7 +41,7 @@ if ($tool === 'wallet-analysis' && $tab) {
         echo '<div class="result-error"><p>Error: Invalid tab parameter</p></div>';
         exit;
     }
-    $tool_file = __DIR__ . "/wallet-analysis/$tab.php";
+    $tool_file = __DIR__ . "/../wallet-analysis/$tab.php";
 } else {
     $tool_file = __DIR__ . '/' . ($tool_files[$tool] ?? '');
 }
