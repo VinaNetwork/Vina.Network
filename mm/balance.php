@@ -285,28 +285,25 @@ try {
         }
     }
 
-    // Check SOL and token balance
-    $errors = [];
-    // Check SOL balance for all trade directions
+    // Check SOL balance for all transactions (buy, sell, or both)
     if ($balanceInSol < $requiredSolAmount) {
-        $errors[] = sprintf("Insufficient SOL balance: %.8f SOL available, required %.8f SOL", $balanceInSol, $requiredSolAmount);
+        $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL";
     }
 
-    // Check token balance for 'sell' or 'both'
+    // Check token balance for 'sell' or 'both' transactions
     if ($trade_direction === 'sell' || $trade_direction === 'both') {
         if ($tokenBalance < $requiredTokenAmount) {
-            $errors[] = sprintf("Insufficient token balance: %.2f tokens available, required %.2f tokens", $tokenBalance, $requiredTokenAmount);
+            $errors[] = "Insufficient token balance: $tokenBalance tokens available, required=$requiredTokenAmount tokens";
         }
     }
 
     // Return errors if any
     if (!empty($errors)) {
-        $errorMessage = "Error submitting form: " . implode("; ", $errors);
-        log_message($errorMessage, 'make-market.log', 'make-market', 'ERROR');
+        log_message(implode("; ", $errors), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode([
             'status' => 'error',
-            'message' => $errorMessage
+            'message' => implode("; ", $errors)
         ], JSON_UNESCAPED_UNICODE);
         if (isset($_SESSION['decimals_' . $token_mint])) {
             unset($_SESSION['decimals_' . $token_mint]);
@@ -319,7 +316,7 @@ try {
     echo json_encode([
         'status' => 'success',
         'message' => 'Wallet balance is sufficient to perform the transaction',
-        'balance' => $trade_direction === 'buy' ? $balanceInSol : ($trade_direction === 'sell' ? ['sol' => $balanceInSol, 'token' => $tokenBalance] : ['sol' => $balanceInSol, 'token' => $tokenBalance])
+        'balance' => $trade_direction === 'buy' ? $balanceInSol : ($trade_direction === 'sell' ? $tokenBalance : ['sol' => $balanceInSol, 'token' => $tokenBalance])
     ], JSON_UNESCAPED_UNICODE);
     if (isset($_SESSION['decimals_' . $token_mint])) {
         unset($_SESSION['decimals_' . $token_mint]);
