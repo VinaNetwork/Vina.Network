@@ -11,9 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php';
-
-// Error reporting: in config/bootstrap.php
+require_once $root_path . 'tools/bootstrap.php';
 
 // Function to extract title and description from a PHP file
 function getToolInfo($file_path) {
