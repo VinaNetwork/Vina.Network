@@ -51,7 +51,6 @@ $page_css = ['css/404.css'];
 
 <!-- Scripts -->
 <script src="js/vina.js"></script>
-<script src="js/navbar.js"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
