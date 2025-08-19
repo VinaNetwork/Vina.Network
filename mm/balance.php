@@ -289,19 +289,19 @@ try {
     $errors = [];
     if ($trade_direction === 'buy' || $trade_direction === 'both' || $trade_direction === 'sell') {
         if ($balanceInSol < $requiredSolAmount) {
-            $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required $requiredSolAmount SOL";
+            $errors[] = sprintf("Insufficient SOL balance: %.8f SOL available, required %.8f SOL", $balanceInSol, $requiredSolAmount);
         }
     }
 
     if ($trade_direction === 'sell' || $trade_direction === 'both') {
         if ($tokenBalance < $requiredTokenAmount) {
-            $errors[] = "Insufficient token balance: $tokenBalance tokens available, required $requiredTokenAmount tokens";
+            $errors[] = sprintf("Insufficient token balance: %.2f tokens available, required %.2f tokens", $tokenBalance, $requiredTokenAmount);
         }
     }
 
     // Return errors if any
     if (!empty($errors)) {
-        $errorMessage = "Error submitting form: " . implode("; ", $errors) . ". Please try again.";
+        $errorMessage = "Error submitting form: " . implode("; ", $errors);
         log_message($errorMessage, 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode([
