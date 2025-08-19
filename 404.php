@@ -11,23 +11,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = './';
-require_once $root_path . 'config/bootstrap.php';
-
-// Add Security Headers
-$csp_base = rtrim(BASE_URL, '/');
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' $csp_base; connect-src 'self' $csp_base; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
-header("Access-Control-Allow-Origin: $csp_base");
-header("X-Frame-Options: DENY");
-header("X-Content-Type-Options: nosniff");
-header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
-header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Permissions-Policy: geolocation=(), microphone=(), camera=()");
-header("Access-Control-Allow-Credentials: true");
-header("Access-Control-Allow-Methods: POST, GET");
-header("Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With");
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
+$root_path = __DIR__ . '/';
+require_once $root_path . 'bootstrap.php';
 
 // Log 404 error
 $request_uri = $_SERVER['REQUEST_URI'];
