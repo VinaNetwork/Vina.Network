@@ -29,6 +29,17 @@ define('TOOLS_PATH', LOGS_PATH . 'tools/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
 
 // ---------------------------------------------------
+// PHP configuration
+// Set error handling and session
+// ---------------------------------------------------
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
+session_start();
+ini_set('log_errors', true);
+ini_set('error_log', ERROR_LOG_PATH);
+
+// ---------------------------------------------------
 // Load configuration file
 // ---------------------------------------------------
 $config_path = ROOT_PATH . 'config/config.php';
