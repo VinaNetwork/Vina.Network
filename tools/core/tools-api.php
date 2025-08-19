@@ -8,7 +8,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = __DIR__ . '/../';
+$root_path = __DIR__ . '/../../';
 require_once $root_path . 'tools/bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
