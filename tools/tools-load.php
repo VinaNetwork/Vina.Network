@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'tools/bootstrap.php';
 
 $tool = isset($_GET['tool']) ? trim($_GET['tool']) : '';
 $tab = isset($_GET['tab']) ? trim($_GET['tab']) : '';
