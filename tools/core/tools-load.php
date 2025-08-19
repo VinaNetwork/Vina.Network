@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: tools/tools-load.php
+// File: tools/core/tools-load.php
 // Description: Load separate tools and wallet analysis tabs.
 // Created by: Vina Network
 // ============================================================================
