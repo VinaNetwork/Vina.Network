@@ -23,7 +23,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file)) {
 }
 
 // Load API helper
-$api_helper_path = dirname(__DIR__) . '/tools-api.php';
+$api_helper_path = __DIR__ . '/../core/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft_info: tools-api.php not found at $api_helper_path", 'nft-info.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
