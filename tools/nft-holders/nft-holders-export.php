@@ -5,21 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-define('VINANETWORK_ENTRY', true);
-
-// Log to confirm script is loaded
-log_message("export_holders: nft-holders-export.php loaded", 'holders-export.log', 'tools', 'INFO');
-
-// Load bootstrap
-$bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
-if (!file_exists($bootstrap_path)) {
-    log_message("export_holders: bootstrap.php not found at $bootstrap_path", 'holders-export.log', 'tools', 'ERROR');
-    http_response_code(500);
-    echo json_encode(['error' => 'Cannot find bootstrap.php']);
-    exit;
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
 }
-require_once $bootstrap_path;
+
+$root_path = __DIR__ . '/../../';
+require_once $root_path . 'tools/bootstrap.php';
 
 // Load API and helper
 require_once dirname(__DIR__) . '/tools-api.php';
