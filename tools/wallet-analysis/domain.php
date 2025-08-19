@@ -5,22 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
-
-// Log to confirm file is loaded
-log_message("wallet_analysis_domain: domain.php loaded", 'nft-analysis.log', 'tools', 'INFO');
-
-// Load bootstrap
-$bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
-if (!file_exists($bootstrap_path)) {
-    log_message("wallet_analysis_domain: bootstrap.php not found at $bootstrap_path", 'nft-analysis.log', 'tools', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
-    echo '<div class="result-error"><p>Server error: Cannot find bootstrap.php</p></div>';
-    exit;
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
 }
-require_once $bootstrap_path;
-log_message("wallet_analysis_domain: bootstrap.php loaded", 'nft-analysis.log', 'tools', 'INFO');
+
+$root_path = __DIR__ . '/../../';
+require_once $root_path . 'tools/bootstrap.php';
 
 // Load tools-api
 $api_helper_path = dirname(__DIR__) . '/tools-api.php';
