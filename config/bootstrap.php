@@ -26,19 +26,7 @@ define('ROOT_PATH', dirname(__DIR__) . '/');
 define('LOGS_PATH', ROOT_PATH . 'logs/');
 define('ACCOUNTS_PATH', LOGS_PATH . 'accounts/');
 define('TOOLS_PATH', LOGS_PATH . 'tools/');
-define('MAKE_MARKET_PATH', LOGS_PATH . 'make-market/');
 define('ERROR_LOG_PATH', LOGS_PATH . 'error.txt');
-
-// ---------------------------------------------------
-// PHP configuration
-// Set error handling and session
-// ---------------------------------------------------
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-session_start();
-ini_set('log_errors', true);
-ini_set('error_log', ERROR_LOG_PATH);
 
 // ---------------------------------------------------
 // Load configuration file
@@ -98,13 +86,13 @@ function ensure_directory_and_file($dir_path, $file_path) {
 // Logging utility function
 // Writes timestamped messages to the specified log file
 // @param string $message    - The log content/message
-// @param string $log_file   - Filename (e.g., accounts.log, tools.log, make-market.log)
-// @param string $module     - Module name (e.g., accounts, tools, make-market); if empty, logs to ERROR_LOG_PATH
+// @param string $log_file   - Filename (e.g., accounts.log, tools.log)
+// @param string $module     - Module name (e.g., accounts, tools); if empty, logs to ERROR_LOG_PATH
 // @param string $log_type   - Optional: log level (INFO, ERROR, DEBUG, etc.)
 // ---------------------------------------------------
-function log_message($message, $log_file = 'accounts.log', $module = 'accounts', $log_type = 'INFO') {
-    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : ($module === 'make-market' ? MAKE_MARKET_PATH : TOOLS_PATH));
-    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : ($module === 'make-market' ? MAKE_MARKET_PATH . $log_file : TOOLS_PATH . $log_file));
+function log_message($message, $log_file = 'tools.log', $module = 'tools', $log_type = 'INFO') {
+    $dir_path = empty($module) ? LOGS_PATH : ($module === 'accounts' ? ACCOUNTS_PATH : TOOLS_PATH));
+    $log_path = empty($module) ? ERROR_LOG_PATH : ($module === 'accounts' ? ACCOUNTS_PATH . $log_file : TOOLS_PATH . $log_file));
     $timestamp = date('Y-m-d H:i:s');
     $log_entry = "[$timestamp] [$log_type] $message" . PHP_EOL;
 
