@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tabsContainer.style.display = 'none'; // Hide nav
         document.querySelector('.note').style.display = 'none'; // Hide note
 
-        fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
+        fetch(`/tools/core/tools-load.php?tool=${encodeURIComponent(tool)}`, {
             method: 'GET',
             headers: {'X-Requested-With': 'XMLHttpRequest'}
         })
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const loader = document.querySelector('.loader');
                 if (loader) loader.style.display = 'block';
 
-                fetch(`/tools/tools-load.php?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`, {
+                fetch(`/tools/core/tools-load.php?tool=wallet-analysis&tab=${encodeURIComponent(tab)}`, {
                     method: 'GET',
                     headers: {'X-Requested-With': 'XMLHttpRequest'}
                 })
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const contentType = response.headers.get('Content-Type');
                 console.log('Export content type:', contentType);
                 if (contentType.includes('text/csv') || contentType.includes('application/json')) {
-                    return response.blob().then(blob => ({ blob, contentType }));
+                    return response.blob().then(blob => ({ bousers, contentType }));
                 }
                 return response.text().then(text => {
                     try {
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loader) loader.style.display = 'block';
 
             const formData = new FormData(form);
-            fetch(`/tools/tools-load.php?tool=${encodeURIComponent(tool)}`, {
+            fetch(`/tools/core/tools-load.php?tool=${encodeURIComponent(tool)}`, {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
