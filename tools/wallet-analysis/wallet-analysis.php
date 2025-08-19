@@ -9,17 +9,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-// Log to confirm file is loaded
-log_message("wallet_analysis: wallet-analysis.php loaded", 'nft-analysis.log', 'tools', 'INFO');
-
-// Load bootstrap
-$bootstrap_path = dirname(__DIR__, 2) . '/config/bootstrap.php';
-if (!file_exists($bootstrap_path)) {
-    log_message("wallet_analysis: bootstrap.php not found at $bootstrap_path", 'nft-analysis.log', 'tools', 'ERROR');
-    echo '<div class="result-error"><p>Cannot find bootstrap.php</p></div>';
-    exit;
-}
-require_once $bootstrap_path;
+$root_path = __DIR__ . '/../../';
+require_once $root_path . 'tools/bootstrap.php';
 
 // Define cache directory and files
 $cache_dir = TOOLS_PATH . 'cache/';
