@@ -269,11 +269,11 @@ try {
         $requiredSolAmount = $totalTransactions * ($sol_amount + $transactionFee);
     } elseif ($trade_direction === 'sell') {
         $requiredTokenAmount = $totalTransactions * $token_amount;
-        $requiredSolAmount = 0; // No SOL required for sell
+        $requiredSolAmount = $totalTransactions * $transactionFee; // Require SOL for transaction fees
     } elseif ($trade_direction === 'both') {
         $buyTransactions = floor($totalTransactions / 2);
         $sellTransactions = $totalTransactions - $buyTransactions;
-        $requiredSolAmount = $buyTransactions * ($sol_amount + $transactionFee);
+        $requiredSolAmount = $buyTransactions * ($sol_amount + $transactionFee) + $sellTransactions * $transactionFee;
         $requiredTokenAmount = $sellTransactions * $token_amount;
     }
 
@@ -285,11 +285,9 @@ try {
         }
     }
 
-    // Check SOL balance for 'buy' or 'both' transactions
-    if ($trade_direction === 'buy' || $trade_direction === 'both') {
-        if ($balanceInSol < $requiredSolAmount) {
-            $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL";
-        }
+    // Check SOL balance for all transactions (buy, sell, or both)
+    if ($balanceInSol < $requiredSolAmount) {
+        $errors[] = "Insufficient SOL balance: $balanceInSol SOL available, required=$requiredSolAmount SOL";
     }
 
     // Check token balance for 'sell' or 'both' transactions
