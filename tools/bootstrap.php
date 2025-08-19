@@ -19,7 +19,7 @@ require_once $root_path . 'core/error.php'; 			  // PHP configuration
 require_once $root_path . 'core/session.php'; 		      // Initialize session with security options
 
 // Custom configuration
-require_once $root_path . 'tools/core/tools-load.php'; 	  // Load file
-require_once $root_path . 'tools/core/tools-api.php'; 	  // API handles
+// require_once $root_path . 'tools/core/tools-load.php'; 	  // Load file
+// require_once $root_path . 'tools/core/tools-api.php'; 	  // API handles
 require_once $root_path . 'tools/core/csrf.php'; 	      // CSRF Token
 ?>
