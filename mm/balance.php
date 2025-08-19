@@ -287,12 +287,12 @@ try {
 
     // Check SOL and token balance
     $errors = [];
-    if ($trade_direction === 'buy' || $trade_direction === 'both' || $trade_direction === 'sell') {
-        if ($balanceInSol < $requiredSolAmount) {
-            $errors[] = sprintf("Insufficient SOL balance: %.8f SOL available, required %.8f SOL", $balanceInSol, $requiredSolAmount);
-        }
+    // Check SOL balance for all trade directions
+    if ($balanceInSol < $requiredSolAmount) {
+        $errors[] = sprintf("Insufficient SOL balance: %.8f SOL available, required %.8f SOL", $balanceInSol, $requiredSolAmount);
     }
 
+    // Check token balance for 'sell' or 'both'
     if ($trade_direction === 'sell' || $trade_direction === 'both') {
         if ($tokenBalance < $requiredTokenAmount) {
             $errors[] = sprintf("Insufficient token balance: %.2f tokens available, required %.2f tokens", $tokenBalance, $requiredTokenAmount);
