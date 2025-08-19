@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'tools/bootstrap.php';
-require_once $root_path . 'tools/tools-api.php';
+require_once $root_path . 'tools/core/tools-api.php';
 
 /**
  * fetchNFTCollectionHolders - Fetch all NFT ownership data in a collection using pagination
