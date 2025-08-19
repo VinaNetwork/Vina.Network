@@ -16,7 +16,7 @@ require_once $root_path . 'tools/bootstrap.php';
 // Function to extract title and description from a PHP file
 function getToolInfo($file_path) {
     if (!file_exists($file_path)) {
-        log_message("getToolInfo: File not found at $file_path", 'tools-index.log', 'tools', 'ERROR');
+        log_message("getToolInfo: File not found at $file_path", 'tools.log', 'tools', 'ERROR');
         return ['title' => 'N/A', 'description' => 'File not found'];
     }
     $content = file_get_contents($file_path);
