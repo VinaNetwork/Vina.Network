@@ -11,10 +11,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'tools/bootstrap.php';
-
-// Load API and helper
-require_once dirname(__DIR__) . '/tools-api.php';
-require_once __DIR__ . '/nft-holders-helper.php';
+require_once $root_path . 'tools/core/tools-api.php';
+require_once $root_path . 'tools/nft-holders/nft-holders-helper.php';
 
 // Define cache directory and file
 $cache_dir = NFT_HOLDERS_PATH . 'cache/';
