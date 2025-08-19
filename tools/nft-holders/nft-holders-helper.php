@@ -5,10 +5,13 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK')) define('VINANETWORK', true);
-if (!defined('VINANETWORK_ENTRY')) define('VINANETWORK_ENTRY', true);
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
 
-require_once dirname(__DIR__) . '/tools-api.php';
+$root_path = __DIR__ . '/../../';
+require_once $root_path . 'tools/bootstrap.php';
+require_once $root_path . 'tools/tools-api.php';
 
 /**
  * fetchNFTCollectionHolders - Fetch all NFT ownership data in a collection using pagination
