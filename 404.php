@@ -16,7 +16,7 @@ require_once $root_path . 'bootstrap.php';
 
 // Log 404 error
 $request_uri = $_SERVER['REQUEST_URI'];
-log_message("404 Error: Page not found - REQUEST_URI: $request_uri", 'make-market.log', 'make-market', 'ERROR');
+log_message("404 Error: Page not found - REQUEST_URI: $request_uri", 'app.log', 'logs', 'ERROR');
 
 // Set HTTP status code
 http_response_code(404);
