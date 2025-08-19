@@ -12,7 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'core/constants.php';
 $page_css = ['css/home.css'];
 require_once $root_path . 'include/header.php';
 ?>
