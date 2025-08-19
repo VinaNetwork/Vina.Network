@@ -30,6 +30,11 @@ if (!defined('HELIUS_API_KEY')) {
     define('HELIUS_API_KEY', 'helius_api_key');
 }
 
+// JWT Secret for encryption
+if (!defined('JWT_SECRET')) {
+    define('JWT_SECRET', 'jwt_secret_key');
+}
+
 // Solana Network Configuration
 if (getenv('SOLANA_NETWORK') === false) {
     $solana_network = 'devnet'; // devnet | testnet | mainnet
@@ -37,8 +42,6 @@ if (getenv('SOLANA_NETWORK') === false) {
     $_ENV['SOLANA_NETWORK'] = $solana_network;
 }
 
-// JWT Secret for encryption
-if (!defined('JWT_SECRET')) {
-    define('JWT_SECRET', 'jwt_secret_key');
-}
+// Transaction fee per transaction (in SOL - mm/balance.php)
+define('TRANSACTION_FEE', 0.000005); // 5 lamports
 ?>
