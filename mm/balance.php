@@ -256,26 +256,32 @@ try {
         }
     }
 
+    // Calculate required amounts
     $totalTransactions = $loop_count * $batch_size;
     $requiredSolAmount = 0;
     $requiredTokenAmount = 0;
 
+    // Use TRANSACTION_FEE from config.php
+    $transactionFee = defined('TRANSACTION_FEE') ? TRANSACTION_FEE : 0.000005; // Fallback to 0.000005 if not defined
+
     // Calculate required amounts based on trade direction
     if ($trade_direction === 'buy') {
-        $requiredSolAmount = ($sol_amount * $loop_count) + (0.000005 * $totalTransactions) + 0.00203928;
+        $requiredSolAmount = $totalTransactions * ($sol_amount + $transactionFee);
     } elseif ($trade_direction === 'sell') {
-        $requiredTokenAmount = $token_amount * $totalTransactions;
-        $requiredSolAmount = (0.000005 * $totalTransactions);
+        $requiredTokenAmount = $totalTransactions * $token_amount;
+        $requiredSolAmount = 0; // No SOL required for sell
     } elseif ($trade_direction === 'both') {
-        $requiredSolAmount = ($sol_amount * ($loop_count / 2)) + (0.000005 * $totalTransactions) + 0.00203928;
-        $requiredTokenAmount = $token_amount * ($totalTransactions / 2);
+        $buyTransactions = floor($totalTransactions / 2);
+        $sellTransactions = $totalTransactions - $buyTransactions;
+        $requiredSolAmount = $buyTransactions * ($sol_amount + $transactionFee);
+        $requiredTokenAmount = $sellTransactions * $token_amount;
     }
 
     // Log balance information
     if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
         log_message("SOL balance for public_key=$short_public_key: $balanceInSol SOL, required=$requiredSolAmount SOL, network=$network", 'make-market.log', 'make-market', 'DEBUG');
         if ($trade_direction === 'sell' || $trade_direction === 'both') {
-            log_message("Token balance for public_key=$short_public_key, token_mint=$token_mint: $tokenBalance tokens (decimals: $decimals), network=$network", 'make-market.log', 'make-market', 'DEBUG');
+            log_message("Token balance for public_key=$short_public_key, token_mint=$token_mint: $tokenBalance tokens (decimals: $decimals), required=$requiredTokenAmount tokens, network=$network", 'make-market.log', 'make-market', 'DEBUG');
         }
     }
 
