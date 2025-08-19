@@ -9,7 +9,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'tools/bootstrap.php';
 
 function callAPI($endpoint, $params = [], $method = 'POST') {
     $helius_api_key = HELIUS_API_KEY;
