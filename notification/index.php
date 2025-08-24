@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 <?php
 // ============================================================================
 // File: notification/notification.php
@@ -12,16 +10,18 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = '../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'bootstrap.php';
 
 // Set path and SEO metadata for this page
 $page_title = "Notification - Vina Network";
 $page_og_url = BASE_URL . "notification/";
 $page_canonical = BASE_URL . "notification/";
-$page_css = ['notification.css'];
+$page_css = ['notification/notification.css'];
 include $root_path . 'include/header.php';
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
 <body>
 <!-- Include shared top navigation bar -->
 <?php include $root_path . 'include/navbar.php'; ?>
