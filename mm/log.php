@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: accounts/log.php
+// File: make-market/log.php
 // Description: Handles client-side logging with size limitation.
 // Created by: Vina Network
 // ============================================================================
@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/logging.php';
+require_once $root_path . 'core/logging.php';
 
 // Set response header
 header('Content-Type: application/json');
@@ -31,7 +31,7 @@ if (!$data || !isset($data['message'], $data['level'])) {
 }
 
 // Log file configuration
-$log_dir = MAKE_MARKET_PATH . '/logs/mm/';
+$log_dir = MAKE_MARKET_PATH . '/logs/make-market/';
 $log_file = $log_dir . 'make-market.log';
 $max_size = 10 * 1024 * 1024; // 10MB in bytes
 
@@ -57,7 +57,7 @@ if (file_exists($log_file) && filesize($log_file) >= $max_size) {
 $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 $level = strtoupper($data['level']);
 $message = "[IP:$ip_address] [URL:{$data['url']}] [UA:{$data['userAgent']}] {$data['message']}";
-log_message($message, 'client.log', 'accounts', $level);
+log_message($message, 'make-market.log', 'make-market', $level);
 
 echo json_encode(['status' => 'success', 'message' => 'Log recorded']);
 exit;
