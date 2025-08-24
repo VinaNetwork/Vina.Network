@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 <?php
 // ============================================================================
 // File: index.php
@@ -8,10 +6,12 @@
 // ============================================================================
 
 $root_path = __DIR__ . '/';
-$page_css = ['css/home.css'];
+$page_css = ['/css/home.css'];
 require_once $root_path . 'include/header.php';
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="home-container">
