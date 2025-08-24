@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 <?php
 // ============================================================================
 // File: contact/index.php
@@ -12,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = '../';
-require_once $root_path . 'config/bootstrap.php';
+require_once $root_path . 'bootstrap.php';
 
 // Head Section (Meta, Styles, Title) is included via header.php
 $page_title = "Contact Us - Vina Network";
@@ -22,11 +20,12 @@ $page_og_title = "Vina Network - Contact Us";
 $page_og_description = "Contact Vina Network via X, Telegram, or Email. Join our community today!";
 $page_og_url = BASE_URL . "contact/";
 $page_canonical = BASE_URL . "contact/";
-
 $page_css = ['contact.css'];
 include $root_path . 'include/header.php';
 ?>
 
+<!DOCTYPE html>
+<html lang="en">
 <body>
 	<!-- Navigation Bar -->
 	<?php include $root_path . 'include/navbar.php'; ?>
