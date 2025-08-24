@@ -16,7 +16,7 @@ require_once $root_path . 'bootstrap.php';
 $page_title = "Notification - Vina Network";
 $page_og_url = BASE_URL . "notification/";
 $page_canonical = BASE_URL . "notification/";
-$page_css = ['notification/notification.css'];
+$page_css = ['/notification/notification.css'];
 include $root_path . 'include/header.php';
 ?>
 
