@@ -17,7 +17,7 @@ require_once $root_path . 'mm/bootstrap.php';
 define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
 define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
 define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie'); // Name of the CSRF cookie (for AJAX requests)
-define('CSRF_TOKEN_TTL', 1800); // Token time-to-live in seconds (30 minutes)
+define('CSRF_TOKEN_TTL', 3600); // Token time-to-live in seconds (1h)
 
 // Ensure session is active
 function ensure_session() {
