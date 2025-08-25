@@ -4,7 +4,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Hàm lấy CSRF token từ endpoint /mm/refresh-csrf
+// Hàm làm mới CSRF token khi cần thiết
 async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
     let attempt = 0;
     while (attempt < maxRetries) {
@@ -44,21 +44,44 @@ async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
     }
 }
 
-// Initialize authentication and CSRF token
-async function ensureAuthInitialized(maxRetries = 3, retryDelay = 1000) {
-    if (window.CSRF_TOKEN) {
-        const tokenAge = Date.now() - (window.CSRF_TOKEN_TIMESTAMP || 0);
-        if (tokenAge > 25 * 60 * 1000) { // Làm mới nếu mã cũ hơn 25 phút
-            log_message(`CSRF token potentially expired (age=${tokenAge/1000}s), refreshing`, 'process.log', 'make-market', 'INFO');
-            window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
-            window.CSRF_TOKEN_TIMESTAMP = Date.now();
-            return window.CSRF_TOKEN;
+// Hàm xóa CSRF token sau khi giao dịch hoàn tất
+async function clearCsrfToken() {
+    try {
+        const headers = addAuthHeaders({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        });
+        log_message(`Clearing CSRF token, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        const response = await fetch('/mm/clear-csrf', {
+            method: 'POST',
+            headers,
+            credentials: 'include'
+        });
+        const responseBody = await response.text();
+        log_message(`Response from /mm/clear-csrf: status=${response.status}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${responseBody}`);
         }
-        log_message(`Using existing CSRF token: ${window.CSRF_TOKEN}`, 'process.log', 'make-market', 'INFO');
-        return window.CSRF_TOKEN;
+        const result = JSON.parse(responseBody);
+        if (result.status !== 'success') {
+            throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
+        }
+        log_message(`CSRF token cleared successfully, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+        console.log('CSRF token cleared successfully');
+    } catch (err) {
+        log_message(`Failed to clear CSRF token: ${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+        console.error('Failed to clear CSRF token:', err.message);
     }
-    window.CSRF_TOKEN = await getCsrfToken(maxRetries, retryDelay);
-    window.CSRF_TOKEN_TIMESTAMP = Date.now();
+}
+
+// Kiểm tra CSRF token, chỉ làm mới nếu cần
+async function ensureAuthInitialized() {
+    if (!window.CSRF_TOKEN) {
+        log_message(`CSRF token missing, fetching new token`, 'process.log', 'make-market', 'WARNING');
+        window.CSRF_TOKEN = await getCsrfToken();
+        window.CSRF_TOKEN_TIMESTAMP = Date.now();
+    }
     return window.CSRF_TOKEN;
 }
 
@@ -163,7 +186,7 @@ function delay(ms) {
 }
 
 // Show error message
-function showError(message, detailedError = null) {
+async function showError(message, detailedError = null) {
     if (detailedError?.includes('Invalid or expired CSRF token')) {
         message = 'Phiên của bạn đã hết hạn. Vui lòng làm mới trang để tiếp tục.';
     }
@@ -180,7 +203,8 @@ function showError(message, detailedError = null) {
     document.getElementById('transaction-status').classList.add('text-danger');
     log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'process.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
-    updateTransactionStatus('failed', detailedError || message);
+    await updateTransactionStatus('failed', detailedError || message);
+    await clearCsrfToken(); // Xóa CSRF token khi giao dịch thất bại
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -188,7 +212,7 @@ function showError(message, detailedError = null) {
 }
 
 // Show success message
-function showSuccess(message, results = [], networkConfig) {
+async function showSuccess(message, results = [], networkConfig) {
     const resultDiv = document.getElementById('process-result');
     let html = `
         <div class="alert alert-${results.some(r => r.status === 'error') ? 'warning' : 'success'}">
@@ -213,6 +237,7 @@ function showSuccess(message, results = [], networkConfig) {
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
     log_message(`Process completed: ${message}, network=${networkConfig.network}`, 'process.log', 'make-market', 'INFO');
     console.log(`Process completed: ${message}, network=${networkConfig.network}`);
+    await clearCsrfToken(); // Xóa CSRF token khi giao dịch thành công
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -338,6 +363,7 @@ async function cancelTransaction(transactionId) {
                 </div>
             `;
             document.getElementById('process-result').classList.add('active');
+            await clearCsrfToken(); // Xóa CSRF token khi giao dịch bị hủy
             const cancelBtn = document.getElementById('cancel-btn');
             if (cancelBtn) {
                 cancelBtn.style.display = 'none';
@@ -690,7 +716,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await ensureAuthInitialized();
         networkConfig = await getNetworkConfig();
     } catch (err) {
-        showError('Failed to initialize authentication or network config: ' + err.message, err.message);
+        await showError('Failed to initialize authentication or network config: ' + err.message, err.message);
         return;
     }
 
@@ -702,7 +728,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Main process
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     if (!transactionId || isNaN(transactionId)) {
-        showError('Invalid transaction ID');
+        await showError('Invalid transaction ID');
         return;
     }
 
@@ -767,7 +793,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             log_message(`Failed to fetch transaction: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
             console.error('Failed to fetch transaction:', err.message);
             if (attempt === maxRetries - 1) {
-                showError('Failed to retrieve transaction info: ' + err.message, err.message);
+                await showError('Failed to retrieve transaction info: ' + err.message, err.message);
                 return;
             }
             attempt++;
@@ -780,19 +806,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const batchSize = transaction.batch_size;
     const tradeDirection = transaction.trade_direction;
     if (isNaN(loopCount) || isNaN(batchSize) || loopCount <= 0 || batchSize <= 0) {
-        showError('Invalid transaction parameters: loop_count or batch_size is invalid');
+        await showError('Invalid transaction parameters: loop_count or batch_size is invalid');
         return;
     }
     if (!['buy', 'sell', 'both'].includes(tradeDirection)) {
-        showError('Invalid trade direction: ' + tradeDirection);
+        await showError('Invalid trade direction: ' + tradeDirection);
         return;
     }
     if (transaction.sol_amount <= 0 && (tradeDirection === 'buy' || tradeDirection === 'both')) {
-        showError('SOL amount must be greater than 0 for buy or both transactions');
+        await showError('SOL amount must be greater than 0 for buy or both transactions');
         return;
     }
     if (transaction.token_amount <= 0 && (tradeDirection === 'sell' || tradeDirection === 'both')) {
-        showError('Token amount must be greater than 0 for sell or both transactions');
+        await showError('Token amount must be greater than 0 for sell or both transactions');
         return;
     }
 
@@ -812,7 +838,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         tokenDecimals = await getTokenDecimals(transaction.token_mint, networkConfig.network);
     } catch (err) {
-        showError('Failed to retrieve token decimals: ' + err.message, err.message);
+        await showError('Failed to retrieve token decimals: ' + err.message, err.message);
         return;
     }
 
@@ -822,7 +848,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         subTransactionIds = await createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, networkConfig.network);
     } catch (err) {
-        showError('Failed to create sub-transactions: ' + err.message, err.message);
+        await showError('Failed to create sub-transactions: ' + err.message, err.message);
         return;
     }
 
@@ -836,7 +862,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const swapTransactions = [];
 
         for (let loop = 1; loop <= loopCount; loop++) {
-            await ensureAuthInitialized(); // Kiểm tra và làm mới CSRF trước mỗi vòng lặp
             document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
@@ -871,8 +896,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
-        showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
+        await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
     } catch (err) {
-        showError('Error during swap process: ' + err.message, err.message);
+        await showError('Error during swap process: ' + err.message, err.message);
     }
 });
