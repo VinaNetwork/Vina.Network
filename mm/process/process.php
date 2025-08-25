@@ -11,7 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
 require_once $root_path . 'mm/bootstrap.php';
 
 use StephenHill\Base58;
@@ -37,12 +36,22 @@ if ($request_method !== 'GET') {
     exit;
 }
 
-// Khởi tạo session và thiết lập CSRF cookie
+// Khởi tạo session và thiết lập CSRF token
 if (!ensure_session()) {
     log_message("Failed to initialize session, method=$request_method, uri=$request_uri", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Tạo hoặc lấy CSRF token một lần và đặt vào cookie
+$csrf_token = generate_csrf_token();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token, uri=$request_uri", 'process.log', 'make-market', 'ERROR', $log_context);
+    header('Content-Type: application/json');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 set_csrf_cookie(); // Thiết lập CSRF cookie cho AJAX
@@ -52,7 +61,6 @@ $session_id = session_id() ?: 'none';
 $headers = apache_request_headers();
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    $csrf_token = isset($_SESSION[CSRF_TOKEN_NAME]) && validate_csrf_token($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : 'none';
     log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
@@ -106,7 +114,6 @@ try {
     $stmt->execute([$transaction_id, $user_id, SOLANA_NETWORK]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
-        // Kiểm tra từng điều kiện riêng lẻ để xác định nguyên nhân
         $stmt_check_id = $pdo->prepare("SELECT COUNT(*) FROM make_market WHERE id = ?");
         $stmt_check_id->execute([$transaction_id]);
         $id_exists = $stmt_check_id->fetchColumn();
@@ -262,7 +269,7 @@ $page_css = ['/mm/process/process.css'];
 <!-- Pass environment and CSRF token to JavaScript -->
 <script>
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'development'; ?>';
-    window.CSRF_TOKEN = '<?php echo htmlspecialchars(isset($_SESSION[CSRF_TOKEN_NAME]) && validate_csrf_token($_SESSION[CSRF_TOKEN_NAME]) ? $_SESSION[CSRF_TOKEN_NAME] : generate_csrf_token()); ?>';
+    window.CSRF_TOKEN = '<?php echo htmlspecialchars($csrf_token); ?>';
     window.CSRF_TOKEN_TIMESTAMP = <?php echo isset($_SESSION[CSRF_TOKEN_NAME . '_created']) ? $_SESSION[CSRF_TOKEN_NAME . '_created'] * 1000 : 'Date.now()'; ?>;
 </script>
 <script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
