@@ -36,8 +36,8 @@ function ensure_session() {
                 'use_strict_mode' => true,
                 'cookie_httponly' => true,
                 'cookie_samesite' => 'Lax',
-                'cookie_secure' => $is_secure, // Configuration on config/constants.php
-                'cookie_domain' => $domain     // Configuration on config/constants.php
+                'cookie_secure' => $is_secure, // Configuration on core/constants.php
+                'cookie_domain' => $domain     // Configuration on core/constants.php
             ];
 
             $session_started = session_start($required_session_config);
@@ -146,7 +146,8 @@ function csrf_protect() {
             }
             exit;
         }
-        regenerate_csrf_token(); // Regenerate token after successful validation
+        // Bỏ regenerate_csrf_token() để giữ token cố định trong suốt tiến trình
+        log_message("CSRF token validated successfully for POST request: $token", 'make-market.log', 'make-market', 'INFO');
     }
 }
 
@@ -184,5 +185,20 @@ function set_csrf_cookie() {
 
     log_message("CSRF cookie set: $token, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
     return true;
+}
+
+// Clear CSRF token when transaction process completes
+function clear_csrf_token() {
+    global $is_secure;
+    if (ensure_session()) {
+        unset($_SESSION[CSRF_TOKEN_NAME]);
+        unset($_SESSION[CSRF_TOKEN_NAME . '_created']);
+        // Clear the CSRF cookie
+        setcookie(CSRF_TOKEN_COOKIE, '', time() - 3600, '/', $_SERVER['HTTP_HOST'], $is_secure, true);
+        log_message("CSRF token cleared, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
+        return true;
+    }
+    log_message("Failed to clear CSRF token: session not active, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
+    return false;
 }
 ?>
