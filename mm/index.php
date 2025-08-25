@@ -235,8 +235,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
 
-            // Sử dụng CSRF token hiện tại thay vì làm mới
-            log_message("Using existing CSRF token for decimals.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+            // Refresh CSRF nếu cần
+            $csrf_token = generate_csrf_token();
+            log_message("CSRF token refreshed before calling decimals.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+            $_POST['csrf_token'] = $csrf_token;
+            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
             // Call decimals.php
             include __DIR__ . '/decimals.php';
@@ -274,6 +277,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Validate private key using SolanaPhpSdk and derive transactionPublicKey
+        try {
+            $base58 = new Base58();
+            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+                log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+            }
+            $decodedKey = $base58->decode($privateKey);
+            if (strlen($decodedKey) !== 64) {
+                log_message("Invalid private key length: " . strlen($decodedKey) . ", expected 64 bytes", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Invalid private key length']);
+                exit;
+            }
+            $keypair = Keypair::fromSecretKey($decodedKey);
+            $transactionPublicKey = $keypair->getPublicKey()->toBase58();
+            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+                log_message("Derived public key: $transactionPublicKey", 'make-market.log', 'make-market', 'DEBUG');
+            }
+            log_message("Private key validated: public_key=$transactionPublicKey", 'make-market.log', 'make-market', 'INFO');
+        } catch (Exception $e) {
+            log_message("Invalid private key: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid private key: ' . $e->getMessage()]);
+            exit;
+        }
+
         // Check wallet balance by calling balance.php, unless skipped or trade direction conditions are not met
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
             log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, network=$network, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
@@ -296,8 +325,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
 
-                // Sử dụng CSRF token hiện tại thay vì làm mới
-                log_message("Using existing CSRF token for balance.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+                // Refresh CSRF
+                $csrf_token = generate_csrf_token();
+                log_message("CSRF token refreshed before calling balance.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+                $_POST['csrf_token'] = $csrf_token;
+                $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call balance.php
                 include __DIR__ . '/balance.php';
