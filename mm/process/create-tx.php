@@ -60,7 +60,7 @@ try {
 
 // Get input data
 $input = json_decode(file_get_contents('php://input'), true);
-$transaction_id = isset($input['id']) ? intval($input['id']) : 0;
+$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : (isset($input['id']) ? intval($input['id']) : 0); // Lấy từ URL trước, sau đó từ payload
 $sub_transactions = isset($input['sub_transactions']) ? $input['sub_transactions'] : null;
 $client_network = isset($input['network']) ? $input['network'] : null;
 $log_context['transaction_id'] = $transaction_id;
