@@ -60,7 +60,7 @@ try {
 
 // Get input data
 $input = json_decode(file_get_contents('php://input'), true);
-$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : (isset($input['id']) ? intval($input['id']) : 0); // Lấy từ URL trước, sau đó từ payload
+$transaction_id = isset($_GET['id']) ? intval($_GET['id']) : (isset($input['id']) ? intval($input['id']) : 0);
 $sub_transactions = isset($input['sub_transactions']) ? $input['sub_transactions'] : null;
 $client_network = isset($input['network']) ? $input['network'] : null;
 $log_context['transaction_id'] = $transaction_id;
@@ -140,7 +140,7 @@ if (count($sub_transactions) !== $expected_count) {
 $sub_transaction_ids = [];
 try {
     $pdo->beginTransaction();
-    $stmt = $pdo->prepare("INSERT INTO make_market_sub (transaction_id, loop_number, batch_index, direction, status, network) VALUES (?, ?, ?, ?, 'pending', ?)");
+    $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, network) VALUES (?, ?, ?, ?, 'pending', ?)");
     foreach ($sub_transactions as $sub_tx) {
         $loop = isset($sub_tx['loop']) ? intval($sub_tx['loop']) : 0;
         $batch_index = isset($sub_tx['batch_index']) ? intval($sub_tx['batch_index']) : 0;
@@ -172,7 +172,6 @@ try {
 
 // Return success response
 header('Content-Type: application/json');
-// Note: CSRF token is cleared by client-side (process.js) after transaction completion
 echo json_encode([
     'status' => 'success',
     'message' => 'Sub-transactions created successfully',
