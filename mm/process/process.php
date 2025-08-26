@@ -61,7 +61,8 @@ $session_id = session_id() ?: 'none';
 $headers = apache_request_headers();
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $csrf_token", 'process.log', 'make-market', 'DEBUG', $log_context);
+    $short_csrf_token = $csrf_token ? substr($csrf_token, 0, 4) . '...' : 'none';
+    log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $short_csrf_token", 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
 // Database connection
@@ -133,7 +134,7 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key={$transaction['public_key']}, trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
+    log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key=" . substr($transaction['public_key'], 0, 4) . "... , trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
@@ -273,6 +274,7 @@ $page_css = ['/mm/process/process.css'];
     window.CSRF_TOKEN_TIMESTAMP = <?php echo isset($_SESSION[CSRF_TOKEN_NAME . '_created']) ? $_SESSION[CSRF_TOKEN_NAME . '_created'] * 1000 : 'Date.now()'; ?>;
 </script>
 <script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
+<!-- Note: Transaction processing is handled by /mm/process/process.js via Jupiter API -->
 </body>
 </html>
 <?php ob_end_flush(); ?>
