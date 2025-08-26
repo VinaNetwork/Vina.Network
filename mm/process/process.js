@@ -606,7 +606,11 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
             const response = await fetch(`/mm/create-tx/${transactionId}`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ sub_transactions: subTransactions, network: solanaNetwork }),
+                body: JSON.stringify({
+                    id: transactionId, // Thêm id vào payload
+                    sub_transactions: subTransactions,
+                    network: solanaNetwork
+                }),
                 credentials: 'include'
             });
             const responseBody = await response.text();
