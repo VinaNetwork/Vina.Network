@@ -140,7 +140,7 @@ if (count($sub_transactions) !== $expected_count) {
 $sub_transaction_ids = [];
 try {
     $pdo->beginTransaction();
-    $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, network) VALUES (?, ?, ?, ?, 'pending', ?)");
+    $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, network, created_at) VALUES (?, ?, ?, ?, 'pending', ?, NOW())");
     foreach ($sub_transactions as $sub_tx) {
         $loop = isset($sub_tx['loop']) ? intval($sub_tx['loop']) : 0;
         $batch_index = isset($sub_tx['batch_index']) ? intval($sub_tx['batch_index']) : 0;
