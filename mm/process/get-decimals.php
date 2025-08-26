@@ -21,7 +21,7 @@ $log_context = [
 
 // Start session
 if (!ensure_session()) {
-    log_message("Failed to initialize session in get-decimals.php, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Failed to initialize session in get-decimals.php, session_id=" . (session_id() ?: 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -29,7 +29,7 @@ if (!ensure_session()) {
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Non-AJAX request rejected in get-decimals.php", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Non-AJAX request rejected in get-decimals.php", 'process.log', 'make-market', 'ERROR', $log_context);
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
     exit;
@@ -37,16 +37,17 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 
 // Check request method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("Invalid request method in get-decimals.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Invalid request method in get-decimals.php: {$_SERVER['REQUEST_METHOD']}", 'process.log', 'make-market', 'ERROR', $log_context);
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Request method not supported'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Get parameters from POST data
-$token_mint = $_POST['tokenMint'] ?? '';
-$network = $_POST['network'] ?? 'mainnet';
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
+$input = json_decode(file_get_contents('php://input'), true);
+$token_mint = isset($input['tokenMint']) ? trim($input['tokenMint']) : '';
+$network = isset($input['network']) ? trim($input['network']) : 'mainnet';
+$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? (isset($input['csrf_token']) ? $input['csrf_token'] : '');
 $log_context['token_mint'] = $token_mint;
 $log_context['network'] = $network;
 
@@ -58,68 +59,92 @@ try {
     csrf_protect();
 } catch (Exception $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("CSRF validation failed in get-decimals.php: {$e->getMessage()}, session_id=" . (session_id() ?: 'none') . ", user_id=$user_id", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    $csrf_token_short = strlen($csrf_token) > 4 ? substr($csrf_token, 0, 4) . '...' : 'none';
+    log_message(
+        "CSRF validation failed in get-decimals.php: {$e->getMessage()}, session_id=" . (session_id() ?: 'none') . ", user_id=$user_id, CSRF_TOKEN=$csrf_token_short",
+        'process.log',
+        'make-market',
+        'ERROR',
+        $log_context
+    );
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Validate inputs
-if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $token_mint)) {
-    log_message("Invalid token mint in get-decimals.php: $token_mint", 'make-market.log', 'make-market', 'ERROR', $log_context);
+if (empty($token_mint) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $token_mint)) {
+    log_message("Invalid token mint format in get-decimals.php: $token_mint, network=$network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address format'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 if (!in_array($network, ['mainnet', 'testnet', 'devnet'])) {
-    log_message("Invalid network in get-decimals.php: $network", 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message("Invalid network in get-decimals.php: $network, token_mint=$token_mint, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid network'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-log_message("Parameters received: token_mint=$token_mint, network=$network, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO', $log_context);
+log_message("Parameters received: token_mint=$token_mint, network=$network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
 
 try {
     // Get database connection
     $pdo = get_db_connection();
     if (!$pdo) {
-        log_message("Failed to connect to database in get-decimals.php", 'make-market.log', 'make-market', 'ERROR', $log_context);
+        log_message("Failed to connect to database in get-decimals.php, token_mint=$token_mint, network=$network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Database connection error'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     // Query decimals from make_market table
+    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     $stmt = $pdo->prepare("SELECT decimals FROM make_market WHERE token_mint = ? AND network = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1");
-    $stmt->execute([$token_mint, $network, $_SESSION['user_id']]);
+    $stmt->execute([$token_mint, $network, $user_id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$row) {
-        log_message("No decimals found in make_market table for token_mint=$token_mint, network=$network, user_id={$_SESSION['user_id']}, using default=9", 'make-market.log', 'make-market', 'INFO', $log_context);
-        http_response_code(200);
+    if (!$row || !isset($row['decimals'])) {
+        log_message(
+            "No decimals found in make_market table for token_mint=$token_mint, network=$network, user_id=$user_id, session_id=" . (session_id() ?: 'none'),
+            'process.log',
+            'make-market',
+            'ERROR',
+            $log_context
+        );
+        http_response_code(400);
         echo json_encode([
-            'status' => 'success',
-            'decimals' => 9,
-            'message' => 'No decimals found in database, using default value'
+            'status' => 'error',
+            'message' => "No decimals found for token_mint=$token_mint, network=$network, user_id=$user_id"
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     $decimals = intval($row['decimals']);
-    log_message("Decimals retrieved from make_market table: $decimals for token_mint=$token_mint, network=$network, user_id={$_SESSION['user_id']}, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'INFO', $log_context);
+    log_message(
+        "Decimals retrieved from make_market table: $decimals for token_mint=$token_mint, network=$network, user_id=$user_id, session_id=" . (session_id() ?: 'none'),
+        'process.log',
+        'make-market',
+        'INFO',
+        $log_context
+    );
 
     http_response_code(200);
-    // Note: CSRF token is cleared by client-side (process.js) after transaction completion
     echo json_encode([
         'status' => 'success',
         'decimals' => $decimals,
-        'message' => 'Decimals retrieved successfully'
+        'message' => 'Decimals retrieved from database'
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
-    log_message("Failed to retrieve decimals from make_market table: {$e->getMessage()}, token_mint=$token_mint, network=$network, user_id={$_SESSION['user_id']}, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR', $log_context);
+    log_message(
+        "Failed to retrieve decimals from make_market table: {$e->getMessage()}, token_mint=$token_mint, network=$network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
+        'process.log',
+        'make-market',
+        'ERROR',
+        $log_context
+    );
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error retrieving decimals: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit;
