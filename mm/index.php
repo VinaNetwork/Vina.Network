@@ -464,7 +464,7 @@ $page_og_title = "Make Market: Automate Solana Token Trading with Vina Network";
 $page_og_description = "Use Vina Network's Make Market to automatically buy and sell Solana tokens with Jupiter API. Try now!";
 $page_og_url = BASE_URL . "mm/";
 $page_canonical = BASE_URL . "mm/";
-$page_css = ['/mm/mm.css'];
+$page_css = ['/mm/css/mm.css'];
 // Slippage
 $defaultSlippage = 0.5;
 ?>
@@ -474,7 +474,6 @@ $defaultSlippage = 0.5;
 <?php include $root_path . 'include/header.php'; ?>
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
-
 <div class="mm-container">
     <div class="mm-content">
         <h1><i class="fas fa-chart-line"></i> Make Market</h1>
@@ -542,7 +541,6 @@ $defaultSlippage = 0.5;
         </div>
     </div>
 </div>
-
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
