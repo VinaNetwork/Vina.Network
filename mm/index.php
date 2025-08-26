@@ -245,10 +245,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             include __DIR__ . '/decimals.php';
             $response = ob_get_clean();
 
-            // Close Session
-            session_write_close();
-            session_start();
-
             // Kiểm tra phản hồi
             $data = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -334,10 +330,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Call balance.php
                 include __DIR__ . '/balance.php';
                 $response = ob_get_clean();
-
-                // Close Session
-                session_write_close();
-                session_start();
 
                 // Kiểm tra phản hồi
                 $data = json_decode($response, true);
