@@ -1,8 +1,13 @@
 // ============================================================================
 // File: mm/process/process.js
-// Description: JavaScript for processing Solana token swap with looping using Jupiter (mainnet) or Raydium (devnet) API
+// Description: JavaScript for processing Solana token swap with looping using Jupiter (mainnet) or Raydium SDK (devnet)
 // Created by: Vina Network
 // ============================================================================
+
+// Yêu cầu các thư viện cần thiết
+import { Connection, PublicKey } from '/vendor/raydium-sdk/node_modules/@solana/web3.js/dist/index.global.js';
+import { Token, TOKEN_PROGRAM_ID } from '/vendor/raydium-sdk/node_modules/@solana/spl-token/dist/index.global.js';
+import { Liquidity, MAINNET_PROGRAM_ID, DEVNET_PROGRAM_ID } from '/vendor/raydium-sdk/node_modules/@raydium-io/raydium-sdk/dist/index.global.js';
 
 // Hàm làm mới CSRF token khi cần thiết
 async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
@@ -204,7 +209,7 @@ async function showError(message, detailedError = null) {
     log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'process.log', 'make-market', 'ERROR');
     console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
     await updateTransactionStatus('failed', detailedError || message);
-    await clearCsrfToken(); // Xóa CSRF token khi giao dịch thất bại
+    await clearCsrfToken();
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -242,7 +247,7 @@ async function showSuccess(message, results = [], networkConfig) {
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
     log_message(`Process completed: ${message}, network=${networkConfig.network}`, 'process.log', 'make-market', 'INFO');
     console.log(`Process completed: ${message}, network=${networkConfig.network}`);
-    await clearCsrfToken(); // Xóa CSRF token khi giao dịch thành công
+    await clearCsrfToken();
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -368,7 +373,7 @@ async function cancelTransaction(transactionId) {
                 </div>
             `;
             document.getElementById('process-result').classList.add('active');
-            await clearCsrfToken(); // Xóa CSRF token khi giao dịch bị hủy
+            await clearCsrfToken();
             const cancelBtn = document.getElementById('cancel-btn');
             if (cancelBtn) {
                 cancelBtn.style.display = 'none';
@@ -434,11 +439,13 @@ async function getNetworkConfig() {
                 log_message(`Invalid network in response: ${result.network || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
                 throw new Error(`Invalid network: ${result.network || 'undefined'}`);
             }
-            if (!result.explorerUrl || !result.explorerQuery || !result.jupiterApi || (result.network === 'devnet' && !result.raydiumApi)) {
-                log_message(`Invalid network config: explorerUrl=${result.explorerUrl || 'undefined'}, explorerQuery=${result.explorerQuery || 'undefined'}, jupiterApi=${result.jupiterApi || 'undefined'}, raydiumApi=${result.raydiumApi || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
-                throw new Error(`Invalid network config: missing explorerUrl, explorerQuery, jupiterApi, or raydiumApi`);
+            if (!result.explorerUrl || !result.explorerQuery || !result.jupiterApi || !result.solMint) {
+                log_message(`Invalid network config: explorerUrl=${result.explorerUrl || 'undefined'}, explorerQuery=${result.explorerQuery || 'undefined'}, jupiterApi=${result.jupiterApi || 'undefined'}, solMint=${result.solMint || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
+                throw new Error(`Invalid network config: missing explorerUrl, explorerQuery, jupiterApi, or solMint`);
             }
-            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery}, jupiterApi=${result.jupiterApi}, raydiumApi=${result.raydiumApi || 'undefined'}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            // Thêm RPC endpoint cho Raydium SDK
+            result.rpcEndpoint = result.network === 'mainnet' ? 'https://api.mainnet-beta.solana.com' : 'https://api.devnet.solana.com';
+            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery}, jupiterApi=${result.jupiterApi}, solMint=${result.solMint}, rpcEndpoint=${result.rpcEndpoint}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Network config fetched successfully:`, result);
             return result;
         } catch (err) {
@@ -509,70 +516,147 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
     }
 }
 
-// Get quote from Jupiter or Raydium API
-async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig) {
-    const params = {
-        inputMint,
-        outputMint,
-        amount: Math.floor(amount),
-        slippageBps
-    };
-    const apiUrl = networkConfig.network === 'mainnet' ? networkConfig.jupiterApi : networkConfig.raydiumApi;
-    try {
-        log_message(`Requesting quote from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.get(`${apiUrl}/quote`, {
-            params,
-            timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        log_message(`Response from ${apiUrl}/quote: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        if (response.status !== 200 || !response.data) {
-            throw new Error(`Failed to retrieve quote from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API`);
+// Get quote for mainnet (Jupiter API) or devnet (Raydium SDK)
+async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig, publicKey) {
+    if (networkConfig.network === 'mainnet') {
+        const params = {
+            inputMint,
+            outputMint,
+            amount: Math.floor(amount),
+            slippageBps
+        };
+        try {
+            log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const response = await axios.get(`${networkConfig.jupiterApi}/quote`, {
+                params,
+                timeout: 15000,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            log_message(`Response from ${networkConfig.jupiterApi}/quote: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            if (response.status !== 200 || !response.data) {
+                throw new Error('Failed to retrieve quote from Jupiter API');
+            }
+            log_message(`Quote retrieved from Jupiter: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log('Quote retrieved from Jupiter:', response.data);
+            return response.data;
+        } catch (err) {
+            const errorMessage = err.response
+                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/quote`}`;
+            log_message(`Failed to get quote from Jupiter: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Failed to get quote from Jupiter:', errorMessage);
+            throw new Error(errorMessage);
         }
-        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-        console.log(`Quote retrieved from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, response.data);
-        return response.data;
-    } catch (err) {
-        const errorMessage = err.response
-            ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${apiUrl}/quote`}`;
-        log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-        console.error(`Failed to get quote from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, errorMessage);
-        throw new Error(errorMessage);
+    } else {
+        // Raydium SDK for devnet
+        try {
+            log_message(`Fetching quote from Raydium SDK: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}`, 'process.log', 'make-market', 'DEBUG');
+            const connection = new Connection(networkConfig.rpcEndpoint, 'confirmed');
+            const inputMintPubkey = new PublicKey(inputMint);
+            const outputMintPubkey = new PublicKey(outputMint);
+            const programId = DEVNET_PROGRAM_ID.AMM;
+
+            // Tìm pool AMM (giả định cần pool ID, bạn cần cung cấp hoặc lấy từ API/server)
+            const poolId = new PublicKey('YOUR_POOL_ID_HERE'); // Cần lấy pool ID từ server hoặc API
+            const poolState = await Liquidity.fetchInfo({ connection, poolKeys: { id: poolId, programId } });
+
+            // Tính toán quote
+            const amountIn = amount;
+            const slippage = slippageBps / 10000; // Chuyển từ bps sang phần trăm
+            const quote = Liquidity.computeAmountOut({
+                poolKeys: poolState,
+                poolInfo: { ...poolState, programId },
+                amountIn: amountIn,
+                currencyIn: new Token(TOKEN_PROGRAM_ID, inputMintPubkey, poolState.tokenA.decimals),
+                currencyOut: new Token(TOKEN_PROGRAM_ID, outputMintPubkey, poolState.tokenB.decimals),
+                slippage
+            });
+
+            log_message(`Quote retrieved from Raydium SDK: input=${inputMint}, output=${outputMint}, amountIn=${amount / 1e9}, amountOut=${quote.amountOut.toNumber() / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log('Quote retrieved from Raydium SDK:', quote);
+            return {
+                amountIn,
+                amountOut: quote.amountOut.toNumber(),
+                minimumAmountOut: quote.minAmountOut.toNumber(),
+                poolKeys: poolState
+            };
+        } catch (err) {
+            log_message(`Failed to get quote from Raydium SDK: ${err.message}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Failed to get quote from Raydium SDK:', err.message);
+            throw new Error(`Raydium SDK quote error: ${err.message}`);
+        }
     }
 }
 
 // Get swap transaction
 async function getSwapTransaction(quote, publicKey, networkConfig) {
-    const requestBody = {
-        quoteResponse: quote,
-        userPublicKey: publicKey,
-        wrapAndUnwrapSol: true,
-        dynamicComputeUnitLimit: true,
-        prioritizationFeeLamports: networkConfig.prioritizationFeeLamports
-    };
-    const apiUrl = networkConfig.network === 'mainnet' ? networkConfig.jupiterApi : networkConfig.raydiumApi;
-    try {
-        log_message(`Requesting swap transaction from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.post(`${apiUrl}/swap`, requestBody, {
-            timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        log_message(`Response from ${apiUrl}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        if (response.status !== 200 || !response.data) {
-            throw new Error(`Failed to prepare swap transaction from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API`);
+    if (networkConfig.network === 'mainnet') {
+        const requestBody = {
+            quoteResponse: quote,
+            userPublicKey: publicKey,
+            wrapAndUnwrapSol: true,
+            dynamicComputeUnitLimit: true,
+            prioritizationFeeLamports: networkConfig.prioritizationFeeLamports
+        };
+        try {
+            log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
+                timeout: 15000,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            if (response.status !== 200 || !response.data) {
+                throw new Error('Failed to prepare swap transaction from Jupiter API');
+            }
+            const { swapTransaction } = response.data;
+            log_message(`Swap transaction prepared from Jupiter: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log('Swap transaction prepared from Jupiter:', swapTransaction);
+            return swapTransaction;
+        } catch (err) {
+            const errorMessage = err.response
+                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
+            log_message(`Swap transaction failed from Jupiter: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Swap transaction failed from Jupiter:', errorMessage);
+            throw new Error(errorMessage);
         }
-        const { swapTransaction } = response.data;
-        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-        console.log(`Swap transaction prepared from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, swapTransaction);
-        return swapTransaction;
-    } catch (err) {
-        const errorMessage = err.response
-            ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${apiUrl}/swap`}`;
-        log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-        console.error(`Swap transaction failed from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, errorMessage);
-        throw new Error(errorMessage);
+    } else {
+        // Raydium SDK for devnet
+        try {
+            log_message(`Preparing swap transaction with Raydium SDK: publicKey=${publicKey}, network=${networkConfig.network}`, 'process.log', 'make-market', 'DEBUG');
+            const connection = new Connection(networkConfig.rpcEndpoint, 'confirmed');
+            const userPublicKey = new PublicKey(publicKey);
+            const { poolKeys, amountIn, minimumAmountOut } = quote;
+
+            // Tạo giao dịch hoán đổi
+            const swapInstruction = await Liquidity.makeSwapInstructionSimple({
+                connection,
+                poolKeys,
+                userKeys: { owner: userPublicKey, tokenAccounts: [] }, // Token accounts sẽ được server xử lý
+                amountIn,
+                amountOut: minimumAmountOut,
+                fixedSide: 'in',
+                makeTxVersion: 0 // Legacy transaction
+            });
+
+            const { blockhash } = await connection.getLatestBlockhash();
+            const transaction = new Transaction({
+                recentBlockhash: blockhash,
+                feePayer: userPublicKey
+            });
+            transaction.add(...swapInstruction.instructions);
+
+            // Mã hóa giao dịch
+            const serializedTx = transaction.serialize({ requireAllSignatures: false }).toString('base64');
+
+            log_message(`Swap transaction prepared from Raydium SDK: ${serializedTx.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log('Swap transaction prepared from Raydium SDK:', serializedTx);
+            return serializedTx;
+        } catch (err) {
+            log_message(`Failed to prepare swap transaction from Raydium SDK: ${err.message}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Failed to prepare swap transaction from Raydium SDK:', err.message);
+            throw new Error(`Raydium SDK swap transaction error: ${err.message}`);
+        }
     }
 }
 
@@ -605,7 +689,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    id: transactionId, // Thêm id vào payload
+                    id: transactionId,
                     sub_transactions: subTransactions,
                     network: solanaNetwork
                 }),
@@ -798,7 +882,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
             transaction.token_amount = parseFloat(transaction.token_amount) || 0;
             transaction.trade_direction = transaction.trade_direction || 'buy';
-            log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`, 'process.log', 'make-market', 'INFO');
+            transaction.pool_id = transaction.pool_id || null; // Pool ID cho Raydium
+            log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, pool_id=${transaction.pool_id || 'none'}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log('Transaction fetched:', transaction);
             break;
         } catch (err) {
@@ -831,6 +916,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (transaction.token_amount <= 0 && (tradeDirection === 'sell' || tradeDirection === 'both')) {
         await showError('Token amount must be greater than 0 for sell or both transactions');
+        return;
+    }
+    if (networkConfig.network === 'devnet' && !transaction.pool_id) {
+        await showError('Pool ID is required for Raydium swaps on devnet');
         return;
     }
 
@@ -878,7 +967,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
                     document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
-                    const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, networkConfig);
+                    const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, networkConfig, publicKey);
+                    if (networkConfig.network === 'devnet') {
+                        buyQuote.poolId = transaction.pool_id; // Thêm pool ID cho Raydium
+                    }
                     const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1 || tradeDirection === 'both') {
@@ -888,7 +980,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 if (tradeDirection === 'sell' || tradeDirection === 'both') {
                     document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
-                    const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, networkConfig);
+                    const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, networkConfig, publicKey);
+                    if (networkConfig.network === 'devnet') {
+                        sellQuote.poolId = transaction.pool_id; // Thêm pool ID cho Raydium
+                    }
                     const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1) {
