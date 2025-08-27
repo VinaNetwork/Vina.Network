@@ -74,7 +74,7 @@ $client_network = $input['network'] ?? null;
 $log_context['transaction_id'] = $transaction_id;
 $log_context['client_network'] = $client_network;
 
-if ($transaction_id <= 0 || !is_array($swap_transactions) || !is_array($sub_transaction_ids) || count($swap_transactions) !== count($sub_transaction_ids) || !in_array($client_network, ['mainnet', 'devnet'])) {
+if ($transaction_id <= 0 || !is_array($swap_transactions) || !is_array($sub_transaction_ids) || count($swap_transactions) !== count($sub_transaction_ids) || $client_network !== 'mainnet') {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Invalid input: transaction_id=$transaction_id, swap_transactions=" . json_encode($swap_transactions) . ", sub_transaction_ids=" . json_encode($sub_transaction_ids) . ", client_network=$client_network, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
@@ -84,7 +84,7 @@ if ($transaction_id <= 0 || !is_array($swap_transactions) || !is_array($sub_tran
 }
 
 // Check network consistency
-if ($client_network !== SOLANA_NETWORK) {
+if ($client_network !== SOLANA_NETWORK || SOLANA_NETWORK !== 'mainnet') {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Network mismatch: client_network=$client_network, server_network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
