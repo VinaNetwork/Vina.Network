@@ -78,7 +78,7 @@ $log_context['transaction_id'] = $transaction_id;
 $log_context['client_network'] = $client_network;
 
 log_message(
-    "swap.php: Input received, transaction_id=$transaction_id, swap_transactions_count=" . (is_array($swap_transactions) ? count($swap_transactions) : 'null') . ", sub_transaction_ids_count=" . (is_array($sub_transaction_ids) ? count($sub_transaction_ids) : 'null') . ", client_network=$client_network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
+    "swap-jupiter.php: Input received, transaction_id=$transaction_id, swap_transactions_count=" . (is_array($swap_transactions) ? count($swap_transactions) : 'null') . ", sub_transaction_ids_count=" . (is_array($sub_transaction_ids) ? count($sub_transaction_ids) : 'null') . ", client_network=$client_network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
     'process.log', 'make-market', 'INFO', $log_context
 );
 
