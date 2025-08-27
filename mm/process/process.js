@@ -1,6 +1,6 @@
 // ============================================================================
 // File: mm/process/process.js
-// Description: JavaScript for processing Solana token swap with looping using Jupiter Aggregator API
+// Description: JavaScript for processing Solana token swap with looping using Jupiter (mainnet) or Raydium (devnet) API
 // Created by: Vina Network
 // ============================================================================
 
@@ -434,11 +434,11 @@ async function getNetworkConfig() {
                 log_message(`Invalid network in response: ${result.network || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
                 throw new Error(`Invalid network: ${result.network || 'undefined'}`);
             }
-            if (!result.explorerUrl || !result.explorerQuery) {
-                log_message(`Invalid network config: explorerUrl=${result.explorerUrl || 'undefined'}, explorerQuery=${result.explorerQuery || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
-                throw new Error(`Invalid network config: missing explorerUrl or explorerQuery`);
+            if (!result.explorerUrl || !result.explorerQuery || !result.jupiterApi || (result.network === 'devnet' && !result.raydiumApi)) {
+                log_message(`Invalid network config: explorerUrl=${result.explorerUrl || 'undefined'}, explorerQuery=${result.explorerQuery || 'undefined'}, jupiterApi=${result.jupiterApi || 'undefined'}, raydiumApi=${result.raydiumApi || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
+                throw new Error(`Invalid network config: missing explorerUrl, explorerQuery, jupiterApi, or raydiumApi`);
             }
-            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery}, jupiterApi=${result.jupiterApi}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery}, jupiterApi=${result.jupiterApi}, raydiumApi=${result.raydiumApi || 'undefined'}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Network config fetched successfully:`, result);
             return result;
         } catch (err) {
@@ -509,7 +509,7 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
     }
 }
 
-// Get quote from Jupiter API
+// Get quote from Jupiter or Raydium API
 async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig) {
     const params = {
         inputMint,
@@ -517,63 +517,61 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         amount: Math.floor(amount),
         slippageBps
     };
-    if (networkConfig.network === 'devnet') {
-        params.testnet = true;
-    }
+    const apiUrl = networkConfig.network === 'mainnet' ? networkConfig.jupiterApi : networkConfig.raydiumApi;
     try {
-        log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.get(`${networkConfig.jupiterApi}/quote`, {
+        log_message(`Requesting quote from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        const response = await axios.get(`${apiUrl}/quote`, {
             params,
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        log_message(`Response from ${networkConfig.jupiterApi}/quote: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(`Response from ${apiUrl}/quote: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
-            throw new Error('Failed to retrieve quote from Jupiter API');
+            throw new Error(`Failed to retrieve quote from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API`);
         }
         log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-        console.log('Quote retrieved:', response.data);
+        console.log(`Quote retrieved from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, response.data);
         return response.data;
     } catch (err) {
         const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/quote`}`;
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${apiUrl}/quote`}`;
         log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-        console.error('Failed to get quote:', errorMessage);
+        console.error(`Failed to get quote from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, errorMessage);
         throw new Error(errorMessage);
     }
 }
 
 // Get swap transaction
 async function getSwapTransaction(quote, publicKey, networkConfig) {
+    const requestBody = {
+        quoteResponse: quote,
+        userPublicKey: publicKey,
+        wrapAndUnwrapSol: true,
+        dynamicComputeUnitLimit: true,
+        prioritizationFeeLamports: networkConfig.prioritizationFeeLamports
+    };
+    const apiUrl = networkConfig.network === 'mainnet' ? networkConfig.jupiterApi : networkConfig.raydiumApi;
     try {
-        const requestBody = {
-            quoteResponse: quote,
-            userPublicKey: publicKey,
-            wrapAndUnwrapSol: true,
-            dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: networkConfig.prioritizationFeeLamports,
-            testnet: networkConfig.network === 'devnet'
-        };
-        log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
+        log_message(`Requesting swap transaction from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        const response = await axios.post(`${apiUrl}/swap`, requestBody, {
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(`Response from ${apiUrl}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
-            throw new Error('Failed to prepare swap transaction from Jupiter API');
+            throw new Error(`Failed to prepare swap transaction from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'} API`);
         }
         const { swapTransaction } = response.data;
         log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-        console.log('Swap transaction prepared:', swapTransaction);
+        console.log(`Swap transaction prepared from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, swapTransaction);
         return swapTransaction;
     } catch (err) {
         const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${apiUrl}/swap`}`;
         log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-        console.error('Swap transaction failed:', errorMessage);
+        console.error(`Swap transaction failed from ${networkConfig.network === 'mainnet' ? 'Jupiter' : 'Raydium'}:`, errorMessage);
         throw new Error(errorMessage);
     }
 }
@@ -660,6 +658,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
     const maxRetries = 3;
     let attempt = 0;
+    const endpoint = solanaNetwork === 'mainnet' ? '/mm/swap-jupiter' : '/mm/swap-raydium';
     while (attempt < maxRetries) {
         try {
             await ensureAuthInitialized();
@@ -668,15 +667,15 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             });
-            log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/swap-jupiter', {
+            log_message(`Executing swap transactions: ID=${transactionId}, endpoint=${endpoint}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/swap-jupiter: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Response from ${endpoint}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
                 let result;
                 try {
@@ -703,12 +702,12 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             if (result.status !== 'success' && result.status !== 'partial') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, endpoint=${endpoint}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Swap transactions executed:`, result);
             return result;
         } catch (err) {
-            log_message(`Swap execution failed: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error('Swap execution failed:', err.message);
+            log_message(`Swap execution failed: ${err.message}, transactionId=${transactionId}, endpoint=${endpoint}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error(`Swap execution failed at ${endpoint}:`, err.message);
             if (attempt === maxRetries - 1) {
                 throw err;
             }
