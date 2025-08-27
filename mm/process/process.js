@@ -409,14 +409,20 @@ async function getNetworkConfig() {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             });
-            log_message(`Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(
+                `Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'INFO'
+            );
             const response = await fetch('/mm/get-network', {
                 method: 'GET',
                 headers,
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(
+                `Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'INFO'
+            );
             if (response.status === 401) {
                 log_message(`Unauthorized response from /mm/get-network, redirecting to login`, 'process.log', 'make-market', 'ERROR');
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
@@ -445,18 +451,29 @@ async function getNetworkConfig() {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
             if (!result.network || !['mainnet', 'devnet'].includes(result.network)) {
-                log_message(`Invalid network in response: ${result.network || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
                 throw new Error(`Invalid network: ${result.network || 'undefined'}`);
             }
-            if (!result.explorerUrl || !result.explorerQuery) {
-                log_message(`Invalid network config: explorerUrl=${result.explorerUrl || 'undefined'}, explorerQuery=${result.explorerQuery || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
-                throw new Error(`Invalid network config: missing explorerUrl or explorerQuery`);
+            if (!result.jupiterApi || !result.jupiterApi.includes('jup.ag')) {
+                throw new Error(`Invalid Jupiter API URL: ${result.jupiterApi || 'undefined'}`);
             }
-            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery}, jupiterApi=${result.jupiterApi}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            if (!result.explorerUrl) {
+                throw new Error(`Invalid network config: missing explorerUrl, received explorerUrl=${result.explorerUrl}`);
+            }
+            // Cho phép explorerQuery là chuỗi rỗng cho mainnet
+            if (result.explorerQuery === undefined) {
+                throw new Error(`Invalid network config: missing explorerQuery, received explorerQuery=${result.explorerQuery}`);
+            }
+            log_message(
+                `Network config fetched successfully: network=${result.network}, jupiterApi=${result.jupiterApi}, solMint=${result.solMint}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery || 'empty'}, prioritizationFeeLamports=${result.prioritizationFeeLamports}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'INFO'
+            );
             console.log(`Network config fetched successfully:`, result);
             return result;
         } catch (err) {
-            log_message(`Failed to fetch network config: ${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            log_message(
+                `Failed to fetch network config: error=${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'ERROR'
+            );
             console.error('Failed to fetch network config:', err.message);
             if (attempt === maxRetries - 1) {
                 throw err;
