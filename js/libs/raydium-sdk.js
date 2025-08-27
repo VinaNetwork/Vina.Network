@@ -3,9 +3,9 @@
 // Created by: Vina Network
 
 import { Connection, PublicKey, Transaction } from '/js/libs/solana.web3.iife.js';
-import { Raydium, TxVersion } from '/vendor/node_modules/@raydium-io/raydium-sdk-v2/dist/index.esm.mjs';
-import Decimal from '/vendor/node_modules/decimal.js/decimal.js';
-import BN from '/vendor/node_modules/bn.js/lib/bn.js';
+import { Raydium, TxVersion } from '/vendor/raydium-sdk/node_modules/@raydium-io/raydium-sdk-v2/dist/index.esm.mjs';
+import Decimal from '/vendor/raydium-sdk/node_modules/decimal.js/decimal.js';
+import BN from '/vendor/raydium-sdk/node_modules/bn.js/lib/bn.js';
 
 // Initialize Raydium SDK
 async function initializeRaydium(rpcEndpoint) {
