@@ -702,15 +702,26 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             });
-            log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(
+                `Executing swap transactions: ID=${transactionId}, swap_transactions_count=${swapTransactions.length}, sub_transaction_ids=${JSON.stringify(subTransactionIds)}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'DEBUG'
+            );
             const response = await fetch('/mm/swap-jupiter', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
+                body: JSON.stringify({
+                    id: transactionId,
+                    swap_transactions: swapTransactions,
+                    sub_transaction_ids: subTransactionIds,
+                    network: solanaNetwork
+                }),
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/swap-jupiter: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(
+                `Response from /mm/swap-jupiter: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'DEBUG'
+            );
             if (!response.ok) {
                 let result;
                 try {
@@ -719,11 +730,18 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                     result = {};
                 }
                 if (response.status === 401) {
+                    log_message(
+                        `Unauthorized response from /mm/swap-jupiter, redirecting to login, transactionId=${transactionId}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                        'process.log', 'make-market', 'ERROR'
+                    );
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
                 if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
+                    log_message(
+                        `CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries}), transactionId=${transactionId}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                        'process.log', 'make-market', 'WARNING'
+                    );
                     attempt++;
                     if (attempt === maxRetries) {
                         throw new Error(`Failed to execute swap transactions after ${maxRetries} attempts: ${result.error}`);
@@ -737,11 +755,17 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             if (result.status !== 'success' && result.status !== 'partial') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(
+                `Swap transactions executed: status=${result.status}, message=${result.message}, results_count=${result.results?.length || 0}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'INFO'
+            );
             console.log(`Swap transactions executed:`, result);
             return result;
         } catch (err) {
-            log_message(`Swap execution failed: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            log_message(
+                `Swap execution failed: error=${err.message}, transactionId=${transactionId}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'ERROR'
+            );
             console.error('Swap execution failed:', err.message);
             if (attempt === maxRetries - 1) {
                 throw err;
