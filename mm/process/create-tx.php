@@ -66,7 +66,7 @@ $client_network = isset($input['network']) ? $input['network'] : null;
 $log_context['transaction_id'] = $transaction_id;
 $log_context['client_network'] = $client_network;
 
-if ($transaction_id <= 0 || !is_array($sub_transactions) || !in_array($client_network, ['testnet', 'mainnet', 'devnet'])) {
+if ($transaction_id <= 0 || !is_array($sub_transactions) || !in_array($client_network, ['mainnet', 'devnet'])) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Invalid input: transaction_id=$transaction_id, sub_transactions=" . json_encode($sub_transactions) . ", client_network=$client_network, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
