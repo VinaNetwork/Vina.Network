@@ -14,6 +14,7 @@ require_once $root_path . 'mm/bootstrap.php';
 
 use StephenHill\Base58;
 use Attestto\SolanaPhpSdk\Connection;
+use Attestto\SolanaPhpSdk\RpcClient;
 use Attestto\SolanaPhpSdk\Keypair;
 use Attestto\SolanaPhpSdk\PublicKey;
 use Attestto\SolanaPhpSdk\Transaction;
@@ -71,12 +72,14 @@ $transaction_id = isset($input['id']) ? intval($input['id']) : 0;
 $swap_transactions = $input['swap_transactions'] ?? null;
 $sub_transaction_ids = $input['sub_transaction_ids'] ?? null;
 $client_network = $input['network'] ?? null;
+$simulate = isset($input['simulate']) ? filter_var($input['simulate'], FILTER_VALIDATE_BOOLEAN) : false;
 $log_context['transaction_id'] = $transaction_id;
 $log_context['client_network'] = $client_network;
+$log_context['simulate'] = $simulate;
 
 if ($transaction_id <= 0 || !is_array($swap_transactions) || !is_array($sub_transaction_ids) || count($swap_transactions) !== count($sub_transaction_ids) || !in_array($client_network, ['mainnet', 'devnet'])) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Invalid input: transaction_id=$transaction_id, swap_transactions=" . json_encode($swap_transactions) . ", sub_transaction_ids=" . json_encode($sub_transaction_ids) . ", client_network=$client_network, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Invalid input: transaction_id=$transaction_id, swap_transactions=" . json_encode($swap_transactions) . ", sub_transaction_ids=" . json_encode($sub_transaction_ids) . ", client_network=$client_network, simulate=$simulate, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid transaction data or network'], JSON_UNESCAPED_UNICODE);
@@ -172,6 +175,7 @@ try {
 // Process each transaction
 $results = [];
 $connection = new Connection(RPC_ENDPOINT);
+$rpcClient = new RpcClient(RPC_ENDPOINT);
 $maxRetries = 3;
 
 foreach ($swap_transactions as $index => $swap) {
@@ -301,76 +305,123 @@ foreach ($swap_transactions as $index => $swap) {
         continue;
     }
 
-    // Send transaction with retries
-    $txid = null;
-    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-        $log_context['attempt'] = $attempt;
-        try {
-            $txid = $connection->sendRawTransaction($transactionObj->serialize());
-            log_message("Swap transaction sent for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: txid=$txid, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+    // Check if simulation is required
+    $shouldSimulate = SOLANA_NETWORK === 'devnet' && $simulate;
+
+    if ($shouldSimulate) {
+        // Simulate transaction
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $log_context['attempt'] = $attempt;
             try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
-                $stmt->execute(['success', null, $txid, $sub_transaction_id]);
-                log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=success, txid=$txid, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
-            } catch (PDOException $e) {
-                log_message("Failed to update sub-transaction status: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            }
-            $results[] = [
-                'loop' => $loop,
-                'batch_index' => $batch_index,
-                'direction' => $direction,
-                'status' => 'success',
-                'txid' => $txid
-            ];
-            break;
-        } catch (Exception $e) {
-            log_message("Failed to send transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, attempt $attempt/$maxRetries: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            if ($attempt === $maxRetries) {
+                $simulationResult = $rpcClient->call('simulateTransaction', [
+                    base64_encode($transactionObj->serialize()),
+                    [
+                        'encoding' => 'base64',
+                        'sigVerify' => true,
+                        'commitment' => 'confirmed'
+                    ]
+                ]);
+                $txid = "simulated_" . $sub_transaction_id . "_" . time();
+                log_message("Swap transaction simulated for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: txid=$txid, result=" . json_encode($simulationResult) . ", network=" . SOLANA_NETWORK . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+
+                // Update sub-transaction status
                 try {
-                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                    $stmt->execute(['failed', "Failed to send transaction after $maxRetries attempts: " . $e->getMessage(), $sub_transaction_id]);
-                } catch (PDOException $e2) {
-                    log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
+                    $stmt->execute(['success', null, $txid, $sub_transaction_id]);
+                    log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=success, txid=$txid, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+                } catch (PDOException $e) {
+                    log_message("Failed to update sub-transaction status: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
                 }
                 $results[] = [
                     'loop' => $loop,
                     'batch_index' => $batch_index,
                     'direction' => $direction,
-                    'status' => 'error',
-                    'message' => "Error sending transaction after $maxRetries attempts: " . $e->getMessage()
+                    'status' => 'success',
+                    'txid' => $txid,
+                    'simulation' => $simulationResult
                 ];
+                break;
+            } catch (Exception $e) {
+                log_message("Simulation failed for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, attempt $attempt/$maxRetries: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                if ($attempt === $maxRetries) {
+                    try {
+                        $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                        $stmt->execute(['failed', "Simulation failed after $maxRetries attempts: " . $e->getMessage(), $sub_transaction_id]);
+                    } catch (PDOException $e2) {
+                        log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                    }
+                    $results[] = [
+                        'loop' => $loop,
+                        'batch_index' => $batch_index,
+                        'direction' => $direction,
+                        'status' => 'error',
+                        'message' => "Simulation failed: " . $e->getMessage()
+                    ];
+                }
+                continue;
             }
-            if ($attempt < $maxRetries) {
-                sleep(1 * $attempt); // Wait 1s, 2s, 3s
+        }
+    } else {
+        // Send real transaction
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $log_context['attempt'] = $attempt;
+            try {
+                $txid = $connection->sendRawTransaction($transactionObj->serialize());
+                log_message("Swap transaction sent for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: txid=$txid, network=" . SOLANA_NETWORK . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+
+                // Update sub-transaction status
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
+                    $stmt->execute(['success', null, $txid, $sub_transaction_id]);
+                    log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=success, txid=$txid, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+                } catch (PDOException $e) {
+                    log_message("Failed to update sub-transaction status: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                }
+                $results[] = [
+                    'loop' => $loop,
+                    'batch_index' => $batch_index,
+                    'direction' => $direction,
+                    'status' => 'success',
+                    'txid' => $txid
+                ];
+                break;
+            } catch (Exception $e) {
+                log_message("Swap transaction failed for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, attempt $attempt/$maxRetries: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                if ($attempt === $maxRetries) {
+                    try {
+                        $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                        $stmt->execute(['failed', "Swap failed after $maxRetries attempts: " . $e->getMessage(), $sub_transaction_id]);
+                    } catch (PDOException $e2) {
+                        log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                    }
+                    $results[] = [
+                        'loop' => $loop,
+                        'batch_index' => $batch_index,
+                        'direction' => $direction,
+                        'status' => 'error',
+                        'message' => "Swap failed: " . $e->getMessage()
+                    ];
+                }
+                continue;
             }
         }
     }
 }
 
-// Update main transaction status
-try {
-    $success_count = count(array_filter($results, fn($r) => $r['status'] === 'success'));
-    $overall_status = $success_count === count($swap_transactions) ? 'success' : 'partial';
-    $error_message = $success_count < count($swap_transactions) ? "Completed $success_count of " . count($swap_transactions) . " transactions" : null;
-    $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
-    $stmt->execute([$overall_status, $error_message, $transaction_id]);
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Main transaction status updated: ID=$transaction_id, status=$overall_status, success_count=$success_count, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
-} catch (PDOException $e) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Failed to update main transaction status: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error updating main transaction status'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
+// Determine overall status
+$success_count = count(array_filter($results, function ($result) {
+    return $result['status'] === 'success';
+}));
+$status = $success_count === count($swap_transactions) ? 'success' : ($success_count > 0 ? 'partial' : 'error');
 
-// Return results
+log_message("Swap execution completed: transaction_id=$transaction_id, status=$status, success_count=$success_count, total=" . count($swap_transactions) . ", network=" . SOLANA_NETWORK . ", simulate=$simulate, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+
+// Send response
 header('Content-Type: application/json');
-// Note: CSRF token is cleared by client-side (process.js) after transaction completion
+http_response_code(200);
 echo json_encode([
-    'status' => $success_count === count($swap_transactions) ? 'success' : 'partial',
-    'message' => $success_count === count($swap_transactions) ? 'All swap transactions completed successfully' : "Completed $success_count of " . count($swap_transactions) . " transactions",
+    'status' => $status,
+    'message' => $status === 'success' ? 'All swaps completed successfully' : ($status === 'partial' ? 'Some swaps completed successfully' : 'Swap execution failed'),
     'results' => $results
 ], JSON_UNESCAPED_UNICODE);
 ?>
