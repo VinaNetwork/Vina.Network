@@ -37,7 +37,7 @@ if (!defined('JWT_SECRET')) {
 
 // Solana Network Configuration
 if (getenv('SOLANA_NETWORK') === false) {
-    $solana_network = 'devnet'; // devnet | testnet | mainnet
+    $solana_network = 'devnet'; // devnet | mainnet
     putenv("SOLANA_NETWORK={$solana_network}");
     $_ENV['SOLANA_NETWORK'] = $solana_network;
 }
