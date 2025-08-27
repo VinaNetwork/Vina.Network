@@ -515,30 +515,33 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         inputMint,
         outputMint,
         amount: Math.floor(amount),
-        slippageBps
+        slippageBps,
+        testnet: networkConfig.network === 'devnet' ? true : undefined // Chỉ thêm testnet nếu là devnet
     };
-    if (networkConfig.network === 'devnet') {
-        params.testnet = true;
-    }
     try {
-        log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(
+            `Requesting quote from Jupiter API: url=${networkConfig.jupiterApi}/quote, params=${JSON.stringify(params)}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+            'process.log', 'make-market', 'DEBUG'
+        );
         const response = await axios.get(`${networkConfig.jupiterApi}/quote`, {
             params,
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        log_message(`Response from ${networkConfig.jupiterApi}/quote: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        if (response.status !== 200 || !response.data) {
-            throw new Error('Failed to retrieve quote from Jupiter API');
-        }
-        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+        log_message(
+            `Quote response: url=${networkConfig.jupiterApi}/quote, status=${response.status}, data=${JSON.stringify(response.data)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+            'process.log', 'make-market', 'INFO'
+        );
         console.log('Quote retrieved:', response.data);
         return response.data;
     } catch (err) {
         const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
             : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/quote`}`;
-        log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+        log_message(
+            `Failed to get quote: error=${errorMessage}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, slippageBps=${slippageBps}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+            'process.log', 'make-market', 'ERROR'
+        );
         console.error('Failed to get quote:', errorMessage);
         throw new Error(errorMessage);
     }
