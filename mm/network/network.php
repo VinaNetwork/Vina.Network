@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: mm/network/network.php
-// Description: Centralized network configuration for Solana devnet, testnet, and mainnet
+// Description: Centralized network configuration for Solana devnet and mainnet
 // Created by: Vina Network
 // ============================================================================
 
@@ -20,7 +20,7 @@ if (!defined('SOLANA_NETWORK')) {
 }
 
 // Validate SOLANA_NETWORK
-$valid_networks = ['devnet', 'testnet', 'mainnet'];
+$valid_networks = ['devnet', 'mainnet'];
 if (!in_array(SOLANA_NETWORK, $valid_networks, true)) {
     log_message("Invalid SOLANA_NETWORK: " . SOLANA_NETWORK, 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
@@ -35,7 +35,6 @@ if (!in_array(SOLANA_NETWORK, $valid_networks, true)) {
 if (!defined('RPC_ENDPOINT')) {
     define('RPC_ENDPOINT', match (SOLANA_NETWORK) {
         'devnet'  => 'https://api.devnet.solana.com',
-        'testnet' => 'https://api.testnet.solana.com',
         'mainnet' => (defined('HELIUS_API_KEY') && !empty(HELIUS_API_KEY))
             ? 'https://mainnet.helius-rpc.com/?api-key=' . HELIUS_API_KEY
             : 'https://api.mainnet-beta.solana.com',
@@ -45,7 +44,7 @@ if (!defined('RPC_ENDPOINT')) {
 // Define Explorer URL (only if not already defined)
 if (!defined('EXPLORER_URL')) {
     define('EXPLORER_URL', match (SOLANA_NETWORK) {
-        'devnet', 'testnet' => 'https://solana.fm/tx/',
+        'devnet' => 'https://solana.fm/tx/',
         'mainnet' => 'https://solscan.io/tx/',
     });
 }
@@ -54,7 +53,6 @@ if (!defined('EXPLORER_URL')) {
 if (!defined('EXPLORER_QUERY')) {
     define('EXPLORER_QUERY', match (SOLANA_NETWORK) {
         'devnet'  => '?cluster=devnet',
-        'testnet' => '?cluster=testnet',
         default   => '',
     });
 }
