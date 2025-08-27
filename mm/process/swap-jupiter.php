@@ -131,6 +131,8 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    // Log transaction details
+    log_message("Transaction details retrieved: ID=$transaction_id, token_mint={$transaction['token_mint']}, sol_amount={$transaction['sol_amount']}, token_amount={$transaction['token_amount']}, trade_direction={$transaction['trade_direction']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
@@ -197,10 +199,14 @@ foreach ($swap_transactions as $index => $swap) {
         continue;
     }
 
+    // Log swap transaction details
+    log_message("Processing swap transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, swap_transaction_length=" . strlen($swap_transaction) . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'DEBUG', $log_context);
+
     // Decode private key
     try {
         $base58 = new Base58();
         $decoded_private_key = $base58->decode($private_key);
+        log_message("Private key decoded successfully for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
     } catch (Exception $e) {
         log_message("Failed to decode private key for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
         try {
@@ -222,6 +228,7 @@ foreach ($swap_transactions as $index => $swap) {
     // Create keypair
     try {
         $keypair = Keypair::fromSecretKey($decoded_private_key);
+        log_message("Keypair created successfully for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
     } catch (Exception $e) {
         log_message("Failed to create keypair for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
         try {
@@ -263,6 +270,7 @@ foreach ($swap_transactions as $index => $swap) {
     // Decode and sign transaction
     try {
         $transactionObj = Transaction::from($swap_transaction);
+        log_message("Transaction decoded successfully for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
     } catch (Exception $e) {
         log_message("Failed to decode transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
         try {
@@ -276,13 +284,14 @@ foreach ($swap_transactions as $index => $swap) {
             'batch_index' => $batch_index,
             'direction' => $direction,
             'status' => 'error',
-            'message' => 'Error decoding transaction'
+            'message' => 'Error decoding transaction: ' . $e->getMessage()
         ];
         continue;
     }
 
     try {
         $transactionObj->sign($keypair);
+        log_message("Transaction signed successfully for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
     } catch (Exception $e) {
         log_message("Failed to sign transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
         try {
@@ -296,7 +305,7 @@ foreach ($swap_transactions as $index => $swap) {
             'batch_index' => $batch_index,
             'direction' => $direction,
             'status' => 'error',
-            'message' => 'Error signing transaction'
+            'message' => 'Error signing transaction: ' . $e->getMessage()
         ];
         continue;
     }
@@ -324,11 +333,14 @@ foreach ($swap_transactions as $index => $swap) {
             ];
             break;
         } catch (Exception $e) {
-            log_message("Failed to send transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, attempt $attempt/$maxRetries: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            if ($attempt === $maxRetries) {
+            $error_message = $e->getMessage();
+            log_message("Failed to send transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, attempt=$attempt/$maxRetries, error=$error_message, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+            // Check for TOKEN_NOT_TRADABLE error
+            if (strpos($error_message, 'TOKEN_NOT_TRADABLE') !== false || strpos($error_message, 'The token is not tradable') !== false) {
                 try {
                     $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                    $stmt->execute(['failed', "Failed to send transaction after $maxRetries attempts: " . $e->getMessage(), $sub_transaction_id]);
+                    $stmt->execute(['failed', "Token not tradable: " . $error_message, $sub_transaction_id]);
+                    log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=failed, error=Token not tradable: $error_message, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
                 } catch (PDOException $e2) {
                     log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
                 }
@@ -337,7 +349,23 @@ foreach ($swap_transactions as $index => $swap) {
                     'batch_index' => $batch_index,
                     'direction' => $direction,
                     'status' => 'error',
-                    'message' => "Error sending transaction after $maxRetries attempts: " . $e->getMessage()
+                    'message' => "Token not tradable: " . $error_message
+                ];
+                break;
+            }
+            if ($attempt === $maxRetries) {
+                try {
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "Failed to send transaction after $maxRetries attempts: " . $error_message, $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                }
+                $results[] = [
+                    'loop' => $loop,
+                    'batch_index' => $batch_index,
+                    'direction' => $direction,
+                    'status' => 'error',
+                    'message' => "Error sending transaction after $maxRetries attempts: " . $error_message
                 ];
             }
             if ($attempt < $maxRetries) {
@@ -352,10 +380,17 @@ try {
     $success_count = count(array_filter($results, fn($r) => $r['status'] === 'success'));
     $overall_status = $success_count === count($swap_transactions) ? 'success' : 'partial';
     $error_message = $success_count < count($swap_transactions) ? "Completed $success_count of " . count($swap_transactions) . " transactions" : null;
+    // Check if all transactions failed due to TOKEN_NOT_TRADABLE
+    if ($success_count === 0 && count($results) > 0 && strpos($results[0]['message'], 'Token not tradable') !== false) {
+        $error_message = "HTTP 400: " . json_encode([
+            'error' => "The token {$transaction['token_mint']} is not tradable",
+            'errorCode' => 'TOKEN_NOT_TRADABLE'
+        ], JSON_UNESCAPED_UNICODE);
+    }
     $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
     $stmt->execute([$overall_status, $error_message, $transaction_id]);
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Main transaction status updated: ID=$transaction_id, status=$overall_status, success_count=$success_count, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
+    log_message("Main transaction status updated: ID=$transaction_id, status=$overall_status, success_count=$success_count, error=$error_message, token_mint={$transaction['token_mint']}, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Failed to update main transaction status: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
