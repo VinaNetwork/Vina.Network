@@ -43,5 +43,5 @@ if (getenv('SOLANA_NETWORK') === false) {
 }
 
 // Transaction fee per transaction (in SOL - mm/balance.php)
-define('TRANSACTION_FEE', 0.000005); // 5 lamports
+define('TRANSACTION_FEE', 0.0001);
 ?>
