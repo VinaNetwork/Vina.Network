@@ -187,24 +187,38 @@ function delay(ms) {
 
 // Show error message
 async function showError(message, detailedError = null) {
-    if (detailedError?.includes('Invalid or expired CSRF token')) {
-        message = 'Phiên của bạn đã hết hạn. Vui lòng làm mới trang để tiếp tục.';
+    let userFriendlyMessage = 'Đã xảy ra lỗi trong quá trình giao dịch. Vui lòng thử lại sau.';
+    
+    // Xử lý các trường hợp lỗi cụ thể để hiển thị thông báo thân thiện
+    if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
+        userFriendlyMessage = 'Token không thể giao dịch. Vui lòng kiểm tra tính thanh khoản của token hoặc chọn token khác.';
+    } else if (detailedError?.includes('Invalid or expired CSRF token')) {
+        userFriendlyMessage = 'Phiên của bạn đã hết hạn. Vui lòng làm mới trang để tiếp tục.';
+    } else if (detailedError?.includes('Network Error')) {
+        userFriendlyMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet và thử lại.';
     }
+
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
-            <strong>Error:</strong> ${message}
-            ${detailedError ? `<br>Details: ${detailedError}` : ''}
+            <strong>Lỗi:</strong> ${userFriendlyMessage}
+            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Chi tiết kỹ thuật: ${detailedError}` : ''}
         </div>
     `;
     resultDiv.classList.add('active');
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
-    log_message(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`, 'process.log', 'make-market', 'ERROR');
-    console.error(`Process stopped: ${message}${detailedError ? `, Details: ${detailedError}` : ''}`);
+    
+    const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
+    log_message(
+        `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+        'process.log', 'make-market', 'ERROR'
+    );
+    console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
+    
     await updateTransactionStatus('failed', detailedError || message);
-    await clearCsrfToken(); // Xóa CSRF token khi giao dịch thất bại
+    await clearCsrfToken();
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
