@@ -63,7 +63,8 @@ if (!defined('NETWORK_CONFIG_LOGGED')) {
     log_message(
         "Network config loaded: SOLANA_NETWORK=" . SOLANA_NETWORK .
         ", RPC_ENDPOINT=" . RPC_ENDPOINT .
-        ", EXPLORER_URL=" . EXPLORER_URL . EXPLORER_QUERY,
+        ", EXPLORER_URL=" . EXPLORER_URL .
+        ", EXPLORER_QUERY=" . ($EXPLORER_QUERY !== '' ? $EXPLORER_QUERY : 'empty'),
         'make-market.log',
         'make-market',
         'INFO'
