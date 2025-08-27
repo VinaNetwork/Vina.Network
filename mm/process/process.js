@@ -4,6 +4,8 @@
 // Created by: Vina Network
 // ============================================================================
 
+import raydiumSDK from '/js/libs/raydium-sdk.js';
+
 // Hàm làm mới CSRF token khi cần thiết
 async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
     let attempt = 0;
@@ -657,64 +659,88 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 }
 
 // Execute swap transactions
-async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
-    const maxRetries = 3;
-    let attempt = 0;
-    while (attempt < maxRetries) {
-        try {
-            await ensureAuthInitialized();
-            const headers = addAuthHeaders({
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            });
-            log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/swap', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
-                credentials: 'include'
-            });
-            const responseBody = await response.text();
-            log_message(`Response from /mm/swap: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
-            if (!response.ok) {
-                let result;
-                try {
-                    result = JSON.parse(responseBody);
-                } catch (e) {
-                    result = {};
-                }
-                if (response.status === 401) {
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                    return;
-                }
-                if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                    attempt++;
-                    if (attempt === maxRetries) {
-                        throw new Error(`Failed to execute swap transactions after ${maxRetries} attempts: ${result.error}`);
-                    }
-                    await getCsrfToken();
-                    continue;
-                }
-                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
+// Hàm xử lý giao dịch với Raydium SDK
+async function getRaydiumSwapTransaction(tokenMint, solMint, amount, direction, publicKey, networkConfig) {
+    try {
+        log_message(`Preparing Raydium swap transaction: tokenMint=${tokenMint}, direction=${direction}, amount=${amount}, network=${networkConfig.network}`, 'process.log', 'make-market', 'DEBUG');
+        
+        const swapTx = await raydiumSDK.createSwapTransaction({
+            tokenMint,
+            solMint,
+            amount,
+            direction,
+            publicKey,
+            rpcEndpoint: networkConfig.rpcEndpoint,
+            slippage: networkConfig.slippage || 0.5,
+        });
+
+        log_message(`Raydium swap transaction prepared: ${swapTx.substring(0, 20)}..., network=${networkConfig.network}`, 'process.log', 'make-market', 'INFO');
+        console.log('Raydium swap transaction prepared:', swapTx);
+        return swapTx;
+    } catch (err) {
+        const errorMessage = `Raydium swap transaction failed: ${err.message}`;
+        log_message(errorMessage, 'process.log', 'make-market', 'ERROR');
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+    }
+}
+
+// Hàm thực thi swap transactions
+async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, network) {
+    try {
+        const endpoint = network === 'mainnet' ? '/mm/process/swap' : '/mm/process/swap-raydium';
+        log_message(`Executing swap transactions: transactionId=${transactionId}, endpoint=${endpoint}, network=${network}, swap_count=${swapTransactions.length}, sub_transaction_ids=${JSON.stringify(subTransactionIds)}`, 'process.log', 'make-market', 'DEBUG');
+        const headers = addAuthHeaders({
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        });
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            credentials: 'include',
+            body: JSON.stringify({
+                id: transactionId,
+                swap_transactions: swapTransactions,
+                sub_transaction_ids: subTransactionIds,
+                network
+            })
+        });
+        const responseBody = await response.text();
+        log_message(`Response from ${endpoint}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+        if (!response.ok) {
+            let result;
+            try {
+                result = JSON.parse(responseBody);
+            } catch (e) {
+                result = {};
             }
-            const result = JSON.parse(responseBody);
-            if (result.status !== 'success' && result.status !== 'partial') {
-                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
+            if (response.status === 403 && result.error === 'CSRF validation failed') {
+                await getCsrfToken();
+                throw new Error('CSRF token invalid or expired');
             }
-            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log(`Swap transactions executed:`, result);
-            return result;
-        } catch (err) {
-            log_message(`Swap execution failed: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error('Swap execution failed:', err.message);
-            if (attempt === maxRetries - 1) {
-                throw err;
-            }
-            attempt++;
-            await delay(1000 * attempt);
+            throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
         }
+        const result = JSON.parse(responseBody);
+        if (result.status !== 'success' && result.status !== 'partial') {
+            throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
+        }
+        log_message(`Swap transactions executed: transactionId=${transactionId}, status=${result.status}, message=${result.message}, provider=${result.provider}, network=${network}`, 'process.log', 'make-market', 'INFO');
+        return result;
+    } catch (err) {
+        log_message(`Failed to execute swap transactions: ${err.message}, transactionId=${transactionId}, endpoint=${endpoint}, network=${network}`, 'process.log', 'make-market', 'ERROR');
+        console.error('Failed to execute swap transactions:', err.message);
+        throw err;
+    }
+}
+
+// Hàm xử lý giao dịch chính
+async function processSwapTransaction(direction, inputMint, outputMint, amount, slippageBps, publicKey, networkConfig) {
+    if (networkConfig.swapProvider === 'raydium') {
+        return await getRaydiumSwapTransaction(inputMint, outputMint, amount, direction, publicKey, networkConfig);
+    } else {
+        const quote = await getQuote(inputMint, outputMint, amount, slippageBps, networkConfig);
+        return await getSwapTransaction(quote, publicKey, networkConfig);
     }
 }
 
@@ -728,6 +754,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await ensureAuthInitialized();
         networkConfig = await getNetworkConfig();
+        networkConfig.rpcEndpoint = networkConfig.network === 'devnet' ? 'https://api.devnet.solana.com' :
+                                   networkConfig.network === 'testnet' ? 'https://api.testnet.solana.com' :
+                                   'https://api.mainnet-beta.solana.com';
     } catch (err) {
         await showError('Failed to initialize authentication or network config: ' + err.message, err.message);
         return;
@@ -875,12 +904,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const swapTransactions = [];
 
         for (let loop = 1; loop <= loopCount; loop++) {
-            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
+            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network} using ${networkConfig.swapProvider}...`;
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
-                    const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, networkConfig);
-                    const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
+                    document.getElementById('swap-status').textContent = `Retrieving buy ${networkConfig.swapProvider} transaction for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
+                    const buyTx = await processSwapTransaction('buy', solMint, transaction.token_mint, solAmount, slippageBps, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1 || tradeDirection === 'both') {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next ${tradeDirection === 'both' ? 'buy/sell' : 'batch'} in loop ${loop}...`;
@@ -888,9 +916,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
                 if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
-                    const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, networkConfig);
-                    const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
+                    document.getElementById('swap-status').textContent = `Retrieving sell ${networkConfig.swapProvider} transaction for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
+                    const sellTx = await processSwapTransaction('sell', transaction.token_mint, solMint, tokenAmount, slippageBps, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
                     if (i < batchSize - 1) {
                         document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
@@ -904,12 +931,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}...`;
+        document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network} using ${networkConfig.swapProvider}...`;
         const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, networkConfig.network);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
-        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
-        await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
+        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network} using ${networkConfig.swapProvider}`);
+        await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network} using ${networkConfig.swapProvider}`, swapResult.results, networkConfig);
     } catch (err) {
         await showError('Error during swap process: ' + err.message, err.message);
     }
