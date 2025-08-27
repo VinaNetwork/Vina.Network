@@ -669,14 +669,14 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/swap-jupiter', {
+            const response = await fetch('/mm/swap', {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/swap-jupiter: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Response from /mm/swap: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
                 let result;
                 try {
