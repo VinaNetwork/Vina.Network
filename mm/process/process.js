@@ -521,20 +521,6 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         params.testnet = true;
     }
     try {
-        // Kiểm tra danh sách token được hỗ trợ
-        log_message(`Checking supported tokens from ${networkConfig.jupiterApi}/tokens`, 'process.log', 'make-market', 'DEBUG');
-        const tokenListResponse = await axios.get(`${networkConfig.jupiterApi}/tokens`, {
-            params: { testnet: networkConfig.network === 'devnet' },
-            timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        const supportedTokens = tokenListResponse.data.map(token => token.address);
-        log_message(`Supported tokens: ${JSON.stringify(supportedTokens)}, token_mint=${outputMint}, is_supported=${supportedTokens.includes(outputMint)}`, 'process.log', 'make-market', 'INFO');
-
-        if (!supportedTokens.includes(outputMint)) {
-            throw new Error(`Token ${outputMint} is not supported by Jupiter API`);
-        }
-
         log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         const response = await axios.get(`${networkConfig.jupiterApi}/quote`, {
             params,
@@ -555,7 +541,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         log_message(`Failed to get quote: ${errorMessage}, input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Failed to get quote:', errorMessage);
         throw new Error(errorMessage);
-    }                                                                                              
+    }
 }
 
 // Get swap transaction
@@ -698,8 +684,6 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 } catch (e) {
                     result = {};
                 }
-                const errorMessage = `HTTP ${response.status}: ${JSON.stringify(result)}`;
-                log_message(`Swap execution failed: ${errorMessage}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
                 if (response.status === 401) {
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
@@ -713,13 +697,13 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                     await getCsrfToken();
                     continue;
                 }
-                throw new Error(errorMessage);
+                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
             const result = JSON.parse(responseBody);
             if (result.status !== 'success' && result.status !== 'partial') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Swap transactions executed: status=${result.status}, results=${JSON.stringify(result.results)}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Swap transactions executed:`, result);
             return result;
         } catch (err) {
