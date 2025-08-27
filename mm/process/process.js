@@ -226,10 +226,9 @@ async function showSuccess(message, results = [], networkConfig) {
     if (results.length > 0) {
         html += '<ul>';
         results.forEach(result => {
-            const simulationNote = networkConfig.simulate ? ' (Simulated)' : '';
             html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
                 result.status === 'success' 
-                    ? `<a href="${networkConfig.explorerUrl}${result.txid}${networkConfig.explorerQuery}" target="_blank">Success (txid: ${result.txid})${simulationNote}</a>`
+                    ? `<a href="${networkConfig.explorerUrl}${result.txid}${networkConfig.explorerQuery}" target="_blank">Success (txid: ${result.txid})</a>`
                     : `Failed - ${result.message}`
             }</li>`;
         });
@@ -241,8 +240,8 @@ async function showSuccess(message, results = [], networkConfig) {
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = results.some(r => r.status === 'error') ? 'Partial' : 'Success';
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
-    log_message(`Process completed: ${message}, network=${networkConfig.network}, simulate=${networkConfig.simulate}`, 'process.log', 'make-market', 'INFO');
-    console.log(`Process completed: ${message}, network=${networkConfig.network}, simulate=${networkConfig.simulate}`);
+    log_message(`Process completed: ${message}, network=${networkConfig.network}`, 'process.log', 'make-market', 'INFO');
+    console.log(`Process completed: ${message}, network=${networkConfig.network}`);
     await clearCsrfToken(); // Xóa CSRF token khi giao dịch thành công
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
@@ -439,7 +438,7 @@ async function getNetworkConfig() {
                 log_message(`Invalid network config: explorerUrl=${result.explorerUrl || 'undefined'}, explorerQuery=${result.explorerQuery || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
                 throw new Error(`Invalid network config: missing explorerUrl or explorerQuery`);
             }
-            log_message(`Network config fetched successfully: network=${result.network}, simulate=${result.simulate}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery}, jupiterApi=${result.jupiterApi}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Network config fetched successfully: network=${result.network}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery}, jupiterApi=${result.jupiterApi}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Network config fetched successfully:`, result);
             return result;
         } catch (err) {
@@ -512,18 +511,19 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
 
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig) {
-    if (networkConfig.simulate) {
-        console.warn('Devnet detected: Using Mainnet quote for simulation');
+    const params = {
+        inputMint,
+        outputMint,
+        amount: Math.floor(amount),
+        slippageBps
+    };
+    if (networkConfig.network === 'devnet') {
+        params.testnet = true;
     }
     try {
-        log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify({ inputMint, outputMint, amount: Math.floor(amount), slippageBps })}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(`Requesting quote from Jupiter API: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, params=${JSON.stringify(params)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         const response = await axios.get(`${networkConfig.jupiterApi}/quote`, {
-            params: {
-                inputMint,
-                outputMint,
-                amount: Math.floor(amount),
-                slippageBps
-            },
+            params,
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
@@ -531,7 +531,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to retrieve quote from Jupiter API');
         }
-        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, simulate=${networkConfig.simulate}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+        log_message(`Quote retrieved: input=${inputMint}, output=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
         console.log('Quote retrieved:', response.data);
         return response.data;
     } catch (err) {
@@ -546,16 +546,14 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
 
 // Get swap transaction
 async function getSwapTransaction(quote, publicKey, networkConfig) {
-    if (networkConfig.simulate) {
-        console.warn('Devnet detected: Swap transaction will be simulated');
-    }
     try {
         const requestBody = {
             quoteResponse: quote,
             userPublicKey: publicKey,
             wrapAndUnwrapSol: true,
             dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: networkConfig.prioritizationFeeLamports
+            prioritizationFeeLamports: networkConfig.prioritizationFeeLamports,
+            testnet: networkConfig.network === 'devnet'
         };
         log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
@@ -567,7 +565,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
         }
         const { swapTransaction } = response.data;
-        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, simulate=${networkConfig.simulate}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
         console.log('Swap transaction prepared:', swapTransaction);
         return swapTransaction;
     } catch (err) {
@@ -609,7 +607,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    id: transactionId,
+                    id: transactionId, // Thêm id vào payload
                     sub_transactions: subTransactions,
                     network: solanaNetwork
                 }),
@@ -659,7 +657,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 }
 
 // Execute swap transactions
-async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork, networkConfig) {
+async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
     const maxRetries = 3;
     let attempt = 0;
     while (attempt < maxRetries) {
@@ -674,7 +672,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             const response = await fetch('/mm/swap-jupiter', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork, simulate: networkConfig.simulate }),
+                body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
                 credentials: 'include'
             });
             const responseBody = await response.text();
@@ -705,7 +703,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             if (result.status !== 'success' && result.status !== 'partial') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, simulate=${networkConfig.simulate}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log(`Swap transactions executed:`, result);
             return result;
         } catch (err) {
@@ -877,10 +875,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const swapTransactions = [];
 
         for (let loop = 1; loop <= loopCount; loop++) {
-            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}${networkConfig.simulate ? ' (Simulated)' : ''}...`;
+            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
             for (let i = 0; i < batchSize; i++) {
                 if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}${networkConfig.simulate ? ' (Simulated)' : ''}...`;
+                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
                     const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, networkConfig);
                     const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
@@ -890,7 +888,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
                 if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}${networkConfig.simulate ? ' (Simulated)' : ''}...`;
+                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
                     const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, networkConfig);
                     const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
                     swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
@@ -901,17 +899,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
             if (loop < loopCount) {
-                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop on ${networkConfig.network}${networkConfig.simulate ? ' (Simulated)' : ''}...`;
+                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop on ${networkConfig.network}...`;
                 await delay(delaySeconds);
             }
         }
 
-        document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}${networkConfig.simulate ? ' (Simulated)' : ''}...`;
-        const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, networkConfig.network, networkConfig);
+        document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}...`;
+        const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, networkConfig.network);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
-        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}${networkConfig.simulate ? ' (Simulated)' : ''}`);
-        await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}${networkConfig.simulate ? ' (Simulated)' : ''}`, swapResult.results, networkConfig);
+        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
+        await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
     } catch (err) {
         await showError('Error during swap process: ' + err.message, err.message);
     }
