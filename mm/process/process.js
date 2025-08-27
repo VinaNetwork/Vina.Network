@@ -430,7 +430,7 @@ async function getNetworkConfig() {
             if (result.status !== 'success') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            if (!result.network || !['testnet', 'mainnet', 'devnet'].includes(result.network)) {
+            if (!result.network || !['mainnet', 'devnet'].includes(result.network)) {
                 log_message(`Invalid network in response: ${result.network || 'undefined'}`, 'process.log', 'make-market', 'ERROR');
                 throw new Error(`Invalid network: ${result.network || 'undefined'}`);
             }
@@ -517,7 +517,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         amount: Math.floor(amount),
         slippageBps
     };
-    if (networkConfig.network === 'testnet' || networkConfig.network === 'devnet') {
+    if (networkConfig.network === 'devnet') {
         params.testnet = true;
     }
     try {
@@ -553,7 +553,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             wrapAndUnwrapSol: true,
             dynamicComputeUnitLimit: true,
             prioritizationFeeLamports: networkConfig.prioritizationFeeLamports,
-            testnet: networkConfig.network === 'testnet' || networkConfig.network === 'devnet'
+            testnet: networkConfig.network === 'devnet'
         };
         log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
