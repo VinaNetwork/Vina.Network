@@ -187,22 +187,22 @@ function delay(ms) {
 
 // Show error message
 async function showError(message, detailedError = null) {
-    let userFriendlyMessage = 'Đã xảy ra lỗi trong quá trình giao dịch. Vui lòng thử lại sau.';
+    let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
     
-    // Xử lý các trường hợp lỗi cụ thể để hiển thị thông báo thân thiện
+    // Handle specific error cases to display friendly messages
     if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
-        userFriendlyMessage = 'Token không thể giao dịch. Vui lòng kiểm tra tính thanh khoản của token hoặc chọn token khác.';
+        userFriendlyMessage = 'Token is not tradable. Please check the liquidity of the token or choose another token.';
     } else if (detailedError?.includes('Invalid or expired CSRF token')) {
-        userFriendlyMessage = 'Phiên của bạn đã hết hạn. Vui lòng làm mới trang để tiếp tục.';
+        userFriendlyMessage = 'Your session has expired. Please refresh the page to continue.';
     } else if (detailedError?.includes('Network Error')) {
-        userFriendlyMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet và thử lại.';
+        userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
     }
 
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
-            <strong>Lỗi:</strong> ${userFriendlyMessage}
-            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Chi tiết kỹ thuật: ${detailedError}` : ''}
+            <strong>Error:</strong> ${userFriendlyMessage}
+            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Detail: ${detailedError}` : ''}
         </div>
     `;
     resultDiv.classList.add('active');
