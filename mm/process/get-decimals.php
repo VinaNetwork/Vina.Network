@@ -80,7 +80,7 @@ if (empty($token_mint) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $token_
     exit;
 }
 
-if (!in_array($network, ['mainnet', 'testnet', 'devnet'])) {
+if (!in_array($network, ['mainnet', 'devnet'])) {
     log_message("Invalid network in get-decimals.php: $network, token_mint=$token_mint, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid network'], JSON_UNESCAPED_UNICODE);
