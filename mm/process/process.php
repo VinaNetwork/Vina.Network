@@ -265,6 +265,7 @@ $page_css = ['/mm/css/process.css'];
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <script src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
 <script src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
+<script type="module" src="/js/libs/raydium-sdk.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/raydium-sdk.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <!-- Pass environment and CSRF token to JavaScript -->
