@@ -10,6 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
+// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
 require_once $root_path . 'mm/bootstrap.php';
 
 // Return network configuration
@@ -19,7 +20,6 @@ echo json_encode([
     'network' => SOLANA_NETWORK,
     'explorerUrl' => EXPLORER_URL,
     'explorerQuery' => EXPLORER_QUERY,
-    'swapProvider' => in_array(SOLANA_NETWORK, ['devnet', 'testnet']) ? 'raydium' : 'jupiter',
     'jupiterApi' => defined('JUPITER_API') ? JUPITER_API : 'https://quote-api.jup.ag/v6',
     'solMint' => 'So11111111111111111111111111111111111111112',
     'prioritizationFeeLamports' => defined('PRIORITIZATION_FEE_LAMPORTS') ? PRIORITIZATION_FEE_LAMPORTS : 10000
