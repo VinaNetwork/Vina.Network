@@ -18,6 +18,7 @@ header('Content-Type: application/json');
 echo json_encode([
     'status' => 'success',
     'network' => SOLANA_NETWORK,
+    'simulate' => SOLANA_NETWORK === 'devnet',
     'explorerUrl' => EXPLORER_URL,
     'explorerQuery' => EXPLORER_QUERY,
     'jupiterApi' => defined('JUPITER_API') ? JUPITER_API : 'https://quote-api.jup.ag/v6',
