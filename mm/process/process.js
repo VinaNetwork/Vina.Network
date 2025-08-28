@@ -603,6 +603,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             console.error(errorMessage);
             
             // Cập nhật trạng thái giao dịch thành failed
+            await ensureAuthInitialized();
             const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
             await updateTransactionStatus('failed', errorMessage);
             
@@ -632,6 +633,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
         
         // Nếu lỗi không phải do simulationError (đã xử lý ở trên), cập nhật trạng thái và hiển thị lỗi
         if (!err.message.includes('Jupiter API simulation error')) {
+            await ensureAuthInitialized();
             const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
             await updateTransactionStatus('failed', errorMessage);
             await showError('Failed to prepare swap transaction: ' + errorMessage, errorMessage);
