@@ -11,20 +11,17 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php
 require_once $root_path . 'accounts/bootstrap.php';
 
-// Protect POST requests with CSRF
+date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
+
 csrf_protect();
 
-// Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
 }
 
-// Library Base58
 use StephenHill\Base58;
-// Generate CSRF token
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
@@ -32,10 +29,9 @@ if ($csrf_token === false) {
     log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 }
 
-// Database connection
 $start_time = microtime(true);
 try {
-    $pdo = get_db_connection(); // Use the function from config/db.php
+    $pdo = get_db_connection();
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
@@ -46,7 +42,6 @@ try {
     exit;
 }
 
-// Check session
 $public_key = $_SESSION['public_key'] ?? null;
 log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key) {
@@ -54,10 +49,8 @@ if (!$public_key) {
     header('Location: /accounts');
     exit;
 }
-// Regenerate session ID for improved security
 session_regenerate_id(true);
 
-// Validate public_key format and compute short_public_key early
 $base58 = new Base58();
 $short_public_key = 'Invalid address';
 try {
@@ -69,7 +62,6 @@ try {
     log_message("Invalid public_key format: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
 }
 
-// If public_key is invalid, redirect immediately
 if ($short_public_key === 'Invalid address') {
     log_message("Invalid public_key detected, redirecting to login", 'accounts.log', 'accounts', 'WARNING');
     header('Location: /accounts');
@@ -78,9 +70,8 @@ if ($short_public_key === 'Invalid address') {
 
 log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 
-// Fetch account info
 try {
-    $stmt = $pdo->prepare("SELECT id, public_key, created_at, last_login FROM accounts WHERE public_key = ?");
+    $stmt = $pdo->prepare("SELECT id, public_key, created_at, previous_login, last_login FROM accounts WHERE public_key = ?");
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
@@ -96,11 +87,9 @@ try {
     exit;
 }
 
-// Validate DB fields for additional sanitization
 $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Invalid date';
-$last_login = $account['last_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['last_login']) ? $account['last_login'] : 'Invalid date') : 'Never';
+$last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'Never';
 
-// Handle logout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
@@ -109,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     exit;
 }
 
-// SEO meta - Use base variables and derive others for reduced redundancy
 $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
 $page_url = BASE_URL . "accounts/profile.php";
