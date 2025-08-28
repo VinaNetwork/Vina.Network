@@ -702,28 +702,76 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             });
-            log_message(`Executing swap transactions: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            
+            // Log request details
+            log_message(
+                `Initiating swap transactions: ID=${transactionId}, attempt=${attempt + 1}/${maxRetries}, ` +
+                `swap_transactions_count=${swapTransactions.length}, sub_transaction_ids=${JSON.stringify(subTransactionIds)}, ` +
+                `network=${solanaNetwork}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}, ` +
+                `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, ` +
+                `csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`,
+                'process.log', 'make-market', 'INFO'
+            );
+
+            // Prepare request body
+            const requestBody = {
+                id: transactionId,
+                swap_transactions: swapTransactions,
+                sub_transaction_ids: subTransactionIds,
+                network: solanaNetwork
+            };
+            
+            // Log request body details
+            log_message(
+                `Sending request to /mm/swap-jupiter: body=${JSON.stringify(requestBody, (key, value) => {
+                    if (key === 'tx' && typeof value === 'string' && value.length > 20) {
+                        return value.substring(0, 20) + '...';
+                    }
+                    return value;
+                })}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'DEBUG'
+            );
+
             const response = await fetch('/mm/swap-jupiter', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ id: transactionId, swap_transactions: swapTransactions, sub_transaction_ids: subTransactionIds, network: solanaNetwork }),
+                body: JSON.stringify(requestBody),
                 credentials: 'include'
             });
+
             const responseBody = await response.text();
-            log_message(`Response from /mm/swap-jupiter: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            
+            // Log response details
+            log_message(
+                `Response from /mm/swap-jupiter: status=${response.status}, ` +
+                `headers=${JSON.stringify([...response.headers.entries()])}, ` +
+                `response_body=${responseBody.length > 1000 ? responseBody.substring(0, 1000) + '...' : responseBody}, ` +
+                `network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'DEBUG'
+            );
+
             if (!response.ok) {
                 let result;
                 try {
                     result = JSON.parse(responseBody);
                 } catch (e) {
-                    result = {};
+                    result = { error: 'Failed to parse response body' };
                 }
                 if (response.status === 401) {
+                    log_message(
+                        `Unauthorized response from /mm/swap-jupiter: redirecting to login, transactionId=${transactionId}, ` +
+                        `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                        'process.log', 'make-market', 'ERROR'
+                    );
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
                 if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
+                    log_message(
+                        `CSRF token invalid or expired for /mm/swap-jupiter, retrying with new token (attempt ${attempt + 1}/${maxRetries}), ` +
+                        `transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                        'process.log', 'make-market', 'WARNING'
+                    );
                     attempt++;
                     if (attempt === maxRetries) {
                         throw new Error(`Failed to execute swap transactions after ${maxRetries} attempts: ${result.error}`);
@@ -733,16 +781,37 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
+
             const result = JSON.parse(responseBody);
             if (result.status !== 'success' && result.status !== 'partial') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Swap transactions executed: status=${result.status}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+
+            // Log successful execution details
+            log_message(
+                `Swap transactions executed: status=${result.status}, transactionId=${transactionId}, ` +
+                `results_count=${result.results?.length || 0}, network=${solanaNetwork}, ` +
+                `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, ` +
+                `results=${JSON.stringify(result.results, (key, value) => {
+                    if (key === 'txid' && typeof value === 'string' && value.length > 20) {
+                        return value.substring(0, 20) + '...';
+                    }
+                    return value;
+                })}`,
+                'process.log', 'make-market', 'INFO'
+            );
             console.log(`Swap transactions executed:`, result);
             return result;
         } catch (err) {
-            log_message(`Swap execution failed: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error('Swap execution failed:', err.message);
+            // Log error details
+            const errorMessage = err.message || 'Unknown error';
+            log_message(
+                `Swap execution failed: error=${errorMessage}, transactionId=${transactionId}, attempt=${attempt + 1}/${maxRetries}, ` +
+                `network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, ` +
+                `stack=${err.stack || 'no stack trace'}`,
+                'process.log', 'make-market', 'ERROR'
+            );
+            console.error('Swap execution failed:', errorMessage);
             if (attempt === maxRetries - 1) {
                 throw err;
             }
