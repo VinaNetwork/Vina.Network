@@ -268,7 +268,7 @@ async function showSuccess(message, results = [], networkConfig) {
 // Update transaction status
 async function updateTransactionStatus(status, error = null) {
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -328,7 +328,7 @@ async function updateTransactionStatus(status, error = null) {
 
 // Cancel transaction
 async function cancelTransaction(transactionId) {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -402,7 +402,7 @@ async function cancelTransaction(transactionId) {
 
 // Get network configuration
 async function getNetworkConfig() {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -488,7 +488,7 @@ async function getNetworkConfig() {
 
 // Get token decimals from database
 async function getTokenDecimals(tokenMint, solanaNetwork) {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -745,7 +745,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 
 // Execute swap transactions
 async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -903,7 +903,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fetch transaction details
     let transaction, publicKey;
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -913,14 +913,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Lấy thông tin giao dịch: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/get-tx/${transactionId}`, {
+            const response = await fetch(`/mm/get-order/${transactionId}`, {
                 headers,
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Phản hồi từ /mm/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Phản hồi từ /mm/get-order/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status === 401) {
-                log_message(`Phản hồi không được phép từ /mm/get-tx/${transactionId}, chuyển hướng đến đăng nhập`, 'process.log', 'make-market', 'ERROR');
+                log_message(`Phản hồi không được phép từ /mm/get-order/${transactionId}, chuyển hướng đến đăng nhập`, 'process.log', 'make-market', 'ERROR');
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
