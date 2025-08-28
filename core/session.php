@@ -17,12 +17,12 @@ if (!defined('SESSION_STARTED')) {
         session_start([
             'cookie_lifetime' => 0,
             'use_strict_mode' => true,
-            'cookie_httponly' => true,
+            'cookie_httponly' => false,
             'cookie_samesite' => 'Lax',
             'cookie_secure' => $is_secure, // Configured in config/constants.php
-            'cookie_domain' => $domain // Configured in config/constants.php
+            'cookie_domain' => $domain     // Configured in config/constants.php
         ]);
-        define('SESSION_STARTED', true); // Mark session as started
+        define('SESSION_STARTED', true);   // Mark session as started
         log_message(
             "Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
             'bootstrap.log',
