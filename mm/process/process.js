@@ -602,8 +602,15 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
         }
         const { swapTransaction, error } = response.data;
         if (error) {
-            // Nếu API Jupiter trả về lỗi, ném lỗi ngay lập tức
-            throw new Error(`Lỗi từ Jupiter API: ${error}`);
+            // Nếu Jupiter API trả về lỗi, gọi updateTransactionStatus và showError
+            const errorMessage = `Lỗi từ Jupiter API: ${error}`;
+            log_message(`Giao dịch swap thất bại: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Giao dịch swap thất bại:', errorMessage);
+            // Cập nhật trạng thái giao dịch thành failed
+            await updateTransactionStatus('failed', errorMessage);
+            // Hiển thị thông báo lỗi cho người dùng
+            await showError('Không thể thực hiện giao dịch swap do lỗi từ Jupiter API', errorMessage);
+            throw new Error(errorMessage); // Ném lỗi để dừng quy trình
         }
         log_message(`Giao dịch swap đã được chuẩn bị: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
         console.log('Giao dịch swap đã được chuẩn bị:', swapTransaction);
@@ -614,8 +621,12 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             : `Lỗi mạng: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
         log_message(`Giao dịch swap thất bại: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Giao dịch swap thất bại:', errorMessage);
+        // Cập nhật trạng thái giao dịch thành failed
+        await updateTransactionStatus('failed', errorMessage);
+        // Hiển thị thông báo lỗi cho người dùng
+        await showError('Không thể thực hiện giao dịch swap', errorMessage);
         throw new Error(errorMessage); // Ném lỗi để dừng quy trình
-    }
+    }                                                                                                             
 }
 
 // Create sub-transaction records
