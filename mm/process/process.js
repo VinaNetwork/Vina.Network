@@ -600,13 +600,16 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
         if (response.status !== 200 || !response.data) {
             throw new Error('Không thể chuẩn bị giao dịch swap từ Jupiter API');
         }
-        const { swapTransaction, error } = response.data;
-        if (error) {
-            // Nếu Jupiter API trả về lỗi, gọi updateTransactionStatus và showError
-            const errorMessage = `Lỗi từ Jupiter API: ${error}`;
+        const { swapTransaction, error, simulationError } = response.data;
+        if (error || simulationError) {
+            // Xử lý cả lỗi trực tiếp từ API và lỗi mô phỏng (simulationError)
+            const errorMessage = error 
+                ? `Lỗi từ Jupiter API: ${error}`
+                : `Lỗi mô phỏng giao dịch: ${simulationError.error || 'Unknown simulation error'}`;
             log_message(`Giao dịch swap thất bại: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
             console.error('Giao dịch swap thất bại:', errorMessage);
             // Cập nhật trạng thái giao dịch thành failed
+            const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
             await updateTransactionStatus('failed', errorMessage);
             // Hiển thị thông báo lỗi cho người dùng
             await showError('Không thể thực hiện giao dịch swap do lỗi từ Jupiter API', errorMessage);
@@ -622,11 +625,12 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
         log_message(`Giao dịch swap thất bại: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Giao dịch swap thất bại:', errorMessage);
         // Cập nhật trạng thái giao dịch thành failed
+        const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
         await updateTransactionStatus('failed', errorMessage);
         // Hiển thị thông báo lỗi cho người dùng
         await showError('Không thể thực hiện giao dịch swap', errorMessage);
         throw new Error(errorMessage); // Ném lỗi để dừng quy trình
-    }                                                                                                             
+    }
 }
 
 // Create sub-transaction records
