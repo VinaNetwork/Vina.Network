@@ -5,7 +5,7 @@
 // ============================================================================
 
 // Hàm làm mới CSRF token khi cần thiết
-async function getCsrfToken(maxRetries = 3, retryDelay = 1000) {
+async function getCsrfToken(maxRetries = 2, retryDelay = 1000) {
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -266,7 +266,7 @@ async function showSuccess(message, results = [], networkConfig) {
 // Update transaction status
 async function updateTransactionStatus(status, error = null) {
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -326,7 +326,7 @@ async function updateTransactionStatus(status, error = null) {
 
 // Cancel transaction
 async function cancelTransaction(transactionId) {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -400,7 +400,7 @@ async function cancelTransaction(transactionId) {
 
 // Get network configuration
 async function getNetworkConfig() {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -486,7 +486,7 @@ async function getNetworkConfig() {
 
 // Get token decimals from database
 async function getTokenDecimals(tokenMint, solanaNetwork) {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -614,7 +614,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
 
 // Create sub-transaction records
 async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork) {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -692,7 +692,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 
 // Execute swap transactions
 async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -850,7 +850,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fetch transaction details
     let transaction, publicKey;
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -860,14 +860,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'X-Requested-With': 'XMLHttpRequest'
             });
             log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/get-tx/${transactionId}`, {
+            const response = await fetch(`/mm/get-order/${transactionId}`, {
                 headers,
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Response from /mm/get-order/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status === 401) {
-                log_message(`Unauthorized response from /mm/get-tx/${transactionId}, redirecting to login`, 'process.log', 'make-market', 'ERROR');
+                log_message(`Unauthorized response from /mm/get-order/${transactionId}, redirecting to login`, 'process.log', 'make-market', 'ERROR');
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
