@@ -190,32 +190,34 @@ async function showError(message, detailedError = null) {
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
     
     // Handle specific error cases to display friendly messages
-    if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
-        userFriendlyMessage = 'Token is not tradable. Please check the liquidity of the token or choose another token.';
+    if (detailedError?.includes('Attempt to debit an account but found no record of a prior credit')) {
+        userFriendlyMessage = 'Số dư ví không đủ để thực hiện giao dịch. Vui lòng nạp thêm SOL vào ví.';
+    } else if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
+        userFriendlyMessage = 'Token không thể giao dịch. Vui lòng kiểm tra thanh khoản của token hoặc chọn token khác.';
     } else if (detailedError?.includes('Invalid or expired CSRF token')) {
-        userFriendlyMessage = 'Your session has expired. Please refresh the page to continue.';
+        userFriendlyMessage = 'Phiên của bạn đã hết hạn. Vui lòng làm mới trang để tiếp tục.';
     } else if (detailedError?.includes('Network Error')) {
-        userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
+        userFriendlyMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet và thử lại.';
     }
 
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
-            <strong>Error:</strong> ${userFriendlyMessage}
-            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Detail: ${detailedError}` : ''}
+            <strong>Lỗi:</strong> ${userFriendlyMessage}
+            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Chi tiết: ${detailedError}` : ''}
         </div>
     `;
     resultDiv.classList.add('active');
     document.getElementById('swap-status').textContent = '';
-    document.getElementById('transaction-status').textContent = 'Failed';
+    document.getElementById('transaction-status').textContent = 'Thất bại';
     document.getElementById('transaction-status').classList.add('text-danger');
     
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     log_message(
-        `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+        `Quy trình dừng: ${userFriendlyMessage}${detailedError ? `, Chi tiết: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
         'process.log', 'make-market', 'ERROR'
     );
-    console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
+    console.error(`Quy trình dừng: ${userFriendlyMessage}${detailedError ? `, Chi tiết: ${detailedError}` : ''}`);
     
     await updateTransactionStatus('failed', detailedError || message);
     await clearCsrfToken();
@@ -589,26 +591,30 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             prioritizationFeeLamports: networkConfig.prioritizationFeeLamports,
             testnet: networkConfig.network === 'devnet'
         };
-        log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(`Yêu cầu giao dịch swap từ Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
             timeout: 15000,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        log_message(`Phản hồi từ ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
-            throw new Error('Failed to prepare swap transaction from Jupiter API');
+            throw new Error('Không thể chuẩn bị giao dịch swap từ Jupiter API');
         }
-        const { swapTransaction } = response.data;
-        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-        console.log('Swap transaction prepared:', swapTransaction);
+        const { swapTransaction, error } = response.data;
+        if (error) {
+            // Nếu API Jupiter trả về lỗi, ném lỗi ngay lập tức
+            throw new Error(`Lỗi từ Jupiter API: ${error}`);
+        }
+        log_message(`Giao dịch swap đã được chuẩn bị: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+        console.log('Giao dịch swap đã được chuẩn bị:', swapTransaction);
         return swapTransaction;
     } catch (err) {
         const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
-        log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-        console.error('Swap transaction failed:', errorMessage);
-        throw new Error(errorMessage);
+            : `Lỗi mạng: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
+        log_message(`Giao dịch swap thất bại: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+        console.error('Giao dịch swap thất bại:', errorMessage);
+        throw new Error(errorMessage); // Ném lỗi để dừng quy trình
     }
 }
 
@@ -627,20 +633,32 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
             for (let loop = 1; loop <= loopCount; loop++) {
                 for (let batchIndex = 0; batchIndex < batchSize; batchIndex++) {
                     if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                        // Tạo quote và swap transaction riêng cho buy
-                        const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps, networkConfig);
-                        const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
-                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'buy', swap_transaction: buyTx });
-                        swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: null, loop, batch_index: batchIndex });
-                        subTransactionIndex++;
+                        try {
+                            // Tạo quote và swap transaction riêng cho buy
+                            const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps, networkConfig);
+                            const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
+                            subTransactions.push({ loop, batch_index: batchIndex, direction: 'buy', swap_transaction: buyTx });
+                            swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: null, loop, batch_index: batchIndex });
+                            subTransactionIndex++;
+                        } catch (err) {
+                            // Dừng quy trình và thông báo lỗi nếu getSwapTransaction thất bại
+                            await showError('Không thể tạo giao dịch mua: ' + err.message, err.message);
+                            return null; // Dừng quy trình
+                        }
                     }
                     if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                        // Tạo quote và swap transaction riêng cho sell
-                        const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps, networkConfig);
-                        const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
-                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'sell', swap_transaction: sellTx });
-                        swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: null, loop, batch_index: batchIndex });
-                        subTransactionIndex++;
+                        try {
+                            // Tạo quote và swap transaction riêng cho sell
+                            const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps, networkConfig);
+                            const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
+                            subTransactions.push({ loop, batch_index: batchIndex, direction: 'sell', swap_transaction: sellTx });
+                            swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: null, loop, batch_index: batchIndex });
+                            subTransactionIndex++;
+                        } catch (err) {
+                            // Dừng quy trình và thông báo lỗi nếu getSwapTransaction thất bại
+                            await showError('Không thể tạo giao dịch bán: ' + err.message, err.message);
+                            return null; // Dừng quy trình
+                        }
                     }
                 }
             }
@@ -650,7 +668,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             });
-            log_message(`Creating sub-transactions: ID=${transactionId}, total=${subTransactions.length}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Tạo sub-transactions: ID=${transactionId}, total=${subTransactions.length}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/create-tx/${transactionId}`, {
                 method: 'POST',
                 headers,
@@ -662,7 +680,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Phản hồi từ /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (!response.ok) {
                 let result;
                 try {
@@ -672,13 +690,13 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 }
                 if (response.status === 401) {
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                    return;
+                    return null;
                 }
                 if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
+                    log_message(`CSRF token không hợp lệ hoặc hết hạn, thử lại với token mới (lần thử ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
                     attempt++;
                     if (attempt === maxRetries) {
-                        throw new Error(`Failed to create sub-transactions after ${maxRetries} attempts: ${result.error}`);
+                        throw new Error(`Không thể tạo sub-transactions sau ${maxRetries} lần thử: ${result.error}`);
                     }
                     await getCsrfToken();
                     continue;
@@ -687,25 +705,27 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
             }
             const result = JSON.parse(responseBody);
             if (result.status !== 'success') {
-                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
+                throw new Error(result.message || `Phản hồi không hợp lệ: ${JSON.stringify(result)}`);
             }
             // Gán sub_transaction_id cho swapTransactions
             for (let i = 0; i < result.sub_transaction_ids.length; i++) {
                 swapTransactions[i].sub_transaction_id = result.sub_transaction_ids[i];
             }
-            log_message(`Created ${result.sub_transaction_ids.length} sub-transactions for transaction ID=${transactionId}, IDs: ${result.sub_transaction_ids.join(',')}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log(`Created ${result.sub_transaction_ids.length} sub-transactions:`, result.sub_transaction_ids);
+            log_message(`Đã tạo ${result.sub_transaction_ids.length} sub-transactions cho transaction ID=${transactionId}, IDs: ${result.sub_transaction_ids.join(',')}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log(`Đã tạo ${result.sub_transaction_ids.length} sub-transactions:`, result.sub_transaction_ids);
             return { subTransactionIds: result.sub_transaction_ids, swapTransactions };
         } catch (err) {
-            log_message(`Failed to create sub-transactions: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error('Failed to create sub-transactions:', err.message);
+            log_message(`Không thể tạo sub-transactions: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Không thể tạo sub-transactions:', err.message);
             if (attempt === maxRetries - 1) {
-                throw err;
+                await showError('Không thể tạo sub-transactions: ' + err.message, err.message);
+                return null;
             }
             attempt++;
             await delay(1000 * attempt);
         }
     }
+    return null; // Trả về null nếu thất bại sau maxRetries
 }
 
 // Execute swap transactions
@@ -850,19 +870,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         await ensureAuthInitialized();
         networkConfig = await getNetworkConfig();
     } catch (err) {
-        await showError('Failed to initialize authentication or network config: ' + err.message, err.message);
+        await showError('Không thể khởi tạo xác thực hoặc cấu hình mạng: ' + err.message, err.message);
         return;
     }
 
     // Warn if on mainnet
     if (networkConfig.network === 'mainnet') {
-        alert('Warning: You are on Solana Mainnet. Transactions will use real funds.');
+        alert('Cảnh báo: Bạn đang ở mạng Solana Mainnet. Các giao dịch sẽ sử dụng tiền thật.');
     }
 
     // Main process
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     if (!transactionId || isNaN(transactionId)) {
-        await showError('Invalid transaction ID');
+        await showError('ID giao dịch không hợp lệ');
         return;
     }
 
@@ -877,15 +897,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             });
-            log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Lấy thông tin giao dịch: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-tx/${transactionId}`, {
                 headers,
                 credentials: 'include'
             });
             const responseBody = await response.text();
-            log_message(`Response from /mm/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Phản hồi từ /mm/get-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status === 401) {
-                log_message(`Unauthorized response from /mm/get-tx/${transactionId}, redirecting to login`, 'process.log', 'make-market', 'ERROR');
+                log_message(`Phản hồi không được phép từ /mm/get-tx/${transactionId}, chuyển hướng đến đăng nhập`, 'process.log', 'make-market', 'ERROR');
                 window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
@@ -897,10 +917,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     result = {};
                 }
                 if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
+                    log_message(`CSRF token không hợp lệ hoặc hết hạn, thử lại với token mới (lần thử ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
                     attempt++;
                     if (attempt === maxRetries) {
-                        throw new Error(`Failed to fetch transaction after ${maxRetries} attempts: ${result.error}`);
+                        throw new Error(`Không thể lấy thông tin giao dịch sau ${maxRetries} lần thử: ${result.error}`);
                     }
                     await getCsrfToken();
                     continue;
@@ -909,7 +929,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             const result = JSON.parse(responseBody);
             if (result.status !== 'success') {
-                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
+                throw new Error(result.message || `Phản hồi không hợp lệ: ${JSON.stringify(result)}`);
             }
             transaction = result.data;
             publicKey = transaction.public_key;
@@ -920,14 +940,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
             transaction.token_amount = parseFloat(transaction.token_amount) || 0;
             transaction.trade_direction = transaction.trade_direction || 'buy';
-            log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log('Transaction fetched:', transaction);
+            log_message(`Giao dịch đã được lấy: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log('Giao dịch đã được lấy:', transaction);
             break;
         } catch (err) {
-            log_message(`Failed to fetch transaction: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error('Failed to fetch transaction:', err.message);
+            log_message(`Không thể lấy thông tin giao dịch: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Không thể lấy thông tin giao dịch:', err.message);
             if (attempt === maxRetries - 1) {
-                await showError('Failed to retrieve transaction info: ' + err.message, err.message);
+                await showError('Không thể lấy thông tin giao dịch: ' + err.message, err.message);
                 return;
             }
             attempt++;
@@ -940,19 +960,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const batchSize = transaction.batch_size;
     const tradeDirection = transaction.trade_direction;
     if (isNaN(loopCount) || isNaN(batchSize) || loopCount <= 0 || batchSize <= 0) {
-        await showError('Invalid transaction parameters: loop_count or batch_size is invalid');
+        await showError('Tham số giao dịch không hợp lệ: loop_count hoặc batch_size không hợp lệ');
         return;
     }
     if (!['buy', 'sell', 'both'].includes(tradeDirection)) {
-        await showError('Invalid trade direction: ' + tradeDirection);
+        await showError('Hướng giao dịch không hợp lệ: ' + tradeDirection);
         return;
     }
     if (transaction.sol_amount <= 0 && (tradeDirection === 'buy' || tradeDirection === 'both')) {
-        await showError('SOL amount must be greater than 0 for buy or both transactions');
+        await showError('Số lượng SOL phải lớn hơn 0 cho giao dịch mua hoặc cả hai');
         return;
     }
     if (transaction.token_amount <= 0 && (tradeDirection === 'sell' || tradeDirection === 'both')) {
-        await showError('Token amount must be greater than 0 for sell or both transactions');
+        await showError('Số lượng token phải lớn hơn 0 cho giao dịch bán hoặc cả hai');
         return;
     }
 
@@ -972,7 +992,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         tokenDecimals = await getTokenDecimals(transaction.token_mint, networkConfig.network);
     } catch (err) {
-        await showError('Failed to retrieve token decimals: ' + err.message, err.message);
+        await showError('Không thể lấy số thập phân của token: ' + err.message, err.message);
         return;
     }
 
@@ -994,22 +1014,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             networkConfig,
             tokenDecimals
         );
+        if (!result) {
+            // Nếu createSubTransactions trả về null, quy trình đã dừng do lỗi
+            return;
+        }
         subTransactionIds = result.subTransactionIds;
         swapTransactions = result.swapTransactions;
     } catch (err) {
-        await showError('Failed to create sub-transactions: ' + err.message, err.message);
+        await showError('Không thể tạo sub-transactions: ' + err.message, err.message);
         return;
     }
 
     // Process swaps
     try {
-        document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}...`;
+        document.getElementById('swap-status').textContent = `Đang thực hiện giao dịch swap trên ${networkConfig.network}...`;
         const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, networkConfig.network);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
         const totalTransactions = swapTransactions.length;
-        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
-        await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
+        await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Hoàn thành ${successCount} trong số ${totalTransactions} giao dịch trên ${networkConfig.network}`);
+        await showSuccess(`Hoàn thành ${successCount} trong số ${totalTransactions} giao dịch trên ${networkConfig.network}`, swapResult.results, networkConfig);
     } catch (err) {
-        await showError('Error during swap process: ' + err.message, err.message);
+        await showError('Lỗi trong quá trình swap: ' + err.message, err.message);
     }
 });
