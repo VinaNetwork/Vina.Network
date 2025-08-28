@@ -260,26 +260,6 @@ try {
             continue;
         }
 
-        // Verify public key matches
-        $derivedPublicKey = $keypair->getPublicKey()->toBase58();
-        if ($derivedPublicKey !== $transaction['public_key']) {
-            log_message("Public key mismatch for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: derived=$derivedPublicKey, stored={$transaction['public_key']}, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Public key mismatch: derived=$derivedPublicKey, stored={$transaction['public_key']}", $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            }
-            $results[] = [
-                'loop' => $loop,
-                'batch_index' => $batch_index,
-                'direction' => $direction,
-                'status' => 'error',
-                'message' => 'Wallet address mismatch'
-            ];
-            continue;
-        }
-
         // Decode and sign transaction
         try {
             $transactionObj = Transaction::from($swap_transaction);
