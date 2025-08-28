@@ -620,7 +620,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
 
 // Create sub-transaction records
 async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork, solMint, tokenMint, solAmount, tokenAmount, slippageBps, publicKey, networkConfig, tokenDecimals) {
-    const maxRetries = 3;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
