@@ -140,22 +140,21 @@ if (count($sub_transactions) !== $expected_count) {
 $sub_transaction_ids = [];
 try {
     $pdo->beginTransaction();
-    $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, network, swap_transaction, created_at) VALUES (?, ?, ?, ?, 'pending', ?, ?, NOW())");
+    $stmt = $pdo->prepare("INSERT INTO make_market_sub (parent_id, loop_number, batch_index, direction, status, network, created_at) VALUES (?, ?, ?, ?, 'pending', ?, NOW())");
     foreach ($sub_transactions as $sub_tx) {
         $loop = isset($sub_tx['loop']) ? intval($sub_tx['loop']) : 0;
         $batch_index = isset($sub_tx['batch_index']) ? intval($sub_tx['batch_index']) : 0;
         $direction = isset($sub_tx['direction']) && in_array($sub_tx['direction'], ['buy', 'sell']) ? $sub_tx['direction'] : null;
-        $swap_transaction = isset($sub_tx['swap_transaction']) ? $sub_tx['swap_transaction'] : null;
-        if ($loop <= 0 || $batch_index < 0 || !$direction || !$swap_transaction) {
+        if ($loop <= 0 || $batch_index < 0 || !$direction) {
             $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-            log_message("Invalid sub-transaction data: loop=$loop, batch_index=$batch_index, direction=$direction, swap_transaction=" . ($swap_transaction ? 'provided' : 'missing') . ", user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
+            log_message("Invalid sub-transaction data: loop=$loop, batch_index=$batch_index, direction=$direction, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
             $pdo->rollBack();
             header('Content-Type: application/json');
             http_response_code(400);
             echo json_encode(['status' => 'error', 'message' => 'Invalid sub-transaction data'], JSON_UNESCAPED_UNICODE);
             exit;
         }
-        $stmt->execute([$transaction_id, $loop, $batch_index, $direction, SOLANA_NETWORK, $swap_transaction]);
+        $stmt->execute([$transaction_id, $loop, $batch_index, $direction, SOLANA_NETWORK]);
         $sub_transaction_ids[] = $pdo->lastInsertId();
     }
     $pdo->commit();
