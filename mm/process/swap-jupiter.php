@@ -189,55 +189,6 @@ try {
     $connection = new Connection(RPC_ENDPOINT, ['timeout' => 15]); // Thêm timeout 15 giây
     $maxRetries = 3;
 
-    // Kiểm tra số dư ví và tài khoản token trước khi xử lý giao dịch
-    try {
-        $public_key = new PublicKey($transaction['public_key']);
-        $balance = $connection->getBalance($public_key);
-        $minimum_balance = 0.2 * 1e9 + 5000; // 0.2 SOL + phí giao dịch (~0.000005 SOL)
-        if ($balance < $minimum_balance && $transaction['trade_direction'] === 'buy') {
-            $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-            log_message(
-                "Số dư ví không đủ: balance=$balance lamports, minimum_required=$minimum_balance lamports, public_key=" . $transaction['public_key'] . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
-                'process.log', 'make-market', 'ERROR', $log_context
-            );
-            header('Content-Type: application/json');
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Số dư ví không đủ để thực hiện giao dịch. Vui lòng nạp thêm SOL.'], JSON_UNESCAPED_UNICODE);
-            exit;
-        }
-
-        // Kiểm tra tài khoản token nếu giao dịch là bán
-        if ($transaction['trade_direction'] === 'sell' || $transaction['trade_direction'] === 'both') {
-            $token_mint = new PublicKey($transaction['token_mint']);
-            $token_accounts = $connection->getTokenAccountsByOwner($public_key, ['mint' => $token_mint]);
-            if (empty($token_accounts->value)) {
-                $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-                log_message(
-                    "Không tìm thấy tài khoản token cho mint=" . $transaction['token_mint'] . ", public_key=" . $transaction['public_key'] . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
-                    'process.log', 'make-market', 'ERROR', $log_context
-                );
-                header('Content-Type: application/json');
-                http_response_code(400);
-                echo json_encode(['status' => 'error', 'message' => 'Không tìm thấy tài khoản token. Vui lòng tạo tài khoản token trước khi bán.'], JSON_UNESCAPED_UNICODE);
-                exit;
-            }
-        }
-        log_message(
-            "Kiểm tra số dư và tài khoản token hoàn tất: balance=$balance lamports, public_key=" . $transaction['public_key'] . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
-            'process.log', 'make-market', 'INFO', $log_context
-        );
-    } catch (Exception $e) {
-        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message(
-            "Kiểm tra số dư hoặc tài khoản token thất bại: " . $e->getMessage() . ", public_key=" . $transaction['public_key'] . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
-            'process.log', 'make-market', 'ERROR', $log_context
-        );
-        header('Content-Type: application/json');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi khi kiểm tra số dư hoặc tài khoản token: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
     foreach ($swap_transactions as $index => $swap) {
         $direction = $swap['direction'] ?? 'buy';
         $swap_transaction = $swap['tx'] ?? '';
@@ -378,11 +329,13 @@ try {
                 break;
             } catch (Exception $e) {
                 $error_message = $e->getMessage();
+                $user_friendly_message = $error_message === "Attempt to debit an account but found no record of a prior credit"
+                    ? "Số dư ví không đủ để thực hiện giao dịch. Vui lòng nạp thêm SOL."
+                    : ($error_message === "TOKEN_NOT_TRADABLE"
+                        ? "Token không thể giao dịch. Vui lòng kiểm tra thanh khoản của token hoặc chọn token khác."
+                        : "Lỗi khi gửi giao dịch sau $maxRetries lần thử: " . $error_message);
                 log_message("Không thể gửi giao dịch cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, lần thử $attempt/$maxRetries: " . $error_message . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
                 if ($attempt === $maxRetries) {
-                    $user_friendly_message = $error_message === "Attempt to debit an account but found no record of a prior credit"
-                        ? "Số dư ví không đủ để thực hiện giao dịch. Vui lòng nạp thêm SOL."
-                        : "Lỗi khi gửi giao dịch sau $maxRetries lần thử: " . $error_message;
                     try {
                         $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
                         $stmt->execute(['failed', $user_friendly_message, $sub_transaction_id]);
@@ -437,7 +390,9 @@ try {
     $error_message = $e->getMessage();
     $user_friendly_message = $error_message === "Attempt to debit an account but found no record of a prior credit"
         ? "Số dư ví không đủ để thực hiện giao dịch. Vui lòng nạp thêm SOL."
-        : "Lỗi server không mong muốn: " . $error_message;
+        : ($error_message === "TOKEN_NOT_TRADABLE"
+            ? "Token không thể giao dịch. Vui lòng kiểm tra thanh khoản của token hoặc chọn token khác."
+            : "Lỗi server không mong muốn: " . $error_message);
     log_message(
         "Lỗi không mong muốn trong swap-jupiter.php: " . $error_message . ", transaction_id=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
         'process.log', 'make-market', 'ERROR', $log_context
