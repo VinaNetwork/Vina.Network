@@ -17,8 +17,6 @@ use Attestto\SolanaPhpSdk\Connection;
 use Attestto\SolanaPhpSdk\Keypair;
 use Attestto\SolanaPhpSdk\PublicKey;
 use Attestto\SolanaPhpSdk\Transaction;
-use Attestto\SolanaPhpSdk\Programs\SystemProgram;
-use Attestto\SolanaPhpSdk\Programs\TokenProgram;
 
 // Initialize logging context
 $log_context = [
@@ -34,27 +32,24 @@ $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message(
-        "swap.php: Yêu cầu nhận được, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", body=" . file_get_contents('php://input'),
-        'process.log', 'make-market', 'DEBUG', $log_context
-    );
+    log_message("swap.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
 // Kiểm tra phương thức POST
 if ($request_method !== 'POST') {
-    log_message("Phương thức yêu cầu không hợp lệ: $request_method, uri=$request_uri, session_id=$session_id", 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Invalid request method: $request_method, uri=$request_uri, session_id=$session_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(405);
-    echo json_encode(['status' => 'error', 'message' => 'Phương thức không được phép'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Khởi tạo session
 if (!ensure_session()) {
-    log_message("Không thể khởi tạo session, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Failed to initialize session, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Khởi tạo session thất bại'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -63,10 +58,10 @@ try {
     csrf_protect();
 } catch (Exception $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Kiểm tra CSRF thất bại: " . $e->getMessage() . ", method=$request_method, uri=$request_uri, session_id=$session_id, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("CSRF validation failed: " . $e->getMessage() . ", method=$request_method, uri=$request_uri, session_id=$session_id, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Kiểm tra CSRF thất bại'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'CSRF validation failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -79,37 +74,32 @@ $client_network = $input['network'] ?? null;
 $log_context['transaction_id'] = $transaction_id;
 $log_context['client_network'] = $client_network;
 
-log_message(
-    "Dữ liệu đầu vào nhận được: transaction_id=$transaction_id, swap_transactions_count=" . (is_array($swap_transactions) ? count($swap_transactions) : 0) . ", sub_transaction_ids=" . json_encode($sub_transaction_ids) . ", client_network=$client_network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
-    'process.log', 'make-market', 'INFO', $log_context
-);
-
 if ($transaction_id <= 0 || !is_array($swap_transactions) || !is_array($sub_transaction_ids) || count($swap_transactions) !== count($sub_transaction_ids) || !in_array($client_network, ['mainnet', 'devnet'])) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Dữ liệu đầu vào không hợp lệ: transaction_id=$transaction_id, swap_transactions=" . json_encode($swap_transactions) . ", sub_transaction_ids=" . json_encode($sub_transaction_ids) . ", client_network=$client_network, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Invalid input: transaction_id=$transaction_id, swap_transactions=" . json_encode($swap_transactions) . ", sub_transaction_ids=" . json_encode($sub_transaction_ids) . ", client_network=$client_network, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Dữ liệu giao dịch hoặc mạng không hợp lệ'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction data or network'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Check network consistency
 if ($client_network !== SOLANA_NETWORK) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Mạng không khớp: client_network=$client_network, server_network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Network mismatch: client_network=$client_network, server_network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => "Mạng không khớp: client ($client_network) vs server (" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ")"], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => "Network mismatch: client ($client_network) vs server (" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ")"], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Check RPC endpoint
 if (empty(RPC_ENDPOINT)) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("RPC_ENDPOINT trống, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("RPC_ENDPOINT is empty, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi cấu hình server: Thiếu endpoint RPC'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing RPC endpoint'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -117,13 +107,13 @@ if (empty(RPC_ENDPOINT)) {
 try {
     $pdo = get_db_connection();
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Kết nối cơ sở dữ liệu thành công, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
+    log_message("Database connection retrieved, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (Exception $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Kết nối cơ sở dữ liệu thất bại: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Database connection failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cơ sở dữ liệu'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Database connection error'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -135,22 +125,18 @@ try {
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$transaction) {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message("Giao dịch không tìm thấy, không được phép, hoặc mạng không khớp: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
+        log_message("Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
         header('Content-Type: application/json');
         http_response_code(403);
-        echo json_encode(['status' => 'error', 'message' => 'Giao dịch không tìm thấy, không được phép, hoặc mạng không khớp'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    log_message(
-        "Giao dịch đã được lấy: ID=$transaction_id, public_key=" . substr($transaction['public_key'], 0, 4) . "... , token_mint=" . $transaction['token_mint'] . ", trade_direction=" . $transaction['trade_direction'] . ", user_id=$user_id, network=" . $transaction['network'],
-        'process.log', 'make-market', 'INFO', $log_context
-    );
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Truy vấn cơ sở dữ liệu thất bại: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi khi lấy thông tin giao dịch'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -158,247 +144,233 @@ try {
 try {
     if (!defined('JWT_SECRET') || empty(JWT_SECRET)) {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message("JWT_SECRET không được định nghĩa hoặc trống, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
+        log_message("JWT_SECRET is not defined or empty, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
         header('Content-Type: application/json');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi cấu hình server'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Server configuration error'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     $private_key = openssl_decrypt($transaction['private_key'], 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
     if ($private_key === false) {
         $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message("Không thể giải mã khóa riêng, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
+        log_message("Failed to decrypt private key, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
         header('Content-Type: application/json');
         http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Không thể giải mã khóa riêng'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to decrypt private key'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    log_message("Khóa riêng đã được giải mã thành công, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
+    log_message("Private key decrypted successfully, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (Exception $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Giải mã khóa riêng thất bại: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
+    log_message("Private key decryption failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Không thể giải mã khóa riêng'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Failed to decrypt private key'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Process each transaction
-try {
-    $results = [];
-    $connection = new Connection(RPC_ENDPOINT, ['timeout' => 15]); // Thêm timeout 15 giây
-    $maxRetries = 3;
+$results = [];
+$connection = new Connection(RPC_ENDPOINT);
+$maxRetries = 3;
 
-    foreach ($swap_transactions as $index => $swap) {
-        $direction = $swap['direction'] ?? 'buy';
-        $swap_transaction = $swap['tx'] ?? '';
-        $sub_transaction_id = $sub_transaction_ids[$index] ?? 0;
-        $loop = $swap['loop'] ?? 1;
-        $batch_index = $swap['batch_index'] ?? 0;
-        $log_context['sub_transaction_id'] = $sub_transaction_id;
-        $log_context['direction'] = $direction;
-        $log_context['loop'] = $loop;
-        $log_context['batch_index'] = $batch_index;
+foreach ($swap_transactions as $index => $swap) {
+    $direction = $swap['direction'] ?? 'buy';
+    $swap_transaction = $swap['tx'] ?? '';
+    $sub_transaction_id = $sub_transaction_ids[$index] ?? 0;
+    $loop = $swap['loop'] ?? 1;
+    $batch_index = $swap['batch_index'] ?? 0;
+    $log_context['sub_transaction_id'] = $sub_transaction_id;
+    $log_context['direction'] = $direction;
+    $log_context['loop'] = $loop;
+    $log_context['batch_index'] = $batch_index;
 
-        log_message(
-            "Xử lý sub-transaction: ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, swap_transaction_length=" . strlen($swap_transaction) . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
-            'process.log', 'make-market', 'INFO', $log_context
-        );
+    if ($sub_transaction_id === 0 || empty($swap_transaction)) {
+        log_message("Invalid sub-transaction ID or swap transaction, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        $results[] = [
+            'loop' => $loop,
+            'batch_index' => $batch_index,
+            'direction' => $direction,
+            'status' => 'error',
+            'message' => 'Invalid sub-transaction ID or swap transaction'
+        ];
+        continue;
+    }
 
-        if ($sub_transaction_id === 0 || empty($swap_transaction)) {
-            log_message("ID sub-transaction hoặc swap transaction không hợp lệ, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            $results[] = [
-                'loop' => $loop,
-                'batch_index' => $batch_index,
-                'direction' => $direction,
-                'status' => 'error',
-                'message' => 'ID sub-transaction hoặc swap transaction không hợp lệ'
-            ];
-            continue;
-        }
-
-        // Decode private key
+    // Decode private key
+    try {
+        $base58 = new Base58();
+        $decoded_private_key = $base58->decode($private_key);
+    } catch (Exception $e) {
+        log_message("Failed to decode private key for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
         try {
-            $base58 = new Base58();
-            $decoded_private_key = $base58->decode($private_key);
-            log_message("Khóa riêng đã được giải mã thành công cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
-        } catch (Exception $e) {
-            log_message("Không thể giải mã khóa riêng cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+            $stmt->execute(['failed', "Failed to decode private key: " . $e->getMessage(), $sub_transaction_id]);
+        } catch (PDOException $e2) {
+            log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        }
+        $results[] = [
+            'loop' => $loop,
+            'batch_index' => $batch_index,
+            'direction' => $direction,
+            'status' => 'error',
+            'message' => 'Error processing private key'
+        ];
+        continue;
+    }
+
+    // Create keypair
+    try {
+        $keypair = Keypair::fromSecretKey($decoded_private_key);
+    } catch (Exception $e) {
+        log_message("Failed to create keypair for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        try {
+            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+            $stmt->execute(['failed', "Failed to create keypair: " . $e->getMessage(), $sub_transaction_id]);
+        } catch (PDOException $e2) {
+            log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        }
+        $results[] = [
+            'loop' => $loop,
+            'batch_index' => $batch_index,
+            'direction' => $direction,
+            'status' => 'error',
+            'message' => 'Error creating keypair'
+        ];
+        continue;
+    }
+
+    // Verify public key matches
+    $derivedPublicKey = $keypair->getPublicKey()->toBase58();
+    if ($derivedPublicKey !== $transaction['public_key']) {
+        log_message("Public key mismatch for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: derived=$derivedPublicKey, stored={$transaction['public_key']}, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        try {
+            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+            $stmt->execute(['failed', "Public key mismatch: derived=$derivedPublicKey, stored={$transaction['public_key']}", $sub_transaction_id]);
+        } catch (PDOException $e2) {
+            log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        }
+        $results[] = [
+            'loop' => $loop,
+            'batch_index' => $batch_index,
+            'direction' => $direction,
+            'status' => 'error',
+            'message' => 'Wallet address mismatch'
+        ];
+        continue;
+    }
+
+    // Decode and sign transaction
+    try {
+        $transactionObj = Transaction::from($swap_transaction);
+    } catch (Exception $e) {
+        log_message("Failed to decode transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        try {
+            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+            $stmt->execute(['failed', "Failed to decode transaction: " . $e->getMessage(), $sub_transaction_id]);
+        } catch (PDOException $e2) {
+            log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        }
+        $results[] = [
+            'loop' => $loop,
+            'batch_index' => $batch_index,
+            'direction' => $direction,
+            'status' => 'error',
+            'message' => 'Error decoding transaction'
+        ];
+        continue;
+    }
+
+    try {
+        $transactionObj->sign($keypair);
+    } catch (Exception $e) {
+        log_message("Failed to sign transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        try {
+            $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+            $stmt->execute(['failed', "Failed to sign transaction: " . $e->getMessage(), $sub_transaction_id]);
+        } catch (PDOException $e2) {
+            log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+        }
+        $results[] = [
+            'loop' => $loop,
+            'batch_index' => $batch_index,
+            'direction' => $direction,
+            'status' => 'error',
+            'message' => 'Error signing transaction'
+        ];
+        continue;
+    }
+
+    // Send transaction with retries
+    $txid = null;
+    for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+        $log_context['attempt'] = $attempt;
+        try {
+            $txid = $connection->sendRawTransaction($transactionObj->serialize());
+            log_message("Swap transaction sent for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: txid=$txid, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
             try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Không thể giải mã khóa riêng: " . $e->getMessage(), $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Không thể cập nhật trạng thái sub-transaction: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
+                $stmt->execute(['success', null, $txid, $sub_transaction_id]);
+                log_message("Sub-transaction status updated: ID=$sub_transaction_id, status=success, txid=$txid, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+            } catch (PDOException $e) {
+                log_message("Failed to update sub-transaction status: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
             }
             $results[] = [
                 'loop' => $loop,
                 'batch_index' => $batch_index,
                 'direction' => $direction,
-                'status' => 'error',
-                'message' => 'Lỗi khi xử lý khóa riêng'
+                'status' => 'success',
+                'txid' => $txid
             ];
-            continue;
-        }
-
-        // Create keypair
-        try {
-            $keypair = Keypair::fromSecretKey($decoded_private_key);
-            log_message("Keypair được tạo thành công cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+            break;
         } catch (Exception $e) {
-            log_message("Không thể tạo keypair cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Không thể tạo keypair: " . $e->getMessage(), $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Không thể cập nhật trạng thái sub-transaction: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            }
-            $results[] = [
-                'loop' => $loop,
-                'batch_index' => $batch_index,
-                'direction' => $direction,
-                'status' => 'error',
-                'message' => 'Lỗi khi tạo keypair'
-            ];
-            continue;
-        }
-
-        // Decode and sign transaction
-        try {
-            $transactionObj = Transaction::from($swap_transaction);
-            log_message("Giao dịch được giải mã thành công cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
-        } catch (Exception $e) {
-            log_message("Không thể giải mã giao dịch cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Không thể giải mã giao dịch: " . $e->getMessage(), $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Không thể cập nhật trạng thái sub-transaction: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            }
-            $results[] = [
-                'loop' => $loop,
-                'batch_index' => $batch_index,
-                'direction' => $direction,
-                'status' => 'error',
-                'message' => 'Lỗi khi giải mã giao dịch'
-            ];
-            continue;
-        }
-
-        try {
-            $transactionObj->sign($keypair);
-            log_message("Giao dịch được ký thành công cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
-        } catch (Exception $e) {
-            log_message("Không thể ký giao dịch cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            try {
-                $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                $stmt->execute(['failed', "Không thể ký giao dịch: " . $e->getMessage(), $sub_transaction_id]);
-            } catch (PDOException $e2) {
-                log_message("Không thể cập nhật trạng thái sub-transaction: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-            }
-            $results[] = [
-                'loop' => $loop,
-                'batch_index' => $batch_index,
-                'direction' => $direction,
-                'status' => 'error',
-                'message' => 'Lỗi khi ký giao dịch'
-            ];
-            continue;
-        }
-
-        // Send transaction with retries
-        $txid = null;
-        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-            $log_context['attempt'] = $attempt;
-            try {
-                $txid = $connection->sendRawTransaction($transactionObj->serialize());
-                log_message("Giao dịch swap đã được gửi cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index: txid=$txid, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
+            log_message("Failed to send transaction for sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, attempt $attempt/$maxRetries: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+            if ($attempt === $maxRetries) {
                 try {
-                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ?, txid = ? WHERE id = ?");
-                    $stmt->execute(['success', null, $txid, $sub_transaction_id]);
-                    log_message("Trạng thái sub-transaction đã được cập nhật: ID=$sub_transaction_id, status=success, txid=$txid, direction=$direction, loop=$loop, batch_index=$batch_index, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
-                } catch (PDOException $e) {
-                    log_message("Không thể cập nhật trạng thái sub-transaction: " . $e->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+                    $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
+                    $stmt->execute(['failed', "Failed to send transaction after $maxRetries attempts: " . $e->getMessage(), $sub_transaction_id]);
+                } catch (PDOException $e2) {
+                    log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
                 }
                 $results[] = [
                     'loop' => $loop,
                     'batch_index' => $batch_index,
                     'direction' => $direction,
-                    'status' => 'success',
-                    'txid' => $txid
+                    'status' => 'error',
+                    'message' => "Error sending transaction after $maxRetries attempts: " . $e->getMessage()
                 ];
-                break;
-            } catch (Exception $e) {
-                $error_message = $e->getMessage();
-                $user_friendly_message = $error_message === "Attempt to debit an account but found no record of a prior credit"
-                    ? "Số dư ví không đủ để thực hiện giao dịch. Vui lòng nạp thêm SOL."
-                    : ($error_message === "TOKEN_NOT_TRADABLE"
-                        ? "Token không thể giao dịch. Vui lòng kiểm tra thanh khoản của token hoặc chọn token khác."
-                        : "Lỗi khi gửi giao dịch sau $maxRetries lần thử: " . $error_message);
-                log_message("Không thể gửi giao dịch cho sub-transaction ID=$sub_transaction_id, direction=$direction, loop=$loop, batch_index=$batch_index, lần thử $attempt/$maxRetries: " . $error_message . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-                if ($attempt === $maxRetries) {
-                    try {
-                        $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                        $stmt->execute(['failed', $user_friendly_message, $sub_transaction_id]);
-                    } catch (PDOException $e2) {
-                        log_message("Không thể cập nhật trạng thái sub-transaction: " . $e2->getMessage() . ", user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-                    }
-                    $results[] = [
-                        'loop' => $loop,
-                        'batch_index' => $batch_index,
-                        'direction' => $direction,
-                        'status' => 'error',
-                        'message' => $user_friendly_message
-                    ];
-                }
-                if ($attempt < $maxRetries) {
-                    sleep(1 * $attempt); // Wait 1s, 2s, 3s
-                }
+            }
+            if ($attempt < $maxRetries) {
+                sleep(1 * $attempt); // Wait 1s, 2s, 3s
             }
         }
     }
+}
 
-    // Update main transaction status
-    try {
-        $success_count = count(array_filter($results, fn($r) => $r['status'] === 'success'));
-        $overall_status = $success_count === count($swap_transactions) ? 'success' : ($success_count > 0 ? 'partial' : 'failed');
-        $error_message = $success_count < count($swap_transactions) ? "Hoàn thành $success_count trong số " . count($swap_transactions) . " giao dịch" : null;
-        $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
-        $stmt->execute([$overall_status, $error_message, $transaction_id]);
-        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message(
-            "Trạng thái giao dịch chính đã được cập nhật: ID=$transaction_id, status=$overall_status, success_count=$success_count, error_message=" . ($error_message ?? 'none') . ", results=" . json_encode($results) . ", network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id",
-            'process.log', 'make-market', 'INFO', $log_context
-        );
-    } catch (PDOException $e) {
-        $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-        log_message("Không thể cập nhật trạng thái giao dịch chính: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
-        header('Content-Type: application/json');
-        http_response_code(500);
-        echo json_encode(['status' => 'error', 'message' => 'Lỗi khi cập nhật trạng thái giao dịch chính'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    // Return results
-    header('Content-Type: application/json');
-    echo json_encode([
-        'status' => $overall_status,
-        'message' => $success_count === count($swap_transactions) ? 'Tất cả giao dịch swap đã hoàn thành thành công' : "Hoàn thành $success_count trong số " . count($swap_transactions) . " giao dịch",
-        'results' => $results
-    ], JSON_UNESCAPED_UNICODE);
-} catch (Exception $e) {
+// Update main transaction status
+try {
+    $success_count = count(array_filter($results, fn($r) => $r['status'] === 'success'));
+    $overall_status = $success_count === count($swap_transactions) ? 'success' : 'partial';
+    $error_message = $success_count < count($swap_transactions) ? "Completed $success_count of " . count($swap_transactions) . " transactions" : null;
+    $stmt = $pdo->prepare("UPDATE make_market SET status = ?, error = ? WHERE id = ?");
+    $stmt->execute([$overall_status, $error_message, $transaction_id]);
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    $error_message = $e->getMessage();
-    $user_friendly_message = $error_message === "Attempt to debit an account but found no record of a prior credit"
-        ? "Số dư ví không đủ để thực hiện giao dịch. Vui lòng nạp thêm SOL."
-        : ($error_message === "TOKEN_NOT_TRADABLE"
-            ? "Token không thể giao dịch. Vui lòng kiểm tra thanh khoản của token hoặc chọn token khác."
-            : "Lỗi server không mong muốn: " . $error_message);
-    log_message(
-        "Lỗi không mong muốn trong swap-jupiter.php: " . $error_message . ", transaction_id=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'),
-        'process.log', 'make-market', 'ERROR', $log_context
-    );
+    log_message("Main transaction status updated: ID=$transaction_id, status=$overall_status, success_count=$success_count, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
+} catch (PDOException $e) {
+    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
+    log_message("Failed to update main transaction status: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $user_friendly_message], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Error updating main transaction status'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
+
+// Return results
+header('Content-Type: application/json');
+// Note: CSRF token is cleared by client-side (process.js) after transaction completion
+echo json_encode([
+    'status' => $success_count === count($swap_transactions) ? 'success' : 'partial',
+    'message' => $success_count === count($swap_transactions) ? 'All swap transactions completed successfully' : "Completed $success_count of " . count($swap_transactions) . " transactions",
+    'results' => $results
+], JSON_UNESCAPED_UNICODE);
 ?>
