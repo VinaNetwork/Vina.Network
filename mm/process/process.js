@@ -613,35 +613,49 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
 }
 
 // Create sub-transaction records
-async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork) {
+async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork, solMint, tokenMint, solAmount, tokenAmount, slippageBps, publicKey, networkConfig, tokenDecimals) {
     const maxRetries = 3;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
             await ensureAuthInitialized();
-            const totalTransactions = tradeDirection === 'both' ? loopCount * batchSize * 2 : loopCount * batchSize;
             const subTransactions = [];
+            const swapTransactions = [];
+            let subTransactionIndex = 0;
+
+            // Tạo sub-transaction và swap_transaction riêng cho mỗi loop và batch
             for (let loop = 1; loop <= loopCount; loop++) {
                 for (let batchIndex = 0; batchIndex < batchSize; batchIndex++) {
                     if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'buy' });
+                        // Tạo quote và swap transaction riêng cho buy
+                        const buyQuote = await getQuote(solMint, tokenMint, solAmount, slippageBps, networkConfig);
+                        const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
+                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'buy', swap_transaction: buyTx });
+                        swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: null, loop, batch_index: batchIndex });
+                        subTransactionIndex++;
                     }
                     if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'sell' });
+                        // Tạo quote và swap transaction riêng cho sell
+                        const sellQuote = await getQuote(tokenMint, solMint, tokenAmount, slippageBps, networkConfig);
+                        const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
+                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'sell', swap_transaction: sellTx });
+                        swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: null, loop, batch_index: batchIndex });
+                        subTransactionIndex++;
                     }
                 }
             }
+
             const headers = addAuthHeaders({
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             });
-            log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Creating sub-transactions: ID=${transactionId}, total=${subTransactions.length}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/create-tx/${transactionId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    id: transactionId, // Thêm id vào payload
+                    id: transactionId,
                     sub_transactions: subTransactions,
                     network: solanaNetwork
                 }),
@@ -675,9 +689,13 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
             if (result.status !== 'success') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            log_message(`Created ${totalTransactions} sub-transactions for transaction ID=${transactionId}, IDs: ${result.sub_transaction_ids.join(',')}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log(`Created ${totalTransactions} sub-transactions:`, result.sub_transaction_ids);
-            return result.sub_transaction_ids;
+            // Gán sub_transaction_id cho swapTransactions
+            for (let i = 0; i < result.sub_transaction_ids.length; i++) {
+                swapTransactions[i].sub_transaction_id = result.sub_transaction_ids[i];
+            }
+            log_message(`Created ${result.sub_transaction_ids.length} sub-transactions for transaction ID=${transactionId}, IDs: ${result.sub_transaction_ids.join(',')}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log(`Created ${result.sub_transaction_ids.length} sub-transactions:`, result.sub_transaction_ids);
+            return { subTransactionIds: result.sub_transaction_ids, swapTransactions };
         } catch (err) {
             log_message(`Failed to create sub-transactions: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
             console.error('Failed to create sub-transactions:', err.message);
@@ -958,11 +976,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Create sub-transaction records
-    let subTransactionIds;
-    let subTransactionIndex = 0;
+    // Create sub-transaction records and swap transactions
+    let subTransactionIds, swapTransactions;
     try {
-        subTransactionIds = await createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, networkConfig.network);
+        const result = await createSubTransactions(
+            transactionId,
+            loopCount,
+            batchSize,
+            tradeDirection,
+            networkConfig.network,
+            networkConfig.solMint,
+            transaction.token_mint,
+            transaction.sol_amount * 1e9,
+            transaction.token_amount * Math.pow(10, tokenDecimals),
+            Math.floor(transaction.slippage * 100),
+            publicKey,
+            networkConfig,
+            tokenDecimals
+        );
+        subTransactionIds = result.subTransactionIds;
+        swapTransactions = result.swapTransactions;
     } catch (err) {
         await showError('Failed to create sub-transactions: ' + err.message, err.message);
         return;
@@ -970,43 +1003,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Process swaps
     try {
-        const solMint = networkConfig.solMint;
-        const solAmount = transaction.sol_amount * 1e9;
-        const tokenAmount = transaction.token_amount * Math.pow(10, tokenDecimals);
-        const slippageBps = Math.floor(transaction.slippage * 100);
-        const delaySeconds = transaction.delay_seconds * 1000;
-        const swapTransactions = [];
-
-        for (let loop = 1; loop <= loopCount; loop++) {
-            document.getElementById('swap-status').textContent = `Preparing loop ${loop} of ${loopCount} on ${networkConfig.network}...`;
-            for (let i = 0; i < batchSize; i++) {
-                if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving buy quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
-                    const buyQuote = await getQuote(solMint, transaction.token_mint, solAmount, slippageBps, networkConfig);
-                    const buyTx = await getSwapTransaction(buyQuote, publicKey, networkConfig);
-                    swapTransactions.push({ direction: 'buy', tx: buyTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
-                    if (i < batchSize - 1 || tradeDirection === 'both') {
-                        document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next ${tradeDirection === 'both' ? 'buy/sell' : 'batch'} in loop ${loop}...`;
-                        await delay(delaySeconds);
-                    }
-                }
-                if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                    document.getElementById('swap-status').textContent = `Retrieving sell quote for loop ${loop}, batch ${i + 1} on ${networkConfig.network}...`;
-                    const sellQuote = await getQuote(transaction.token_mint, solMint, tokenAmount, slippageBps, networkConfig);
-                    const sellTx = await getSwapTransaction(sellQuote, publicKey, networkConfig);
-                    swapTransactions.push({ direction: 'sell', tx: sellTx, sub_transaction_id: subTransactionIds[subTransactionIndex++], loop, batch_index: i });
-                    if (i < batchSize - 1) {
-                        document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next batch in loop ${loop}...`;
-                        await delay(delaySeconds);
-                    }
-                }
-            }
-            if (loop < loopCount) {
-                document.getElementById('swap-status').textContent = `Waiting ${transaction.delay_seconds} seconds before next loop on ${networkConfig.network}...`;
-                await delay(delaySeconds);
-            }
-        }
-
         document.getElementById('swap-status').textContent = `Executing swap transactions on ${networkConfig.network}...`;
         const swapResult = await executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, networkConfig.network);
         const successCount = swapResult.results.filter(r => r.status === 'success').length;
