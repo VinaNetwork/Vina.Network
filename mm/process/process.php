@@ -131,6 +131,8 @@ try {
         log_message($error_message, 'process.log', 'make-market', 'ERROR', $log_context);
         // Chuyển hướng đến trang chính với thông báo lỗi
         $_SESSION['error_message'] = 'Transaction not found or you do not have permission to access it.';
+        log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
+        session_write_close();
         header('Location: /mm/error');
         exit;
     }
@@ -140,6 +142,8 @@ try {
     log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
     // Chuyển hướng đến trang chính với thông báo lỗi
     $_SESSION['error_message'] = 'Error retrieving transaction. Please try again later.';
+    log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
+    session_write_close();
     header('Location: /mm/error');
     exit;
 }
