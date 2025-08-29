@@ -27,9 +27,9 @@ $page_description = "The page you are looking for does not exist.";
 $page_keywords = "404, page not found, Vina Network";
 $page_og_title = "Page Not Found";
 $page_og_description = "The page you are looking for does not exist.";
-$page_og_url = BASE_URL . "404.php";
-$page_canonical = BASE_URL . "404.php";
-$page_css = ['css/404.css'];
+$page_og_url = BASE_URL . "404";
+$page_canonical = BASE_URL . "404";
+$page_css = ['/css/404.css'];
 ?>
 
 <!DOCTYPE html>
