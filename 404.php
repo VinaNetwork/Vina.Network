@@ -42,6 +42,12 @@ $page_css = ['/css/404.css'];
         <i class="fas fa-exclamation-triangle"></i>
         <h1>404</h1>
         <p><strong>Error:</strong> Page Not Found.</p>
+        <?php if (isset($_SESSION['error_message'])): ?>
+            <div class="alert alert-danger">
+                <?php echo htmlspecialchars($_SESSION['error_message']); ?>
+            </div>
+            <?php unset($_SESSION['error_message']); // Xóa thông báo sau khi hiển thị ?>
+        <?php endif; ?>
         <a href="/" class="cta-button">Back to Home</a>
     </div>
 </div>
