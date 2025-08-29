@@ -93,6 +93,7 @@ if (!$user_public_key) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("No public key in session, redirecting to login, user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
     $_SESSION['redirect_url'] = '/mm/process';
+    session_write_close();
     header('Location: /accounts');
     exit;
 }
