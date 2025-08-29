@@ -129,18 +129,18 @@ try {
 
         $error_message = "Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", id_exists=$id_exists, user_matches=$user_matches, network_matches=$network_matches";
         log_message($error_message, 'process.log', 'make-market', 'ERROR', $log_context);
-        header('Content-Type: application/json');
-        http_response_code(404);
-        echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
+        // Chuyển hướng đến trang chính với thông báo lỗi
+        $_SESSION['error_message'] = 'Transaction not found or you do not have permission to access it.';
+        header('Location: /404');
         exit;
     }
     log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key=" . substr($transaction['public_key'], 0, 4) . "... , trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Error retrieving transaction'], JSON_UNESCAPED_UNICODE);
+    // Chuyển hướng đến trang chính với thông báo lỗi
+    $_SESSION['error_message'] = 'Error retrieving transaction. Please try again later.';
+    header('Location: /404');
     exit;
 }
 
