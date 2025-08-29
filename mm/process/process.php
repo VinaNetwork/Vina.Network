@@ -84,6 +84,7 @@ try {
 
 // Check session for authentication
 $user_public_key = $_SESSION['public_key'] ?? null;
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     $short_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
     log_message("Session public_key: $short_user_public_key, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'DEBUG', $log_context);
