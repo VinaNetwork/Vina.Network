@@ -836,11 +836,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Warn if on mainnet
-    if (networkConfig.network === 'mainnet') {
-        alert('Warning: You are on Solana Mainnet. Transactions will use real funds.');
-    }
-
     // Main process
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     if (!transactionId || isNaN(transactionId)) {
