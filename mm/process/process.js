@@ -912,6 +912,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Check if transaction is already in a final state
+    if (['failed', 'canceled', 'success'].includes(transaction.status)) {
+        await showError(`Transaction is already in a final state: ${transaction.status}`, `Transaction ID=${transactionId} is ${transaction.status} and cannot be reprocessed`);
+        const cancelBtn = document.getElementById('cancel-btn');
+        if (cancelBtn) {
+            cancelBtn.style.display = 'none';
+        }
+        return;
+    }
+
     // Validate transaction parameters
     const loopCount = transaction.loop_count;
     const batchSize = transaction.batch_size;
