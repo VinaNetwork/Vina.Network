@@ -171,19 +171,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         return;
     }
 
-    // Warn if mainnet is selected
-    if (network === 'mainnet') {
-        const proceed = confirm('Warning: You are on Solana Mainnet. Transactions will use real funds. Do you want to proceed?');
-        if (!proceed) {
-            log_message('User canceled mainnet transaction', 'make-market.log', 'make-market', 'INFO');
-            console.log('User canceled mainnet transaction');
-            submitButton.disabled = false;
-            resultDiv.innerHTML = '';
-            resultDiv.classList.remove('active');
-            return;
-        }
-    }
-
     const params = {
         processName: formData.get('processName')?.trim() || '',
         privateKey: formData.get('privateKey')?.trim() || '',
