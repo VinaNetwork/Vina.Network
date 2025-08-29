@@ -16,7 +16,7 @@
 RewriteEngine On
 RewriteBase /
 
-// If accessing /404 then rewrite to file 404.php
+# If accessing /404 then rewrite to file 404.php
 RewriteRule ^404$ 404.php [L]
 # Redirect 301 from /404.php to /404
 RewriteCond %{THE_REQUEST} \s/404\.php[\s?] [NC]
