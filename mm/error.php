@@ -25,12 +25,15 @@ $log_context = [
 ];
 log_message("Error: Page not found - REQUEST_URI: $request_uri, session_id=$session_id, error_message=" . (isset($_SESSION['error_message']) ? $_SESSION['error_message'] : 'none'), 'make-market.log', 'make-market', 'ERROR', $log_context);
 
+// Set HTTP status code
+http_response_code(404);
+
 // SEO meta
-$page_title = "Page Not Found - Vina Network";
-$page_description = "The page you are looking for does not exist.";
-$page_keywords = "404, page not found, Vina Network";
-$page_og_title = "Page Not Found";
-$page_og_description = "The page you are looking for does not exist.";
+$page_title = "Error - Vina Network";
+$page_description = "An error occurred while accessing the Make Market tool.";
+$page_keywords = "error, make market, Vina Network";
+$page_og_title = "Error: Make Market";
+$page_og_description = "An error occurred while accessing the Make Market tool.";
 $page_og_url = BASE_URL . "mm/error";
 $page_canonical = BASE_URL . "mm/error";
 $page_css = ['/css/404.css'];
@@ -44,17 +47,14 @@ $page_css = ['/css/404.css'];
 <div class="container-404">
     <div class="content-404">
         <i class="fas fa-exclamation-triangle"></i>
-        <h1>404</h1>
-        <p><strong>Error:</strong> Page Not Found.</p>
+        <h1>Error</h1>
         <?php if (isset($_SESSION['error_message'])): ?>
             <div class="alert alert-danger">
                 <?php echo htmlspecialchars($_SESSION['error_message']); ?>
             </div>
-            <?php unset($_SESSION['error_message']); // Xóa thông báo sau khi hiển thị ?>
-        <?php else: ?>
-            <p>The page you are looking for does not exist.</p>
+            <?php unset($_SESSION['error_message']);?>  // Xóa thông báo sau khi hiển thị
         <?php endif; ?>
-        <a href="/" class="cta-button">Back to Home</a>
+        <a href="/mm" class="cta-button">Back to Make Market</a>
     </div>
 </div>
 
@@ -62,7 +62,7 @@ $page_css = ['/css/404.css'];
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts -->
-<script src="js/vina.js"></script>
+<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
