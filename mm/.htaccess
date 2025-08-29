@@ -11,3 +11,9 @@ RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC]
 RewriteRule ^get-decimals$ process/get-decimals.php [L,NC]
 RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC]
 RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC]
+
+# If accessing /error then rewrite to file error.php
+RewriteRule ^error$ error.php [L]
+# Redirect 301 from /error.php to /error
+RewriteCond %{THE_REQUEST} \s/error\.php[\s?] [NC]
+RewriteRule ^error\.php$ /error [R=301,L]
