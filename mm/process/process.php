@@ -134,6 +134,12 @@ try {
         echo json_encode(['status' => 'error', 'message' => 'Transaction not found, unauthorized, or network mismatch'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    // Check if transaction is in a final state
+    if (in_array($transaction['status'], ['failed', 'canceled', 'success'])) {
+        $show_cancel_button = false; // Ensure cancel button is not shown
+        $log_context['status'] = $transaction['status'];
+        log_message("Transaction is in final state: ID=$transaction_id, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
+    }
     log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key=" . substr($transaction['public_key'], 0, 4) . "... , trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
@@ -172,6 +178,14 @@ $page_css = ['/mm/css/process.css'];
 <div class="process-container">
     <div class="process-content">
         <h1><i class="fas fa-cogs"></i> Make Market Process</h1>
+        <?php if (in_array($transaction['status'], ['failed', 'canceled', 'success'])): ?>
+            <div class="alert alert-info">
+                <strong>Transaction Completed:</strong> This transaction is in a final state (<?php echo htmlspecialchars(ucfirst($transaction['status'])); ?>) and cannot be reprocessed.
+                <?php if ($transaction['error']): ?>
+                    <br><strong>Error Details:</strong> <?php echo htmlspecialchars($transaction['error']); ?>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
         <div class="transaction-details">
             <table class="details-table">
                 <tr>
