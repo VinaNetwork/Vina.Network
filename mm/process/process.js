@@ -595,28 +595,6 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
         log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        
-        // Kiểm tra lỗi mô phỏng
-        if (response.data.simulationError) {
-            const errorMessage = `Jupiter API simulation error: ${response.data.simulationError.error}`;
-            log_message(errorMessage, 'process.log', 'make-market', 'ERROR');
-            console.error(errorMessage);
-            
-            // Cập nhật trạng thái giao dịch thành failed
-            await ensureAuthInitialized();
-            const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-            await updateTransactionStatus('failed', errorMessage);
-            
-            // Hiển thị thông báo lỗi thân thiện
-            let userFriendlyMessage = 'Transaction failed due to insufficient account balance or uninitialized token account. Please ensure your wallet has sufficient funds.';
-            if (response.data.simulationError.error.includes('Attempt to debit an account but found no record of a prior credit')) {
-                userFriendlyMessage = 'Transaction failed: Your wallet does not have enough SOL or the token account is not initialized.';
-            }
-            
-            await showError(userFriendlyMessage, errorMessage);
-            throw new Error(errorMessage); // Dừng giao dịch
-        }
-
         if (response.status !== 200 || !response.data) {
             throw new Error('Failed to prepare swap transaction from Jupiter API');
         }
@@ -630,14 +608,6 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
         log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Swap transaction failed:', errorMessage);
-        
-        // Nếu lỗi không phải do simulationError (đã xử lý ở trên), cập nhật trạng thái và hiển thị lỗi
-        if (!err.message.includes('Jupiter API simulation error')) {
-            await ensureAuthInitialized();
-            const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-            await updateTransactionStatus('failed', errorMessage);
-            await showError('Failed to prepare swap transaction: ' + errorMessage, errorMessage);
-        }
         throw new Error(errorMessage);
     }
 }
