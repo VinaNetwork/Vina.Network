@@ -52,7 +52,7 @@ $page_css = ['/css/404.css'];
             <div class="alert alert-danger">
                 <?php echo htmlspecialchars($_SESSION['error_message']); ?>
             </div>
-            <?php unset($_SESSION['error_message']); // Xóa thông báo sau khi hiển thị ?>  
+            <?php unset($_SESSION['error_message']); // Xóa thông báo sau khi hiển thị ?>
         <?php endif; ?>
         <a href="/mm" class="cta-button">Back to Make Market</a>
     </div>
