@@ -30,12 +30,14 @@ if (!defined('SESSION_STARTED')) {
             'INFO'
         );
     } else {
-        log_message(
-            "Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
-            'bootstrap.log',
-            'logs',
-            'WARNING'
-        );
+        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+            log_message(
+                "Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
+                'bootstrap.log',
+                'logs',
+                'DEBUG'
+            );
+        }
     }
 } else {
     log_message(
