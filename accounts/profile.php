@@ -15,34 +15,50 @@ require_once $root_path . 'accounts/bootstrap.php';
 
 date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
 
-// Protect POST requests with CSRF, but handle invalid token gracefully
-try {
-    csrf_protect();
-} catch (Exception $e) {
-    log_message("CSRF validation failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'WARNING');
-    // If CSRF token is invalid, try to generate a new one
-    $csrf_token = generate_csrf_token();
-    if ($csrf_token === false) {
-        log_message("Failed to generate new CSRF token after invalid token", 'accounts.log', 'accounts', 'ERROR');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.']);
-        exit;
-    }
-    if (!set_csrf_cookie()) {
-        log_message("Failed to set new CSRF cookie after invalid token", 'accounts.log', 'accounts', 'ERROR');
-    }
-}
-
-if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
-}
-
+// Initialize CSRF token
 use StephenHill\Base58;
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-} else {
-    log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
+    exit;
+}
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+}
+log_message("CSRF token generated successfully for profile page: $csrf_token", 'accounts.log', 'accounts', 'INFO');
+
+// Check rate limit before proceeding
+try {
+    $pdo = get_db_connection();
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time > ?");
+    $stmt->execute([$ip, date('Y-m-d H:i:s', time() - 3600)]);
+    $attempt_count = $stmt->fetchColumn();
+    if ($attempt_count >= 5) {
+        log_message("Rate limit exceeded for IP: $ip, attempts: $attempt_count", 'accounts.log', 'accounts', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Too many requests. Please wait a few minutes and try again.']);
+        exit;
+    }
+} catch (PDOException $e) {
+    log_message("Rate limit check failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Database error during rate limit check']);
+    exit;
+}
+
+// Protect POST requests with CSRF
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        csrf_protect();
+    } catch (Exception $e) {
+        log_message("CSRF validation failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'WARNING');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.']);
+        exit;
+    }
 }
 
 $start_time = microtime(true);
@@ -110,19 +126,9 @@ $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['cr
 $last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'Never';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
-    // Double-check CSRF token for logout
-    try {
-        csrf_protect();
-    } catch (Exception $e) {
-        log_message("CSRF validation failed during logout: {$e->getMessage()}", 'accounts.log', 'accounts', 'WARNING');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token during logout. Please refresh the page and try again.']);
-        exit;
-    }
-
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
-    log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
+    log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     
     // Return JSON response for AJAX requests
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
