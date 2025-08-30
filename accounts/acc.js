@@ -147,13 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             body: formData
                         });
                         const retryResult = await retryResponse.json();
-                        if (retryResult.status === 'success') {
-                            window.location.href = '/accounts';
+                        if (retryResult.status === 'success' && retryResult.redirect) {
+                            console.log('Logout successful, redirecting to:', retryResult.redirect);
+                            window.location.href = retryResult.redirect;
                         } else {
                             showError(retryResult.message || 'Logout failed. Please try again.');
                         }
-                    } else if (result.status === 'success') {
-                        window.location.href = '/accounts';
+                    } else if (result.status === 'success' && result.redirect) {
+                        console.log('Logout successful, redirecting to:', result.redirect);
+                        window.location.href = result.redirect;
                     } else {
                         showError(result.message || 'Logout failed. Please try again.');
                     }
