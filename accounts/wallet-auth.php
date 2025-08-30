@@ -221,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
 
         if ($account) {
             $start_time = microtime(true);
-            // Save current last_login to previous_login
+            // Lưu last_login hiện tại vào previous_login
             $stmt = $pdo->prepare("UPDATE accounts SET previous_login = last_login, last_login = ? WHERE public_key = ?");
             $stmt->execute([$current_time, $public_key]);
             $duration = (microtime(true) - $start_time) * 1000;
@@ -230,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
             echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => $redirect_url]);
         } else {
             $start_time = microtime(true);
-            // When registering, previous_login is NULL because there is no previous login.
+            // Khi đăng ký, previous_login để NULL vì không có lần đăng nhập trước
             $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login, previous_login) VALUES (?, ?, ?, NULL)");
             $stmt->execute([$public_key, $current_time, $current_time]);
             $duration = (microtime(true) - $start_time) * 1000;
