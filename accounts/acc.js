@@ -150,12 +150,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (retryResult.status === 'success' && retryResult.redirect) {
                             console.log('Logout successful, redirecting to:', retryResult.redirect);
                             window.location.href = retryResult.redirect;
+                        } else if (retryResult.status === 'error' && retryResult.message.includes('Too many requests')) {
+                            showError('Too many requests. Please wait a few minutes and try again.');
                         } else {
                             showError(retryResult.message || 'Logout failed. Please try again.');
                         }
                     } else if (result.status === 'success' && result.redirect) {
                         console.log('Logout successful, redirecting to:', result.redirect);
                         window.location.href = result.redirect;
+                    } else if (result.status === 'error' && result.message.includes('Too many requests')) {
+                        showError('Too many requests. Please wait a few minutes and try again.');
                     } else {
                         showError(result.message || 'Logout failed. Please try again.');
                     }
@@ -283,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
                         statusSpan.textContent = 'Error: Invalid CSRF token. Please refresh the page.';
                     } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
-                        statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
+                        statusSpan.textContent = 'Error: Too many login attempts. Please wait a few minutes and try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
                         window.location.href = result.redirect;
