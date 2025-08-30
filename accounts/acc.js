@@ -171,32 +171,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
         connectWalletButton.addEventListener('click', async () => {
-            // Vô hiệu hóa nút để ngăn nhấn nhiều lần
+            // Disable button to prevent multiple clicks
             connectWalletButton.disabled = true;
             connectWalletButton.textContent = 'Connecting...';
 
-            const walletInfo = document.getElementById('wallet-info');
-            const publicKeySpan = document.getElementById('public-key');
-            const statusSpan = document.getElementById('status');
-            let csrfToken = document.getElementById('csrf-token').value || getCsrfTokenFromCookie();
-            const nonce = document.getElementById('login-nonce').value;
-
-            if (!csrfToken) {
-                logToServer('CSRF token not found in form or cookie', 'ERROR');
-                walletInfo.style.display = 'block';
-                statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
-                return;
-            }
-            await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
-
-            if (!window.isSecureContext) {
-                logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
-                walletInfo.style.display = 'block';
-                statusSpan.textContent = 'Error: Wallet connection requires HTTPS';
-                return;
-            }
-
             try {
+                const walletInfo = document.getElementById('wallet-info');
+                const publicKeySpan = document.getElementById('public-key');
+                const statusSpan = document.getElementById('status');
+                let csrfToken = document.getElementById('csrf-token').value || getCsrfTokenFromCookie();
+                const nonce = document.getElementById('login-nonce').value;
+
+                if (!csrfToken) {
+                    logToServer('CSRF token not found in form or cookie', 'ERROR');
+                    walletInfo.style.display = 'block';
+                    statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
+                    return;
+                }
+                await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
+
+                if (!window.isSecureContext) {
+                    logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
+                    walletInfo.style.display = 'block';
+                    statusSpan.textContent = 'Error: Wallet connection requires HTTPS';
+                    return;
+                }
+
                 if (window.solana && window.solana.isPhantom) {
                     statusSpan.textContent = 'Connecting wallet...';
                     await logToServer('Initiating Phantom wallet connection', 'INFO');
@@ -213,11 +213,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
+                    // Check for duplicate signature attempts
+                    if (sessionStorage.getItem('lastSignature')) {
+                        await logToServer('Duplicate signature attempt detected', 'WARNING');
+                        statusSpan.textContent = 'Error: A signature request is already in progress. Please wait.';
+                        return;
+                    }
+
                     const signature = await window.solana.signMessage(encodedMessage, 'utf8');
                     const signatureBytes = new Uint8Array(signature.signature);
                     if (signatureBytes.length !== 64) {
                         throw new Error(`Invalid signature length: ${signatureBytes.length} bytes, expected 64 bytes`);
                     }
+                    sessionStorage.setItem('lastSignature', JSON.stringify(signature));
                     const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
                     await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
@@ -260,9 +268,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusSpan.textContent = 'Error: ' + error.message;
                 walletInfo.style.display = 'block';
             } finally {
-                // Kích hoạt lại nút sau khi xử lý xong
+                // Re-enable button and clear sessionStorage
                 connectWalletButton.disabled = false;
                 connectWalletButton.textContent = 'Connect Wallet';
+                sessionStorage.removeItem('lastSignature');
             }
         });
     }
