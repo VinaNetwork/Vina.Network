@@ -171,6 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
         connectWalletButton.addEventListener('click', async () => {
+            // Vô hiệu hóa nút để ngăn nhấn nhiều lần
+            connectWalletButton.disabled = true;
+            connectWalletButton.textContent = 'Connecting...';
+
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
             const statusSpan = document.getElementById('status');
@@ -255,6 +259,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error connecting or signing:', error);
                 statusSpan.textContent = 'Error: ' + error.message;
                 walletInfo.style.display = 'block';
+            } finally {
+                // Kích hoạt lại nút sau khi xử lý xong
+                connectWalletButton.disabled = false;
+                connectWalletButton.textContent = 'Connect Wallet';
             }
         });
     }
