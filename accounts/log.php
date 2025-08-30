@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'config/logging.php';
+require_once $root_path . 'core/logging.php';
 
 // Set response header
 header('Content-Type: application/json');
@@ -25,14 +25,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WI
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
-if (!$data || !isset($data['message'], $data['level'])) {
+if (!$data || !isset($data['message'], $data['log_type'])) {
     echo json_encode(['status' => 'error', 'message' => 'Invalid log data']);
     exit;
 }
+$level = strtoupper($data['log_type']);
 
 // Log file configuration
 $log_dir = ACCOUNTS_PATH . '/logs/accounts/';
-$log_file = $log_dir . 'accounts.log';
+$log_file = $log_dir . ($data['log_file'] ?? 'accounts.log');
+if (file_exists($log_file) && filesize($log_file) >= $max_size) {
+    $new_log_file = $log_dir . basename($log_file, '.log') . '-' . date('YmdHis') . '.log';
+    if (!rename($log_file, $new_log_file)) {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to rotate log file']);
+        exit;
+    }
+    log_message("Rotated log file to $new_log_file due to size limit (10MB)", 'accounts.log', 'accounts', 'INFO');
+}
+$message = "[IP:$ip_address] [URL:{$data['url']}] [UA:{$data['userAgent']}] {$data['message']}";
+log_message($message, basename($log_file), 'accounts', $level);
 $max_size = 10 * 1024 * 1024; // 10MB in bytes
 
 // Ensure log directory exists
