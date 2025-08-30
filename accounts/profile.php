@@ -15,50 +15,18 @@ require_once $root_path . 'accounts/bootstrap.php';
 
 date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
 
-// Initialize CSRF token
+csrf_protect();
+
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+}
+
 use StephenHill\Base58;
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token']);
-    exit;
-}
-if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
-}
-log_message("CSRF token generated successfully for profile page: $csrf_token", 'accounts.log', 'accounts', 'INFO');
-
-// Check rate limit before proceeding
-try {
-    $pdo = get_db_connection();
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-    $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time > ?");
-    $stmt->execute([$ip, date('Y-m-d H:i:s', time() - 3600)]);
-    $attempt_count = $stmt->fetchColumn();
-    if ($attempt_count >= 5) {
-        log_message("Rate limit exceeded for IP: $ip, attempts: $attempt_count", 'accounts.log', 'accounts', 'ERROR');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Too many requests. Please wait a few minutes and try again.']);
-        exit;
-    }
-} catch (PDOException $e) {
-    log_message("Rate limit check failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Database error during rate limit check']);
-    exit;
-}
-
-// Protect POST requests with CSRF
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        csrf_protect();
-    } catch (Exception $e) {
-        log_message("CSRF validation failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'WARNING');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.']);
-        exit;
-    }
+} else {
+    log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 }
 
 $start_time = microtime(true);
@@ -78,8 +46,7 @@ $public_key = $_SESSION['public_key'] ?? null;
 log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'No session found', 'redirect' => '/accounts']);
+    header('Location: /accounts');
     exit;
 }
 session_regenerate_id(true);
@@ -97,8 +64,7 @@ try {
 
 if ($short_public_key === 'Invalid address') {
     log_message("Invalid public_key detected, redirecting to login", 'accounts.log', 'accounts', 'WARNING');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Invalid address', 'redirect' => '/accounts']);
+    header('Location: /accounts');
     exit;
 }
 
@@ -110,8 +76,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Account not found', 'redirect' => '/accounts']);
+        header('Location: /accounts');
         exit;
     }
     log_message("Profile accessed for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
@@ -127,17 +92,8 @@ $last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
-    session_destroy();
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
-    
-    // Return JSON response for AJAX requests
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'success', 'message' => 'Logout successful', 'redirect' => '/accounts']);
-        exit;
-    }
-    
-    // Fallback for non-AJAX requests
+    session_destroy();
     header('Location: /accounts');
     exit;
 }

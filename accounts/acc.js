@@ -102,71 +102,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (logoutForm) {
             console.log('Logout form found, attaching submit event');
             logoutForm.addEventListener('submit', async (event) => {
-                event.preventDefault(); // Prevent default form submission
                 console.log('Logout form submitted');
                 let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
 
                 if (!csrfToken) {
                     console.warn('CSRF token not found, attempting to refresh');
                     logToServer('CSRF token not found, attempting to refresh', 'WARNING');
+                    event.preventDefault(); // Prevent form submission
                     csrfToken = await refreshCsrfToken();
                     if (!csrfToken) {
                         showError('Unable to refresh CSRF token. Please refresh the page.');
                         return;
                     }
+                    // Update CSRF token and allow form submission
                     document.querySelector('input[name="csrf_token"]').value = csrfToken;
-                }
-
-                // Send logout request via AJAX
-                const formData = new FormData(logoutForm);
-                try {
-                    const response = await fetch('/accounts/profile.php', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: formData
-                    });
-                    const result = await response.json();
-                    console.log('Logout response:', result);
-                    if (result.status === 'error' && result.message.includes('Invalid or expired CSRF token')) {
-                        console.warn('Invalid CSRF token, attempting to refresh');
-                        logToServer('Invalid CSRF token during logout, attempting to refresh', 'WARNING');
-                        csrfToken = await refreshCsrfToken();
-                        if (!csrfToken) {
-                            showError('Unable to refresh CSRF token. Please refresh the page.');
-                            return;
-                        }
-                        document.querySelector('input[name="csrf_token"]').value = csrfToken;
-                        console.log('CSRF token updated, resubmitting form');
-                        const retryResponse = await fetch('/accounts/profile.php', {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: formData
-                        });
-                        const retryResult = await retryResponse.json();
-                        if (retryResult.status === 'success' && retryResult.redirect) {
-                            console.log('Logout successful, redirecting to:', retryResult.redirect);
-                            window.location.href = retryResult.redirect;
-                        } else if (retryResult.status === 'error' && retryResult.message.includes('Too many requests')) {
-                            showError('Too many requests. Please wait a few minutes and try again.');
-                        } else {
-                            showError(retryResult.message || 'Logout failed. Please try again.');
-                        }
-                    } else if (result.status === 'success' && result.redirect) {
-                        console.log('Logout successful, redirecting to:', result.redirect);
-                        window.location.href = result.redirect;
-                    } else if (result.status === 'error' && result.message.includes('Too many requests')) {
-                        showError('Too many requests. Please wait a few minutes and try again.');
-                    } else {
-                        showError(result.message || 'Logout failed. Please try again.');
-                    }
-                } catch (error) {
-                    console.error('Error during logout:', error.message);
-                    logToServer('Error during logout: ' + error.message, 'ERROR');
-                    showError('Error during logout: ' + error.message);
+                    console.log('CSRF token updated, submitting form');
+                    logoutForm.submit(); // Submit form directly
                 }
             });
         } else {
@@ -287,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
                         statusSpan.textContent = 'Error: Invalid CSRF token. Please refresh the page.';
                     } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
-                        statusSpan.textContent = 'Error: Too many login attempts. Please wait a few minutes and try again.';
+                        statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
                     } else if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Success';
                         window.location.href = result.redirect;
