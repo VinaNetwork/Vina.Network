@@ -62,7 +62,8 @@ $public_key = $_SESSION['public_key'] ?? null;
 log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
-    header('Location: /accounts');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'No session found', 'redirect' => '/accounts']);
     exit;
 }
 session_regenerate_id(true);
@@ -80,7 +81,8 @@ try {
 
 if ($short_public_key === 'Invalid address') {
     log_message("Invalid public_key detected, redirecting to login", 'accounts.log', 'accounts', 'WARNING');
-    header('Location: /accounts');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Invalid address', 'redirect' => '/accounts']);
     exit;
 }
 
@@ -92,7 +94,8 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
-        header('Location: /accounts');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Account not found', 'redirect' => '/accounts']);
         exit;
     }
     log_message("Profile accessed for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
@@ -120,6 +123,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
+    
+    // Return JSON response for AJAX requests
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'success', 'message' => 'Logout successful', 'redirect' => '/accounts']);
+        exit;
+    }
+    
+    // Fallback for non-AJAX requests
     header('Location: /accounts');
     exit;
 }
