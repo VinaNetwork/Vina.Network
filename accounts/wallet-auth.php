@@ -36,7 +36,7 @@ if ($ip_address === 'Unknown') {
     echo json_encode(['status' => 'error', 'message' => 'Unable to process request: Invalid IP address']);
     exit;
 }
-$rate_limit = 5; // Maximum 5 attempts per minute
+$rate_limit = 55; // Maximum 5 attempts per minute
 $rate_limit_window = 60; // 1 minute in seconds
 
 try {
