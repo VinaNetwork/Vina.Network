@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'core/logging.php';
+require_once $root_path . 'accounts/bootstrap.php';
 
 // Set response header
 header('Content-Type: application/json');
@@ -22,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WI
 }
 
 // Check user session (basic authorization)
-session_start();
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit;
