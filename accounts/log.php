@@ -51,24 +51,13 @@ if (!preg_match('/^[a-zA-Z0-9_-]+\.log$/', $log_file_name)) {
 }
 
 // Log file configuration
-$log_dir = ACCOUNTS_PATH . '/logs/accounts/';
+$log_dir = ACCOUNTS_PATH; // Use ACCOUNTS_PATH directly (logs/accounts/)
 $log_file = $log_dir . $log_file_name;
-$max_size = 10 * 1024 * 1024; // 10MB in bytes
 
-// Ensure log directory exists
-if (!is_dir($log_dir) && !mkdir($log_dir, 0755, true)) {
-    echo json_encode(['status' => 'error', 'message' => 'Failed to create log directory']);
+// Ensure log directory exists and rotate log file if needed
+if (!ensure_directory_and_file($log_dir, $log_file)) {
+    echo json_encode(['status' => 'error', 'message' => 'Failed to create log directory or file']);
     exit;
-}
-
-// Check and rotate log file if size exceeds 10MB
-if (file_exists($log_file) && filesize($log_file) >= $max_size) {
-    $new_log_file = $log_dir . basename($log_file, '.log') . '-' . date('YmdHis') . '.log';
-    if (!rename($log_file, $new_log_file)) {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to rotate log file']);
-        exit;
-    }
-    log_message("Rotated log file to $new_log_file due to size limit (10MB)", 'accounts.log', 'accounts', 'INFO');
 }
 
 // Get IP address safely
