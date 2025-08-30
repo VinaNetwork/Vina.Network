@@ -15,7 +15,23 @@ require_once $root_path . 'accounts/bootstrap.php';
 
 date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
 
-csrf_protect();
+// Protect POST requests with CSRF, but handle invalid token gracefully
+try {
+    csrf_protect();
+} catch (Exception $e) {
+    log_message("CSRF validation failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'WARNING');
+    // If CSRF token is invalid, try to generate a new one
+    $csrf_token = generate_csrf_token();
+    if ($csrf_token === false) {
+        log_message("Failed to generate new CSRF token after invalid token", 'accounts.log', 'accounts', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token. Please refresh the page and try again.']);
+        exit;
+    }
+    if (!set_csrf_cookie()) {
+        log_message("Failed to set new CSRF cookie after invalid token", 'accounts.log', 'accounts', 'ERROR');
+    }
+}
 
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
@@ -91,6 +107,16 @@ $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['cr
 $last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'Never';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    // Double-check CSRF token for logout
+    try {
+        csrf_protect();
+    } catch (Exception $e) {
+        log_message("CSRF validation failed during logout: {$e->getMessage()}", 'accounts.log', 'accounts', 'WARNING');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token during logout. Please refresh the page and try again.']);
+        exit;
+    }
+
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
