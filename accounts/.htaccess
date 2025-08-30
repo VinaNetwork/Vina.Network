@@ -5,3 +5,9 @@ RewriteBase /accounts/
 RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC]
 RewriteRule ^log$ log.php [L,NC]
 RewriteRule ^wallet-auth$ wallet-auth.php [L,NC]
+
+# If accessing /profile then rewrite to file profile.php
+RewriteRule ^profile$ profile.php [L]
+# Redirect 301 from /profile.php to /profile
+RewriteCond %{THE_REQUEST} \s/profile\.php[\s?] [NC]
+RewriteRule ^profile\.php$ /profile [R=301,L]
