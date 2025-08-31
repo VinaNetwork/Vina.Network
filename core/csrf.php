@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: core/csrf/csrf.php
+// File: core/csrf.php
 // Description: CSRF protection utilities for Vina Network
 // Created by: Vina Network
 // ============================================================================
@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY') && php_sapi_name() !== 'cli') {
     exit('No direct access allowed!');
 }
 
-$root_path = __DIR__ . '/../../';
+$root_path = __DIR__ . '/../';
 require_once $root_path . 'core/constants.php';
 require_once $root_path . 'core/session.php';
 
