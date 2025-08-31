@@ -6,22 +6,19 @@
 // ============================================================================
 
 ob_start();
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'accounts/bootstrap.php';
+// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php
+require_once $root_path . 'core/bootstrap.php';
+use StephenHill\Base58;
 
-date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
-
+// Protect POST requests with CSRF
 csrf_protect();
 
+// Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
 }
 
-use StephenHill\Base58;
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
