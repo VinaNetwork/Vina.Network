@@ -67,7 +67,6 @@ if ($short_public_key === 'Invalid address') {
     header('Location: /accounts');
     exit;
 }
-
 log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 
 try {
@@ -138,7 +137,7 @@ $page_css = ['/accounts/acc.css'];
             </table>
         </div>
         
-        <form method="POST" id="logout-form" action="/accounts/profile.php">
+        <form method="POST" id="logout-form" action="/accounts/profile">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
