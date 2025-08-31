@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'accounts/bootstrap.php';
+require_once $root_path . 'core/bootstrap.php';
 
 // Set response header
 header('Content-Type: application/json');
