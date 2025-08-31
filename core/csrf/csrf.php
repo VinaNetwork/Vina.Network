@@ -47,8 +47,8 @@ function ensure_session() {
                 define('SESSION_STARTED', true);
                 log_message(
                     "Session started with secure settings, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
-                    'make-market.log',
-                    'make-market',
+                    'bootstrap.log',
+                    'logs',
                     'INFO'
                 );
                 return true;
@@ -77,6 +77,7 @@ function generate_csrf_token() {
             $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(CSRF_TOKEN_LENGTH));
             $_SESSION[CSRF_TOKEN_NAME . '_created'] = time(); // Store creation time
             log_message("CSRF token generated: " . $_SESSION[CSRF_TOKEN_NAME] . ", created_at=" . $_SESSION[CSRF_TOKEN_NAME . '_created'] . ", uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'INFO');
+            session_write_close();
         }
         return $_SESSION[CSRF_TOKEN_NAME];
     } catch (Exception $e) {
