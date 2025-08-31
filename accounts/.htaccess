@@ -2,7 +2,6 @@ RewriteEngine On
 RewriteBase /accounts/
 
 # Rules for specific endpoints
-RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC]
 RewriteRule ^wallet-auth$ wallet-auth.php [L,NC]
 RewriteRule ^logout$ logout.php [L,NC]
 
