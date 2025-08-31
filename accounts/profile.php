@@ -7,7 +7,7 @@
 
 ob_start();
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php
+// constants | logging | config | error | session | database | header-auth | csrf
 require_once $root_path . 'core/bootstrap.php';
 use StephenHill\Base58;
 
@@ -97,12 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
 
 $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
-$page_url = BASE_URL . "accounts/profile.php";
+$page_url = BASE_URL . "accounts/profile";
 $page_keywords = "Vina Network, account, profile";
-$page_og_title = $page_title;
-$page_og_description = $page_description;
-$page_og_url = $page_url;
-$page_canonical = $page_url;
 $page_css = ['/accounts/acc.css'];
 ?>
 
@@ -135,7 +131,7 @@ $page_css = ['/accounts/acc.css'];
             </table>
         </div>
         
-        <form method="POST" id="logout-form" action="/accounts/profile.php">
+        <form method="POST" id="logout-form" action="/accounts/profile">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
