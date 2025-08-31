@@ -8,16 +8,23 @@
 ob_start();
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'accounts/bootstrap.php';
-
+use StephenHill\Base58;
 date_default_timezone_set('UTC');
 
-csrf_protect();
-
-if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+// Protect POST requests with CSRF
+if (!csrf_protect()) {
+    log_message("CSRF protection failed", 'accounts.log', 'accounts', 'ERROR');
+    header('HTTP/1.1 403 Forbidden');
+    exit;
 }
 
-use StephenHill\Base58;
+// Set CSRF cookie for AJAX requests
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+    header('HTTP/1.1 500 Internal Server Error');
+    exit('Failed to set CSRF cookie');
+}
+
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
