@@ -24,7 +24,7 @@ if (!set_csrf_cookie()) {
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
     log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
     // Redirect to referrer if set, otherwise to profile
-    $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile.php';
+    $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile';
     unset($_SESSION['redirect_url']); // Clear after use
     header("Location: $redirect_url");
     exit;
@@ -34,7 +34,7 @@ if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $referrer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
     // Validate referrer to prevent open redirect vulnerabilities
-    if (strpos($referrer, '/make-market') === 0 || strpos($referrer, '/other-protected-page') === 0) {
+    if (strpos($referrer, '/mm') === 0 || strpos($referrer, '/other-protected-page') === 0) {
         $_SESSION['redirect_url'] = $referrer;
         log_message("Stored referrer URL: $referrer", 'accounts.log', 'accounts', 'INFO');
     }
@@ -55,10 +55,6 @@ $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
 $page_url = BASE_URL . "accounts/";
 $page_keywords = "Vina Network, connect wallet, login, register";
-$page_og_title = $page_title;
-$page_og_description = $page_description;
-$page_og_url = $page_url;
-$page_canonical = $page_url;
 $page_css = ['/accounts/acc.css'];
 ?>
 
