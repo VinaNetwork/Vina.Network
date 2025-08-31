@@ -13,8 +13,10 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'accounts/bootstrap.php';
 use StephenHill\Base58;
 
-// Database connection
+// Initialize start_time for logging
 $start_time = microtime(true);
+
+// Database connection
 try {
     $pdo = get_db_connection();
     $duration = (microtime(true) - $start_time) * 1000;
@@ -37,6 +39,63 @@ if ($ip_address === 'Unknown') {
 }
 $rate_limit = 5;
 $rate_limit_window = 60;
+
+// Function to handle rate limiting
+function check_and_record_login_attempt($pdo, $ip, $rate_limit, $rate_limit_window) {
+    $start_time = microtime(true);
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ? AND attempt_time < ?");
+        $stmt->execute([$ip, date('Y-m-d H:i:s', time() - $rate_limit_window)]);
+        log_message("Cleaned up old login attempts for IP: $ip", 'accounts.log', 'accounts', 'INFO');
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
+        $stmt->execute([$ip, date('Y-m-d H:i:s', time() - $rate_limit_window)]);
+        $attempt_count = $stmt->fetchColumn();
+        log_message("Checked login attempts for IP: $ip, count: $attempt_count", 'accounts.log', 'accounts', 'INFO');
+
+        if ($attempt_count >= $rate_limit) {
+            $pdo->rollBack();
+            log_message("Rate limit exceeded for IP: $ip, attempts: $attempt_count", 'accounts.log', 'accounts', 'ERROR');
+            return false;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO login_attempts (ip_address, attempt_time) VALUES (?, ?)");
+        $stmt->execute([$ip, date('Y-m-d H:i:s')]);
+        $pdo->commit();
+        $duration = (microtime(true) - $start_time) * 1000;
+        log_message("Recorded login attempt for IP: $ip, attempt count: " . ($attempt_count + 1) . " (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
+        return true;
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $duration = (microtime(true) - $start_time) * 1000;
+        log_message("Rate limiting error for IP: $ip, SQL Error: {$e->getMessage()}, Code: {$e->getCode()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
+        throw $e;
+    }
+}
+
+// Function to check and update account
+function check_and_update_account($pdo, $public_key, $current_time) {
+    $start_time = microtime(true);
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO accounts (public_key, created_at, last_login, previous_login)
+            VALUES (?, ?, ?, NULL)
+            ON DUPLICATE KEY UPDATE
+                previous_login = last_login,
+                last_login = ?
+        ");
+        $stmt->execute([$public_key, $current_time, $current_time, $current_time]);
+        $short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+        $duration = (microtime(true) - $start_time) * 1000;
+        log_message("Account check and update for public_key=$short_public_key (took {$duration}ms), IP=" . $_SERVER['REMOTE_ADDR'], 'accounts.log', 'accounts', 'INFO');
+        return true;
+    } catch (PDOException $e) {
+        $duration = (microtime(true) - $start_time) * 1000;
+        log_message("Database query error for public_key=$short_public_key: {$e->getMessage()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
+        throw $e;
+    }
+}
 
 // Handle POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
@@ -174,4 +233,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     }
     exit;
 }
+
+header('Content-Type: application/json');
+echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
+exit;
 ?>
