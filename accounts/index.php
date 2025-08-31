@@ -12,7 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 // constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php
-require_once $root_path . 'accounts/bootstrap.php';
+require_once $root_path . 'core/bootstrap.php';
 
 // Protect POST requests with CSRF
 csrf_protect();
