@@ -7,7 +7,8 @@
 
 // Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
+    http_response_code(403);
+    exit('No direct access allowed!');
 }
 
 $root_path = __DIR__ . '/../';
