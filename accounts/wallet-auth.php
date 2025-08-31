@@ -28,7 +28,7 @@ try {
     exit;
 }
 
-// Rate limiting configuration
+// Rate limiting
 $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 if ($ip_address === 'Unknown') {
     log_message("Failed to retrieve IP address", 'accounts.log', 'accounts', 'ERROR');
@@ -39,44 +39,40 @@ if ($ip_address === 'Unknown') {
 $rate_limit = 5; // Maximum 5 attempts per minute
 $rate_limit_window = 60; // 1 minute in seconds
 
-// Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
-    // Log incoming POST request details
-    log_message("POST request received: public_key={$_POST['public_key']}, user_agent={$_SERVER['HTTP_USER_AGENT']}, IP=$ip_address", 'accounts.log', 'accounts', 'DEBUG');
+try {
+    // Clean up old attempts
+    $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE attempt_time < ?");
+    $stmt->execute([date('Y-m-d H:i:s', time() - $rate_limit_window)]);
+    log_message("Cleaned up old login attempts for IP: $ip_address", 'accounts.log', 'accounts', 'INFO');
 
-    // Protect POST requests with CSRF
-    csrf_protect();
+    // Count recent attempts
+    $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
+    $stmt->execute([$ip_address, date('Y-m-d H:i:s', time() - $rate_limit_window)]);
+    $attempt_count = $stmt->fetchColumn();
+    log_message("Checked login attempts for IP: $ip_address, count: $attempt_count", 'accounts.log', 'accounts', 'INFO');
 
-    // Rate limiting
-    try {
-        // Clean up old attempts
-        $stmt = $pdo->prepare("DELETE FROM login_attempts WHERE attempt_time < ?");
-        $stmt->execute([date('Y-m-d H:i:s', time() - $rate_limit_window)]);
-        log_message("Cleaned up old login attempts for IP: $ip_address", 'accounts.log', 'accounts', 'INFO');
-
-        // Count recent attempts
-        $stmt = $pdo->prepare("SELECT COUNT(*) as attempt_count FROM login_attempts WHERE ip_address = ? AND attempt_time >= ?");
-        $stmt->execute([$ip_address, date('Y-m-d H:i:s', time() - $rate_limit_window)]);
-        $attempt_count = $stmt->fetchColumn();
-        log_message("Checked login attempts for IP: $ip_address, count: $attempt_count", 'accounts.log', 'accounts', 'INFO');
-
-        if ($attempt_count >= $rate_limit) {
-            log_message("Rate limit exceeded for IP: $ip_address, attempts: $attempt_count", 'accounts.log', 'accounts', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Too many login attempts. Please wait 1 minute and try again.']);
-            exit;
-        }
-
-        // Log the current attempt
-        $stmt = $pdo->prepare("INSERT INTO login_attempts (ip_address, attempt_time) VALUES (?, ?)");
-        $stmt->execute([$ip_address, date('Y-m-d H:i:s')]);
-        log_message("Recorded login attempt for IP: $ip_address, attempt count: " . ($attempt_count + 1), 'accounts.log', 'accounts', 'INFO');
-    } catch (PDOException $e) {
-        log_message("Rate limiting error for IP: $ip_address, SQL Error: {$e->getMessage()}, Code: {$e->getCode()}", 'accounts.log', 'accounts', 'ERROR');
+    if ($attempt_count >= $rate_limit) {
+        log_message("Rate limit exceeded for IP: $ip_address, attempts: $attempt_count", 'accounts.log', 'accounts', 'ERROR');
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Rate limiting error. Please try again later.']);
+        echo json_encode(['status' => 'error', 'message' => 'Too many login attempts. Please wait 1 minute and try again.']);
         exit;
     }
+
+    // Log the current attempt
+    $stmt = $pdo->prepare("INSERT INTO login_attempts (ip_address, attempt_time) VALUES (?, ?)");
+    $stmt->execute([$ip_address, date('Y-m-d H:i:s')]);
+    log_message("Recorded login attempt for IP: $ip_address, attempt count: " . ($attempt_count + 1), 'accounts.log', 'accounts', 'INFO');
+} catch (PDOException $e) {
+    log_message("Rate limiting error for IP: $ip_address, SQL Error: {$e->getMessage()}, Code: {$e->getCode()}", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Rate limiting error. Please try again later.']);
+    exit;
+}
+
+// Handle POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
+    // Protect POST requests with CSRF
+    csrf_protect();
 
     header('Content-Type: application/json');
 
