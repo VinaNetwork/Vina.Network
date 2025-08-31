@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: core/get-logs.php
+// File: core/logs/get-logs.php
 // Description: Handles client-side logging for all modules with size limitation and enhanced security.
 // Created by: Vina Network
 // ============================================================================
