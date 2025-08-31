@@ -52,7 +52,7 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $referrer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
     if ($referrer === parse_url(BASE_URL, PHP_URL_HOST)) {
         $path = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
-        if (in_array($path, ['/make-market', '/other-protected-page'])) {
+        if (in_array($path, ['/mm', '/other-protected-page'])) {
             $_SESSION['redirect_url'] = $path;
             log_message("Stored referrer URL: $path", 'accounts.log', 'accounts', 'INFO');
         }
