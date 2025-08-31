@@ -11,7 +11,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-require_once $root_path . 'core/bootstrap.php';
+require_once $root_path . 'core/constants.php';
+require_once $root_path . 'core/session.php';
 
 // CSRF Configuration
 define('CSRF_TOKEN_NAME', 'csrf_token');
