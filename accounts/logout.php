@@ -44,7 +44,7 @@ log_message("Logout attempt for public_key: $short_public_key, IP=" . ($_SERVER[
 // Clear session
 $_SESSION = [];
 if (isset($_COOKIE[session_name()])) {
-    setcookie(session_name(), '', time() - 3600, '/', '$domain', true, true);
+    setcookie(session_name(), '', time() - 3600, '/', $domain, true, false); // Match core/session.php
 }
 session_destroy();
 
