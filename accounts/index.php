@@ -28,6 +28,15 @@ if (!set_csrf_cookie()) {
     exit;
 }
 
+// Generate CSRF token
+$csrf_token = generate_csrf_token();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Không thể tạo CSRF token']);
+    exit;
+}
+
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
     log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
@@ -46,15 +55,6 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
         $_SESSION['redirect_url'] = $referrer;
         log_message("Stored referrer URL: $referrer", 'accounts.log', 'accounts', 'INFO');
     }
-}
-
-// Generate CSRF token
-$csrf_token = generate_csrf_token();
-if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Không thể tạo CSRF token']);
-    exit;
 }
 
 // Generate nonce for anti-replay
