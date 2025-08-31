@@ -21,12 +21,15 @@ define('CSRF_TOKEN_TTL', 86400); // 24h
 
 // Check CORS header
 function set_cors_headers() {
-    global $allowed_origins;
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if (in_array($origin, $allowed_origins)) {
+    log_message("Checking CORS: origin=$origin, allowed=" . json_encode(ALLOWED_ORIGINS), 'bootstrap.log', 'logs', 'DEBUG');
+    if (in_array($origin, ALLOWED_ORIGINS)) {
         header("Access-Control-Allow-Origin: $origin");
         header("Access-Control-Allow-Methods: GET, POST");
         header("Access-Control-Allow-Headers: X-CSRF-Token, Content-Type");
+        log_message("CORS headers set for origin=$origin", 'bootstrap.log', 'logs', 'INFO');
+    } else {
+        log_message("CORS check failed: origin=$origin, allowed=" . json_encode(ALLOWED_ORIGINS), 'bootstrap.log', 'logs', 'ERROR');
     }
 }
 
