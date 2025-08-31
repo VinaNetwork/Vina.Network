@@ -15,11 +15,7 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'accounts/bootstrap.php';
 
 // Protect POST requests with CSRF
-if (!csrf_protect()) {
-    log_message("CSRF protection failed", 'accounts.log', 'accounts', 'ERROR');
-    header('HTTP/1.1 403 Forbidden');
-    exit;
-}
+csrf_protect();
 
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
