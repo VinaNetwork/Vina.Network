@@ -91,7 +91,7 @@ function rotate_log_file($log_path) {
 }
 
 // Write log entry to file
-function log_message($message, $log_file = 'app.log', $module = 'logs', $log_type = 'INFO') {
+function log_message($message, $log_file = 'bootstrap.log', $module = 'logs', $log_type = 'INFO') {
     if ($log_type === 'DEBUG' && (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development')) {
         return;
     }
