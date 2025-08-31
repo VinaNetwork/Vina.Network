@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: core/csrf/clear-csrf.php
+// File: core/clear-csrf.php
 // Description: API to clear CSRF token after transaction completion
 // Created by: Vina Network
 // ============================================================================
