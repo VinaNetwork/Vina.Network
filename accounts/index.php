@@ -18,6 +18,9 @@ csrf_protect();
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Không thể thiết lập CSRF token']);
+    exit;
 }
 
 // Check if user is already logged in
@@ -44,6 +47,9 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Không thể tạo CSRF token']);
+    exit;
 }
 
 // Generate nonce for anti-replay
@@ -65,13 +71,13 @@ $page_css = ['/accounts/acc.css'];
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="acc-container">
     <div class="acc-content">
-        <h1>Login with Phantom Wallet</h1>
-        <button class="cta-button" id="connect-wallet">Connect Wallet</button>
+        <h1>Đăng nhập bằng Phantom Wallet</h1>
+        <button class="cta-button" id="connect-wallet">Kết nối ví</button>
         <div id="wallet-info" style="display: none;">
-            <p><span id="public-key"></span></p>
-            <p><span id="status"></span></p>
+            <p><strong>Địa chỉ ví:</strong> <span id="public-key"></span></p>
+            <p><strong>Trạng thái:</strong> <span id="status"></span></p>
         </div>
-        <input type="hidden" id="csrf-token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
+        <input type="hidden" id="csrf-token" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
         <input type="hidden" id="login-nonce" value="<?php echo htmlspecialchars($nonce); ?>">
     </div>
 </div>
@@ -82,7 +88,7 @@ $page_css = ['/accounts/acc.css'];
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
