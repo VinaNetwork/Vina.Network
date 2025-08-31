@@ -17,15 +17,23 @@ csrf_protect();
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Không thể thiết lập CSRF token']);
+    exit;
 }
 
+// Generate CSRF token
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Không thể tạo CSRF token']);
+    exit;
 } else {
     log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 }
 
+// Database connection
 $start_time = microtime(true);
 try {
     $pdo = get_db_connection();
@@ -35,10 +43,11 @@ try {
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    echo json_encode(['status' => 'error', 'message' => 'Kết nối cơ sở dữ liệu thất bại']);
     exit;
 }
 
+// Check session and public key
 $public_key = $_SESSION['public_key'] ?? null;
 log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key) {
@@ -46,10 +55,13 @@ if (!$public_key) {
     header('Location: /accounts');
     exit;
 }
+
+// Regenerate session ID to prevent session fixation
 session_regenerate_id(true);
 
+// Validate public key
 $base58 = new Base58();
-$short_public_key = 'Invalid address';
+$short_public_key = 'Địa chỉ không hợp lệ';
 try {
     if (strlen($public_key) >= 8) {
         $base58->decode($public_key);
@@ -57,9 +69,11 @@ try {
     }
 } catch (Exception $e) {
     log_message("Invalid public_key format: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+    header('Location: /accounts');
+    exit;
 }
 
-if ($short_public_key === 'Invalid address') {
+if ($short_public_key === 'Địa chỉ không hợp lệ') {
     log_message("Invalid public_key detected, redirecting to login", 'accounts.log', 'accounts', 'WARNING');
     header('Location: /accounts');
     exit;
@@ -67,6 +81,7 @@ if ($short_public_key === 'Invalid address') {
 
 log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 
+// Fetch account information
 try {
     $stmt = $pdo->prepare("SELECT id, public_key, created_at, previous_login, last_login FROM accounts WHERE public_key = ?");
     $stmt->execute([$public_key]);
@@ -80,25 +95,36 @@ try {
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Error retrieving account information']);
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi khi truy xuất thông tin tài khoản']);
     exit;
 }
 
-$created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Invalid date';
-$last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'Never';
+// Format dates
+$created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Ngày không hợp lệ';
+$last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Ngày không hợp lệ') : 'Chưa từng đăng nhập';
 
+// Handle logout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
+    
+    // Clear CSRF token before destroying session
+    if (clear_csrf_token()) {
+        log_message("CSRF token cleared successfully for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
+    } else {
+        log_message("Failed to clear CSRF token for public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
+    }
+    
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
     exit;
 }
 
-$page_title = "Vina Network - Profile";
-$page_description = "View your Vina Network account information";
+// SEO meta
+$page_title = "Vina Network - Hồ sơ";
+$page_description = "Xem thông tin tài khoản Vina Network của bạn";
 $page_url = BASE_URL . "accounts/profile";
-$page_keywords = "Vina Network, account, profile";
+$page_keywords = "Vina Network, tài khoản, hồ sơ";
 $page_css = ['/accounts/acc.css'];
 ?>
 
@@ -109,31 +135,31 @@ $page_css = ['/accounts/acc.css'];
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="acc-container">
     <div class="acc-content">
-        <h1>Your Profile</h1>
+        <h1>Hồ sơ của bạn</h1>
         <div id="account-info" class="acc-info">
             <table>
                 <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr>
-                    <th>Wallet address:</th>
+                    <th>Địa chỉ ví:</th>
                     <td>
-                        <?php if ($short_public_key !== 'Invalid address'): ?>
+                        <?php if ($short_public_key !== 'Địa chỉ không hợp lệ'): ?>
                         <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
                             <?php echo htmlspecialchars($short_public_key); ?>
                         </a>
-                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+                        <i class="fas fa-copy copy-icon" title="Sao chép địa chỉ đầy đủ" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
                         <?php else: ?>
-                        <span>Invalid address</span>
+                        <span>Địa chỉ không hợp lệ</span>
                         <?php endif; ?>
                     </td>
                 </tr>
-                <tr><th>Created at:</th><td><?php echo htmlspecialchars($created_at); ?></td></tr>
-                <tr><th>Last Login:</th><td><?php echo htmlspecialchars($last_login); ?></td></tr>
+                <tr><th>Ngày tạo:</th><td><?php echo htmlspecialchars($created_at); ?></td></tr>
+                <tr><th>Lần đăng nhập trước:</th><td><?php echo htmlspecialchars($last_login); ?></td></tr>
             </table>
         </div>
         
         <form method="POST" id="logout-form" action="/accounts/profile">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
-            <button class="cta-button" type="submit" name="logout">Logout</button>
+            <button class="cta-button" type="submit" name="logout">Đăng xuất</button>
         </form>
         <div id="wallet-info" style="display: none;">
             <span id="status"></span>
@@ -144,7 +170,7 @@ $page_css = ['/accounts/acc.css'];
 
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/js/acc.js')"></script>
+<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
