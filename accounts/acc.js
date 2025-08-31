@@ -44,13 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let cookie of cookies) {
             cookie = cookie.trim();
             if (cookie.indexOf(name) === 0) {
-                const token = cookie.substring(name.length, cookie.length);
-                if (token && /^[a-zA-Z0-9]+$/.test(token)) {
-                    console.log('CSRF token found in cookie:', token.substring(0, 4) + '...');
-                    return token;
-                }
-                console.warn('Invalid CSRF token format');
-                return null;
+                console.log('CSRF token found in cookie:', cookie.substring(name.length, name.length + 4) + '...');
+                return cookie.substring(name.length, cookie.length);
             }
         }
         console.warn('CSRF token not found in cookie');
@@ -96,19 +91,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to show error messages
     function showError(message) {
         console.log('Showing error:', message);
-        const statusSpan = document.getElementById('status');
-        if (statusSpan) {
-            statusSpan.textContent = message;
-            statusSpan.style.color = 'red';
-            const walletInfo = document.getElementById('wallet-info');
-            if (walletInfo) {
-                walletInfo.style.display = 'block';
-            }
+        const statusSpan = document.getElementById('status') || document.createElement('span');
+        statusSpan.id = 'status';
+        statusSpan.textContent = message;
+        statusSpan.style.color = 'red';
+        const walletInfo = document.getElementById('wallet-info') || document.createElement('div');
+        walletInfo.id = 'wallet-info';
+        walletInfo.style.display = 'block';
+        if (!walletInfo.contains(statusSpan)) {
+            walletInfo.appendChild(statusSpan);
         }
     }
 
     // Handle logout form submission
-    const checkForm = (retries = 3) => {
+    const checkForm = () => {
         const logoutForm = document.querySelector('#logout-form');
         if (logoutForm) {
             console.log('Logout form found, attaching submit event');
@@ -154,13 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     showError('Error during logout: ' + error.message);
                 }
             });
-        } else if (retries > 0) {
-            console.warn('Logout form not found, retrying...');
-            setTimeout(() => checkForm(retries - 1), 100);
         } else {
-            console.warn('Logout form not found after max retries');
+            console.warn('Logout form not found, retrying in 100ms');
+            setTimeout(checkForm, 100);
         }
     };
+
     checkForm();
 
     // Check if running in a secure context (HTTPS)
@@ -171,8 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Function to log to server
-    async function logToServer(message, level = 'INFO', retries = 3) {
-    while (retries > 0) {
+    async function logToServer(message, level = 'INFO') {
         try {
             const logData = {
                 timestamp: new Date().toISOString(),
@@ -188,19 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(logData)
             });
             if (!response.ok) {
+                console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
                 throw new Error(`HTTP ${response.status} - ${response.statusText}`);
             }
             const result = await response.json();
             console.log(`Log server response: ${JSON.stringify(result)}`);
-            return;
         } catch (error) {
-            retries--;
-            console.error(`Failed to send log to server: ${error.message}, retries left: ${retries}`);
-            if (retries === 0) {
-                console.error('Max retries reached, logging failed');
-            }
+            console.error(`Failed to send log to server: ${error.message}`);
         }
-    }
     }
 
     // Connect wallet functionality
@@ -262,13 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Check for duplicate signature attempts
                     if (sessionStorage.getItem('lastSignature')) {
-                        const lastSignature = JSON.parse(sessionStorage.getItem('lastSignature'));
-                        if (lastSignature && Date.now() - lastSignature.timestamp < 30000) {
-                            await logToServer('Duplicate signature attempt detected', 'WARNING');
-                            statusSpan.textContent = 'Error: A signature request is already in progress. Please wait.';
-                            return;
-                        }
-                        sessionStorage.removeItem('lastSignature');
+                        await logToServer('Duplicate signature attempt detected', 'WARNING');
+                        statusSpan.textContent = 'Error: A signature request is already in progress. Please wait.';
+                        return;
                     }
 
                     const signature = await window.solana.signMessage(encodedMessage, 'utf8');
