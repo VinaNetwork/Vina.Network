@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 url: window.location.href
             };
             console.log(`Sending log to server: ${message}`);
-            const response = await fetch('/core/logs/get-logs.php', {
+            const response = await fetch('/core/get-logs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(logData)
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('csrf_token', csrfToken);
 
                     statusSpan.textContent = 'Đang gửi dữ liệu đến server...';
-                    const responseServer = await fetch('/accounts/wallet-auth.php', {
+                    const responseServer = await fetch('/accounts/wallet-auth', {
                         method: 'POST',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
