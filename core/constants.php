@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: config/constants.php
+// File: core/constants.php
 // Description: Dynamic Domain Name Definition
 // Created by: Vina Network
 // ============================================================================
