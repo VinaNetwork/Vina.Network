@@ -5,6 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
