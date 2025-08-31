@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: core/logs/get-logs.php
+// File: core/get-logs.php
 // Description: Handles client-side logging for all modules with size limitation and enhanced security.
 // Created by: Vina Network
 // ============================================================================
@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = __DIR__ . '/../../';
+$root_path = __DIR__ . '/../';
 require_once $root_path . 'core/bootstrap.php';
 
 // Set response header
