@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'accounts/bootstrap.php';
+require_once $root_path . 'core/bootstrap.php';
 
 // Ensure no output before session operations
 ob_start();
