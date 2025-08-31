@@ -62,6 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
             const result = await response.json();
             console.log('Refresh CSRF response:', result);
             if (result.status === 'success' && result.csrf_token) {
@@ -119,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     const formData = new FormData(logoutForm);
-                    formData.append('csrf_token', csrfToken);
+                    formData.set('csrf_token', csrfToken); // Use set to ensure latest token
 
                     console.log('Sending logout request with CSRF token:', csrfToken.substring(0, 4) + '...');
                     await logToServer(`Sending logout request with CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
@@ -192,6 +195,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
+        // Prevent default form submission
+        const loginForm = document.querySelector('form'); // Adjust selector if needed
+        if (loginForm) {
+            loginForm.addEventListener('submit', (event) => {
+                event.preventDefault(); // Prevent non-AJAX form submission
+                console.log('Prevented default form submission');
+            });
+        }
+
         connectWalletButton.addEventListener('click', async () => {
             // Disable button to prevent multiple clicks
             connectWalletButton.disabled = true;
@@ -207,8 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!csrfToken) {
                     showError('Error: CSRF token missing. Please refresh the page.');
                     logToServer('CSRF token refresh failed before login', 'ERROR');
-                    connectWalletButton.disabled = false;
-                    connectWalletButton.textContent = 'Connect Wallet';
                     return;
                 }
                 await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
@@ -231,7 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
-                    const nonce = document.getElementById('login-nonce').value;
+                    const nonce = document.getElementById('login-nonce')?.value;
+                    if (!nonce) {
+                        throw new Error('Login nonce missing');
+                    }
                     const message = `Verify login for Vina Network with nonce ${nonce} at ${timestamp}`;
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
@@ -261,8 +274,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('/accounts/wallet-auth', {
                         method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
                         body: formData
                     });
+
+                    if (!responseServer.ok) {
+                        throw new Error(`HTTP ${responseServer.status}: ${responseServer.statusText}`);
+                    }
 
                     const result = await responseServer.json();
                     await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
