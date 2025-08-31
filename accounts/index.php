@@ -7,8 +7,10 @@
 
 ob_start();
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php
+// constants | logging | config | error | session | database | header-auth | csrf
 require_once $root_path . 'core/bootstrap.php';
+// Connect wallet
+require_once $root_path . 'accounts/wallet-auth.php';
 
 // Protect POST requests with CSRF
 csrf_protect();
