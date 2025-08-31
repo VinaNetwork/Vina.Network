@@ -37,7 +37,7 @@ if (!$data || !isset($data['message'], $data['level'])) {
 }
 
 // Sanitize input data to prevent log injection
-$message = preg_replace("/[\r\n\t]+/", " ", $data['message']); // Loại bỏ ký tự xuống dòng
+$message = preg_replace("/[\r\n\t]+/", " ", $data['message']); // Remove newline character
 $url = filter_var($data['url'], FILTER_VALIDATE_URL) ? $data['url'] : 'Invalid URL';
 $userAgent = htmlspecialchars($data['userAgent'], ENT_QUOTES, 'UTF-8');
 $level = strtoupper($data['level']);
