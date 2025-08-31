@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon.classList.add('copied');
                 const tooltip = document.createElement('span');
                 tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
+                tooltip.textContent = 'Đã sao chép!';
                 const parent = icon.parentNode;
                 parent.style.position = 'relative';
                 parent.appendChild(tooltip);
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2000);
             }).catch(err => {
                 console.error('Clipboard API failed:', err.message);
-                showError(`Unable to copy: ${err.message}`);
+                showError(`Không thể sao chép: ${err.message}`);
             });
         });
     });
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function refreshCsrfToken() {
         console.log('Attempting to refresh CSRF token');
         try {
-            const response = await fetch('/core/csrf/refresh-csrf', {
+            const response = await fetch('/core/csrf/refresh-csrf.php', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -79,12 +79,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return result.csrf_token;
             } else {
-                throw new Error('Failed to refresh CSRF token: ' + (result.message || 'Unknown error'));
+                throw new Error('Không thể làm mới CSRF token: ' + (result.message || 'Lỗi không xác định'));
             }
         } catch (error) {
             console.error('Error refreshing CSRF token:', error.message);
             logToServer('Error refreshing CSRF token: ' + error.message, 'ERROR');
             return null;
+        }
+    }
+
+    // Function to clear CSRF token
+    async function clearCsrfToken(csrfToken) {
+        console.log('Attempting to clear CSRF token');
+        try {
+            const response = await fetch('/core/csrf/clear-csrf.php', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-Token': csrfToken
+                }
+            });
+            const result = await response.json();
+            console.log('Clear CSRF response:', result);
+            if (result.status === 'success') {
+                console.log('CSRF token cleared successfully');
+                logToServer('CSRF token cleared successfully', 'INFO');
+            } else {
+                throw new Error('Không thể xóa CSRF token: ' + (result.message || 'Lỗi không xác định'));
+            }
+        } catch (error) {
+            console.error('Error clearing CSRF token:', error.message);
+            logToServer('Error clearing CSRF token: ' + error.message, 'ERROR');
         }
     }
 
@@ -115,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Refresh CSRF token before logout
                 let csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
-                    showError('Unable to refresh CSRF token. Please refresh the page.');
+                    showError('Không thể làm mới CSRF token. Vui lòng làm mới trang.');
                     logToServer('CSRF token refresh failed before logout', 'ERROR');
                     return;
                 }
@@ -140,14 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (result.status === 'success') {
                         console.log('Logout successful, redirecting to:', result.redirect || '/accounts/');
+                        // Clear CSRF token after logout
+                        await clearCsrfToken(csrfToken);
                         window.location.href = result.redirect || '/accounts/';
                     } else {
-                        showError(result.message || 'Logout failed. Please try again.');
+                        showError(result.message || 'Đăng xuất thất bại. Vui lòng thử lại.');
                     }
                 } catch (error) {
                     console.error('Error during logout:', error.message);
                     await logToServer(`Error during logout: ${error.message}`, 'ERROR');
-                    showError('Error during logout: ' + error.message);
+                    showError('Lỗi khi đăng xuất: ' + error.message);
                 }
             });
         } else {
@@ -161,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if running in a secure context (HTTPS)
     if (!window.isSecureContext) {
         logToServer('Page not loaded over HTTPS, secure context unavailable', 'ERROR');
-        showError('Error: This page must be loaded over HTTPS');
+        showError('Lỗi: Trang này phải được tải qua HTTPS');
         return;
     }
 
@@ -207,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         connectWalletButton.addEventListener('click', async () => {
             // Disable button to prevent multiple clicks
             connectWalletButton.disabled = true;
-            connectWalletButton.textContent = 'Connecting...';
+            connectWalletButton.textContent = 'Đang kết nối...';
 
             const walletInfo = document.getElementById('wallet-info');
             const publicKeySpan = document.getElementById('public-key');
@@ -217,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Refresh CSRF token before login
                 let csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
-                    showError('Error: CSRF token missing. Please refresh the page.');
+                    showError('Lỗi: Thiếu CSRF token. Vui lòng làm mới trang.');
                     logToServer('CSRF token refresh failed before login', 'ERROR');
                     return;
                 }
@@ -225,25 +252,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!window.isSecureContext) {
                     logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
-                    showError('Error: Wallet connection requires HTTPS');
+                    showError('Lỗi: Kết nối ví yêu cầu HTTPS');
                     return;
                 }
 
                 if (window.solana && window.solana.isPhantom) {
-                    statusSpan.textContent = 'Connecting wallet...';
+                    statusSpan.textContent = 'Đang kết nối ví...';
                     await logToServer('Initiating Phantom wallet connection', 'INFO');
                     const response = await window.solana.connect();
                     const publicKey = response.publicKey.toString();
                     const shortPublicKey = publicKey.length >= 8 ? publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4) : 'Invalid';
                     publicKeySpan.textContent = publicKey;
                     walletInfo.style.display = 'block';
-                    statusSpan.textContent = 'Wallet connected! Signing message...';
+                    statusSpan.textContent = 'Ví đã kết nối! Đang ký thông điệp...';
                     await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
                     const nonce = document.getElementById('login-nonce')?.value;
                     if (!nonce) {
-                        throw new Error('Login nonce missing');
+                        throw new Error('Thiếu nonce đăng nhập');
                     }
                     const message = `Verify login for Vina Network with nonce ${nonce} at ${timestamp}`;
                     const encodedMessage = new TextEncoder().encode(message);
@@ -252,14 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Check for duplicate signature attempts
                     if (sessionStorage.getItem('lastSignature')) {
                         await logToServer('Duplicate signature attempt detected', 'WARNING');
-                        statusSpan.textContent = 'Error: A signature request is already in progress. Please wait.';
+                        statusSpan.textContent = 'Lỗi: Một yêu cầu ký đang được xử lý. Vui lòng đợi.';
                         return;
                     }
 
                     const signature = await window.solana.signMessage(encodedMessage, 'utf8');
                     const signatureBytes = new Uint8Array(signature.signature);
                     if (signatureBytes.length !== 64) {
-                        throw new Error(`Invalid signature length: ${signatureBytes.length} bytes, expected 64 bytes`);
+                        throw new Error(`Độ dài chữ ký không hợp lệ: ${signatureBytes.length} byte, cần 64 byte`);
                     }
                     sessionStorage.setItem('lastSignature', JSON.stringify(signature));
                     const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
@@ -271,11 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('message', message);
                     formData.append('csrf_token', csrfToken);
 
-                    statusSpan.textContent = 'Sending data to server...';
-                    const responseServer = await fetch('/accounts/wallet-auth', {
+                    statusSpan.textContent = 'Đang gửi dữ liệu đến server...';
+                    const responseServer = await fetch('/accounts/wallet-auth.php', {
                         method: 'POST',
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-Token': csrfToken
                         },
                         body: formData
                     });
@@ -288,24 +316,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
 
                     if (result.status === 'success' && result.redirect) {
-                        statusSpan.textContent = result.message || 'Login successful, redirecting...';
+                        // Update CSRF token if provided
+                        if (result.csrf_token) {
+                            const csrfInput = document.querySelector('input[name="csrf_token"]');
+                            if (csrfInput) {
+                                csrfInput.value = result.csrf_token;
+                                console.log('Updated CSRF token from server response:', result.csrf_token.substring(0, 4) + '...');
+                            }
+                        }
+                        statusSpan.textContent = result.message || 'Đăng nhập thành công, đang chuyển hướng...';
+                        // Clear CSRF token after successful login
+                        await clearCsrfToken(csrfToken);
                         window.location.href = result.redirect;
                     } else {
-                        showError(result.message || 'Login failed. Please try again.');
+                        showError(result.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
                     }
                 } else {
-                    showError('Please install Phantom wallet!');
+                    showError('Vui lòng cài đặt ví Phantom!');
                     walletInfo.style.display = 'block';
                     await logToServer('Phantom wallet not installed', 'ERROR');
                 }
             } catch (error) {
                 await logToServer(`Error connecting or signing: ${error.message}`, 'ERROR');
                 console.error('Error connecting or signing:', error);
-                showError('Error: ' + error.message);
+                showError('Lỗi: ' + error.message);
             } finally {
                 // Re-enable button and clear sessionStorage
                 connectWalletButton.disabled = false;
-                connectWalletButton.textContent = 'Connect Wallet';
+                connectWalletButton.textContent = 'Kết nối ví';
                 sessionStorage.removeItem('lastSignature');
             }
         });
