@@ -12,8 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-// constants | logging | core | error | session | database | header-auth | network | csrf | vendor/autoload
-require_once $root_path . 'mm/bootstrap.php';
+// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
+require_once $root_path . 'core/bootstrap.php';
 
 // List of allowed sources (core/constants.php)
 $allowed_origins = ALLOWED_ORIGINS;
