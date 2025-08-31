@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: config/db.php
+// File: core/db.php
 // Description: Database connection management for Vina Network using Singleton Pattern
 // Created by: Vina Network
 // ============================================================================
