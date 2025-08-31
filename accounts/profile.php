@@ -14,17 +14,21 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'accounts/bootstrap.php';
 use StephenHill\Base58;
 
+// Protect POST requests with CSRF
 if (!csrf_protect()) {
     log_message("CSRF protection failed", 'accounts.log', 'accounts', 'ERROR');
     header('HTTP/1.1 403 Forbidden');
     exit;
 }
 
+// Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
     header('HTTP/1.1 500 Internal Server Error');
     exit('Failed to set CSRF cookie');
 }
+
+// Generate CSRF token
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
@@ -92,6 +96,7 @@ try {
 $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Invalid date';
 $last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'Never';
 
+// Store referrer URL if coming from another page
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $referrer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
     if ($referrer === parse_url(BASE_URL, PHP_URL_HOST)) {
@@ -107,7 +112,6 @@ $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
 $page_url = BASE_URL . "accounts/profile";
 $page_keywords = "Vina Network, account, profile";
-$page_canonical = $page_url;
 $page_css = ['/accounts/acc.css'];
 ?>
 
