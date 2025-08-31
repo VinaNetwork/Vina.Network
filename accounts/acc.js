@@ -105,66 +105,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle logout form submission
     const checkForm = () => {
-    const logoutForm = document.querySelector('#logout-form');
-    if (logoutForm) {
-        console.log('Logout form found, attaching submit event');
-        logoutForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            console.log('Logout form submitted');
+        const logoutForm = document.querySelector('#logout-form');
+        if (logoutForm) {
+            console.log('Logout form found, attaching submit event');
+            logoutForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                console.log('Logout form submitted');
 
-            try {
-                // Refresh CSRF token
+                // Refresh CSRF token before logout
                 let csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
                     showError('Unable to refresh CSRF token. Please refresh the page.');
-                    await logToServer('CSRF token refresh failed before logout', 'ERROR');
+                    logToServer('CSRF token refresh failed before logout', 'ERROR');
                     return;
                 }
 
-                // Cập nhật token vào input của form
-                const csrfInput = logoutForm.querySelector('input[name="csrf_token"]');
-                if (csrfInput) {
-                    csrfInput.value = csrfToken;
-                    console.log('Updated CSRF token in form:', csrfToken.substring(0, 4) + '...');
-                } else {
-                    console.error('CSRF input not found in form');
-                    await logToServer('CSRF input not found in form', 'ERROR');
-                    showError('CSRF input not found. Please refresh the page.');
-                    return;
+                try {
+                    const formData = new FormData(logoutForm);
+                    formData.set('csrf_token', csrfToken); // Use set to ensure latest token
+
+                    console.log('Sending logout request with CSRF token:', csrfToken.substring(0, 4) + '...');
+                    await logToServer(`Sending logout request with CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
+
+                    const response = await fetch('/accounts/logout', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    await logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
+
+                    if (result.status === 'success') {
+                        console.log('Logout successful, redirecting to:', result.redirect || '/accounts/');
+                        window.location.href = result.redirect || '/accounts/';
+                    } else {
+                        showError(result.message || 'Logout failed. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error during logout:', error.message);
+                    await logToServer(`Error during logout: ${error.message}`, 'ERROR');
+                    showError('Error during logout: ' + error.message);
                 }
+            });
+        } else {
+            console.warn('Logout form not found, retrying in 100ms');
+            setTimeout(checkForm, 100);
+        }
+    };
 
-                // Gửi yêu cầu logout
-                const formData = new FormData(logoutForm);
-                console.log('Sending logout request with CSRF token:', csrfToken.substring(0, 4) + '...');
-                await logToServer(`Sending logout request with CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
-
-                const response = await fetch('/accounts/logout', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                });
-
-                const result = await response.json();
-                await logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
-
-                if (result.status === 'success') {
-                    console.log('Logout successful, redirecting to:', result.redirect || '/accounts/');
-                    window.location.href = result.redirect || '/accounts/';
-                } else {
-                    showError(result.message || 'Logout failed. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error during logout:', error.message);
-                await logToServer(`Error during logout: ${error.message}`, 'ERROR');
-                showError('Error during logout: ' + error.message);
-            }
-        });
-    } else {
-        console.warn('Logout form not found');
-    }
-};
     checkForm();
 
     // Check if running in a secure context (HTTPS)
