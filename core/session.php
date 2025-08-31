@@ -30,28 +30,6 @@ if (!defined('SESSION_STARTED')) {
             'cookie_domain' => $domain     // Configured in config/constants.php
         ]);
         define('SESSION_STARTED', true);   // Mark session as started
-        log_message(
-            "Session started, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
-            'bootstrap.log',
-            'logs',
-            'INFO'
-        );
-    } else {
-        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            log_message(
-                "Session already active, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
-                'bootstrap.log',
-                'logs',
-                'DEBUG'
-            );
-        }
     }
-} else {
-    log_message(
-        "Attempt to start session ignored, session_id=" . session_id() . ", secure=" . ($is_secure ? 'true' : 'false') . ", cookie_domain=$domain, uri=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'),
-        'bootstrap.log',
-        'logs',
-        'WARNING'
-    );
 }
 ?>
