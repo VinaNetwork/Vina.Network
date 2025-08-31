@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: config/error.php
+// File: core/error.php
 // Description: PHP configuration
 // Created by: Vina Network
 // ============================================================================
