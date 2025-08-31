@@ -7,12 +7,16 @@
 
 // Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct access allowed!');
 }
 
 $root_path = __DIR__ . '/../';
-require_once $root_path . 'core/bootstrap.php'; // Dynamic Domain Name Definition
+require_once $root_path . 'core/constants.php'; // Dynamic Domain Name Definition
 
 // Initialize session with security options
 if (!defined('SESSION_STARTED')) {
