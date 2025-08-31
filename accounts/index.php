@@ -40,7 +40,7 @@ if ($csrf_token === false) {
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
     log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
     // Redirect to referrer if set, otherwise to profile
-    $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile.php';
+    $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile';
     unset($_SESSION['redirect_url']); // Clear after use
     header("Location: $redirect_url");
     exit;
