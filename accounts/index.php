@@ -6,6 +6,11 @@
 // ============================================================================
 
 ob_start();
+// Access Conditions
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
 $root_path = __DIR__ . '/../';
 // constants | logging | config | error | session | database | header-auth | csrf
 require_once $root_path . 'core/bootstrap.php';
