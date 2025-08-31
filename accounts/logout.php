@@ -1,0 +1,70 @@
+<?php
+// ============================================================================
+// File: accounts/logout.php
+// Description: API to handle logout requests with CSRF validation
+// Created by: Vina Network
+// ============================================================================
+
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+$root_path = __DIR__ . '/../';
+// constants | logging | config | error | session | database | header-auth.php | csrf.php
+require_once $root_path . 'accounts/bootstrap.php';
+
+// Ensure POST request and AJAX
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
+    !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
+    $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
+    log_message("Invalid logout request: Not POST or not AJAX, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Protect with CSRF validation
+$token = $_POST['csrf_token'] ?? $_COOKIE['csrf_token_cookie'] ?? '';
+if (!validate_csrf_token($token)) {
+    log_message("CSRF token validation failed for logout, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'WARNING');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Log logout attempt
+$public_key = $_SESSION['public_key'] ?? 'unknown';
+$short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+log_message("Logout attempt for public_key: $short_public_key, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'INFO');
+
+// Clear session
+$_SESSION = [];
+if (isset($_COOKIE[session_name()])) {
+    setcookie(session_name(), '', time() - 3600, '/');
+}
+session_destroy();
+
+// Log successful logout
+log_message("User logged out: public_key=$short_public_key, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'INFO');
+
+// Regenerate CSRF token for next use
+$token = regenerate_csrf_token();
+if ($token === false) {
+    log_message("Failed to regenerate CSRF token after logout, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+}
+
+// Set new CSRF cookie
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie after logout, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+}
+
+// Respond with success
+http_response_code(200);
+echo json_encode([
+    'status' => 'success',
+    'message' => 'Logout successful',
+    'redirect' => '/accounts/',
+    'csrf_token' => $token
+], JSON_UNESCAPED_UNICODE);
+exit;
+?>
