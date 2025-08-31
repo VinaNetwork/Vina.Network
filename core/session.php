@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: config/session.php
+// File: core/session.php
 // Description: Initialize session with security options.
 // Created by: Vina Network
 // ============================================================================
