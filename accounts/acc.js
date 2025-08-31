@@ -98,90 +98,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle logout form submission
     const checkForm = () => {
-    const logoutForm = document.querySelector('#logout-form');
-    if (logoutForm) {
-        console.log('Logout form found, attaching submit event');
-        logoutForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Prevent default form submission
-            console.log('Logout form submitted');
+        const logoutForm = document.querySelector('#logout-form');
+        if (logoutForm) {
+            console.log('Logout form found, attaching submit event');
+            logoutForm.addEventListener('submit', async (event) => {
+                console.log('Logout form submitted');
+                let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
 
-            let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
-
-            if (!csrfToken) {
-                console.warn('CSRF token not found, attempting to refresh');
-                await logToServer('CSRF token not found, attempting to refresh', 'WARNING');
-                csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
-                    showError('Unable to refresh CSRF token. Please refresh the page.');
-                    return;
-                }
-                document.querySelector('input[name="csrf_token"]').value = csrfToken;
-                console.log('CSRF token updated:', csrfToken.substring(0, 4) + '...');
-            }
-
-            try {
-                const formData = new FormData(logoutForm);
-                formData.append('csrf_token', csrfToken); // Ensure CSRF token is included
-
-                console.log('Sending logout request with CSRF token:', csrfToken.substring(0, 4) + '...');
-                await logToServer(`Sending logout request with CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
-
-                const response = await fetch('/accounts/logout', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                });
-
-                const result = await response.json();
-                await logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
-
-                if (result.status === 'error') {
-                    if (result.message.includes('Invalid or expired CSRF token')) {
-                        console.warn('CSRF token invalid or expired, attempting to refresh');
-                        await logToServer('CSRF token invalid or expired, attempting to refresh', 'WARNING');
-                        csrfToken = await refreshCsrfToken();
-                        if (!csrfToken) {
-                            showError('Unable to refresh CSRF token. Please refresh the page.');
-                            return;
-                        }
-                        document.querySelector('input[name="csrf_token"]').value = csrfToken;
-                        console.log('CSRF token updated, retrying logout');
-                        await logToServer('Retrying logout with new CSRF token: ' + csrfToken.substring(0, 4) + '...', 'DEBUG');
-                        // Retry logout with new token
-                        formData.set('csrf_token', csrfToken);
-                        const retryResponse = await fetch('/accounts/logout', {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: formData
-                        });
-                        const retryResult = await retryResponse.json();
-                        await logToServer(`Retry logout response: ${JSON.stringify(retryResult)}`, retryResult.status === 'error' ? 'ERROR' : 'INFO');
-                        if (retryResult.status === 'success') {
-                            window.location.href = retryResult.redirect || '/accounts/';
-                        } else {
-                            showError(retryResult.message || 'Logout failed. Please try again.');
-                        }
-                    } else {
-                        showError(result.message || 'Logout failed. Please try again.');
+                    console.warn('CSRF token not found, attempting to refresh');
+                    logToServer('CSRF token not found, attempting to refresh', 'WARNING');
+                    event.preventDefault(); // Prevent form submission
+                    csrfToken = await refreshCsrfToken();
+                    if (!csrfToken) {
+                        showError('Unable to refresh CSRF token. Please refresh the page.');
+                        return;
                     }
-                } else if (result.status === 'success') {
-                    console.log('Logout successful, redirecting to:', result.redirect || '/accounts/');
-                    window.location.href = result.redirect || '/accounts/';
+                    // Update CSRF token and allow form submission
+                    document.querySelector('input[name="csrf_token"]').value = csrfToken;
+                    console.log('CSRF token updated, submitting form');
+                    logoutForm.submit(); // Submit form directly
                 }
-            } catch (error) {
-                console.error('Error during logout:', error.message);
-                await logToServer(`Error during logout: ${error.message}`, 'ERROR');
-                showError('Error during logout: ' + error.message);
-            }
-        });
-    } else {
-        console.warn('Logout form not found, retrying in 100ms');
-        setTimeout(checkForm, 100); // Retry after 100ms
-    }
+            });
+        } else {
+            console.warn('Logout form not found, retrying in 100ms');
+            setTimeout(checkForm, 100); // Retry after 100ms
+        }
     };
 
     checkForm(); // Initial check for logout form

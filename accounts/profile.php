@@ -90,6 +90,14 @@ try {
 $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Invalid date';
 $last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'Never';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
+    log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
+    session_destroy();
+    header('Location: /accounts');
+    exit;
+}
+
 $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
 $page_url = BASE_URL . "accounts/profile.php";
@@ -130,9 +138,9 @@ $page_css = ['/accounts/acc.css'];
             </table>
         </div>
         
-        <form method="POST" id="logout-form" action="/accounts/logout.php">
+        <form method="POST" id="logout-form" action="/accounts/profile.php">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
-            <button class="cta-button" type="submit">Logout</button>
+            <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
         <div id="wallet-info" style="display: none;">
             <span id="status"></span>
