@@ -17,7 +17,7 @@ if (!defined('SESSION_STARTED')) {
         session_start([
             'cookie_lifetime' => 0,
             'use_strict_mode' => true,
-            'cookie_httponly' => true,
+            'cookie_httponly' => false,
             'cookie_samesite' => 'Lax',
             'cookie_secure' => $is_secure, // Configured in config/constants.php
             'cookie_domain' => $domain     // Configured in config/constants.php
