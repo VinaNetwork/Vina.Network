@@ -10,3 +10,10 @@
     Order deny,allow
     Deny from all
 </IfModule>
+
+RewriteEngine On
+RewriteBase /core/
+
+# Rules for specific endpoints
+RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC]
+RewriteRule ^clear-csrf$ csrf/clear-csrf.php [L,NC]
