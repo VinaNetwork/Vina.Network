@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: config/logging.php
+// File: core/logging.php
 // Description: Logging utilities for Vina Network without session handling
 // Created by: Vina Network
 // ============================================================================
