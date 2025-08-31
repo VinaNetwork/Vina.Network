@@ -5,26 +5,22 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php | vendor/autoload.php
+// constants | logging | core | error | session | database | header-auth.php | csrf.php | wallet-auth.php | vendor/autoload.php
 require_once $root_path . 'accounts/bootstrap.php';
 use StephenHill\Base58;
 
 // Database connection
 $start_time = microtime(true);
 try {
-    $pdo = get_db_connection(); // Use the function from config/db.php
+    $pdo = get_db_connection(); // Use the function from core/db.php
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
-} catch (PDOException $e) {
-    $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
+catch (PDOException $e) {
+    $error_message = "Database error occurred. Please try again later.";
+    log_message("Database query failed: {$e->getMessage()}, Code: {$e->getCode()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    echo json_encode(['status' => 'error', 'message' => $error_message]);
     exit;
 }
 
