@@ -62,6 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
             const result = await response.json();
             console.log('Refresh CSRF response:', result);
             if (result.status === 'success' && result.csrf_token) {
@@ -89,11 +92,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function showError(message) {
         console.log('Showing error:', message);
         const statusSpan = document.getElementById('status') || document.createElement('span');
+        statusSpan.id = 'status';
         statusSpan.textContent = message;
         statusSpan.style.color = 'red';
         const walletInfo = document.getElementById('wallet-info') || document.createElement('div');
+        walletInfo.id = 'wallet-info';
         walletInfo.style.display = 'block';
-        walletInfo.appendChild(statusSpan);
+        if (!walletInfo.contains(statusSpan)) {
+            walletInfo.appendChild(statusSpan);
+        }
     }
 
     // Handle logout form submission
@@ -102,41 +109,59 @@ document.addEventListener('DOMContentLoaded', () => {
         if (logoutForm) {
             console.log('Logout form found, attaching submit event');
             logoutForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
                 console.log('Logout form submitted');
-                let csrfToken = document.querySelector('input[name="csrf_token"]').value || getCsrfTokenFromCookie();
 
+                // Refresh CSRF token before logout
+                let csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
-                    console.warn('CSRF token not found, attempting to refresh');
-                    logToServer('CSRF token not found, attempting to refresh', 'WARNING');
-                    event.preventDefault(); // Prevent form submission
-                    csrfToken = await refreshCsrfToken();
-                    if (!csrfToken) {
-                        showError('Unable to refresh CSRF token. Please refresh the page.');
-                        return;
+                    showError('Unable to refresh CSRF token. Please refresh the page.');
+                    logToServer('CSRF token refresh failed before logout', 'ERROR');
+                    return;
+                }
+
+                try {
+                    const formData = new FormData(logoutForm);
+                    formData.set('csrf_token', csrfToken); // Use set to ensure latest token
+
+                    console.log('Sending logout request with CSRF token:', csrfToken.substring(0, 4) + '...');
+                    await logToServer(`Sending logout request with CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
+
+                    const response = await fetch('/accounts/logout', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    await logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
+
+                    if (result.status === 'success') {
+                        console.log('Logout successful, redirecting to:', result.redirect || '/accounts/');
+                        window.location.href = result.redirect || '/accounts/';
+                    } else {
+                        showError(result.message || 'Logout failed. Please try again.');
                     }
-                    // Update CSRF token and allow form submission
-                    document.querySelector('input[name="csrf_token"]').value = csrfToken;
-                    console.log('CSRF token updated, submitting form');
-                    logoutForm.submit(); // Submit form directly
+                } catch (error) {
+                    console.error('Error during logout:', error.message);
+                    await logToServer(`Error during logout: ${error.message}`, 'ERROR');
+                    showError('Error during logout: ' + error.message);
                 }
             });
         } else {
             console.warn('Logout form not found, retrying in 100ms');
-            setTimeout(checkForm, 100); // Retry after 100ms
+            setTimeout(checkForm, 100);
         }
     };
 
-    checkForm(); // Initial check for logout form
+    checkForm();
 
     // Check if running in a secure context (HTTPS)
     if (!window.isSecureContext) {
         logToServer('Page not loaded over HTTPS, secure context unavailable', 'ERROR');
-        const walletInfo = document.getElementById('wallet-info');
-        const statusSpan = document.getElementById('status');
-        if (walletInfo && statusSpan) {
-            walletInfo.style.display = 'block';
-            statusSpan.textContent = 'Error: This page must be loaded over HTTPS';
-        }
+        showError('Error: This page must be loaded over HTTPS');
         return;
     }
 
@@ -170,30 +195,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
+        // Prevent default form submission
+        const loginForm = document.querySelector('form'); // Adjust selector if needed
+        if (loginForm) {
+            loginForm.addEventListener('submit', (event) => {
+                event.preventDefault(); // Prevent non-AJAX form submission
+                console.log('Prevented default form submission');
+            });
+        }
+
         connectWalletButton.addEventListener('click', async () => {
             // Disable button to prevent multiple clicks
             connectWalletButton.disabled = true;
             connectWalletButton.textContent = 'Connecting...';
 
-            try {
-                const walletInfo = document.getElementById('wallet-info');
-                const publicKeySpan = document.getElementById('public-key');
-                const statusSpan = document.getElementById('status');
-                let csrfToken = document.getElementById('csrf-token').value || getCsrfTokenFromCookie();
-                const nonce = document.getElementById('login-nonce').value;
+            const walletInfo = document.getElementById('wallet-info');
+            const publicKeySpan = document.getElementById('public-key');
+            const statusSpan = document.getElementById('status');
 
+            try {
+                // Refresh CSRF token before login
+                let csrfToken = await refreshCsrfToken();
                 if (!csrfToken) {
-                    logToServer('CSRF token not found in form or cookie', 'ERROR');
-                    walletInfo.style.display = 'block';
-                    statusSpan.textContent = 'Error: CSRF token missing. Please refresh the page.';
+                    showError('Error: CSRF token missing. Please refresh the page.');
+                    logToServer('CSRF token refresh failed before login', 'ERROR');
                     return;
                 }
                 await logToServer(`Using CSRF token: ${csrfToken.substring(0, 4)}...`, 'DEBUG');
 
                 if (!window.isSecureContext) {
                     logToServer('Wallet connection blocked: Not in secure context', 'ERROR');
-                    walletInfo.style.display = 'block';
-                    statusSpan.textContent = 'Error: Wallet connection requires HTTPS';
+                    showError('Error: Wallet connection requires HTTPS');
                     return;
                 }
 
@@ -209,6 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
+                    const nonce = document.getElementById('login-nonce')?.value;
+                    if (!nonce) {
+                        throw new Error('Login nonce missing');
+                    }
                     const message = `Verify login for Vina Network with nonce ${nonce} at ${timestamp}`;
                     const encodedMessage = new TextEncoder().encode(message);
                     await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
@@ -229,8 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
                     await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
-                    await logToServer(`Message sent: ${message}, hex: ${Array.from(new TextEncoder().encode(message)).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
-
                     const formData = new FormData();
                     formData.append('public_key', publicKey);
                     formData.append('signature', signatureBase64);
@@ -240,33 +274,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusSpan.textContent = 'Sending data to server...';
                     const responseServer = await fetch('/accounts/wallet-auth', {
                         method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
                         body: formData
                     });
 
+                    if (!responseServer.ok) {
+                        throw new Error(`HTTP ${responseServer.status}: ${responseServer.statusText}`);
+                    }
+
                     const result = await responseServer.json();
                     await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
-                    if (result.status === 'error' && result.message.includes('Signature verification failed')) {
-                        statusSpan.textContent = 'Error: Signature verification failed. Please ensure you are using the correct wallet in Phantom and try again.';
-                    } else if (result.status === 'error' && result.message.includes('Invalid CSRF token')) {
-                        statusSpan.textContent = 'Error: Invalid CSRF token. Please refresh the page.';
-                    } else if (result.status === 'error' && result.message.includes('Too many login attempts')) {
-                        statusSpan.textContent = 'Error: Too many login attempts. Please wait 1 minute and try again.';
-                    } else if (result.status === 'success' && result.redirect) {
-                        statusSpan.textContent = result.message || 'Success';
+
+                    if (result.status === 'success' && result.redirect) {
+                        statusSpan.textContent = result.message || 'Login successful, redirecting...';
                         window.location.href = result.redirect;
                     } else {
-                        statusSpan.textContent = result.message || 'Unknown error';
+                        showError(result.message || 'Login failed. Please try again.');
                     }
                 } else {
-                    statusSpan.textContent = 'Please install Phantom wallet!';
+                    showError('Please install Phantom wallet!');
                     walletInfo.style.display = 'block';
                     await logToServer('Phantom wallet not installed', 'ERROR');
                 }
             } catch (error) {
                 await logToServer(`Error connecting or signing: ${error.message}`, 'ERROR');
                 console.error('Error connecting or signing:', error);
-                statusSpan.textContent = 'Error: ' + error.message;
-                walletInfo.style.display = 'block';
+                showError('Error: ' + error.message);
             } finally {
                 // Re-enable button and clear sessionStorage
                 connectWalletButton.disabled = false;
