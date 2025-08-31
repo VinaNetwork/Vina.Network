@@ -15,17 +15,11 @@ $root_path = __DIR__ . '/../';
 require_once $root_path . 'accounts/bootstrap.php';
 
 // Protect POST requests with CSRF
-if (!csrf_protect()) {
-    log_message("CSRF protection failed", 'accounts.log', 'accounts', 'ERROR');
-    header('HTTP/1.1 403 Forbidden');
-    exit;
-}
+csrf_protect();
 
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
-    exit('Failed to set CSRF cookie');
 }
 
 // Check if user is already logged in
@@ -40,13 +34,11 @@ if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
 
 // Store referrer URL if coming from another page
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
-    $referrer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
-    if ($referrer === parse_url(BASE_URL, PHP_URL_HOST)) {
-        $path = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
-        if (in_array($path, ['/mm', '/other-protected-page'])) {
-            $_SESSION['redirect_url'] = $path;
-            log_message("Stored referrer URL: $path", 'accounts.log', 'accounts', 'INFO');
-        }
+    $referrer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
+    // Validate referrer to prevent open redirect vulnerabilities
+    if (strpos($referrer, '/make-market') === 0 || strpos($referrer, '/other-protected-page') === 0) {
+        $_SESSION['redirect_url'] = $referrer;
+        log_message("Stored referrer URL: $referrer", 'accounts.log', 'accounts', 'INFO');
     }
 }
 
@@ -54,8 +46,6 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
-    exit('Failed to generate CSRF token');
 }
 
 // Generate nonce for anti-replay
@@ -67,6 +57,9 @@ $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
 $page_url = BASE_URL . "accounts/";
 $page_keywords = "Vina Network, connect wallet, login, register";
+$page_og_title = $page_title;
+$page_og_description = $page_description;
+$page_og_url = $page_url;
 $page_canonical = $page_url;
 $page_css = ['/accounts/acc.css'];
 ?>
