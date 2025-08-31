@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: make-market/log.php
+// File: mm/log.php
 // Description: Handles client-side logging with size limitation.
 // Created by: Vina Network
 // ============================================================================
