@@ -20,6 +20,16 @@ csrf_protect();
 // Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
+    header('HTTP/1.1 500 Internal Server Error');
+    exit('Failed to set CSRF cookie');
+}
+
+// Generate CSRF token
+$csrf_token = generate_csrf_token();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
+    header('HTTP/1.1 500 Internal Server Error');
+    exit('Failed to generate CSRF token');
 }
 
 // Check if user is already logged in
@@ -42,12 +52,6 @@ if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
             log_message("Stored referrer URL: $path", 'accounts.log', 'accounts', 'INFO');
         }
     }
-}
-
-// Generate CSRF token
-$csrf_token = generate_csrf_token();
-if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
 }
 
 // Generate nonce for anti-replay
