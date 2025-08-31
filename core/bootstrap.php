@@ -13,7 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 // Configuration
 require_once $root_path . 'core/constants.php'; 		  // Dynamic Domain Name Definition
-require_once $root_path . 'core/logs/logging.php'; 		      // Logging utilities
+require_once $root_path . 'core/logs/logging.php'; 		  // Logging utilities
 require_once $root_path . 'core/config.php'; 			  // Central configuration
 require_once $root_path . 'core/error.php'; 			  // PHP configuration
 require_once $root_path . 'core/session.php'; 		      // Initialize session with security options
