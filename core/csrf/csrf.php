@@ -5,7 +5,8 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
+// Access Conditions - allow includes from other files
+if (!defined('VINANETWORK_ENTRY') && php_sapi_name() !== 'cli') {
     http_response_code(403);
     exit('No direct access allowed!');
 }
