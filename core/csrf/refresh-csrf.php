@@ -17,36 +17,36 @@ require_once $root_path . 'core/bootstrap.php';
 
 // List of allowed sources (core/constants.php)
 $allowed_origins = ALLOWED_ORIGINS;
+if (!isset($allowed_origins) || !is_array($allowed_origins)) {
+    log_message("ALLOWED_ORIGINS not defined or invalid", 'bootstrap.log', 'logs', 'CRITICAL');
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'Server configuration error'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 // Origin check function
 function check_request_origin() {
     global $allowed_origins;
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
 
-    // If there is no Origin or Referer, reject the request.
     if (empty($origin)) {
-        log_message("Invalid request to refresh-csrf: No Origin or Referer header, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
+        log_message("No Origin header provided, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
         return false;
     }
-
-    // Normalize Origin/Referer by getting domain (remove path)
+    // Normalize and validate origin
     $parsed_origin = parse_url($origin, PHP_URL_SCHEME) . '://' . parse_url($origin, PHP_URL_HOST);
     if (parse_url($origin, PHP_URL_PORT)) {
         $parsed_origin .= ':' . parse_url($origin, PHP_URL_PORT);
     }
-
-    // Check if the origin is in the allowed list
     foreach ($allowed_origins as $allowed) {
-        $parsed_allowed = rtrim($allowed, '/');
-        if ($parsed_origin === $parsed_allowed) {
+        if ($parsed_origin === rtrim($allowed, '/')) {
             log_message("Origin validated: $parsed_origin, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'INFO');
             return true;
         }
     }
-
-    log_message("Invalid request to refresh-csrf: Origin/Referer ($parsed_origin) not allowed, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
+    log_message("Invalid origin: $parsed_origin, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
     return false;
 }
 
