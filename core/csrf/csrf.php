@@ -19,6 +19,17 @@ define('CSRF_TOKEN_LENGTH', 32);
 define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie');
 define('CSRF_TOKEN_TTL', 86400); // 24h
 
+// Check CORS header
+function set_cors_headers() {
+    global $allowed_origins;
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if (in_array($origin, $allowed_origins)) {
+        header("Access-Control-Allow-Origin: $origin");
+        header("Access-Control-Allow-Methods: GET, POST");
+        header("Access-Control-Allow-Headers: X-CSRF-Token, Content-Type");
+    }
+}
+
 // Ensure session is active
 function ensure_session() {
     if (defined('SESSION_STARTED') && session_status() === PHP_SESSION_ACTIVE) {
