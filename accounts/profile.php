@@ -12,29 +12,21 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'accounts/bootstrap.php';
-use StephenHill\Base58;
 
-// Protect POST requests with CSRF
+date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
+
 csrf_protect();
-if (!csrf_protect()) {
-    log_message("CSRF protection failed", 'accounts.log', 'accounts', 'ERROR');
-    header('HTTP/1.1 403 Forbidden');
-    exit;
-}
 
-// Set CSRF cookie for AJAX requests
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
-    exit('Failed to set CSRF cookie');
 }
 
-// Generate CSRF token
+use StephenHill\Base58;
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
     log_message("Failed to generate CSRF token", 'accounts.log', 'accounts', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
-    exit('Failed to generate CSRF token');
+} else {
+    log_message("CSRF token generated successfully for profile page", 'accounts.log', 'accounts', 'INFO');
 }
 
 $start_time = microtime(true);
@@ -98,14 +90,9 @@ try {
 $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Invalid date';
 $last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'Never';
 
-// Logout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
-    if (!csrf_protect()) {
-        log_message("CSRF validation failed for logout", 'accounts.log', 'accounts', 'ERROR');
-        header('HTTP/1.1 403 Forbidden');
-        exit;
-    }
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
+    log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
     header('Location: /accounts');
     exit;
@@ -115,6 +102,10 @@ $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
 $page_url = BASE_URL . "accounts/profile.php";
 $page_keywords = "Vina Network, account, profile";
+$page_og_title = $page_title;
+$page_og_description = $page_description;
+$page_og_url = $page_url;
+$page_canonical = $page_url;
 $page_css = ['/accounts/acc.css'];
 ?>
 
@@ -147,7 +138,7 @@ $page_css = ['/accounts/acc.css'];
             </table>
         </div>
         
-        <form method="POST" id="logout-form" action="/accounts/profile">
+        <form method="POST" id="logout-form" action="/accounts/profile.php">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <button class="cta-button" type="submit" name="logout">Logout</button>
         </form>
