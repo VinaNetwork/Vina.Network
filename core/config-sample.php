@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: config/config.php
+// File: core/config.php
 // Description: Central configuration file for Vina Network.
 // Created by: Vina Network
 // ============================================================================
