@@ -24,9 +24,19 @@ if (!isset($allowed_origins) || !is_array($allowed_origins)) {
     exit;
 }
 
+// Check Method
+if ($_SERVER['REQUEST_METHOD'] !== 'GET' || 
+    !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
+    $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest' ||
+    !check_request_origin($allowed_origins)) {
+    log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'ERROR');
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Origin check function
-function check_request_origin() {
-    global $allowed_origins;
+function check_request_origin($allowed_origins) { // Truyền tham số thay vì global
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $uri = $_SERVER['REQUEST_URI'] ?? 'unknown';
@@ -35,7 +45,6 @@ function check_request_origin() {
         log_message("No Origin header provided, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
         return false;
     }
-    // Normalize and validate origin
     $parsed_origin = parse_url($origin, PHP_URL_SCHEME) . '://' . parse_url($origin, PHP_URL_HOST);
     if (parse_url($origin, PHP_URL_PORT)) {
         $parsed_origin .= ':' . parse_url($origin, PHP_URL_PORT);
@@ -48,17 +57,6 @@ function check_request_origin() {
     }
     log_message("Invalid origin: $parsed_origin, IP=$ip, URI=$uri", 'bootstrap.log', 'logs', 'ERROR');
     return false;
-}
-
-// Test methods, AJAX and origins
-if ($_SERVER['REQUEST_METHOD'] !== 'GET' || 
-    !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
-    $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest' ||
-    !check_request_origin()) {
-    log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'bootstrap.log', 'logs', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
-    exit;
 }
 
 $token = generate_csrf_token();
