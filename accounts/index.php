@@ -17,6 +17,8 @@ require_once $root_path . 'core/bootstrap.php';
 // Connect wallet
 require_once $root_path . 'accounts/wallet-auth.php';
 
+log_message("Accounts page accessed", 'accounts.log', 'accounts', 'INFO');
+
 // Protect POST requests with CSRF
 csrf_protect();
 
