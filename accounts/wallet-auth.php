@@ -5,13 +5,9 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth.php | csrf.php | wallet-auth.php | vendor/autoload.php
-require_once $root_path . 'accounts/bootstrap.php';
+// constants | logging | config | error | session | database | header-auth | csrf | vendor/autoload
+require_once $root_path . 'core/bootstrap.php';
 use StephenHill\Base58;
 
 // Database connection
