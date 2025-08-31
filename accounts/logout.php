@@ -10,7 +10,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth.php | csrf.php
 require_once $root_path . 'accounts/bootstrap.php';
 
 // Ensure POST request and AJAX
@@ -44,8 +43,12 @@ if (isset($_COOKIE[session_name()])) {
 }
 session_destroy();
 
-// Log successful logout
-log_message("User logged out: public_key=$short_public_key, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'INFO');
+// Start a new session for CSRF token regeneration
+if (!ensure_session()) {
+    log_message("Failed to start new session after logout, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+} else {
+    log_message("New session started after logout, session_id=" . session_id(), 'accounts.log', 'accounts', 'INFO');
+}
 
 // Regenerate CSRF token for next use
 $token = regenerate_csrf_token();
@@ -64,7 +67,7 @@ echo json_encode([
     'status' => 'success',
     'message' => 'Logout successful',
     'redirect' => '/accounts/',
-    'csrf_token' => $token
+    'csrf_token' => $token ?: ''
 ], JSON_UNESCAPED_UNICODE);
 exit;
 ?>
