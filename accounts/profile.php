@@ -13,10 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 require_once $root_path . 'accounts/bootstrap.php';
 
-date_default_timezone_set('Asia/Ho_Chi_Minh'); // Đặt múi giờ Việt Nam
-
 csrf_protect();
-
 if (!set_csrf_cookie()) {
     log_message("Failed to set CSRF cookie", 'accounts.log', 'accounts', 'ERROR');
 }
