@@ -20,11 +20,11 @@ try {
     $pdo = get_db_connection(); // Use the function from config/db.php
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
-} catch (PDOException $e) {
-    $duration = (microtime(true) - $start_time) * 1000;
-    log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
+catch (PDOException $e) {
+    $error_message = "Database error occurred. Please try again later.";
+    log_message("Database query failed: {$e->getMessage()}, Code: {$e->getCode()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
+    echo json_encode(['status' => 'error', 'message' => $error_message]);
     exit;
 }
 
