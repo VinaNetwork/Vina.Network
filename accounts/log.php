@@ -59,12 +59,6 @@ if (!ensure_directory_and_file($log_dir, $log_file)) {
     exit;
 }
 
-// Get IP address safely
-$ip_address = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
-if (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && is_trusted_proxy()) { // Giả định hàm is_trusted_proxy tồn tại
-    $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'];
-}
-
 // Format and log the message
 $formatted_message = "[IP:$ip_address] [URL:$url] [UA:$userAgent] $message";
 if (!log_message($formatted_message, $log_file_name, 'accounts', $level)) {
