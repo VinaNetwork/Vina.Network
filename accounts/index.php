@@ -14,10 +14,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 // constants | logging | config | error | session | database | header-auth | csrf
 require_once $root_path . 'core/bootstrap.php';
+log_message("Accounts page accessed", 'accounts.log', 'accounts', 'INFO');
+
 // Connect wallet
 require_once $root_path . 'accounts/wallet-auth.php';
-
-log_message("Accounts page accessed", 'accounts.log', 'accounts', 'INFO');
 
 // Protect POST requests with CSRF
 csrf_protect();
