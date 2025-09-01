@@ -13,3 +13,8 @@ RewriteRule ^profile$ profile.php [L]
 # Redirect 301 from /profile.php to /profile
 RewriteCond %{THE_REQUEST} \s/profile\.php[\s?] [NC]
 RewriteRule ^profile\.php$ /profile [R=301,L]
+
+# Enable CORS for logging
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, X-Requested-With"
