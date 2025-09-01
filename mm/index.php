@@ -63,7 +63,7 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm';
-    header('Location: /accounts');
+    header('Location: /acc');
     exit;
 }
 
@@ -75,7 +75,7 @@ try {
     if (!$account) {
         log_message("No account found for session public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
         $_SESSION['redirect_url'] = '/mm';
-        header('Location: /accounts');
+        header('Location: /acc');
         exit;
     }
     $_SESSION['user_id'] = $account['id'];
