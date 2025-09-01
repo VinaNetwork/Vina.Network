@@ -2,11 +2,11 @@ RewriteEngine On
 RewriteBase /acc/
 
 # Rules for specific endpoints
-RewriteRule ^wallet-auth$ wallet-auth.php [L,NC]
+RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
+RewriteRule ^get-logs$ core/get-logs.php [L,NC]
+RewriteRule ^logout$ core/logout.php [L,NC]
 RewriteRule ^refresh-csrf$ core/refresh-csrf.php [L,NC]
 RewriteRule ^clear-csrf$ core/clear-csrf.php [L,NC]
-RewriteRule ^get-logs$ core/get-logs.php [L,NC]
-RewriteRule ^logout$ logout.php [L,NC]
 
 # /profile.php
 RewriteRule ^profile$ profile.php [L]
