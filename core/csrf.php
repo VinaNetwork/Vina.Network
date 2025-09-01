@@ -5,16 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Access Conditions - allow includes from other files
-if (!defined('VINANETWORK_ENTRY') && php_sapi_name() !== 'cli') {
-    http_response_code(403);
-    exit('No direct access allowed!');
-}
-
-$root_path = __DIR__ . '/../';
-require_once $root_path . 'core/constants.php';
-require_once $root_path . 'core/session.php';
-
 // CSRF Configuration
 define('CSRF_TOKEN_NAME', 'csrf_token');
 define('CSRF_TOKEN_LENGTH', 32);
