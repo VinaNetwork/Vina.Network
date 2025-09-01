@@ -13,7 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 // constants | logging | config | error | session | database | header-auth | wallet-auth
-require_once $root_path . 'accounts/bootstrap.php';
+require_once $root_path . 'acc/bootstrap.php';
 
 // Ensure POST request and AJAX
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
@@ -43,7 +43,7 @@ http_response_code(200);
 echo json_encode([
     'status' => 'success',
     'message' => 'Logout successful',
-    'redirect' => '/accounts/'
+    'redirect' => '/acc/'
 ], JSON_UNESCAPED_UNICODE);
 ob_end_flush();
 exit;
