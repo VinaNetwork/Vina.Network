@@ -13,13 +13,13 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 $root_path = __DIR__ . '/../';
 // constants | logging | config | error | session | database | header-auth | wallet-auth
-require_once $root_path . 'accounts/bootstrap.php';
+require_once $root_path . 'acc/bootstrap.php';
 
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
     log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
     // Redirect to referrer if set, otherwise to profile
-    $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile';
+    $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/acc/profile';
     unset($_SESSION['redirect_url']); // Clear after use
     header("Location: $redirect_url");
     exit;
@@ -42,9 +42,9 @@ $_SESSION['login_nonce'] = $nonce;
 // SEO meta
 $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_url = BASE_URL . "accounts/";
+$page_url = BASE_URL . "acc/";
 $page_keywords = "Vina Network, connect wallet, login, register";
-$page_css = ['/accounts/acc.css'];
+$page_css = ['/acc/acc.css'];
 ?>
 
 <!DOCTYPE html>
@@ -70,7 +70,7 @@ $page_css = ['/accounts/acc.css'];
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/accounts/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /accounts/acc.js')"></script>
+<script src="/acc/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
