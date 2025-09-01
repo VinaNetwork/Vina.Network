@@ -13,6 +13,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'mm/bootstrap.php';
 
+// Solana Library
 use StephenHill\Base58;
 use Attestto\SolanaPhpSdk\Keypair;
 use Attestto\SolanaPhpSdk\Connection;
@@ -25,7 +26,7 @@ $log_context = [
     'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown'
 ];
 
-// Kiểm tra phương thức GET
+// Check request method
 $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 if ($request_method !== 'GET') {
@@ -36,7 +37,7 @@ if ($request_method !== 'GET') {
     exit;
 }
 
-// Khởi tạo session và thiết lập CSRF token
+// Initialize session
 if (!ensure_session()) {
     log_message("Failed to initialize session, method=$request_method, uri=$request_uri", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
@@ -45,24 +46,12 @@ if (!ensure_session()) {
     exit;
 }
 
-// Tạo hoặc lấy CSRF token một lần và đặt vào cookie
-$csrf_token = generate_csrf_token();
-if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token, uri=$request_uri", 'process.log', 'make-market', 'ERROR', $log_context);
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Failed to generate CSRF token'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-set_csrf_cookie(); // Thiết lập CSRF cookie cho AJAX
-
 // Log request info
 $session_id = session_id() ?: 'none';
 $headers = apache_request_headers();
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    $short_csrf_token = $csrf_token ? substr($csrf_token, 0, 4) . '...' : 'none';
-    log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN: $short_csrf_token", 'process.log', 'make-market', 'DEBUG', $log_context);
+    log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
 // Database connection
@@ -131,7 +120,7 @@ try {
 
         $error_message = "Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", id_exists=$id_exists, user_matches=$user_matches, network_matches=$network_matches";
         log_message($error_message, 'process.log', 'make-market', 'ERROR', $log_context);
-        // Chuyển hướng đến trang chính với thông báo lỗi
+        // Redirect to main page with error message
         $_SESSION['error_message'] = 'Transaction not found or you do not have permission to access it.';
         log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
         session_write_close();
@@ -142,7 +131,7 @@ try {
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
-    // Chuyển hướng đến trang chính với thông báo lỗi
+    // Redirect to main page with error message
     $_SESSION['error_message'] = 'Error retrieving transaction. Please try again later.';
     log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
     session_write_close();
@@ -255,7 +244,6 @@ $page_css = ['/mm/css/process.css'];
         <div class="action-buttons">
             <?php if ($show_cancel_button): ?>
                 <form id="cancel-form" method="POST" action="/mm/get-status">
-                    <?php echo get_csrf_field(); ?>
                     <input type="hidden" name="id" value="<?php echo htmlspecialchars($transaction_id); ?>">
                     <input type="hidden" name="status" value="canceled">
                     <input type="hidden" name="error" value="Transaction canceled by user">
@@ -273,11 +261,9 @@ $page_css = ['/mm/css/process.css'];
 <script src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<!-- Pass environment and CSRF token to JavaScript -->
+<!-- Pass environment to JavaScript -->
 <script>
     window.ENVIRONMENT = '<?php echo defined('ENVIRONMENT') ? ENVIRONMENT : 'development'; ?>';
-    window.CSRF_TOKEN = '<?php echo htmlspecialchars($csrf_token); ?>';
-    window.CSRF_TOKEN_TIMESTAMP = <?php echo isset($_SESSION[CSRF_TOKEN_NAME . '_created']) ? $_SESSION[CSRF_TOKEN_NAME . '_created'] * 1000 : 'Date.now()'; ?>;
 </script>
 <script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 <!-- Note: Transaction processing is handled by /mm/process/process.js via Jupiter API -->
