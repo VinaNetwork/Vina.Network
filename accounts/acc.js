@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 url: window.location.href
             };
             console.log(`Sending log to server: ${message}`);
-            const response = await fetch('/core/logs/get-logs.php', {
+            const response = await fetch('/core/get-logs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(logData)
