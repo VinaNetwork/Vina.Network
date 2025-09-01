@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
 
                     if (result.status === 'success') {
-                        console.log('Logout successful, redirecting to:', result.redirect || '/accounts/');
+                        console.log('Logout successful, redirecting to:', result.redirect || '/acc/');
                         window.location.href = result.redirect || '/acc/';
                     } else {
                         showError(result.message || 'Logout failed. Please try again.');
