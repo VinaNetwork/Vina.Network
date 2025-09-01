@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: accounts/get-logs.php
+// File: accounts/core/get-logs.php
 // Description: Handles client-side logging for all modules with size limitation and enhanced security.
 // Created by: Vina Network
 // ============================================================================
@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // constants | logging | config | error | session | database | header-auth | csrf | wallet-auth
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 // Set response header
 header('Content-Type: application/json');
