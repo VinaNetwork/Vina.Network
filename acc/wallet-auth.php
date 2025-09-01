@@ -18,7 +18,7 @@ use StephenHill\Base58;
 // Database connection
 $start_time = microtime(true);
 try {
-    $pdo = get_db_connection(); // Use the function from config/db.php
+    $pdo = get_db_connection(); // Use the function from core/db.php
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection successful (took {$duration}ms)", 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Session ID regenerated: old=$old_session_id, new=$new_session_id, public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
 
         // Determine redirect URL
-        $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/accounts/profile';
+        $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/acc/profile';
         unset($_SESSION['redirect_url']); // Clear after use
 
         if ($account) {
