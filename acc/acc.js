@@ -62,8 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     const formData = new FormData(logoutForm);
-                    const logPromises = []; // Mảng để lưu các promise của logToServer
-                    logPromises.push(logToServer(`Sending logout request`, 'DEBUG'));
+
+                    console.log('Sending logout request');
+                    await logToServer(`Sending logout request`, 'DEBUG');
 
                     const response = await fetch('/acc/logout', {
                         method: 'POST',
@@ -74,15 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     const result = await response.json();
-                    logPromises.push(logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO'));
-
-                    // Chờ tất cả log hoàn thành trước khi chuyển hướng
-                    await Promise.all(logPromises);
+                    await logToServer(`Logout response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
 
                     if (result.status === 'success') {
                         console.log('Logout successful, redirecting to:', result.redirect || '/acc/');
-                        // Thêm độ trễ 500ms trước khi chuyển hướng
-                        await new Promise(resolve => setTimeout(resolve, 500));
                         window.location.href = result.redirect || '/acc/';
                     } else {
                         showError(result.message || 'Logout failed. Please try again.');
@@ -110,44 +106,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to log to server
     async function logToServer(message, level = 'INFO') {
-        try {
-            const logData = {
-                timestamp: new Date().toISOString(),
-                level: level,
-                message: message,
-                userAgent: navigator.userAgent,
-                url: window.location.href,
-                module: 'accounts',
-                log_file: 'accounts.log'
-            };
-            console.log(`Sending log to server: ${message}`);
-            const response = await fetch('/acc/get-logs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(logData)
-            });
-            if (!response.ok) {
-                console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
-                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-            }
-            const result = await response.json();
-            console.log(`Log server response: ${JSON.stringify(result)}`);
-        } catch (error) {
-            console.error(`Failed to send log to server: ${error.message}`);
+    try {
+        const logData = {
+            timestamp: new Date().toISOString(),
+            level: level,
+            message: message,
+            userAgent: navigator.userAgent,
+            url: window.location.href,
+            module: 'accounts', // Thêm module
+            log_file: 'accounts.log' // Thêm log_file
+        };
+        console.log(`Sending log to server: ${message}`);
+        const response = await fetch('/acc/get-logs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(logData)
+        });
+        if (!response.ok) {
+            console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
+            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
         }
+        const result = await response.json();
+        console.log(`Log server response: ${JSON.stringify(result)}`);
+    } catch (error) {
+        console.error(`Failed to send log to server: ${error.message}`);
+    }
     }
 
     // Connect wallet functionality
     const connectWalletButton = document.getElementById('connect-wallet');
     if (connectWalletButton) {
         // Prevent default form submission
-        const loginForm = document.querySelector('form');
+        const loginForm = document.querySelector('form'); // Adjust selector if needed
         if (loginForm) {
             loginForm.addEventListener('submit', (event) => {
-                event.preventDefault();
+                event.preventDefault(); // Prevent non-AJAX form submission
                 console.log('Prevented default form submission');
             });
         }
@@ -169,16 +165,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (window.solana && window.solana.isPhantom) {
-                    const logPromises = []; // Mảng để lưu các promise của logToServer
                     statusSpan.textContent = 'Connecting wallet...';
-                    logPromises.push(logToServer('Initiating Phantom wallet connection', 'INFO'));
+                    await logToServer('Initiating Phantom wallet connection', 'INFO');
                     const response = await window.solana.connect();
                     const publicKey = response.publicKey.toString();
                     const shortPublicKey = publicKey.length >= 8 ? publicKey.substring(0, 4) + '...' + publicKey.substring(publicKey.length - 4) : 'Invalid';
                     publicKeySpan.textContent = publicKey;
                     walletInfo.style.display = 'block';
                     statusSpan.textContent = 'Wallet connected! Signing message...';
-                    logPromises.push(logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO'));
+                    await logToServer(`Wallet connected, publicKey: ${shortPublicKey}`, 'INFO');
 
                     const timestamp = Date.now();
                     const nonce = document.getElementById('login-nonce')?.value;
@@ -187,13 +182,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     const message = `Verify login for Vina Network with nonce ${nonce} at ${timestamp}`;
                     const encodedMessage = new TextEncoder().encode(message);
-                    logPromises.push(logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG'));
+                    await logToServer(`Message to sign: ${message}, hex: ${Array.from(encodedMessage).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
                     // Check for duplicate signature attempts
                     if (sessionStorage.getItem('lastSignature')) {
-                        logPromises.push(logToServer('Duplicate signature attempt detected', 'WARNING'));
+                        await logToServer('Duplicate signature attempt detected', 'WARNING');
                         statusSpan.textContent = 'Error: A signature request is being processed. Please wait.';
-                        await Promise.all(logPromises); // Chờ tất cả log hoàn thành
                         return;
                     }
 
@@ -204,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     sessionStorage.setItem('lastSignature', JSON.stringify(signature));
                     const signatureBase64 = btoa(String.fromCharCode(...signatureBytes));
-                    logPromises.push(logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG'));
+                    await logToServer(`Signature created, base64: ${signatureBase64}, hex: ${Array.from(signatureBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`, 'DEBUG');
 
                     const formData = new FormData();
                     formData.append('public_key', publicKey);
@@ -225,15 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const result = await responseServer.json();
-                    logPromises.push(logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO'));
-
-                    // Chờ tất cả log hoàn thành trước khi chuyển hướng
-                    await Promise.all(logPromises);
+                    await logToServer(`Server response: ${JSON.stringify(result)}`, result.status === 'error' ? 'ERROR' : 'INFO');
 
                     if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Login successful, redirecting...';
-                        // Thêm độ trễ 500ms trước khi chuyển hướng
-                        await new Promise(resolve => setTimeout(resolve, 500));
                         window.location.href = result.redirect;
                     } else {
                         showError(result.message || 'Login failed. Please try again.');
@@ -244,11 +233,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     await logToServer('Phantom wallet not installed', 'ERROR');
                 }
             } catch (error) {
-                const logPromises = [];
-                logPromises.push(logToServer(`Error connecting or signing: ${error.message}`, 'ERROR'));
+                await logToServer(`Error connecting or signing: ${error.message}`, 'ERROR');
                 console.error('Error connecting or signing:', error);
                 showError('Error: ' + error.message);
-                await Promise.all(logPromises); // Chờ log lỗi hoàn thành
             } finally {
                 // Re-enable button and clear sessionStorage
                 connectWalletButton.disabled = false;
