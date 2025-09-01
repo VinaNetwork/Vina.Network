@@ -112,10 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
             level: level,
             message: message,
             userAgent: navigator.userAgent,
-            url: window.location.href
+            url: window.location.href,
+            module: 'accounts', // Thêm module
+            log_file: 'accounts.log' // Thêm log_file
         };
         console.log(`Sending log to server: ${message}`);
-        const response = await fetch('/accounts/get-logs', {
+        const response = await fetch('/acc/get-logs', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
