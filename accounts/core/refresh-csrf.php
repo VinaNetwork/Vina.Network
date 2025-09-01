@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: accounts/refresh-csrf.php
+// File: accounts/core/refresh-csrf.php
 // Description: API to refresh CSRF token for AJAX requests
 // Created by: Vina Network
 // ============================================================================
@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // constants | logging | config | error | session | database | header-auth | csrf | wallet-auth
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 // List of allowed sources (core/constants.php)
 $allowed_origins = ALLOWED_ORIGINS;
