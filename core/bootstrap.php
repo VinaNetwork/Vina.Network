@@ -19,5 +19,4 @@ require_once __DIR__ . '/session.php'; 		              // Initialize session wit
 require_once __DIR__ . '/db.php'; 				          // Database connection management
 require_once __DIR__ . '/header-auth.php'; 		          // Security Headers
 require_once __DIR__ . '/csrf/csrf.php'; 	              // CSRF Token
-require_once __DIR__ . '/../../vendor/autoload.php'; 	  // Solana Library
 ?>
