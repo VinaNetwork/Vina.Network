@@ -11,15 +11,16 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // General configuration
-require_once __DIR__ . '/../core/constants.php'; 		    // Dynamic Domain Name Definition
+require_once __DIR__ . '/../core/constants.php'; 		// Dynamic Domain Name Definition
 require_once __DIR__ . '/../core/logging.php'; 	        // Logging utilities
-require_once __DIR__ . '/../core/config.php'; 			    // Central configuration
-require_once __DIR__ . '/../core/error.php'; 			      // PHP configuration
-require_once __DIR__ . '/../core/session.php'; 		      // Initialize session with security options
-require_once __DIR__ . '/../core/db.php'; 				      // Database connection management
-require_once __DIR__ . '/../core/header-auth.php'; 		  // Security Headers
-require_once __DIR__ . '/../../vendor/autoload.php'; 	  // Solana Library
+require_once __DIR__ . '/../core/config.php'; 			// Central configuration
+require_once __DIR__ . '/../core/error.php'; 			// PHP configuration
+require_once __DIR__ . '/../core/session.php'; 		    // Initialize session with security options
+require_once __DIR__ . '/../core/db.php'; 				// Database connection management
+require_once __DIR__ . '/../core/header-auth.php'; 		// Security Headers
+require_once __DIR__ . '/../../vendor/autoload.php'; 	// Solana Library
 
 // Custom configuration
+require_once __DIR__ . '/csrf/csrf.php'; 	            // CSRF Token
 require_once __DIR__ . '/network/network.php';          // Network configuration
 ?>
