@@ -1,18 +1,9 @@
 <?php
 // ============================================================================
-// File: core/clear-csrf.php
+// File: core/csrf/clear-csrf.php
 // Description: API to clear CSRF token after transaction completion
 // Created by: Vina Network
 // ============================================================================
-
-// Access Conditions
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
-$root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
-require_once $root_path . 'core/bootstrap.php';
 
 // Method check and AJAX
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
