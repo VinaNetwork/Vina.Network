@@ -35,7 +35,7 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message("swap.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
-// Kiểm tra phương thức POST
+// Check POST method
 if ($request_method !== 'POST') {
     log_message("Invalid request method: $request_method, uri=$request_uri, session_id=$session_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
@@ -44,24 +44,12 @@ if ($request_method !== 'POST') {
     exit;
 }
 
-// Khởi tạo session
+// Initialize session
 if (!ensure_session()) {
     log_message("Failed to initialize session, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// Kiểm tra CSRF token
-try {
-    csrf_protect();
-} catch (Exception $e) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("CSRF validation failed: " . $e->getMessage() . ", method=$request_method, uri=$request_uri, session_id=$session_id, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
-    header('Content-Type: application/json');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'CSRF validation failed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -367,7 +355,6 @@ try {
 
 // Return results
 header('Content-Type: application/json');
-// Note: CSRF token is cleared by client-side (process.js) after transaction completion
 echo json_encode([
     'status' => $success_count === count($swap_transactions) ? 'success' : 'partial',
     'message' => $success_count === count($swap_transactions) ? 'All swap transactions completed successfully' : "Completed $success_count of " . count($swap_transactions) . " transactions",
