@@ -5,6 +5,14 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+// constants | logging | config | error | session | database | header-auth | csrf | wallet-auth
+require_once __DIR__ . '/../bootstrap.php';
+
 // List of allowed sources (core/constants.php)
 $allowed_origins = ALLOWED_ORIGINS;
 if (!isset($allowed_origins) || !is_array($allowed_origins)) {
