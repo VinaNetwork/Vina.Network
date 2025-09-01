@@ -5,16 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
-$root_path = __DIR__ . '/../';
-require_once $root_path . 'core/bootstrap.php';
-
-// Ensure no output before session operations
 ob_start();
-
 // Ensure POST request and AJAX
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
     !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
