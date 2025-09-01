@@ -61,7 +61,7 @@ if (!ensure_directory_and_file($log_dir, $log_file)) {
     exit;
 }
 
-// Format and log the message (đã loại bỏ IP address)
+// Format and log the message
 $formatted_message = "[URL:$url] [UA:$userAgent] $message";
 if (!log_message($formatted_message, $log_file_name, $module, $level)) {
     echo json_encode(['status' => 'error', 'message' => 'Failed to write log']);
