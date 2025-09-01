@@ -32,6 +32,11 @@ if (!defined('SESSION_STARTED')) {
     }
 }
 
+// Session Lifetime
+ini_set('session.gc_maxlifetime', 30 * 24 * 60 * 60); // 30 day
+ini_set('session.cookie_lifetime', 30 * 24 * 60 * 60);
+session_set_cookie_params(30 * 24 * 60 * 60);
+
 // Session regeneration to prevent fixation
 if (!isset($_SESSION['regen_at']) || time() - $_SESSION['regen_at'] > 900) { // every 15 min
     session_regenerate_id(true);
