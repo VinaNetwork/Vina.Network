@@ -10,11 +10,10 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = __DIR__ . '/../';
 // Configuration
-require_once $root_path . 'core/constants.php'; 		  // Dynamic Domain Name Definition
-require_once $root_path . 'core/logging.php'; 		  // Logging utilities
-require_once $root_path . 'core/config.php'; 			  // Central configuration
-require_once $root_path . 'core/error.php'; 			  // PHP configuration
-require_once $root_path . 'tools/core/csrf.php'; 	      // CSRF Token
+require_once __DIR__ . '/../core/constants.php'; 		  // Dynamic Domain Name Definition
+require_once __DIR__ . '/../core/logs/logging.php'; 	  // Logging utilities
+require_once __DIR__ . '/../core/config.php'; 			  // Central configuration
+require_once __DIR__ . '/../core/error.php'; 			  // PHP configuration
+require_once __DIR__ . '/core/csrf.php'; 	              // CSRF Token
 ?>
