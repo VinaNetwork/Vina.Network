@@ -5,7 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Access Conditions - allow includes from other files
+// Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
     http_response_code(403);
     exit('No direct access allowed!');
