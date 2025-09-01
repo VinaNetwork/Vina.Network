@@ -4,116 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Hàm làm mới CSRF token khi cần thiết
-async function getCsrfToken(maxRetries = 2, retryDelay = 1000) {
-    let attempt = 0;
-    while (attempt < maxRetries) {
-        try {
-            log_message(`Attempting to fetch CSRF token from /mm/refresh-csrf (attempt ${attempt + 1}/${maxRetries}), cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch('/mm/refresh-csrf', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'include'
-            });
-            const responseBody = await response.text();
-            log_message(`Response from /mm/refresh-csrf: status=${response.status}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${responseBody}`);
-            }
-            const result = JSON.parse(responseBody);
-            if (result.status !== 'success' || !result.csrf_token) {
-                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
-            }
-            window.CSRF_TOKEN = result.csrf_token;
-            window.CSRF_TOKEN_TIMESTAMP = Date.now();
-            log_message(`CSRF token retrieved: ${window.CSRF_TOKEN.substring(0, 4)}..., session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log(`CSRF token retrieved: ${window.CSRF_TOKEN.substring(0, 4)}...`);
-            return window.CSRF_TOKEN;
-        } catch (err) {
-            attempt++;
-            log_message(`Failed to fetch CSRF token (attempt ${attempt}/${maxRetries}): ${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error(`Failed to fetch CSRF token (attempt ${attempt}/${maxRetries}): ${err.message}`);
-            if (attempt === maxRetries) {
-                throw new Error(`Failed to fetch CSRF token after ${maxRetries} attempts: ${err.message}`);
-            }
-            await delay(retryDelay * attempt);
-        }
-    }
-}
-
-// Hàm xóa CSRF token sau khi giao dịch hoàn tất
-async function clearCsrfToken() {
-    try {
-        const headers = addAuthHeaders({
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        });
-        log_message(`Clearing CSRF token, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await fetch('/mm/clear-csrf', {
-            method: 'POST',
-            headers,
-            credentials: 'include'
-        });
-        const responseBody = await response.text();
-        log_message(`Response from /mm/clear-csrf: status=${response.status}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${responseBody}`);
-        }
-        const result = JSON.parse(responseBody);
-        if (result.status !== 'success') {
-            throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
-        }
-        log_message(`CSRF token cleared successfully, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-        console.log('CSRF token cleared successfully');
-    } catch (err) {
-        log_message(`Failed to clear CSRF token: ${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-        console.error('Failed to clear CSRF token:', err.message);
-    }
-}
-
-// Kiểm tra CSRF token, chỉ làm mới nếu cần
-async function ensureAuthInitialized() {
-    if (!window.CSRF_TOKEN) {
-        log_message(`CSRF token missing, fetching new token`, 'process.log', 'make-market', 'WARNING');
-        window.CSRF_TOKEN = await getCsrfToken();
-        window.CSRF_TOKEN_TIMESTAMP = Date.now();
-    }
-    return window.CSRF_TOKEN;
-}
-
-// Thêm CSRF token vào headers
-function addAuthHeaders(headers = {}) {
-    const csrfToken = window.CSRF_TOKEN;
-    if (!csrfToken) {
-        console.warn('CSRF token is missing');
-        log_message('CSRF token is missing in addAuthHeaders', 'process.log', 'make-market', 'WARNING');
-    }
-    return {
-        ...headers,
-        'X-CSRF-Token': csrfToken || ''
-    };
-}
-
-// Thêm CSRF token vào headers cho axios
-function addAxiosAuthHeaders(config = {}) {
-    const csrfToken = window.CSRF_TOKEN;
-    if (!csrfToken) {
-        console.warn('CSRF token is missing');
-        log_message('CSRF token is missing in addAxiosAuthHeaders', 'process.log', 'make-market', 'WARNING');
-    }
-    return {
-        ...config,
-        headers: {
-            ...config.headers,
-            'X-CSRF-Token': csrfToken || ''
-        }
-    };
-}
-
 // Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
     console.log('process.js loaded');
@@ -163,14 +53,13 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
         return;
     }
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
-    const csrfToken = window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none';
-    const logMessage = `${message}, session_id=${session_id}, csrf_token=${csrfToken}`;
+    const logMessage = `${message}, session_id=${session_id}`;
     fetch('/mm/log.php', {
         method: 'POST',
-        headers: addAuthHeaders({
+        headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
-        }),
+        },
         credentials: 'include',
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
@@ -192,8 +81,6 @@ async function showError(message, detailedError = null) {
     // Handle specific error cases to display friendly messages
     if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
         userFriendlyMessage = 'Token is not tradable. Please check the liquidity of the token or choose another token.';
-    } else if (detailedError?.includes('Invalid or expired CSRF token')) {
-        userFriendlyMessage = 'Your session has expired. Please refresh the page to continue.';
     } else if (detailedError?.includes('Network Error')) {
         userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
     }
@@ -218,7 +105,6 @@ async function showError(message, detailedError = null) {
     console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
     
     await updateTransactionStatus('failed', detailedError || message);
-    await clearCsrfToken();
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -256,7 +142,6 @@ async function showSuccess(message, results = [], networkConfig) {
     document.getElementById('transaction-status').classList.add(results.some(r => r.status === 'error') ? 'text-warning' : 'text-success');
     log_message(`Process completed: ${message}, network=${networkConfig.network}`, 'process.log', 'make-market', 'INFO');
     console.log(`Process completed: ${message}, network=${networkConfig.network}`);
-    await clearCsrfToken(); // Xóa CSRF token khi giao dịch thành công
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -270,12 +155,11 @@ async function updateTransactionStatus(status, error = null) {
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            await ensureAuthInitialized();
-            const headers = addAuthHeaders({
+            const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            });
+            };
             log_message(`Updating transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-status/${transactionId}`, {
                 method: 'POST',
@@ -296,15 +180,6 @@ async function updateTransactionStatus(status, error = null) {
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
-                if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                    attempt++;
-                    if (attempt === maxRetries) {
-                        throw new Error(`Failed to update transaction status after ${maxRetries} attempts: ${result.error}`);
-                    }
-                    await getCsrfToken();
-                    continue;
-                }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
             const result = JSON.parse(responseBody);
@@ -320,6 +195,8 @@ async function updateTransactionStatus(status, error = null) {
             if (attempt === maxRetries - 1) {
                 showError('Failed to update transaction status: ' + err.message, err.message);
             }
+            attempt++;
+            await delay(1000 * attempt);
         }
     }
 }
@@ -330,12 +207,11 @@ async function cancelTransaction(transactionId) {
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            await ensureAuthInitialized();
-            const headers = addAuthHeaders({
+            const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            });
+            };
             log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-status/${transactionId}`, {
                 method: 'POST',
@@ -356,15 +232,6 @@ async function cancelTransaction(transactionId) {
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
-                if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                    attempt++;
-                    if (attempt === maxRetries) {
-                        throw new Error(`Failed to cancel transaction after ${maxRetries} attempts: ${result.error}`);
-                    }
-                    await getCsrfToken();
-                    continue;
-                }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
             const result = JSON.parse(responseBody);
@@ -382,7 +249,6 @@ async function cancelTransaction(transactionId) {
                 </div>
             `;
             document.getElementById('process-result').classList.add('active');
-            await clearCsrfToken(); // Xóa CSRF token khi giao dịch bị hủy
             const cancelBtn = document.getElementById('cancel-btn');
             if (cancelBtn) {
                 cancelBtn.style.display = 'none';
@@ -394,6 +260,8 @@ async function cancelTransaction(transactionId) {
             if (attempt === maxRetries - 1) {
                 showError('Failed to cancel transaction: ' + err.message, err.message);
             }
+            attempt++;
+            await delay(1000 * attempt);
         }
     }
 }
@@ -404,11 +272,10 @@ async function getNetworkConfig() {
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            await ensureAuthInitialized();
-            const headers = addAuthHeaders({
+            const headers = {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            });
+            };
             log_message(
                 `Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                 'process.log', 'make-market', 'INFO'
@@ -435,15 +302,6 @@ async function getNetworkConfig() {
                 } catch (e) {
                     result = {};
                 }
-                if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                    attempt++;
-                    if (attempt === maxRetries) {
-                        throw new Error(`Failed to fetch network config after ${maxRetries} attempts: ${result.error}`);
-                    }
-                    await getCsrfToken();
-                    continue;
-                }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
             const result = JSON.parse(responseBody);
@@ -459,7 +317,7 @@ async function getNetworkConfig() {
             if (!result.explorerUrl) {
                 throw new Error(`Invalid network config: missing explorerUrl, received explorerUrl=${result.explorerUrl}`);
             }
-            // Cho phép explorerQuery là chuỗi rỗng cho mainnet
+            // Allow explorerQuery to be an empty string for mainnet
             if (result.explorerQuery === undefined) {
                 throw new Error(`Invalid network config: missing explorerQuery, received explorerQuery=${result.explorerQuery}`);
             }
@@ -491,15 +349,11 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
     while (attempt < maxRetries) {
         try {
             log_message(`Attempting to get token decimals from database (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            await ensureAuthInitialized();
-            const headers = addAxiosAuthHeaders({
-                timeout: 15000,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            }).headers;
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            };
             log_message(`Requesting /mm/get-decimals, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await axios.post('/mm/get-decimals', {
                 tokenMint,
@@ -524,14 +378,6 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
                 : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-decimals'}`;
             log_message(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
             console.error(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}):`, errorMessage);
-            if (err.response?.status === 403 && err.response?.data?.error === 'Invalid or expired CSRF token') {
-                log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                if (attempt === maxRetries) {
-                    throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
-                }
-                await getCsrfToken();
-                continue;
-            }
             if (attempt === maxRetries) {
                 throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
             }
@@ -547,7 +393,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         outputMint,
         amount: Math.floor(amount),
         slippageBps,
-        testnet: networkConfig.network === 'devnet' ? true : undefined // Chỉ thêm testnet nếu là devnet
+        testnet: networkConfig.network === 'devnet' ? true : undefined // Only add testnet if devnet
     };
     try {
         log_message(
@@ -618,7 +464,6 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            await ensureAuthInitialized();
             const totalTransactions = tradeDirection === 'both' ? loopCount * batchSize * 2 : loopCount * batchSize;
             const subTransactions = [];
             for (let loop = 1; loop <= loopCount; loop++) {
@@ -631,17 +476,17 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                     }
                 }
             }
-            const headers = addAuthHeaders({
+            const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            });
+            };
             log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/create-tx/${transactionId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    id: transactionId, // Thêm id vào payload
+                    id: transactionId, // Add id to payload
                     sub_transactions: subTransactions,
                     network: solanaNetwork
                 }),
@@ -659,15 +504,6 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 if (response.status === 401) {
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
-                }
-                if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                    attempt++;
-                    if (attempt === maxRetries) {
-                        throw new Error(`Failed to create sub-transactions after ${maxRetries} attempts: ${result.error}`);
-                    }
-                    await getCsrfToken();
-                    continue;
                 }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
@@ -696,20 +532,18 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            await ensureAuthInitialized();
-            const headers = addAuthHeaders({
+            const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            });
+            };
             
             // Log request details
             log_message(
                 `Initiating swap transactions: ID=${transactionId}, attempt=${attempt + 1}/${maxRetries}, ` +
                 `swap_transactions_count=${swapTransactions.length}, sub_transaction_ids=${JSON.stringify(subTransactionIds)}, ` +
                 `network=${solanaNetwork}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}, ` +
-                `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, ` +
-                `csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`,
+                `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                 'process.log', 'make-market', 'INFO'
             );
 
@@ -766,19 +600,6 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
-                if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(
-                        `CSRF token invalid or expired for /mm/swap-jupiter, retrying with new token (attempt ${attempt + 1}/${maxRetries}), ` +
-                        `transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-                        'process.log', 'make-market', 'WARNING'
-                    );
-                    attempt++;
-                    if (attempt === maxRetries) {
-                        throw new Error(`Failed to execute swap transactions after ${maxRetries} attempts: ${result.error}`);
-                    }
-                    await getCsrfToken();
-                    continue;
-                }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
 
@@ -823,16 +644,15 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
 
 // Main process
 document.addEventListener('DOMContentLoaded', async () => {
-    log_message(`process.js loaded, cookies=${document.cookie}, csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`, 'process.log', 'make-market', 'DEBUG');
+    log_message(`process.js loaded, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
 
-    // Initialize authentication
+    // Initialize network configuration
     let networkConfig;
     try {
-        await ensureAuthInitialized();
         networkConfig = await getNetworkConfig();
     } catch (err) {
-        await showError('Failed to initialize authentication or network config: ' + err.message, err.message);
+        await showError('Failed to initialize network config: ' + err.message, err.message);
         return;
     }
 
@@ -849,11 +669,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            await ensureAuthInitialized();
-            const headers = addAuthHeaders({
+            const headers = {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
-            });
+            };
             log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-order/${transactionId}`, {
                 headers,
@@ -873,15 +692,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } catch (e) {
                     result = {};
                 }
-                if (response.status === 403 && result.error === 'Invalid or expired CSRF token') {
-                    log_message(`CSRF token invalid or expired, retrying with new token (attempt ${attempt + 1}/${maxRetries})`, 'process.log', 'make-market', 'WARNING');
-                    attempt++;
-                    if (attempt === maxRetries) {
-                        throw new Error(`Failed to fetch transaction after ${maxRetries} attempts: ${result.error}`);
-                    }
-                    await getCsrfToken();
-                    continue;
-                }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
             const result = JSON.parse(responseBody);
@@ -897,7 +707,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             transaction.sol_amount = parseFloat(transaction.sol_amount) || 0;
             transaction.token_amount = parseFloat(transaction.token_amount) || 0;
             transaction.trade_direction = transaction.trade_direction || 'buy';
-            log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, csrf_token=${window.CSRF_TOKEN ? window.CSRF_TOKEN.substring(0, 4) + '...' : 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Transaction fetched: ID=${transactionId}, token_mint=${transaction.token_mint}, public_key=${publicKey}, sol_amount=${transaction.sol_amount}, token_amount=${transaction.token_amount}, trade_direction=${transaction.trade_direction}, loop_count=${transaction.loop_count}, batch_size=${transaction.batch_size}, slippage=${transaction.slippage}, delay_seconds=${transaction.delay_seconds}, status=${transaction.status}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
             console.log('Transaction fetched:', transaction);
             break;
         } catch (err) {
