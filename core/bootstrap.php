@@ -12,11 +12,11 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // Configuration
 require_once __DIR__ . '/constants.php'; 		          // Dynamic Domain Name Definition
-require_once __DIR__ . '/logs/logging.php'; 		      // Logging utilities
+require_once __DIR__ . '/logging.php'; 		      // Logging utilities
 require_once __DIR__ . '/config.php'; 			          // Central configuration
 require_once __DIR__ . '/error.php'; 			          // PHP configuration
 require_once __DIR__ . '/session.php'; 		              // Initialize session with security options
 require_once __DIR__ . '/db.php'; 				          // Database connection management
 require_once __DIR__ . '/header-auth.php'; 		          // Security Headers
-require_once __DIR__ . '/csrf/csrf.php'; 	              // CSRF Token
+require_once __DIR__ . '/csrf.php'; 	              // CSRF Token
 ?>
