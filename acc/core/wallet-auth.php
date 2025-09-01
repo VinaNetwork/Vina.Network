@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: acc/wallet-auth.php
+// File: acc/core/wallet-auth.php
 // Description: API handles Solana wallet signature verification with rate limiting and session regeneration.
 // Created by: Vina Network
 // ============================================================================
@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = __DIR__ . '/../';
+$root_path = __DIR__ . '/../../';
 // constants | logging | config | error | session | database | header-auth | wallet-auth
 require_once $root_path . 'acc/bootstrap.php';
 use StephenHill\Base58;
