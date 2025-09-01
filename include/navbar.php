@@ -29,8 +29,8 @@
                 <i class="fas fa-user"></i> Accounts <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/accounts" class="dropdown-link"><i class="fas fa-wallet"></i> Connect Wallet</a></li>
-                <li><a href="/accounts/profile.php" class="dropdown-link"><i class="fas fa-address-card"></i> Profile</a></li>
+                <li><a href="/acc" class="dropdown-link"><i class="fas fa-wallet"></i> Connect Wallet</a></li>
+                <li><a href="/acc/profile.php" class="dropdown-link"><i class="fas fa-address-card"></i> Profile</a></li>
             </ul>
         </li>
 
