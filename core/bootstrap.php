@@ -10,15 +10,14 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-$root_path = __DIR__ . '/../';
 // Configuration
-require_once $root_path . 'core/constants.php'; 		  // Dynamic Domain Name Definition
-require_once $root_path . 'core/logging.php'; 		      // Logging utilities
-require_once $root_path . 'core/config.php'; 			  // Central configuration
-require_once $root_path . 'core/error.php'; 			  // PHP configuration
-require_once $root_path . 'core/session.php'; 		      // Initialize session with security options
-require_once $root_path . 'core/db.php'; 				  // Database connection management
-require_once $root_path . 'core/header-auth.php'; 		  // Security Headers
-require_once $root_path . 'core/csrf.php'; 	              // CSRF Token
-require_once $root_path . '../vendor/autoload.php'; 	  // Solana Library
+require_once __DIR__ . '/constants.php'; 		          // Dynamic Domain Name Definition
+require_once __DIR__ . '/logs/logging.php'; 		      // Logging utilities
+require_once __DIR__ . '/config.php'; 			          // Central configuration
+require_once __DIR__ . '/error.php'; 			          // PHP configuration
+require_once __DIR__ . '/session.php'; 		              // Initialize session with security options
+require_once __DIR__ . '/db.php'; 				          // Database connection management
+require_once __DIR__ . '/header-auth.php'; 		          // Security Headers
+require_once __DIR__ . '/csrf/csrf.php'; 	              // CSRF Token
+require_once __DIR__ . '/../../vendor/autoload.php'; 	  // Solana Library
 ?>
