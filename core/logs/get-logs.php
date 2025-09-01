@@ -5,6 +5,14 @@
 // Created by: Vina Network
 // ============================================================================
 
+// Access Conditions
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+// constants | logging | config | error | session | database | header-auth | csrf | wallet-auth
+require_once __DIR__ . '/../bootstrap.php';
+
 // Set response header
 header('Content-Type: application/json');
 
