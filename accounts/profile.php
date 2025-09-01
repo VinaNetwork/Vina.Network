@@ -12,8 +12,8 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth | csrf
-require_once $root_path . 'core/bootstrap.php';
+// constants | logging | config | error | session | database | header-auth | csrf | wallet-auth
+require_once $root_path . 'accounts/bootstrap.php';
 use StephenHill\Base58;
 
 // Protect POST requests with CSRF
