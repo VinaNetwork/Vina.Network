@@ -12,7 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 
 // Configuration
 require_once __DIR__ . '/../core/constants.php'; 		  // Dynamic Domain Name Definition
-require_once __DIR__ . '/../core/logs/logging.php'; 	  // Logging utilities
+require_once __DIR__ . '/../core/logging.php'; 	          // Logging utilities
 require_once __DIR__ . '/../core/config.php'; 			  // Central configuration
 require_once __DIR__ . '/../core/error.php'; 			  // PHP configuration
 require_once __DIR__ . '/../core/session.php'; 		      // Initialize session with security options
