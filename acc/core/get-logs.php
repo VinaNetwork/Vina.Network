@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WI
     exit;
 }
 
-// Check user session (basic authorization)
-if (!isset($_SESSION['user_id'])) {
+// Check user session
+if (!isset($_SESSION['public_key'])) {
     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit;
 }
