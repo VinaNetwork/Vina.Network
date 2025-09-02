@@ -106,34 +106,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to log to server
     async function logToServer(message, level = 'INFO') {
-    try {
-        const logData = {
-            timestamp: new Date().toISOString(),
-            level: level,
-            message: message,
-            userAgent: navigator.userAgent,
-            url: window.location.href,
-            module: 'accounts', // Thêm module
-            log_file: 'accounts.log' // Thêm log_file
-        };
-        console.log(`Sending log to server: ${message}`);
-        const response = await fetch('/acc/get-logs', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(logData)
-        });
-        if (!response.ok) {
-            console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
-            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+        if (level === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
+            return;
         }
-        const result = await response.json();
-        console.log(`Log server response: ${JSON.stringify(result)}`);
-    } catch (error) {
-        console.error(`Failed to send log to server: ${error.message}`);
-    }
+        try {
+            const logData = {
+                message: message,
+                log_type: level,
+                log_file: 'accounts.log',
+                module: 'accounts',
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            };
+            console.log(`Sending log to server: ${message}`);
+            const response = await fetch('/mm/get-logs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(logData)
+            });
+            if (!response.ok) {
+                console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
+                return;
+            }
+            const result = await response.json();
+            console.log(`Log server response: ${JSON.stringify(result)}`);
+        } catch (error) {
+            console.error(`Failed to send log to server: ${error.message}`);
+        }
     }
 
     // Connect wallet functionality
