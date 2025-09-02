@@ -47,30 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 $token_mint = isset($input['tokenMint']) ? trim($input['tokenMint']) : '';
 $network = isset($input['network']) ? trim($input['network']) : 'mainnet';
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? (isset($input['csrf_token']) ? $input['csrf_token'] : '');
 $log_context['token_mint'] = $token_mint;
 $log_context['network'] = $network;
-
-// Assign token to $_POST for csrf_protect()
-$_POST[CSRF_TOKEN_NAME] = $csrf_token;
-
-// Protect POST requests with CSRF
-try {
-    csrf_protect();
-} catch (Exception $e) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    $csrf_token_short = strlen($csrf_token) > 4 ? substr($csrf_token, 0, 4) . '...' : 'none';
-    log_message(
-        "CSRF validation failed in get-decimals.php: {$e->getMessage()}, session_id=" . (session_id() ?: 'none') . ", user_id=$user_id, CSRF_TOKEN=$csrf_token_short",
-        'process.log',
-        'make-market',
-        'ERROR',
-        $log_context
-    );
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
 
 // Validate inputs
 if (empty($token_mint) || !preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $token_mint)) {
