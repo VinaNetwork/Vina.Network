@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/get-logs.php
+// File: acc/core/get-logs.php
 // Description: Handles client-side logging using core logging utilities for multiple modules.
 // Created by: Vina Network
 // ============================================================================
@@ -9,7 +9,7 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/../core/logging.php';
+require_once __DIR__ . '/../../core/logging.php';
 
 // Set response header
 header('Content-Type: application/json');
