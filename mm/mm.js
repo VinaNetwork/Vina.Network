@@ -50,7 +50,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    axios.post('/mm/log.php', { message, log_file, module, log_type }, {
+    axios.post('/mm/get-logs', { message, log_file, module, log_type }, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     }).catch(err => console.error('Log error:', err));
 }
