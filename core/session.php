@@ -19,7 +19,7 @@ session_set_cookie_params([
     'path' => '/',
     'domain' => $domain,     // core/constants.php
     'secure' => $is_secure,  // core/constants.php
-    'httponly' => true,
+    'httponly' => false,     // Allow JavaScript to access PHPSESSID
     'samesite' => 'Strict'
 ]);
 
@@ -30,7 +30,7 @@ if (!defined('SESSION_STARTED')) {
             'use_strict_mode' => true,          // prevent session fixation
             'use_only_cookies' => 1,            // only use cookies
             'use_trans_sid' => 0,               // disable URL-based sessions
-            'cookie_httponly' => true,          // prevent JS from reading cookie
+            'cookie_httponly' => false,          // Allow JavaScript to access PHPSESSID
             'cookie_samesite' => 'Strict',      // strongest CSRF defense
             'cookie_secure' => $is_secure,      // only send cookie over HTTPS
             'cookie_domain' => $domain          // set domain dynamically
