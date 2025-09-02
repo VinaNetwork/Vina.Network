@@ -61,7 +61,7 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        credentials: 'include',
+        credentials: 'include', // Make sure cookies are sent
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
@@ -80,23 +80,17 @@ async function showError(message, detailedError = null) {
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
     
     // Handle specific error cases to display friendly messages
-    if (detailedError?.includes('0x1') || detailedError?.includes('Insufficient')) {
-        userFriendlyMessage = 'Insufficient SOL balance in your wallet. Please add more SOL and try again.';
-    } else if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
+    if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
         userFriendlyMessage = 'Token is not tradable. Please check the liquidity of the token or choose another token.';
-    } else if (detailedError?.includes('Network') || detailedError?.includes('timeout')) {
+    } else if (detailedError?.includes('Network Error')) {
         userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
-    } else if (detailedError?.includes('simulationError')) {
-        userFriendlyMessage = 'Transaction simulation failed. Please check your inputs or try again later.';
-    } else if (detailedError?.includes('parse response body')) {
-        userFriendlyMessage = 'Invalid response from server. Please try again later.';
     }
 
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
             <strong>Error:</strong> ${userFriendlyMessage}
-            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Detail: ${detailedError.replace(/</g, '&lt;').replace(/>/g, '&gt;')}` : ''}
+            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Detail: ${detailedError}` : ''}
         </div>
     `;
     resultDiv.classList.add('active');
@@ -106,12 +100,12 @@ async function showError(message, detailedError = null) {
     
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     log_message(
-        `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}`,
+        `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
         'process.log', 'make-market', 'ERROR'
     );
     console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
     
-    await updateTransactionStatus('failed', userFriendlyMessage + (detailedError ? ': ' + detailedError : ''));
+    await updateTransactionStatus('failed', detailedError || message);
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
@@ -158,7 +152,7 @@ async function showSuccess(message, results = [], networkConfig) {
 // Update transaction status
 async function updateTransactionStatus(status, error = null) {
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-    const maxRetries = 1;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -210,7 +204,7 @@ async function updateTransactionStatus(status, error = null) {
 
 // Cancel transaction
 async function cancelTransaction(transactionId) {
-    const maxRetries = 1;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -275,7 +269,7 @@ async function cancelTransaction(transactionId) {
 
 // Get network configuration
 async function getNetworkConfig() {
-    const maxRetries = 1;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -292,7 +286,7 @@ async function getNetworkConfig() {
             const response = await fetch('/mm/get-network', {
                 method: 'GET',
                 headers,
-                credentials: 'include'
+                credentials: 'include' // Đã có, giữ nguyên
             });
             const responseBody = await response.text();
             log_message(
@@ -352,7 +346,7 @@ async function getNetworkConfig() {
 
 // Get token decimals from database
 async function getTokenDecimals(tokenMint, solanaNetwork) {
-    const maxRetries = 1;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -370,7 +364,7 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
             }, {
                 headers,
                 timeout: 15000,
-                withCredentials: true
+                withCredentials: true // Đã có, giữ nguyên
             });
             log_message(`Response from /mm/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${cookies}, session_id=${session_id}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
@@ -402,7 +396,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         outputMint,
         amount: Math.floor(amount),
         slippageBps,
-        testnet: networkConfig.network === 'devnet' ? true : undefined
+        testnet: networkConfig.network === 'devnet' ? true : undefined // Only add testnet if devnet
     };
     try {
         log_message(
@@ -429,13 +423,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
             'process.log', 'make-market', 'ERROR'
         );
         console.error('Failed to get quote:', errorMessage);
-        let userFriendlyMessage = 'Failed to retrieve quote from Jupiter API';
-        if (errorMessage.includes('TOKEN_NOT_TRADABLE')) {
-            userFriendlyMessage = 'Token is not tradable';
-        } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
-            userFriendlyMessage = 'Network error when connecting to Jupiter API';
-        }
-        throw new Error(userFriendlyMessage + ': ' + errorMessage);
+        throw new Error(errorMessage);
     }
 }
 
@@ -469,23 +457,13 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
         log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Swap transaction failed:', errorMessage);
-        let userFriendlyMessage = 'Failed to prepare swap transaction';
-        if (errorMessage.includes('0x1') || errorMessage.includes('Insufficient')) {
-            userFriendlyMessage = 'Insufficient SOL balance in wallet';
-        } else if (errorMessage.includes('TOKEN_NOT_TRADABLE')) {
-            userFriendlyMessage = 'Token is not tradable';
-        } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
-            userFriendlyMessage = 'Network error when connecting to Jupiter API';
-        } else if (errorMessage.includes('simulationError')) {
-            userFriendlyMessage = 'Transaction simulation failed';
-        }
-        throw new Error(userFriendlyMessage + ': ' + errorMessage);
+        throw new Error(errorMessage);
     }
 }
 
 // Create sub-transaction records
 async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork) {
-    const maxRetries = 1;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -511,7 +489,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    id: transactionId,
+                    id: transactionId, // Add id to payload
                     sub_transactions: subTransactions,
                     network: solanaNetwork
                 }),
@@ -553,7 +531,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 
 // Execute swap transactions
 async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
-    const maxRetries = 1;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -563,11 +541,16 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 'X-Requested-With': 'XMLHttpRequest'
             };
             
+            // Log request details
             log_message(
-                `Initiating swap transactions: ID=${transactionId}, attempt=${attempt + 1}/${maxRetries}, swap_transactions_count=${swapTransactions.length}, sub_transaction_ids=${JSON.stringify(subTransactionIds)}, network=${solanaNetwork}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`,
+                `Initiating swap transactions: ID=${transactionId}, attempt=${attempt + 1}/${maxRetries}, ` +
+                `swap_transactions_count=${swapTransactions.length}, sub_transaction_ids=${JSON.stringify(subTransactionIds)}, ` +
+                `network=${solanaNetwork}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}, ` +
+                `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                 'process.log', 'make-market', 'INFO'
             );
 
+            // Prepare request body
             const requestBody = {
                 id: transactionId,
                 swap_transactions: swapTransactions,
@@ -575,6 +558,17 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 network: solanaNetwork
             };
             
+            // Log request body details
+            log_message(
+                `Sending request to /mm/swap-jupiter: body=${JSON.stringify(requestBody, (key, value) => {
+                    if (key === 'tx' && typeof value === 'string' && value.length > 20) {
+                        return value.substring(0, 20) + '...';
+                    }
+                    return value;
+                })}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'DEBUG'
+            );
+
             const response = await fetch('/mm/swap-jupiter', {
                 method: 'POST',
                 headers,
@@ -583,44 +577,46 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             });
 
             const responseBody = await response.text();
-            let result;
-            try {
-                result = JSON.parse(responseBody);
-            } catch (e) {
-                log_message(`Failed to parse response from /mm/swap-jupiter: error=${e.message}, response_body=${responseBody.substring(0, 1000)}`, 'process.log', 'make-market', 'ERROR');
-                throw new Error('Invalid server response');
-            }
-
+            
+            // Log response details
             log_message(
-                `Response from /mm/swap-jupiter: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody.length > 1000 ? responseBody.substring(0, 1000) + '...' : responseBody}, network=${solanaNetwork}`,
+                `Response from /mm/swap-jupiter: status=${response.status}, ` +
+                `headers=${JSON.stringify([...response.headers.entries()])}, ` +
+                `response_body=${responseBody.length > 1000 ? responseBody.substring(0, 1000) + '...' : responseBody}, ` +
+                `network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                 'process.log', 'make-market', 'DEBUG'
             );
 
             if (!response.ok) {
+                let result;
+                try {
+                    result = JSON.parse(responseBody);
+                } catch (e) {
+                    result = { error: 'Failed to parse response body' };
+                }
                 if (response.status === 401) {
-                    log_message(`Unauthorized response from /mm/swap-jupiter: redirecting to login, transactionId=${transactionId}`, 'process.log', 'make-market', 'ERROR');
+                    log_message(
+                        `Unauthorized response from /mm/swap-jupiter: redirecting to login, transactionId=${transactionId}, ` +
+                        `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                        'process.log', 'make-market', 'ERROR'
+                    );
                     window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
-                throw new Error(`HTTP ${response.status}: ${result.error || 'Unknown error'}`);
+                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
             }
 
+            const result = JSON.parse(responseBody);
             if (result.status !== 'success' && result.status !== 'partial') {
-                let userFriendlyMessage = 'Transaction failed';
-                if (result.message?.includes('0x1') || result.message?.includes('Insufficient')) {
-                    userFriendlyMessage = 'Insufficient SOL balance in wallet';
-                } else if (result.message?.includes('TOKEN_NOT_TRADABLE')) {
-                    userFriendlyMessage = 'Token is not tradable';
-                } else if (result.message?.includes('Network') || result.message?.includes('timeout')) {
-                    userFriendlyMessage = 'Network error when connecting to Jupiter API';
-                } else if (result.message?.includes('simulationError')) {
-                    userFriendlyMessage = 'Transaction simulation failed';
-                }
-                throw new Error(userFriendlyMessage + ': ' + (result.message || `Invalid response: ${JSON.stringify(result)}`));
+                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
 
+            // Log successful execution details
             log_message(
-                `Swap transactions executed: status=${result.status}, transactionId=${transactionId}, results_count=${result.results?.length || 0}, network=${solanaNetwork}, results=${JSON.stringify(result.results, (key, value) => {
+                `Swap transactions executed: status=${result.status}, transactionId=${transactionId}, ` +
+                `results_count=${result.results?.length || 0}, network=${solanaNetwork}, ` +
+                `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, ` +
+                `results=${JSON.stringify(result.results, (key, value) => {
                     if (key === 'txid' && typeof value === 'string' && value.length > 20) {
                         return value.substring(0, 20) + '...';
                     }
@@ -631,26 +627,17 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             console.log(`Swap transactions executed:`, result);
             return result;
         } catch (err) {
+            // Log error details
             const errorMessage = err.message || 'Unknown error';
             log_message(
-                `Swap execution failed: error=${errorMessage}, transactionId=${transactionId}, attempt=${attempt + 1}/${maxRetries}, network=${solanaNetwork}, stack=${err.stack || 'no stack trace'}`,
+                `Swap execution failed: error=${errorMessage}, transactionId=${transactionId}, attempt=${attempt + 1}/${maxRetries}, ` +
+                `network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, ` +
+                `stack=${err.stack || 'no stack trace'}`,
                 'process.log', 'make-market', 'ERROR'
             );
             console.error('Swap execution failed:', errorMessage);
             if (attempt === maxRetries - 1) {
-                let userFriendlyMessage = 'Transaction failed';
-                if (errorMessage.includes('0x1') || errorMessage.includes('Insufficient')) {
-                    userFriendlyMessage = 'Insufficient SOL balance in wallet';
-                } else if (errorMessage.includes('TOKEN_NOT_TRADABLE')) {
-                    userFriendlyMessage = 'Token is not tradable';
-                } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
-                    userFriendlyMessage = 'Network error when connecting to Jupiter API';
-                } else if (errorMessage.includes('simulationError')) {
-                    userFriendlyMessage = 'Transaction simulation failed';
-                } else if (errorMessage.includes('parse response body')) {
-                    userFriendlyMessage = 'Invalid response from server';
-                }
-                throw new Error(userFriendlyMessage + ': ' + errorMessage);
+                throw err;
             }
             attempt++;
             await delay(1000 * attempt);
@@ -681,7 +668,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fetch transaction details
     let transaction, publicKey;
-    const maxRetries = 1;
+    const maxRetries = 2;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {

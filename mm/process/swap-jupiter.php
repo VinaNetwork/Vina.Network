@@ -32,7 +32,7 @@ $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 $cookies = $_SERVER['HTTP_COOKIE'] ?? 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("swap.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG', $log_context);
+    log_message("swap.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG就是在', $log_context);
 }
 
 // Helper function to send error response
@@ -134,7 +134,7 @@ try {
 // Process each transaction
 $results = [];
 $connection = new Connection(RPC_ENDPOINT);
-$maxRetries = 1;
+$maxRetries = 3;
 
 foreach ($swap_transactions as $index => $swap) {
     $direction = $swap['direction'] ?? 'buy';
@@ -288,28 +288,11 @@ foreach ($swap_transactions as $index => $swap) {
             break;
         } catch (Exception $e) {
             $error_message = $e->getMessage();
-            $user_friendly_message = 'Transaction failed';
-            
-            // Phân tích lỗi từ Jupiter API
-            if (strpos($error_message, '0x1') !== false) {
-                $user_friendly_message = 'Insufficient SOL balance in wallet';
-            } elseif (strpos($error_message, 'simulationError') !== false) {
-                $user_friendly_message = 'Transaction simulation failed';
-            } elseif (strpos($error_message, 'TOKEN_NOT_TRADABLE') !== false) {
-                $user_friendly_message = 'Token is not tradable';
-            } elseif (strpos($error_message, 'network') !== false || strpos($error_message, 'timeout') !== false) {
-                $user_friendly_message = 'Network error when connecting to Jupiter API';
-            } elseif (empty($error_message)) {
-                $user_friendly_message = 'Invalid or empty response from Jupiter API';
-            }
-            
             log_message("Failed to send transaction for sub-transaction ID=$sub_transaction_id, attempt $attempt/$maxRetries: $error_message, user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
-            log_message("Raw Jupiter API error: $error_message, sub-transaction ID=$sub_transaction_id", 'process.log', 'make-market', 'DEBUG', $log_context);
-            
             if ($attempt === $maxRetries) {
                 try {
                     $stmt = $pdo->prepare("UPDATE make_market_sub SET status = ?, error = ? WHERE id = ?");
-                    $stmt->execute(['failed', "$user_friendly_message: $error_message", $sub_transaction_id]);
+                    $stmt->execute(['failed', "Failed to send transaction after $maxRetries attempts: $error_message", $sub_transaction_id]);
                 } catch (PDOException $e2) {
                     log_message("Failed to update sub-transaction status: " . $e2->getMessage() . ", user_id=$user_id", 'process.log', 'make-market', 'ERROR', $log_context);
                 }
@@ -318,7 +301,7 @@ foreach ($swap_transactions as $index => $swap) {
                     'batch_index' => $batch_index,
                     'direction' => $direction,
                     'status' => 'error',
-                    'message' => $user_friendly_message
+                    'message' => "Failed to send transaction after $maxRetries attempts: $error_message"
                 ];
             }
             if ($attempt < $maxRetries) {
