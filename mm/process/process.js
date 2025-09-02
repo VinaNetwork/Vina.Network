@@ -53,20 +53,21 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
         return;
     }
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
-    const logMessage = `${message}, session_id=${session_id}`;
+    const cookies = document.cookie || 'no cookies';
+    const logMessage = `${message}, session_id=${session_id}, cookies=${cookies}`;
     fetch('/mm/log.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        credentials: 'include',
+        credentials: 'include', // Đảm bảo gửi cookie
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
-            console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}, response=${response.statusText}`);
+            console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}, cookies=${cookies}, response=${response.statusText}`);
         }
-    }).catch(err => console.error(`Log error: ${err.message}, session_id=${session_id}`));
+    }).catch(err => console.error(`Log error: ${err.message}, session_id=${session_id}, cookies=${cookies}`));
 }
 
 // Delay function
@@ -276,18 +277,20 @@ async function getNetworkConfig() {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             };
+            const cookies = document.cookie || 'no cookies';
+            const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
             log_message(
-                `Fetching network config, headers=${JSON.stringify(headers)}, cookies=${document.cookie}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                `Fetching network config, headers=${JSON.stringify(headers)}, cookies=${cookies}, session_id=${session_id}`,
                 'process.log', 'make-market', 'INFO'
             );
             const response = await fetch('/mm/get-network', {
                 method: 'GET',
                 headers,
-                credentials: 'include'
+                credentials: 'include' // Đã có, giữ nguyên
             });
             const responseBody = await response.text();
             log_message(
-                `Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                `Response from /mm/get-network: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}, session_id=${session_id}, cookies=${cookies}`,
                 'process.log', 'make-market', 'INFO'
             );
             if (response.status === 401) {
@@ -317,19 +320,18 @@ async function getNetworkConfig() {
             if (!result.explorerUrl) {
                 throw new Error(`Invalid network config: missing explorerUrl, received explorerUrl=${result.explorerUrl}`);
             }
-            // Allow explorerQuery to be an empty string for mainnet
             if (result.explorerQuery === undefined) {
                 throw new Error(`Invalid network config: missing explorerQuery, received explorerQuery=${result.explorerQuery}`);
             }
             log_message(
-                `Network config fetched successfully: network=${result.network}, jupiterApi=${result.jupiterApi}, solMint=${result.solMint}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery || 'empty'}, prioritizationFeeLamports=${result.prioritizationFeeLamports}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                `Network config fetched successfully: network=${result.network}, jupiterApi=${result.jupiterApi}, solMint=${result.solMint}, explorerUrl=${result.explorerUrl}, explorerQuery=${result.explorerQuery || 'empty'}, prioritizationFeeLamports=${result.prioritizationFeeLamports}, session_id=${session_id}, cookies=${cookies}`,
                 'process.log', 'make-market', 'INFO'
             );
             console.log(`Network config fetched successfully:`, result);
             return result;
         } catch (err) {
             log_message(
-                `Failed to fetch network config: error=${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                `Failed to fetch network config: error=${err.message}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, cookies=${document.cookie || 'no cookies'}`,
                 'process.log', 'make-market', 'ERROR'
             );
             console.error('Failed to fetch network config:', err.message);
@@ -348,27 +350,28 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
-            log_message(`Attempting to get token decimals from database (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const cookies = document.cookie || 'no cookies';
+            const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
+            log_message(`Attempting to get token decimals from database (attempt ${attempt + 1}/${maxRetries}): mint=${tokenMint}, network=${solanaNetwork}, cookies=${cookies}, session_id=${session_id}`, 'process.log', 'make-market', 'DEBUG');
             const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             };
-            log_message(`Requesting /mm/get-decimals, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await axios.post('/mm/get-decimals', {
                 tokenMint,
                 network: solanaNetwork
             }, {
                 headers,
                 timeout: 15000,
-                withCredentials: true
+                withCredentials: true // Đã có, giữ nguyên
             });
-            log_message(`Response from /mm/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            log_message(`Response from /mm/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${cookies}, session_id=${session_id}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
             }
             const decimals = parseInt(response.data.decimals) || 9;
-            log_message(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            log_message(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${session_id}, cookies=${cookies}`, 'process.log', 'make-market', 'INFO');
             console.log(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
             return decimals;
         } catch (err) {
@@ -376,7 +379,7 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
             const errorMessage = err.response
                 ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
                 : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-decimals'}`;
-            log_message(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            log_message(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}): mint=${tokenMint}, error=${errorMessage}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, cookies=${document.cookie || 'no cookies'}`, 'process.log', 'make-market', 'ERROR');
             console.error(`Failed to get token decimals from database (attempt ${attempt}/${maxRetries}):`, errorMessage);
             if (attempt === maxRetries) {
                 throw new Error(`Failed to retrieve token decimals after ${maxRetries} attempts: ${errorMessage}`);
