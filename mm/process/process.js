@@ -158,7 +158,7 @@ async function showSuccess(message, results = [], networkConfig) {
 // Update transaction status
 async function updateTransactionStatus(status, error = null) {
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-    const maxRetries = 2;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -210,7 +210,7 @@ async function updateTransactionStatus(status, error = null) {
 
 // Cancel transaction
 async function cancelTransaction(transactionId) {
-    const maxRetries = 2;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -275,7 +275,7 @@ async function cancelTransaction(transactionId) {
 
 // Get network configuration
 async function getNetworkConfig() {
-    const maxRetries = 2;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -352,7 +352,7 @@ async function getNetworkConfig() {
 
 // Get token decimals from database
 async function getTokenDecimals(tokenMint, solanaNetwork) {
-    const maxRetries = 2;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -485,7 +485,7 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
 
 // Create sub-transaction records
 async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork) {
-    const maxRetries = 2;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -553,7 +553,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
 
 // Execute swap transactions
 async function executeSwapTransactions(transactionId, swapTransactions, subTransactionIds, solanaNetwork) {
-    const maxRetries = 2;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
@@ -681,7 +681,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fetch transaction details
     let transaction, publicKey;
-    const maxRetries = 2;
+    const maxRetries = 1;
     let attempt = 0;
     while (attempt < maxRetries) {
         try {
