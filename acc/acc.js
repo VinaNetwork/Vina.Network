@@ -104,38 +104,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Function to log to server
-    async function logToServer(message, level = 'INFO') {
-        if (level === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
-            return;
+    // Log message function
+    function log_message(message, log_file = 'accounts.log', module = 'accounts', log_type = 'INFO') {
+    if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
+        return;
+    }
+    const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
+    const cookies = document.cookie || 'no cookies';
+    const logMessage = `${message}, session_id=${session_id}, cookies=${cookies}`;
+    fetch('/mm/get-logs', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'include', // Make sure cookies are sent
+        body: JSON.stringify({ message: logMessage, log_file, module, log_type })
+    }).then(response => {
+        if (!response.ok) {
+            console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}, cookies=${cookies}, response=${response.statusText}`);
         }
-        try {
-            const logData = {
-                message: message,
-                log_type: level,
-                log_file: 'accounts.log',
-                module: 'accounts',
-                url: window.location.href,
-                userAgent: navigator.userAgent
-            };
-            console.log(`Sending log to server: ${message}`);
-            const response = await fetch('/acc/get-logs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(logData)
-            });
-            if (!response.ok) {
-                console.error(`Failed to send log to server: HTTP ${response.status} - ${response.statusText}`);
-                return;
-            }
-            const result = await response.json();
-            console.log(`Log server response: ${JSON.stringify(result)}`);
-        } catch (error) {
-            console.error(`Failed to send log to server: ${error.message}`);
-        }
+    }).catch(err => console.error(`Log error: ${err.message}, session_id=${session_id}, cookies=${cookies}`));
     }
 
     // Connect wallet functionality
