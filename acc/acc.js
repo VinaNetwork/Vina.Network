@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
             return;
         }
-        fetch('/mm/get-logs', {
+        fetch('/acc/get-logs', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
