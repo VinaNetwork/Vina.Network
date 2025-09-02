@@ -26,9 +26,8 @@ $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    $csrf_token = isset($_SESSION[CSRF_TOKEN_NAME]) ? substr($_SESSION[CSRF_TOKEN_NAME], 0, 4) . '...' : 'none';
     log_message(
-        "get-status.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", CSRF_TOKEN=$csrf_token",
+        "get-status.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers),
         'process.log',
         'make-market',
         'DEBUG',
@@ -36,7 +35,7 @@ if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     );
 }
 
-// Kiểm tra phương thức POST
+// Check POST method
 if ($request_method !== 'POST') {
     log_message("Invalid request method: $request_method, uri=$request_uri, session_id=$session_id", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
@@ -45,31 +44,12 @@ if ($request_method !== 'POST') {
     exit;
 }
 
-// Khởi tạo session
+// Initialize session
 if (!ensure_session()) {
     log_message("Failed to initialize session, method=$request_method, uri=$request_uri, session_id=$session_id, cookies=$cookies", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Session initialization failed'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// Kiểm tra CSRF token
-try {
-    csrf_protect();
-} catch (Exception $e) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    $csrf_token = isset($_SESSION[CSRF_TOKEN_NAME]) ? substr($_SESSION[CSRF_TOKEN_NAME], 0, 4) . '...' : 'none';
-    log_message(
-        "CSRF validation failed: " . $e->getMessage() . ", method=$request_method, uri=$request_uri, session_id=$session_id, user_id=$user_id, CSRF_TOKEN=$csrf_token",
-        'process.log',
-        'make-market',
-        'ERROR',
-        $log_context
-    );
-    header('Content-Type: application/json');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -229,7 +209,6 @@ try {
         $log_context
     );
     header('Content-Type: application/json');
-    // Note: CSRF token is cleared by client-side (process.js) after transaction completion
     echo json_encode(['status' => 'success'], JSON_UNESCAPED_UNICODE);
 } catch (PDOException $e) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
