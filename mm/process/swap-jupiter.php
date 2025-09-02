@@ -134,7 +134,7 @@ try {
 // Process each transaction
 $results = [];
 $connection = new Connection(RPC_ENDPOINT);
-$maxRetries = 3;
+$maxRetries = 1;
 
 foreach ($swap_transactions as $index => $swap) {
     $direction = $swap['direction'] ?? 'buy';
