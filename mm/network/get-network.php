@@ -13,12 +13,6 @@ $root_path = __DIR__ . '/../../';
 // constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
 require_once $root_path . 'mm/bootstrap.php';
 
-// Handle preflight request (OPTIONS)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
-
 // Return network configuration
 header('Content-Type: application/json');
 echo json_encode([
