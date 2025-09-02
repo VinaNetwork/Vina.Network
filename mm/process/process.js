@@ -55,13 +55,13 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
     const cookies = document.cookie || 'no cookies';
     const logMessage = `${message}, session_id=${session_id}, cookies=${cookies}`;
-    fetch('/mm/log.php', {
+    fetch('/mm/get-logs', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        credentials: 'include', // Đảm bảo gửi cookie
+        credentials: 'include', // Make sure cookies are sent
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
     }).then(response => {
         if (!response.ok) {
