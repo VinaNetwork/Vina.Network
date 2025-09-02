@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/log.php
+// File: mm/get-logs.php
 // Description: Handles client-side logging with size limitation.
 // Created by: Vina Network
 // ============================================================================
