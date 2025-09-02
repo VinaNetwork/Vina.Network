@@ -5,16 +5,9 @@ RewriteBase /acc/
 RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
 RewriteRule ^get-logs$ core/get-logs.php [L,NC]
 RewriteRule ^logout$ core/logout.php [L,NC]
-RewriteRule ^refresh-csrf$ core/refresh-csrf.php [L,NC]
-RewriteRule ^clear-csrf$ core/clear-csrf.php [L,NC]
 
 # /profile.php
 RewriteRule ^profile$ profile.php [L]
 # Redirect 301 from /profile.php to /profile
 RewriteCond %{THE_REQUEST} \s/profile\.php[\s?] [NC]
 RewriteRule ^profile\.php$ /profile [R=301,L]
-
-# Enable CORS for logging
-Header always set Access-Control-Allow-Origin "*"
-Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS"
-Header always set Access-Control-Allow-Headers "Content-Type, X-Requested-With"
