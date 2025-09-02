@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userAgent: navigator.userAgent
             };
             console.log(`Sending log to server: ${message}`);
-            const response = await fetch('/mm/get-logs', {
+            const response = await fetch('/acc/get-logs', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
