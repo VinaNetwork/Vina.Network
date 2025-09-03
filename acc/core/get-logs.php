@@ -5,6 +5,12 @@
 // Created by: Vina Network
 // ============================================================================
 
+if (!defined('VINANETWORK_ENTRY')) {
+    define('VINANETWORK_ENTRY', true);
+}
+
+require_once __DIR__ . '/../../core/logging.php';
+
 // Set response header
 header('Content-Type: application/json');
 
