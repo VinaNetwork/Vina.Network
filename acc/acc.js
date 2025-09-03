@@ -60,50 +60,66 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle logout form submission
     const checkForm = () => {
-        const logoutForm = document.querySelector('#logout-form');
-        if (logoutForm) {
-            console.log('Logout form found, attaching submit event');
-            log_message('Logout form found, attaching submit event', 'accounts.log', 'accounts', 'INFO');
-            logoutForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                console.log('Logout form submitted');
-                log_message('Logout form submitted', 'accounts.log', 'accounts', 'INFO');
-
-                try {
-                    const formData = new FormData(logoutForm);
-
-                    console.log('Sending logout request');
-                    await log_message('Sending logout request', 'accounts.log', 'accounts', 'DEBUG');
-
-                    const response = await fetch('/acc/logout', {
-                        method: 'POST',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: formData
-                    });
-
-                    const result = await response.json();
-                    await log_message(`Logout response: ${JSON.stringify(result)}`, 'accounts.log', 'accounts', result.status === 'error' ? 'ERROR' : 'INFO');
-
-                    if (result.status === 'success') {
-                        console.log('Logout successful, redirecting to:', result.redirect || '/acc/');
-                        log_message(`Logout successful, redirecting to: ${result.redirect || '/acc/'}`, 'accounts.log', 'accounts', 'INFO');
-                        window.location.href = result.redirect || '/acc/';
-                    } else {
-                        showError(result.message || 'Logout failed. Please try again.');
-                    }
-                } catch (error) {
-                    console.error('Error during logout:', error.message);
-                    await log_message(`Error during logout: ${error.message}`, 'accounts.log', 'accounts', 'ERROR');
-                    showError('Error during logout: ' + error.message);
-                }
-            });
-        } else {
-            console.warn('Logout form not found, retrying in 100ms');
-            log_message('Logout form not found, retrying in 100ms', 'accounts.log', 'accounts', 'WARNING');
-            setTimeout(checkForm, 100);
+        // Only run on /acc/profile page
+        if (window.location.pathname !== '/acc/profile') {
+            console.log('Skipping checkForm on non-profile page');
+            log_message('Skipping checkForm on non-profile page', 'accounts.log', 'accounts', 'INFO');
+            return;
         }
+
+        let retryCount = 0;
+        const maxRetries = 50; // Limit to 5 seconds (50 * 100ms)
+        const tryCheckForm = () => {
+            const logoutForm = document.querySelector('#logout-form');
+            if (logoutForm) {
+                console.log('Logout form found, attaching submit event');
+                log_message('Logout form found, attaching submit event', 'accounts.log', 'accounts', 'INFO');
+                logoutForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    console.log('Logout form submitted');
+                    log_message('Logout form submitted', 'accounts.log', 'accounts', 'INFO');
+
+                    try {
+                        const formData = new FormData(logoutForm);
+
+                        console.log('Sending logout request');
+                        await log_message('Sending logout request', 'accounts.log', 'accounts', 'DEBUG');
+
+                        const response = await fetch('/acc/logout', {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+
+                        const result = await response.json();
+                        await log_message(`Logout response: ${JSON.stringify(result)}`, 'accounts.log', 'accounts', result.status === 'error' ? 'ERROR' : 'INFO');
+
+                        if (result.status === 'success') {
+                            console.log('Logout successful, redirecting to:', result.redirect || '/acc/');
+                            log_message(`Logout successful, redirecting to: ${result.redirect || '/acc/'}`, 'accounts.log', 'accounts', 'INFO');
+                            window.location.href = result.redirect || '/acc/';
+                        } else {
+                            showError(result.message || 'Logout failed. Please try again.');
+                        }
+                    } catch (error) {
+                        console.error('Error during logout:', error.message);
+                        await log_message(`Error during logout: ${error.message}`, 'accounts.log', 'accounts', 'ERROR');
+                        showError('Error during logout: ' + error.message);
+                    }
+                });
+            } else if (retryCount < maxRetries) {
+                console.warn('Logout form not found, retrying in 100ms');
+                log_message('Logout form not found, retrying in 100ms', 'accounts.log', 'accounts', 'WARNING');
+                retryCount++;
+                setTimeout(tryCheckForm, 100);
+            } else {
+                console.error('Max retries reached, logout form not found');
+                log_message('Max retries reached, logout form not found', 'accounts.log', 'accounts', 'ERROR');
+            }
+        };
+        tryCheckForm();
     };
 
     checkForm();
