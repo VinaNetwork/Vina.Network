@@ -9,14 +9,25 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/../../core/logging.php';
+require_once __DIR__ . '/../../acc/bootstrap.php'; // Bao gồm config để có JWT_SECRET
 
 // Set response header
 header('Content-Type: application/json');
 
 // Validate POST request and AJAX
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
+    exit;
+}
+
+// Kiểm tra X-Auth-Token
+$headers = getallheaders();
+$authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
+
+if ($authToken !== JWT_SECRET) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or missing token']);
     exit;
 }
 
@@ -25,6 +36,7 @@ $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
 if (!$data || !isset($data['message'], $data['log_type'], $data['log_file'], $data['module'])) {
+    http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid log data']);
     exit;
 }
@@ -45,6 +57,7 @@ $message = "[IP:$ip_address] [URL:$url] [UA:$user_agent] {$data['message']}";
 // Log the message using core logging function
 log_message($message, $log_file, $module, $level);
 
+http_response_code(200);
 echo json_encode(['status' => 'success', 'message' => 'Log recorded']);
 exit;
 ?>
