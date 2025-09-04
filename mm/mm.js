@@ -50,9 +50,17 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    axios.post('/mm/get-logs', { message, log_file, module, log_type }, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    }).catch(err => console.error('Log error:', err));
+    axios.post('/mm/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Auth-Token': authToken // Thêm X-Auth-Token
+        },
+        withCredentials: true
+    }).then(response => {
+        if (response.status !== 200) {
+            console.error(`Log failed: HTTP ${response.status}, response=${response.statusText}`);
+        }
+    }).catch(err => console.error('Log error:', err.message));
 }
 
 // Show error message
@@ -97,7 +105,10 @@ function getCookie(name) {
 // Refresh CSRF token
 async function refreshCSRFToken() {
     const response = await axios.get('/mm/refresh-csrf', {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Auth-Token': authToken // Thêm X-Auth-Token
+        },
         withCredentials: true
     });
     if (response.status !== 200 || !response.data.csrf_token) {
@@ -110,7 +121,10 @@ async function refreshCSRFToken() {
 async function getSolanaNetwork() {
     try {
         const response = await axios.get('/mm/get-network', {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
+            },
             withCredentials: true
         });
         if (response.status === 200 && response.data.network) {
@@ -300,7 +314,8 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         const response = await axios.post('/mm/', formData, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': csrfToken
+                'X-CSRF-Token': csrfToken,
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             },
             withCredentials: true
         });
