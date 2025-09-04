@@ -53,7 +53,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     axios.post('/mm/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken // Thêm X-Auth-Token
+            'X-Auth-Token': authToken
         },
         withCredentials: true
     }).then(response => {
@@ -66,15 +66,19 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
 // Show error message
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
+    let errorHtml = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    
     if (message.includes('Insufficient SOL balance')) {
-        resultDiv.innerHTML = `<p>${message}. Please deposit at least the required amount of SOL to your wallet or enable "Skip Balance Check" to proceed.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+        errorHtml = `<p>${message}. Please deposit at least the required amount of SOL to your wallet or enable "Skip Balance Check" to proceed.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     } else if (message.includes('Connection error while checking wallet balance')) {
-        resultDiv.innerHTML = `<p>${message}. Please check your network connection or try again later.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+        errorHtml = `<p>${message}. Please check your network connection or try again later.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     } else if (message.includes('Error checking token decimals')) {
-        resultDiv.innerHTML = `<p>${message}. Please verify the token mint address and try again.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
-    } else {
-        resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+        errorHtml = `<p>${message}. Please verify the token mint address and try again.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    } else if (message.includes('The token is not tradable')) {
+        errorHtml = `<p>${message}. Please select a different token with available liquidity.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     }
+    
+    resultDiv.innerHTML = errorHtml;
     resultDiv.classList.add('active');
     document.querySelector('#makeMarketForm button').disabled = false;
     log_message(`Client-side error displayed: ${message}`, 'make-market.log', 'make-market', 'ERROR');
@@ -107,7 +111,7 @@ async function refreshCSRFToken() {
     const response = await axios.get('/mm/refresh-csrf', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken // Thêm X-Auth-Token
+            'X-Auth-Token': authToken
         },
         withCredentials: true
     });
@@ -123,7 +127,7 @@ async function getSolanaNetwork() {
         const response = await axios.get('/mm/get-network', {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             },
             withCredentials: true
         });
@@ -134,6 +138,47 @@ async function getSolanaNetwork() {
     } catch (error) {
         log_message(`Failed to fetch SOLANA_NETWORK: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         throw error;
+    }
+}
+
+// Check token liquidity via mm/core/liquidity.php
+async function checkTokenLiquidity(tokenMint, tradeDirection, solAmount, slippage, network) {
+    log_message(`Checking token liquidity via endpoint: tokenMint=${tokenMint}, tradeDirection=${tradeDirection}, solAmount=${solAmount}, slippage=${slippage}, network=${network}`, 'make-market.log', 'make-market', 'INFO');
+    console.log('Checking token liquidity via endpoint:', { tokenMint, tradeDirection, solAmount, slippage, network });
+
+    try {
+        const response = await axios.post('/mm/core/liquidity.php', {
+            token_mint: tokenMint,
+            trade_direction: tradeDirection,
+            sol_amount: solAmount,
+            slippage: slippage,
+            network: network,
+            csrf_token: getCookie('csrf_token')
+        }, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': getCookie('csrf_token'),
+                'X-Auth-Token': authToken
+            },
+            withCredentials: true
+        });
+
+        log_message(`Liquidity check response: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
+        console.log('Liquidity check response:', response.data);
+
+        if (response.status !== 200 || response.data.status !== 'success') {
+            const errorMsg = response.data.message || 'Error checking token liquidity';
+            log_message(errorMsg, 'make-market.log', 'make-market', 'ERROR');
+            showError(errorMsg);
+            return false;
+        }
+        return true;
+    } catch (error) {
+        const errorMsg = `Failed to check token liquidity: ${error.response?.data?.message || error.message}`;
+        log_message(errorMsg, 'make-market.log', 'make-market', 'ERROR');
+        console.error(errorMsg, error.response ? error.response.data : '');
+        showError(errorMsg);
+        return false;
     }
 }
 
@@ -304,18 +349,33 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         submitButton.disabled = false;
         return;
     }
-    // Log if balance check is skipped due to invalid trade direction or user choice
+
+    // Check token liquidity
+    try {
+        const isLiquid = await checkTokenLiquidity(params.tokenMint, params.tradeDirection, params.solAmount, params.slippage, network);
+        if (!isLiquid) {
+            submitButton.disabled = false;
+            return;
+        }
+    } catch (error) {
+        log_message(`Error checking token liquidity: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        showError(`Failed to check token liquidity: ${error.message}`);
+        submitButton.disabled = false;
+        return;
+    }
+
+    // Log if balance check is skipped
     if (params.skipBalanceCheck || !isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)) {
         log_message(`Balance check skipped: skipBalanceCheck=${params.skipBalanceCheck}, validTradeDirection=${isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)}`, 'make-market.log', 'make-market', 'INFO');
     }
 
+    // Submit form data
     try {
-        // Submit form data
         const response = await axios.post('/mm/', formData, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-Token': csrfToken,
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             },
             withCredentials: true
         });
