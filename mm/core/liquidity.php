@@ -19,8 +19,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Check AJAX request
-if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Non-AJAX request rejected in liquidity.php", 'make-market.log', 'make-market', 'ERROR');
+if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    log_message("Non-AJAX request rejected in liquidity.php, IP={$_SERVER['REMOTE_ADDR']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
     exit;
@@ -28,7 +28,7 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 
 // Get parameters from POST data
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("Invalid request method in liquidity.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid request method in liquidity.php: {$_SERVER['REQUEST_METHOD']}, IP={$_SERVER['REMOTE_ADDR']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Request method not supported']);
     exit;
@@ -37,21 +37,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Read from $_POST
 $token_mint = $_POST['token_mint'] ?? '';
 $network = $_POST['network'] ?? SOLANA_NETWORK;
-$csrf_token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['csrf_token'] ?? '';
+$csrf_token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
 $trade_direction = $_POST['trade_direction'] ?? 'buy';
 $sol_amount = floatval($_POST['sol_amount'] ?? 0.01); // Default to small amount for testing liquidity
 $slippage = floatval($_POST['slippage'] ?? 0.5);
 
-// Assign token to $_POST for csrf_protect() to use
+// Assign token to $_POST for csrf_protect()
 $_POST[CSRF_TOKEN_NAME] = $csrf_token;
+
+// Log CSRF token for debugging
+log_message("Received CSRF token: $csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
 
 // Protect POST requests with CSRF
 try {
     csrf_protect();
 } catch (Exception $e) {
-    log_message("CSRF validation failed in liquidity.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("CSRF validation failed in liquidity.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'CRITICAL');
     http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or expired CSRF token']);
     exit;
 }
 
