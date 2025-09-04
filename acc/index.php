@@ -18,11 +18,12 @@ require_once $root_path . 'acc/bootstrap.php';
 // Check if user is already logged in
 if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
     log_message("User already logged in with public_key: " . substr($_SESSION['public_key'], 0, 4) . '...', 'accounts.log', 'accounts', 'INFO');
-    // Redirect to referrer if set, otherwise to profile
     $redirect_url = isset($_SESSION['redirect_url']) ? $_SESSION['redirect_url'] : '/acc/profile';
-    unset($_SESSION['redirect_url']); // Clear after use
-    header("Location: $redirect_url");
-    exit;
+    unset($_SESSION['redirect_url']);
+    if ($_SERVER['REQUEST_URI'] !== $redirect_url) {
+        header("Location: $redirect_url");
+        exit;
+    }
 }
 
 // Store referrer URL if coming from another page
