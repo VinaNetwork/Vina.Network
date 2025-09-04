@@ -19,7 +19,4 @@ require_once __DIR__ . '/../core/session.php'; 		      // Initialize session wit
 require_once __DIR__ . '/../core/db.php'; 				  // Database connection management
 require_once __DIR__ . '/../core/header-auth.php'; 		  // Security Headers
 require_once __DIR__ . '/../../vendor/autoload.php'; 	  // Solana Library
-
-// Custom configuration
-require_once __DIR__ . '/core/wallet-auth.php';                // Connect wallet
 ?>
