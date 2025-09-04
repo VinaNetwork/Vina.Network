@@ -233,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Gọi decimals.php để lấy decimals của token mint
+        // Start: Gọi decimals.php để lấy decimals của token mint
         log_message("Calling decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
         try {
             ob_start();
@@ -285,7 +285,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Error checking token decimals: ' . $e->getMessage()]);
             exit;
         }
+        // End: Gọi decimals.php để lấy decimals của token mint
 
+        // Start: Check token liquidity by calling liquidity.php
+        log_message("Calling liquidity.php for token_mint=$tokenMint, network=$network", 'make-market.log', 'make-market', 'INFO');
+try {
+    ob_start();
+    $_POST = [
+        'token_mint' => $tokenMint,
+        'network' => $network,
+        'trade_direction' => $tradeDirection,
+        'sol_amount' => $solAmount,
+        'slippage' => $slippage,
+        'csrf_token' => $csrf_token
+    ];
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $_SERVER['REQUEST_URI'] = '/mm/core/liquidity.php';
+    $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+    $_COOKIE['PHPSESSID'] = session_id();
+
+    // Refresh CSRF nếu cần
+    $csrf_token = generate_csrf_token();
+    log_message("CSRF token refreshed before calling liquidity.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+    $_POST['csrf_token'] = $csrf_token;
+    $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+
+    // Call liquidity.php
+    require_once $root_path . 'mm/core/liquidity.php';
+    $response = ob_get_clean();
+
+    // Kiểm tra phản hồi
+    $data = json_decode($response, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        log_message("Failed to parse liquidity.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Error parsing response from token liquidity check']);
+        exit;
+    }
+
+    if ($data['status'] !== 'success') {
+        log_message("Liquidity check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => $data['message']]);
+        exit;
+    }
+
+    log_message("Liquidity check passed: token_mint=$tokenMint, network=$network, liquidity=" . json_encode($data['liquidity']), 'make-market.log', 'make-market', 'INFO');
+} catch (Exception $e) {
+    if (!session_id()) {
+        session_start();
+    }
+    log_message("Liquidity check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Error checking token liquidity: ' . $e->getMessage()]);
+    exit;
+        }
+        // End: Check token liquidity by calling liquidity.php
+
+        // Start: Check wallet balance
         // Validate private key using SolanaPhpSdk and derive transactionPublicKey
         try {
             $base58 = new Base58();
@@ -373,6 +431,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             log_message("Wallet balance check skipped: skipBalanceCheck=$skipBalanceCheck, validTradeDirection=" . (isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) ? 'true' : 'false'), 'make-market.log', 'make-market', 'INFO');
         }
+        // End: Check wallet balance
 
         // Check JWT_SECRET
         if (!defined('JWT_SECRET') || strlen(JWT_SECRET) < 32) {
