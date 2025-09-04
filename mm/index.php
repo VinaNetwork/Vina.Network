@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
             // Call decimals.php
-            include __DIR__ . '/core/decimals.php';
+            require_once $root_path . 'mm/core/decimals.php';
             $response = ob_get_clean();
 
             // Kiểm tra phản hồi
@@ -328,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call balance.php
-                include __DIR__ . '/core/balance.php';
+                require_once $root_path . 'mm/core/balance.php';
                 $response = ob_get_clean();
 
                 // Kiểm tra phản hồi
