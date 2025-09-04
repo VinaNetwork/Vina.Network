@@ -32,23 +32,23 @@ $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 $cookies = $_SERVER['HTTP_COOKIE'] ?? 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("swap.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG就是在', $log_context);
-}
-
-// Helper function to send error response
-function send_error_response($code, $message) {
-    global $log_context, $session_id, $cookies;
-    header('Content-Type: application/json');
-    http_response_code($code);
-    echo json_encode(['status' => 'error', 'message' => $message], JSON_UNESCAPED_UNICODE);
-    log_message("Error response sent: code=$code, message=$message, session_id=$session_id, cookies=$cookies", 'process.log', 'make-market', 'ERROR', $log_context);
-    exit;
+    log_message("swap.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG', $log_context);
 }
 
 // Check POST method
 if ($request_method !== 'POST') {
     log_message("Invalid request method: $request_method, uri=$request_uri, session_id=$session_id", 'process.log', 'make-market', 'ERROR', $log_context);
     send_error_response(405, 'Method not allowed');
+}
+
+// Check X-Auth-Token
+$authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
+if ($authToken !== JWT_SECRET) {
+    log_message("Invalid or missing X-Auth-Token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=$request_uri, session_id=$session_id", 'process.log', 'make-market', 'ERROR', $log_context);
+    header('Content-Type: application/json');
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or missing token'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 // Initialize session
