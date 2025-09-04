@@ -69,6 +69,10 @@ $page_css = ['/acc/acc.css'];
 <script>console.log('Attempting to load JS files...');</script>
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
+<script>
+    // Passing JWT_SECRET into JavaScript securely
+    const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
+</script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script src="/acc/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
 </body>
