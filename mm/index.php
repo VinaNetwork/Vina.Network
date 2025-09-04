@@ -226,11 +226,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ob_start();
             $_POST = [
                 'token_mint' => $tokenMint,
-                'network' => $network, // Sử dụng SOLANA_NETWORK
+                'network' => $network,
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
-            $_SERVER['REQUEST_URI'] = '/mm/decimals.php';
+            $_SERVER['REQUEST_URI'] = '/mm/core/decimals.php';
             $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
             // Call decimals.php
-            include __DIR__ . '/decimals.php';
+            include __DIR__ . '/core/decimals.php';
             $response = ob_get_clean();
 
             // Kiểm tra phản hồi
@@ -312,11 +312,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'token_amount' => $tokenAmount,
                     'loop_count' => $loopCount,
                     'batch_size' => $batchSize,
-                    'network' => $network, // Sử dụng SOLANA_NETWORK
+                    'network' => $network,
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
-                $_SERVER['REQUEST_URI'] = '/mm/balance.php';
+                $_SERVER['REQUEST_URI'] = '/mm/core/balance.php';
                 $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
@@ -328,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call balance.php
-                include __DIR__ . '/balance.php';
+                include __DIR__ . '/core/balance.php';
                 $response = ob_get_clean();
 
                 // Kiểm tra phản hồi
@@ -419,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $loopCount,
                 $batchSize,
                 $decimals,
-                $network // Sử dụng SOLANA_NETWORK
+                $network
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "..., network=$network", 'make-market.log', 'make-market', 'INFO');
