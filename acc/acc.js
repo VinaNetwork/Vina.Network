@@ -88,9 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         const response = await fetch('/acc/logout', {
                             method: 'POST',
                             headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-Auth-Token': authToken // Thêm token vào header
                             },
-                            body: formData
+                            body: JSON.stringify(Object.fromEntries(formData)) // Chuyển FormData thành JSON
                         });
 
                         const result = await response.json();
@@ -140,7 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm token vào header
             },
             credentials: 'include', // Make sure cookies are sent
             body: JSON.stringify({ message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent })
@@ -225,9 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const responseServer = await fetch('/acc/wallet-auth', {
                         method: 'POST',
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-Auth-Token': authToken // Thêm token vào header
                         },
-                        body: formData
+                        body: JSON.stringify(Object.fromEntries(formData)) // Chuyển FormData thành JSON
                     });
 
                     if (!responseServer.ok) {
