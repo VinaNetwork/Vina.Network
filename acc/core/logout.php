@@ -6,13 +6,11 @@
 // ============================================================================
 
 ob_start();
-// Access Conditions
 if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
 $root_path = __DIR__ . '/../../';
-// constants | logging | config | error | session | database | header-auth | wallet-auth
 require_once $root_path . 'acc/bootstrap.php';
 
 // Set response header
@@ -22,7 +20,7 @@ header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     log_message("Invalid logout request: Not POST, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method. Use POST.'], JSON_UNESCAPED_UNICODE);
     ob_end_flush();
     exit;
 }
@@ -47,7 +45,7 @@ log_message("Logout attempt for public_key: $short_public_key, IP=" . ($_SERVER[
 // Clear session
 $_SESSION = [];
 if (isset($_COOKIE[session_name()])) {
-    setcookie(session_name(), '', time() - 3600, '/', $domain, true, false); // Match core/session.php
+    setcookie(session_name(), '', time() - 3600, '/', $domain, true, false);
 }
 session_destroy();
 
