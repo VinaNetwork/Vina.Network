@@ -247,8 +247,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (result.status === 'success' && result.redirect) {
                         statusSpan.textContent = result.message || 'Login successful, redirecting...';
-                        log_message(`Login successful, redirecting to: ${result.redirect}`, 'accounts.log', 'accounts', 'INFO');
-                        window.location.href = result.redirect;
+                        await log_message(`Login successful, redirecting to: ${result.redirect}`, 'accounts.log', 'accounts', 'INFO');
+                        if (window.location.pathname !== result.redirect) {
+                            window.location.href = result.redirect;
+                        } else {
+                            console.log('Already on redirect page, skipping navigation');
+                            await log_message('Already on redirect page, skipping navigation', 'accounts.log', 'accounts', 'DEBUG');
+                        }
                     } else {
                         showError(result.message || 'Login failed. Please try again.');
                     }
