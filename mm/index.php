@@ -103,6 +103,19 @@ function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Kiểm tra X-Auth-Token cho yêu cầu AJAX
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        $headers = getallheaders();
+        $authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
+        if ($authToken !== JWT_SECRET) {
+            log_message("Invalid or missing X-Auth-Token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid or missing token']);
+            exit;
+        }
+    }
+
     try {
         log_message("Form submitted, is AJAX: " . (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? 'Yes' : 'No'), 'make-market.log', 'make-market', 'INFO');
         
@@ -548,6 +561,10 @@ $defaultSlippage = 0.5;
 <script defer src="/js/libs/anchor.umd.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/anchor.umd.js')"></script>
 <script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/spl-token.iife.js')"></script>
 <!-- Scripts - Source code -->
+<script>
+    // Passing JWT_SECRET into JavaScript securely
+    const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
+</script>
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/mm/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /mm/mm.js')"></script>
 </body>
