@@ -146,6 +146,21 @@ async function checkTokenLiquidity(tokenMint, tradeDirection, solAmount, slippag
     log_message(`Checking token liquidity via endpoint: tokenMint=${tokenMint}, tradeDirection=${tradeDirection}, solAmount=${solAmount}, slippage=${slippage}, network=${network}`, 'make-market.log', 'make-market', 'INFO');
     console.log('Checking token liquidity via endpoint:', { tokenMint, tradeDirection, solAmount, slippage, network });
 
+    // Refresh CSRF token before calling liquidity.php
+    let csrfToken;
+    try {
+        csrfToken = await refreshCSRFToken();
+        log_message(`CSRF token refreshed before checking liquidity: ${csrfToken}`, 'make-market.log', 'make-market', 'INFO');
+        console.log('CSRF token refreshed before checking liquidity:', csrfToken);
+        // Update cookie manually in case set_csrf_cookie() on server fails
+        document.cookie = `csrf_token=${csrfToken}; path=/; domain=vina.network; secure; SameSite=Strict`;
+    } catch (error) {
+        log_message(`Failed to refresh CSRF token for liquidity check: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to refresh CSRF token for liquidity check:', error.message);
+        showError('Failed to refresh CSRF token for liquidity check. Please reload the page and try again.');
+        return false;
+    }
+
     try {
         const response = await axios.post('/mm/core/liquidity.php', {
             token_mint: tokenMint,
@@ -153,11 +168,11 @@ async function checkTokenLiquidity(tokenMint, tradeDirection, solAmount, slippag
             sol_amount: solAmount,
             slippage: slippage,
             network: network,
-            csrf_token: getCookie('csrf_token')
+            csrf_token: csrfToken
         }, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-Token': getCookie('csrf_token'),
+                'X-CSRF-Token': csrfToken,
                 'X-Auth-Token': authToken
             },
             withCredentials: true
