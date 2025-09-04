@@ -2,7 +2,7 @@ RewriteEngine On
 RewriteBase /mm/
 
 # Index endpoints
-RewriteRule ^get-logs$ core/get-logs.php [L,NC]
+RewriteRule ^get-logs$ get-logs.php [L,NC]
 RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC]
 RewriteRule ^clear-csrf$ csrf/clear-csrf.php [L,NC]
 RewriteRule ^get-network$ network/get-network.php [L,NC]
