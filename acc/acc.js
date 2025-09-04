@@ -224,15 +224,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('signature', signatureBase64);
                     formData.append('message', message);
 
-                    statusSpan.textContent = 'Sending data to server...';
+                    const payload = Object.fromEntries(formData);
+                    console.log('Wallet-auth payload:', payload);
+                    await log_message(`Sending wallet-auth data: ${JSON.stringify(payload)}`, 'accounts.log', 'accounts', 'DEBUG');
+
                     const responseServer = await fetch('/acc/wallet-auth', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
-                            'X-Auth-Token': authToken // Thêm token vào header
+                            'X-Auth-Token': authToken
                         },
-                        body: JSON.stringify(Object.fromEntries(formData)) // Chuyển FormData thành JSON
+                        body: JSON.stringify(payload)
                     });
 
                     if (!responseServer.ok) {
