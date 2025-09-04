@@ -15,6 +15,28 @@ $root_path = __DIR__ . '/../../';
 require_once $root_path . 'acc/bootstrap.php';
 use StephenHill\Base58;
 
+// Set response header
+header('Content-Type: application/json');
+
+// Validate POST request
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    log_message("Invalid request method: {$_SERVER['REQUEST_METHOD']}, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
+    exit;
+}
+
+// Kiểm tra X-Auth-Token
+$headers = getallheaders();
+$authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
+
+if ($authToken !== JWT_SECRET) {
+    log_message("Invalid or missing X-Auth-Token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or missing token']);
+    exit;
+}
+
 // Database connection
 $start_time = microtime(true);
 try {
@@ -24,7 +46,6 @@ try {
 } catch (PDOException $e) {
     $duration = (microtime(true) - $start_time) * 1000;
     log_message("Database connection failed: {$e->getMessage()} (took {$duration}ms)", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Database connection failed']);
     exit;
 }
@@ -33,7 +54,6 @@ try {
 $ip_address = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 if ($ip_address === 'Unknown') {
     log_message("Failed to retrieve IP address", 'accounts.log', 'accounts', 'ERROR');
-    header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Unable to process request: Invalid IP address']);
     exit;
 }
@@ -41,7 +61,7 @@ $rate_limit = 5; // Maximum 5 attempts per minute
 $rate_limit_window = 60; // 1 minute in seconds
 
 // Handle POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
+if (isset($_POST['public_key'], $_POST['signature'], $_POST['message'])) {
     // Log incoming POST request details
     log_message("POST request received: public_key={$_POST['public_key']}, user_agent={$_SERVER['HTTP_USER_AGENT']}, IP=$ip_address", 'accounts.log', 'accounts', 'DEBUG');
 
@@ -60,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
 
         if ($attempt_count >= $rate_limit) {
             log_message("Rate limit exceeded for IP: $ip_address, attempts: $attempt_count", 'accounts.log', 'accounts', 'ERROR');
-            header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Too many login attempts. Please wait 1 minute and try again.']);
             exit;
         }
@@ -71,12 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         log_message("Recorded login attempt for IP: $ip_address, attempt count: " . ($attempt_count + 1), 'accounts.log', 'accounts', 'INFO');
     } catch (PDOException $e) {
         log_message("Rate limiting error for IP: $ip_address, SQL Error: {$e->getMessage()}, Code: {$e->getCode()}", 'accounts.log', 'accounts', 'ERROR');
-        header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Rate limiting error. Please try again later.']);
         exit;
     }
-
-    header('Content-Type: application/json');
 
     $public_key = $_POST['public_key'];
     $short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
@@ -245,6 +261,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
         echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
         exit;
     }
+} else {
+    log_message("Invalid POST data: Missing required fields, IP=$ip_address", 'accounts.log', 'accounts', 'ERROR');
+    echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
     exit;
 }
 ?>
