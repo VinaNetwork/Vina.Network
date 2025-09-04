@@ -43,6 +43,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Check X-Auth-Token
+$headers = apache_request_headers();
+$authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
+if ($authToken !== JWT_SECRET) {
+    log_message("Invalid or missing X-Auth-Token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown') . ", session_id=" . (session_id() ?: 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+    header('Content-Type: application/json');
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or missing token'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Get parameters from POST data
 $input = json_decode(file_get_contents('php://input'), true);
 $token_mint = isset($input['tokenMint']) ? trim($input['tokenMint']) : '';
