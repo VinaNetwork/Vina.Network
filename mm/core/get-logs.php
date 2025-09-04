@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/get-logs.php
+// File: mm/core/get-logs.php
 // Description: Handles client-side logging using core logging utilities for multiple modules.
 // Created by: Vina Network
 // ============================================================================
@@ -9,7 +9,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/../core/logging.php';
+$root_path = __DIR__ . '/../../';
+// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
+require_once $root_path . 'mm/bootstrap.php';
 
 // Set response header
 header('Content-Type: application/json');
