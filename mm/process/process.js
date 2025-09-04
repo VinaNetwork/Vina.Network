@@ -59,7 +59,8 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Auth-Token': authToken // Thêm X-Auth-Token
         },
         credentials: 'include', // Make sure cookies are sent
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
@@ -159,7 +160,8 @@ async function updateTransactionStatus(status, error = null) {
             const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             };
             log_message(`Updating transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-status/${transactionId}`, {
@@ -211,7 +213,8 @@ async function cancelTransaction(transactionId) {
             const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             };
             log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-status/${transactionId}`, {
@@ -275,7 +278,8 @@ async function getNetworkConfig() {
         try {
             const headers = {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             };
             const cookies = document.cookie || 'no cookies';
             const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
@@ -286,7 +290,7 @@ async function getNetworkConfig() {
             const response = await fetch('/mm/get-network', {
                 method: 'GET',
                 headers,
-                credentials: 'include' // Đã có, giữ nguyên
+                credentials: 'include'
             });
             const responseBody = await response.text();
             log_message(
@@ -356,7 +360,8 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
             const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             };
             const response = await axios.post('/mm/get-decimals', {
                 tokenMint,
@@ -364,7 +369,7 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
             }, {
                 headers,
                 timeout: 15000,
-                withCredentials: true // Đã có, giữ nguyên
+                withCredentials: true
             });
             log_message(`Response from /mm/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${cookies}, session_id=${session_id}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
@@ -482,14 +487,15 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
             const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             };
             log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/create-tx/${transactionId}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    id: transactionId, // Add id to payload
+                    id: transactionId,
                     sub_transactions: subTransactions,
                     network: solanaNetwork
                 }),
@@ -538,7 +544,8 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             const headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             };
             
             // Log request details
@@ -674,7 +681,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const headers = {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken // Thêm X-Auth-Token
             };
             log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-order/${transactionId}`, {
