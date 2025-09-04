@@ -9,15 +9,16 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/../../acc/bootstrap.php'; // Bao gồm config để có JWT_SECRET
+require_once __DIR__ . '/../../acc/bootstrap.php';
 
 // Set response header
 header('Content-Type: application/json');
 
-// Validate POST request and AJAX
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+// Validate POST request
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    log_message("Invalid request method: {$_SERVER['REQUEST_METHOD']}, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method. Use POST.']);
     exit;
 }
 
@@ -26,6 +27,7 @@ $headers = getallheaders();
 $authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
 
 if ($authToken !== JWT_SECRET) {
+    log_message("Invalid or missing X-Auth-Token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
     http_response_code(401);
     echo json_encode(['status' => 'error', 'message' => 'Invalid or missing token']);
     exit;
@@ -36,13 +38,14 @@ $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
 if (!$data || !isset($data['message'], $data['log_type'], $data['log_file'], $data['module'])) {
+    log_message("Invalid log data: Missing required fields, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid log data']);
     exit;
 }
 
 // Validate log file name to prevent directory traversal
-$log_file = basename($data['log_file']); // Ensure only the file name is used
+$log_file = basename($data['log_file']);
 $module = $data['module'];
 $level = strtoupper($data['log_type']);
 
@@ -54,7 +57,7 @@ $url = $_SERVER['HTTP_REFERER'] ?? 'Unknown';
 // Format log message
 $message = "[IP:$ip_address] [URL:$url] [UA:$user_agent] {$data['message']}";
 
-// Log the message using core logging function
+// Log the message
 log_message($message, $log_file, $module, $level);
 
 http_response_code(200);
