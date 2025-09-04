@@ -11,7 +11,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
+// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload.php
 require_once $root_path . 'mm/bootstrap.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 5);
-        $network = SOLANA_NETWORK; // Sử dụng trực tiếp SOLANA_NETWORK
+        $network = SOLANA_NETWORK;
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
         // Log form data an toàn
@@ -230,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
-            $_SERVER['REQUEST_URI'] = '/mm/decimals.php';
+            $_SERVER['REQUEST_URI'] = '/mm/core/decimals.php';
             $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
             // Call decimals.php
-            include __DIR__ . '/decimals.php';
+            include __DIR__ . '/core/decimals.php';
             $response = ob_get_clean();
 
             // Kiểm tra phản hồi
@@ -316,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
-                $_SERVER['REQUEST_URI'] = '/mm/balance.php';
+                $_SERVER['REQUEST_URI'] = '/mm/core/balance.php';
                 $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
@@ -328,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call balance.php
-                include __DIR__ . '/balance.php';
+                include __DIR__ . '/core/balance.php';
                 $response = ob_get_clean();
 
                 // Kiểm tra phản hồi
