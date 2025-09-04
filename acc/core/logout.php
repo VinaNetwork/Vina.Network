@@ -15,13 +15,26 @@ $root_path = __DIR__ . '/../../';
 // constants | logging | config | error | session | database | header-auth | wallet-auth
 require_once $root_path . 'acc/bootstrap.php';
 
-// Ensure POST request and AJAX
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
-    !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
-    $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Invalid logout request: Not POST or not AJAX, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request'], JSON_UNESCAPED_UNICODE);
+// Set response header
+header('Content-Type: application/json');
+
+// Ensure POST request
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    log_message("Invalid logout request: Not POST, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid request method'], JSON_UNESCAPED_UNICODE);
+    ob_end_flush();
+    exit;
+}
+
+// Kiểm tra X-Auth-Token
+$headers = getallheaders();
+$authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
+
+if ($authToken !== JWT_SECRET) {
+    log_message("Invalid or missing X-Auth-Token, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid or missing token'], JSON_UNESCAPED_UNICODE);
     ob_end_flush();
     exit;
 }
