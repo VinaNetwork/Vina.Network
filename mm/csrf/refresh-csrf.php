@@ -48,14 +48,18 @@ function check_request_origin() {
     return false;
 }
 
-// Test methods, AJAX and origins
+// Test methods, AJAX, origins, and X-Auth-Token
+$headers = getallheaders();
+$authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET' || 
     !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
     $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest' ||
-    !check_request_origin()) {
-    log_message("Invalid request to refresh-csrf, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
+    !check_request_origin() ||
+    $authToken !== JWT_SECRET) {
+    log_message("Invalid request to refresh-csrf: Method={$_SERVER['REQUEST_METHOD']}, AJAX=" . (isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? $_SERVER['HTTP_X_REQUESTED_WITH'] : 'none') . ", Origin=" . (check_request_origin() ? 'valid' : 'invalid') . ", X-Auth-Token=" . ($authToken ? 'provided' : 'missing') . ", IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown') . ", URI=" . ($_SERVER['REQUEST_URI'] ?? 'unknown'), 'make-market.log', 'make-market', 'ERROR');
+    http_response_code($authToken !== JWT_SECRET ? 401 : 403);
+    echo json_encode(['status' => 'error', 'message' => $authToken !== JWT_SECRET ? 'Invalid or missing token' : 'Invalid request or unauthorized origin'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
