@@ -505,10 +505,11 @@ $defaultSlippage = 0.5;
                         <?php endif; ?>
                     </td>
                 </tr>
+                <tr>
+                    <th>Network:</th>
+                    <td><?php echo htmlspecialchars(SOLANA_NETWORK); ?></td>
+                </tr>
             </table>
-        </div>
-        <div>
-            <p><strong>Network:</strong> <?php echo htmlspecialchars(SOLANA_NETWORK); ?></p>
         </div>
 
         <!-- Form Make Market -->
