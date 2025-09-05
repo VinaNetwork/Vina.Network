@@ -226,10 +226,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'error', 'message' => 'Loop count must be at least 1']);
             exit;
         }
-        if ($batchSize < 1 || $batchSize > 10) {
+        if ($batchSize < 2 || $batchSize > 10) {
             log_message("Invalid batch size: $batchSize", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Batch size must be between 1 and 10']);
+            echo json_encode(['status' => 'error', 'message' => 'Batch size must be between 2 and 10']);
             exit;
         }
 
@@ -536,8 +536,8 @@ $defaultSlippage = 0.5;
             <input type="number" name="delay" id="delay" value="0" min="0">
             <label for="loopCount">🔁 Loop Count:</label>
             <input type="number" name="loopCount" id="loopCount" min="1" value="1">
-            <label for="batchSize">📦 Batch Size (1-10):</label>
-            <input type="number" name="batchSize" id="batchSize" min="1" max="10" value="5" required>
+            <label for="batchSize">📦 Batch Size (2-10):</label>
+            <input type="number" name="batchSize" id="batchSize" min="2" max="10" value="2" required>
             <label for="skipBalanceCheck" class="check-box">
                 <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
                 <p>Skip wallet balance check</p>
