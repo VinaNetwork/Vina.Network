@@ -30,7 +30,7 @@ if (isset($_SESSION['public_key']) && !empty($_SESSION['public_key'])) {
 if (isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER'])) {
     $referrer = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH);
     // Validate referrer to prevent open redirect vulnerabilities
-    if (strpos($referrer, '/mm') === 0 || strpos($referrer, '/other-protected-page') === 0) {
+    if (strpos($referrer, '/mm/create') === 0 || strpos($referrer, '/other-protected-page') === 0) {
         $_SESSION['redirect_url'] = $referrer;
         log_message("Stored referrer URL: $referrer", 'accounts.log', 'accounts', 'INFO');
     }
