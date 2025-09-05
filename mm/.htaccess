@@ -8,6 +8,7 @@ RewriteEngine On
 RewriteBase /mm/
 
 # Rules for specific endpoints
+RewriteRule ^create$ create.php [L,NC,QSA]
 RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC,QSA]
 RewriteRule ^clear-csrf$ csrf/clear-csrf.php [L,NC,QSA]
 RewriteRule ^get-network$ network/get-network.php [L,NC,QSA]
