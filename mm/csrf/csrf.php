@@ -10,7 +10,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
+// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
 // CSRF Configuration
@@ -146,7 +146,7 @@ function csrf_protect() {
             }
             exit;
         }
-        // Bỏ regenerate_csrf_token() để giữ token cố định trong suốt tiến trình
+        // Keep tokens fixed throughout the process
         log_message("CSRF token validated successfully for POST request: $token", 'make-market.log', 'make-market', 'INFO');
     }
 }
@@ -165,8 +165,8 @@ function set_csrf_cookie() {
         'path' => '/',
         'domain' => $_SERVER['HTTP_HOST'],
         'secure' => $is_secure,
-        'httponly' => true,
-        'samesite' => 'Lax'
+        'httponly' => false,
+        'samesite' => 'Strict'
     ];
 
     if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
