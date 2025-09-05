@@ -26,9 +26,20 @@ $log_context = [
     'user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown'
 ];
 
-// Check request method
+// Log request info
 $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
+$session_id = session_id() ?: 'none';
+$headers = apache_request_headers();
+$cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
+if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    log_message(
+        "process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers),
+        'process.log', 'make-market', 'DEBUG', $log_context
+    );
+}
+
+// Check request method
 if ($request_method !== 'GET') {
     log_message("Invalid request method: $request_method, uri=$request_uri", 'process.log', 'make-market', 'ERROR', $log_context);
     header('Content-Type: application/json');
@@ -36,6 +47,27 @@ if ($request_method !== 'GET') {
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+// Check transient token
+$transient_token = isset($_GET['token']) ? $_GET['token'] : null;
+if (!$transient_token || !isset($_SESSION['transient_token']) || $transient_token !== $_SESSION['transient_token'] || time() > $_SESSION['transient_token_expiry']) {
+    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
+    log_message(
+        "Invalid or missing transient token: token=" . ($transient_token ?: 'none') . ", user_id=$user_id, session_token=" . (isset($_SESSION['transient_token']) ? $_SESSION['transient_token'] : 'none') . ", expiry=" . (isset($_SESSION['transient_token_expiry']) ? $_SESSION['transient_token_expiry'] : 'none'),
+        'process.log', 'make-market', 'ERROR', $log_context
+    );
+    // Clear transient token from session
+    unset($_SESSION['transient_token'], $_SESSION['transient_token_expiry']);
+    // Redirect to error page
+    $_SESSION['error_message'] = 'Access denied: Please initiate the transaction from the Make Market page.';
+    log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=$session_id", 'process.log', 'make-market', 'DEBUG', $log_context);
+    session_write_close();
+    header('Location: /mm/error');
+    exit;
+}
+// Clear transient token after use
+unset($_SESSION['transient_token'], $_SESSION['transient_token_expiry']);
+log_message("Transient token validated and cleared, token=$transient_token, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'INFO', $log_context);
 
 // Initialize session
 if (!ensure_session()) {
@@ -46,12 +78,23 @@ if (!ensure_session()) {
     exit;
 }
 
-// Log request info
-$session_id = session_id() ?: 'none';
-$headers = apache_request_headers();
-$cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
+// Check session for authentication
+$user_public_key = $_SESSION['public_key'] ?? null;
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers), 'process.log', 'make-market', 'DEBUG', $log_context);
+    $short_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
+    log_message("Session public_key: $short_user_public_key, user_id=" . ($user_id ?? 'none'), 'process.log', 'make-market', 'DEBUG', $log_context);
+}
+if (!$user_public_key || !$user_id) {
+    log_message(
+        "Missing public key or user_id in session, clearing session and redirecting to login, public_key=" . ($user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'none') . ", user_id=" . ($user_id ?? 'none'),
+        'process.log', 'make-market', 'INFO', $log_context
+    );
+    session_destroy(); // Clear session to avoid using old session
+    $_SESSION['redirect_url'] = '/mm/process';
+    session_write_close();
+    header('Location: /accounts');
+    exit;
 }
 
 // Database connection
@@ -59,69 +102,30 @@ $start_time = microtime(true);
 try {
     $pdo = get_db_connection();
     $duration = (microtime(true) - $start_time) * 1000;
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database connection retrieved (took {$duration}ms), user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (Exception $e) {
     $duration = (microtime(true) - $start_time) * 1000;
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database connection failed: " . $e->getMessage() . " (took {$duration}ms), user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
-    header('Content-Type: application/json');
-    http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => 'Database connection failed'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// Check session for authentication
-$user_public_key = $_SESSION['public_key'] ?? null;
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    $short_user_public_key = $user_public_key ? substr($user_public_key, 0, 4) . '...' . substr($user_public_key, -4) : 'Invalid';
-    log_message("Session public_key: $short_user_public_key, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'process.log', 'make-market', 'DEBUG', $log_context);
-}
-if (!$user_public_key) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("No public key in session, redirecting to login, user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
-    $_SESSION['redirect_url'] = '/mm/process';
-    session_write_close();
-    header('Location: /acc');
-    exit;
-}
-
-// Check transient token
-$transient_token = isset($_GET['token']) ? $_GET['token'] : null;
-if (!$transient_token || !isset($_SESSION['transient_token']) || $transient_token !== $_SESSION['transient_token'] || time() > $_SESSION['transient_token_expiry']) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
-    log_message("Invalid or missing transient token: token=" . ($transient_token ?: 'none') . ", user_id=$user_id, session_token=" . (isset($_SESSION['transient_token']) ? $_SESSION['transient_token'] : 'none') . ", expiry=" . (isset($_SESSION['transient_token_expiry']) ? $_SESSION['transient_token_expiry'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
-    
-    // Xóa transient token khỏi session
-    unset($_SESSION['transient_token'], $_SESSION['transient_token_expiry']);
-    
-    // Redirect to error page
-    $_SESSION['error_message'] = 'Direct access to process page is not allowed.';
-    log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
+    $_SESSION['error_message'] = 'Database connection failed';
     session_write_close();
     header('Location: /mm/error');
     exit;
 }
-// Xóa transient token sau khi sử dụng
-unset($_SESSION['transient_token'], $_SESSION['transient_token_expiry']);
-log_message("Transient token validated and cleared, token=$transient_token, user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
 
 // Get transaction ID from query parameter
 $transaction_id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : 0;
 $log_context['transaction_id'] = $transaction_id;
 if ($transaction_id <= 0) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Invalid or missing transaction ID from query parameter: id={$_GET['id']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
-    header('Content-Type: application/json');
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid transaction ID'], JSON_UNESCAPED_UNICODE);
+    $_SESSION['error_message'] = 'Invalid transaction ID';
+    log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=$session_id", 'process.log', 'make-market', 'DEBUG', $log_context);
+    session_write_close();
+    header('Location: /mm/error');
     exit;
 }
 
 // Fetch transaction details
 try {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
     $stmt = $pdo->prepare("SELECT user_id, public_key, process_name, token_mint, sol_amount, token_amount, trade_direction, slippage, delay_seconds, loop_count, batch_size, status, error, network FROM make_market WHERE id = ? AND user_id = ? AND network = ?");
     $stmt->execute([$transaction_id, $user_id, SOLANA_NETWORK]);
     $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -140,20 +144,17 @@ try {
 
         $error_message = "Transaction not found, unauthorized, or network mismatch: ID=$transaction_id, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", id_exists=$id_exists, user_matches=$user_matches, network_matches=$network_matches";
         log_message($error_message, 'process.log', 'make-market', 'ERROR', $log_context);
-        // Redirect to main page with error message
         $_SESSION['error_message'] = 'Transaction not found or you do not have permission to access it.';
-        log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
+        log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=$session_id", 'process.log', 'make-market', 'DEBUG', $log_context);
         session_write_close();
         header('Location: /mm/error');
         exit;
     }
     log_message("Transaction fetched: ID=$transaction_id, process_name={$transaction['process_name']}, public_key=" . substr($transaction['public_key'], 0, 4) . "... , trade_direction={$transaction['trade_direction']}, status={$transaction['status']}, user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'INFO', $log_context);
 } catch (PDOException $e) {
-    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message("Database query failed: " . $e->getMessage() . ", user_id=$user_id, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined'), 'process.log', 'make-market', 'ERROR', $log_context);
-    // Redirect to main page with error message
     $_SESSION['error_message'] = 'Error retrieving transaction. Please try again later.';
-    log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
+    log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=$session_id", 'process.log', 'make-market', 'DEBUG', $log_context);
     session_write_close();
     header('Location: /mm/error');
     exit;
