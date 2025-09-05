@@ -439,10 +439,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Creat transient token
-        $transient_token = bin2hex(random_bytes(16)); // Generate random tokens
+        // Create transient token
+        $transient_token = bin2hex(random_bytes(16)); // Generate random token
         $_SESSION['transient_token'] = $transient_token; // Save to session
-        $_SESSION['transient_token_expiry'] = time() + 300; // Token expires in 5 minutes
+        $_SESSION['transient_token_expiry'] = time() + 60; // Token expires in 1 minute
         log_message("Transient token generated: $transient_token for transaction ID=$transactionId", 'make-market.log', 'make-market', 'INFO');
 
         // Check for headers sent before redirect
