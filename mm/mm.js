@@ -195,7 +195,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         slippage: parseFloat(formData.get('slippage')) || 0.5,
         delay: parseInt(formData.get('delay')) || 0,
         loopCount: parseInt(formData.get('loopCount')) || 1,
-        batchSize: parseInt(formData.get('batchSize')) || 5,
+        batchSize: parseInt(formData.get('batchSize')) || 2,
         csrf_token: csrfToken,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
     };
@@ -297,9 +297,9 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         submitButton.disabled = false;
         return;
     }
-    if (isNaN(params.batchSize) || params.batchSize < 1 || params.batchSize > 10) {
+    if (isNaN(params.batchSize) || params.batchSize < 2 || params.batchSize > 10) {
         log_message(`Invalid batch size: ${params.batchSize}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Batch size must be between 1 and 10.');
+        showError('Batch size must be between 2 and 10.');
         console.error('Invalid batch size');
         submitButton.disabled = false;
         return;
