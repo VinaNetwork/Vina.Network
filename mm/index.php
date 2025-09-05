@@ -454,13 +454,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Send redirect
-        $redirect_url = "/mm/process/$transactionId";
+        $redirect_url = "/mm/process/$transactionId?token=" . urlencode($transient_token);
         log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]);
+            log_message("AJAX response sent: " . json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]), 'make-market.log', 'make-market', 'DEBUG');
         } else {
             header("Location: $redirect_url");
+            log_message("Non-AJAX redirect sent to: $redirect_url", 'make-market.log', 'make-market', 'INFO');
         }
         exit;
     } catch (Exception $e) {
