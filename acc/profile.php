@@ -118,13 +118,13 @@ $page_css = ['/acc/acc.css'];
                 <tr>
                     <th>Wallet Address:</th>
                     <td>
-                        <?php if ($short_public_key !== 'Invalid address'): ?>
-                        <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
-                            <?php echo htmlspecialchars($short_public_key); ?>
-                        </a>
-                        <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+                        <?php if ($short_public_key !== 'Invalid'): ?>
+                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
+                                <?php echo htmlspecialchars($short_public_key); ?>
+                            </a>
+                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
                         <?php else: ?>
-                        <span>Invalid address</span>
+                            <span>Invalid address</span>
                         <?php endif; ?>
                     </td>
                 </tr>
