@@ -99,7 +99,7 @@ function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Kiểm tra X-Auth-Token cho yêu cầu AJAX
+    // Check X-Auth-Token for AJAX requests
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
         $headers = getallheaders();
         $authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
@@ -130,11 +130,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $network = SOLANA_NETWORK;
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
-        // Log form data an toàn
+        // Log form data securely
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
             $obfuscatedPrivateKey = $privateKey ? substr($privateKey, 0, 4) . '...' . substr($privateKey, -4) : 'empty';
             $logFormData = $form_data;
-            unset($logFormData['privateKey']); // Xóa privateKey khỏi log JSON
+            unset($logFormData['privateKey']); // Remove privateKey from JSON log
             $logFormData['privateKey_obfuscated'] = $obfuscatedPrivateKey;
             log_message("Form data: " . json_encode($logFormData), 'make-market.log', 'make-market', 'DEBUG');
             log_message(
@@ -229,13 +229,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Gọi decimals.php để lấy decimals của token mint
+        // Call decimals.php to get the decimals of the mint token
         log_message("Calling decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
         try {
             ob_start();
             $_POST = [
                 'token_mint' => $tokenMint,
-                'network' => $network, // Sử dụng SOLANA_NETWORK
+                'network' => $network,
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -244,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
 
-            // Refresh CSRF nếu cần
+            // Refresh CSRF
             $csrf_token = generate_csrf_token();
             log_message("CSRF token refreshed before calling decimals.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
             $_POST['csrf_token'] = $csrf_token;
@@ -254,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             require_once $root_path . 'mm/core/decimals.php';
             $response = ob_get_clean();
 
-            // Kiểm tra phản hồi
+            // Check feedback
             $data = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 log_message("Failed to parse decimals.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
@@ -321,7 +321,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'token_amount' => $tokenAmount,
                     'loop_count' => $loopCount,
                     'batch_size' => $batchSize,
-                    'network' => $network, // Sử dụng SOLANA_NETWORK
+                    'network' => $network,
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -340,7 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 require_once $root_path . 'mm/core/balance.php';
                 $response = ob_get_clean();
 
-                // Kiểm tra phản hồi
+                // Check feedback
                 $data = json_decode($response, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     log_message("Failed to parse balance.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
@@ -428,7 +428,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $loopCount,
                 $batchSize,
                 $decimals,
-                $network // Sử dụng SOLANA_NETWORK
+                $network
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "..., network=$network", 'make-market.log', 'make-market', 'INFO');
@@ -440,9 +440,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Creat transient token
-        $transient_token = bin2hex(random_bytes(16)); // Tạo token ngẫu nhiên
-        $_SESSION['transient_token'] = $transient_token; // Lưu vào session
-        $_SESSION['transient_token_expiry'] = time() + 300; // Token hết hạn sau 5 phút
+        $transient_token = bin2hex(random_bytes(16)); // Generate random tokens
+        $_SESSION['transient_token'] = $transient_token; // Save to session
+        $_SESSION['transient_token_expiry'] = time() + 300; // Token expires in 5 minutes
         log_message("Transient token generated: $transient_token for transaction ID=$transactionId", 'make-market.log', 'make-market', 'INFO');
 
         // Check for headers sent before redirect
@@ -480,8 +480,7 @@ $page_og_description = "Use Vina Network's Make Market to automatically buy and 
 $page_og_url = BASE_URL . "mm/";
 $page_canonical = BASE_URL . "mm/";
 $page_css = ['/mm/css/mm.css'];
-// Slippage
-$defaultSlippage = 0.5;
+$defaultSlippage = 0.5; // Slippage
 ?>
 
 <!DOCTYPE html>
