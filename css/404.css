@@ -40,12 +40,6 @@
 /* Heading Styling */
 .content-404 h1 {color: #00d4ff;}
 
-/* Paragraph Styling */
-.content-404 p {
-    color: #fff;
-    margin-bottom: 20px !important;
-}
-
 /* Alert */
 .alert {
     color: #721c24;
@@ -61,6 +55,4 @@
         margin-top: 64px;
         min-height: unset;
     }
-
-    .content-404 i {font-size: 2rem;}
 }
