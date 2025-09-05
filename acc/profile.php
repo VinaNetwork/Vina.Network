@@ -44,7 +44,7 @@ session_regenerate_id(true);
 
 // Validate public key
 $base58 = new Base58();
-$short_public_key = 'Invalid address';
+$short_public_key = 'Invalid';
 try {
     if (strlen($public_key) >= 8) {
         $base58->decode($public_key);
@@ -56,7 +56,7 @@ try {
     exit;
 }
 
-if ($short_public_key === 'Invalid address') {
+if ($short_public_key === 'Invalid') {
     log_message("Invalid public_key detected, redirecting to login", 'accounts.log', 'accounts', 'WARNING');
     header('Location: /acc');
     exit;
