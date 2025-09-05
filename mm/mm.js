@@ -180,6 +180,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         log_message(`Fetched SOLANA_NETWORK: ${network}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Fetched SOLANA_NETWORK:', network);
     } catch (error) {
+        log_message(`Failed to fetch SOLANA_NETWORK: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         showError('Failed to fetch network configuration. Please reload the page.');
         submitButton.disabled = false;
         return;
@@ -315,12 +316,12 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-Token': csrfToken,
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             },
             withCredentials: true
         });
         log_message(`Form submission response: HTTP ${response.status}, Response: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'DEBUG');
-        console.log('Form submission response:', response);
+        console.log('Form submission response:', response.data);
         if (response.status !== 200) {
             log_message(`Form submission failed: HTTP ${response.status}, Response: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Form submission failed:', response.data);
@@ -338,7 +339,14 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         }
         log_message(`Form saved to database: transactionId=${result.transactionId}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Form saved to database: transactionId=', result.transactionId);
-        const redirectUrl = result.redirect || `/mm/process/${result.transactionId}`;
+        const redirectUrl = result.redirect;
+        if (!redirectUrl || !redirectUrl.includes('token=')) {
+            log_message(`Invalid redirect URL: ${redirectUrl}, missing token parameter`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Invalid redirect URL:', redirectUrl);
+            showError('Invalid redirect URL. Please try again.');
+            submitButton.disabled = false;
+            return;
+        }
         log_message(`Redirecting to ${redirectUrl}`, 'make-market.log', 'make-market', 'INFO');
         console.log('Redirecting to', redirectUrl);
         setTimeout(() => {
