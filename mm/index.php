@@ -517,10 +517,10 @@ $defaultSlippage = 0.5;
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
-            <label for="privateKey">🔑 Private Key (Base58):</label>
+            <label for="privateKey">🔑 Private Key:</label>
             <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
             <label for="tokenMint">🎯 Token Address:</label>
-            <input type="text" name="tokenMint" id="tokenMint" required placeholder="Example: So111... or any SPL token">
+            <input type="text" name="tokenMint" id="tokenMint" required placeholder="Example: So111...">
             <label for="tradeDirection">📈 Trade Direction:</label>
             <select name="tradeDirection" id="tradeDirection" required>
                 <option value="buy">Buy</option>
