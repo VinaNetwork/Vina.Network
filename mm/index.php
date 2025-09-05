@@ -18,9 +18,7 @@ use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
 // Log request info
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
-}
+log_message("index.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}, REQUEST_URI: {$_SERVER['REQUEST_URI']}", 'make-market.log', 'make-market', 'DEBUG');
 
 // Protect POST requests with CSRF
 csrf_protect();
@@ -57,9 +55,7 @@ try {
 // Check session for authentication
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
-}
+log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm';
