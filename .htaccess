@@ -1,15 +1,7 @@
 # ============================================================================
-# Vina Network - Safe & Optimized .htaccess
-# ============================================================================
-# Features:
-# ✅ Enable URL rewriting
-# ✅ Block access to sensitive files and folders
-# ✅ Disable directory listing
-# ✅ Enable compression (Brotli / Deflate)
-# ✅ Enable caching for static assets
-# ✅ Block dangerous HTTP methods
-# ✅ Prevent image hotlinking
-# ✅ Rewrite /make-market/process/[id] to /make-market/process.php?id=[id]
+# File: .htaccess
+# Description: This file defines configuration rules for the Apache web server, such as redirects, URL rewriting, access control, caching, and security settings.
+# Created by: Vina Network
 # ============================================================================
 
 # Enable URL rewriting
@@ -32,7 +24,7 @@ RewriteRule ^404\.php$ /404 [R=301,L]
 </FilesMatch>
 
 # Block direct URL access to private folders
-RewriteRule ^(config|logs|include|accounts/include)/ - [F,L]
+RewriteRule ^(config|logs|include)/ - [F,L]
 
 # Block access to hidden files (e.g., .git, .env)
 RedirectMatch 404 /\.(?!well-known)
