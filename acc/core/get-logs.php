@@ -9,7 +9,8 @@ if (!defined('VINANETWORK_ENTRY')) {
     define('VINANETWORK_ENTRY', true);
 }
 
-require_once __DIR__ . '/../../acc/bootstrap.php';
+$root_path = __DIR__ . '/../../';
+require_once $root_path . 'acc/bootstrap.php';
 
 // Set response header
 header('Content-Type: application/json');
@@ -22,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Kiểm tra X-Auth-Token
+// Check X-Auth-Token
 $headers = getallheaders();
 $authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
 
