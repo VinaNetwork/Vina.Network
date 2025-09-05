@@ -32,10 +32,6 @@ http_response_code(404);
 $page_title = "Error - Vina Network";
 $page_description = "An error occurred while accessing the Make Market tool.";
 $page_keywords = "error, make market, Vina Network";
-$page_og_title = "Error: Make Market";
-$page_og_description = "An error occurred while accessing the Make Market tool.";
-$page_og_url = BASE_URL . "mm/error";
-$page_canonical = BASE_URL . "mm/error";
 $page_css = ['/css/404.css'];
 ?>
 
