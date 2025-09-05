@@ -93,7 +93,7 @@ if (!$user_public_key || !$user_id) {
     session_destroy(); // Clear session to avoid using old session
     $_SESSION['redirect_url'] = '/mm/process';
     session_write_close();
-    header('Location: /accounts');
+    header('Location: /acc');
     exit;
 }
 
