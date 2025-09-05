@@ -312,7 +312,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     try {
         // Submit form data
-        const response = await axios.post('/mm/create/', formData, {
+        const response = await axios.post('/mm/create', formData, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-Token': csrfToken,
