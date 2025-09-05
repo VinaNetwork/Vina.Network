@@ -37,16 +37,11 @@
         <!-- Product Dropdown -->
         <li class="navbar-item dropdown">
             <a href="#" class="navbar-link dropdown-toggle">
-                <i class="fas fa-box"></i> Product <i class="dropdown-icon fas fa-caret-down"></i>
+                <i class="fas fa-box"></i> Make Market <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/mm" class="dropdown-link"><i class="fa-solid fa-right-left"></i> Make Market</a></li>
-                <li><a href="/notification" class="dropdown-link"><i class="fas fa-wallet"></i> Vina Wallet</a></li>
-                <li><a href="/notification" class="dropdown-link"><i class="fas fa-balance-scale"></i> Vina Stablecoin</a></li>
-                <li><a href="/notification" class="dropdown-link"><i class="fas fa-exchange-alt"></i> Vina Dex</a></li>
-                <li><a href="/notification" class="dropdown-link"><i class="fas fa-link"></i> Vina DeFi</a></li>
-                <li><a href="/notification" class="dropdown-link"><i class="fas fa-gamepad"></i> Vina GameFi</a></li>
-                <li><a href="/notification" class="dropdown-link"><i class="fas fa-image"></i> NFT Marketplace</a></li>
+                <li><a href="/mm/create" class="dropdown-link"><i class="fa-solid fa-right-left"></i> Create</a></li>
+                <li><a href="/mm/history" class="dropdown-link"><i class="fas fa-wallet"></i> Process history</a></li>
             </ul>
         </li>
 
