@@ -60,7 +60,7 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken // Thêm X-Auth-Token
+            'X-Auth-Token': authToken
         },
         credentials: 'include', // Make sure cookies are sent
         body: JSON.stringify({ message: logMessage, log_file, module, log_type })
@@ -161,7 +161,7 @@ async function updateTransactionStatus(status, error = null) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             };
             log_message(`Updating transaction status: ID=${transactionId}, status=${status}, error=${error || 'none'}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-status/${transactionId}`, {
@@ -214,7 +214,7 @@ async function cancelTransaction(transactionId) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             };
             log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-status/${transactionId}`, {
@@ -279,7 +279,7 @@ async function getNetworkConfig() {
             const headers = {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             };
             const cookies = document.cookie || 'no cookies';
             const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
@@ -361,7 +361,7 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             };
             const response = await axios.post('/mm/get-decimals', {
                 tokenMint,
@@ -488,7 +488,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             };
             log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/create-tx/${transactionId}`, {
@@ -545,7 +545,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             };
             
             // Log request details
@@ -682,7 +682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const headers = {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             };
             log_message(`Fetching transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
             const response = await fetch(`/mm/get-order/${transactionId}`, {
