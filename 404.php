@@ -25,10 +25,6 @@ http_response_code(404);
 $page_title = "Page Not Found - Vina Network";
 $page_description = "The page you are looking for does not exist.";
 $page_keywords = "404, page not found, Vina Network";
-$page_og_title = "Page Not Found";
-$page_og_description = "The page you are looking for does not exist.";
-$page_og_url = BASE_URL . "404.php";
-$page_canonical = BASE_URL . "404.php";
 $page_css = ['css/404.css'];
 ?>
 
@@ -41,7 +37,9 @@ $page_css = ['css/404.css'];
     <div class="content-404">
         <i class="fas fa-exclamation-triangle"></i>
         <h1>404</h1>
-        <p><strong>Error:</strong> Page Not Found.</p>
+        <div class="alert">
+            <p><strong>Error:</strong> Page Not Found.</p>
+        </div>
         <a href="/" class="cta-button">Back to Home</a>
     </div>
 </div>
@@ -50,7 +48,7 @@ $page_css = ['css/404.css'];
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts -->
-<script src="js/vina.js"></script>
+<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
