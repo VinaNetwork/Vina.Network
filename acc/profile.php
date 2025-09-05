@@ -78,8 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
 // SEO meta
 $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
-$page_url = BASE_URL . "acc/profile";
 $page_keywords = "Vina Network, account, profile";
+$page_url = BASE_URL . "acc/profile";
 $page_css = ['/acc/acc.css'];
 ?>
 
