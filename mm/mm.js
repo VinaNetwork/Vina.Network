@@ -53,7 +53,7 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     axios.post('/mm/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken // Thêm X-Auth-Token
+            'X-Auth-Token': authToken
         },
         withCredentials: true
     }).then(response => {
@@ -107,7 +107,7 @@ async function refreshCSRFToken() {
     const response = await axios.get('/mm/refresh-csrf', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken // Thêm X-Auth-Token
+            'X-Auth-Token': authToken
         },
         withCredentials: true
     });
@@ -123,7 +123,7 @@ async function getSolanaNetwork() {
         const response = await axios.get('/mm/get-network', {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken // Thêm X-Auth-Token
+                'X-Auth-Token': authToken
             },
             withCredentials: true
         });
@@ -312,7 +312,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     try {
         // Submit form data
-        const response = await axios.post('/mm/', formData, {
+        const response = await axios.post('/mm/create/', formData, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-Token': csrfToken,
