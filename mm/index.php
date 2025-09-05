@@ -432,41 +432,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $loopCount,
                 $batchSize,
                 $decimals,
-                $network
+                $network // Sử dụng SOLANA_NETWORK
             ]);
             $transactionId = $pdo->lastInsertId();
             log_message("Transaction saved to database: ID=$transactionId, processName=$processName, public_key=" . substr($transactionPublicKey, 0, 4) . "..., network=$network", 'make-market.log', 'make-market', 'INFO');
-
-            // Tạo transient token
-            $transient_token = bin2hex(random_bytes(16)); // Tạo token ngẫu nhiên
-            $_SESSION['transient_token'] = $transient_token; // Lưu vào session
-            $_SESSION['transient_token_expiry'] = time() + 300; // Token hết hạn sau 5 phút
-            log_message("Transient token generated: $transient_token for transaction ID=$transactionId", 'make-market.log', 'make-market', 'INFO');
-
-            // Check for headers sent before redirect
-            if (headers_sent($file, $line)) {
-                log_message("Headers already sent in $file at line $line", 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Internal server error: Headers already sent']);
-                exit;
-            }
-
-            // Send redirect
-            $redirect_url = "/mm/process/$transactionId";
-            log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]);
-            } else {
-                header("Location: $redirect_url");
-            }
-            exit;
         } catch (PDOException $e) {
             log_message("Database insert failed: {$e->getMessage()}, Code: {$e->getCode()}, Query: INSERT INTO make_market..., Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Error saving transaction to database: ' . $e->getMessage()]);
             exit;
         }
+
+        // Check for headers sent before redirect
+        if (headers_sent($file, $line)) {
+            log_message("Headers already sent in $file at line $line", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Internal server error: Headers already sent']);
+            exit;
+        }
+
+        // Send redirect
+        $redirect_url = "/mm/process/$transactionId";
+        log_message("Sending redirect to $redirect_url", 'make-market.log', 'make-market', 'INFO');
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'success', 'transactionId' => $transactionId, 'redirect' => $redirect_url]);
+        } else {
+            header("Location: $redirect_url");
+        }
+        exit;
     } catch (Exception $e) {
         log_message("Error saving transaction: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
