@@ -43,8 +43,8 @@ $_SESSION['login_nonce'] = $nonce;
 // SEO meta
 $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
-$page_url = BASE_URL . "acc/";
 $page_keywords = "Vina Network, connect wallet, login, register";
+$page_url = BASE_URL . "acc/";
 $page_css = ['/acc/acc.css'];
 ?>
 
