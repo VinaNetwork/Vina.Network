@@ -58,7 +58,7 @@ $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($pu
 log_message("Session public_key: $short_public_key", 'make-market.log', 'make-market', 'DEBUG');
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
-    $_SESSION['redirect_url'] = '/mm';
+    $_SESSION['redirect_url'] = '/mm/create';
     header('Location: /acc');
     exit;
 }
@@ -70,7 +70,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for session public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
-        $_SESSION['redirect_url'] = '/mm';
+        $_SESSION['redirect_url'] = '/mm/create';
         header('Location: /acc');
         exit;
     }
