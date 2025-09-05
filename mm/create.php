@@ -479,8 +479,8 @@ $page_description = "Automate token trading on Solana with Vina Network's Make M
 $page_keywords = "Solana trading, automated token trading, Jupiter API, make market, Vina Network, Solana token, crypto trading";
 $page_og_title = "Make Market: Automate Solana Token Trading with Vina Network";
 $page_og_description = "Use Vina Network's Make Market to automatically buy and sell Solana tokens with Jupiter API. Try now!";
-$page_og_url = BASE_URL . "mm/";
-$page_canonical = BASE_URL . "mm/";
+$page_og_url = BASE_URL . "mm/create";
+$page_canonical = BASE_URL . "mm/create";
 $page_css = ['/mm/css/mm.css'];
 $defaultSlippage = 0.5; // Slippage
 ?>
