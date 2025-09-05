@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $slippage = floatval($form_data['slippage'] ?? 0.5);
         $delay = intval($form_data['delay'] ?? 0);
         $loopCount = intval($form_data['loopCount'] ?? 1);
-        $batchSize = intval($form_data['batchSize'] ?? 5);
+        $batchSize = intval($form_data['batchSize'] ?? 2);
         $network = SOLANA_NETWORK;
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
 
