@@ -10,10 +10,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 $root_path = __DIR__ . '/../../';
-// constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
+// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
-// Kiểm tra X-Auth-Token
+// Check X-Auth-Token
 $headers = getallheaders();
 $authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
 
