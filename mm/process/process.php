@@ -83,9 +83,29 @@ if (!$user_public_key) {
     log_message("No public key in session, redirecting to login, user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
     $_SESSION['redirect_url'] = '/mm/process';
     session_write_close();
-    header('Location: /accounts');
+    header('Location: /acc');
     exit;
 }
+
+// Check transient token
+$transient_token = isset($_GET['token']) ? $_GET['token'] : null;
+if (!$transient_token || !isset($_SESSION['transient_token']) || $transient_token !== $_SESSION['transient_token'] || time() > $_SESSION['transient_token_expiry']) {
+    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
+    log_message("Invalid or missing transient token: token=" . ($transient_token ?: 'none') . ", user_id=$user_id, session_token=" . (isset($_SESSION['transient_token']) ? $_SESSION['transient_token'] : 'none') . ", expiry=" . (isset($_SESSION['transient_token_expiry']) ? $_SESSION['transient_token_expiry'] : 'none'), 'process.log', 'make-market', 'ERROR', $log_context);
+    
+    // Xóa transient token khỏi session
+    unset($_SESSION['transient_token'], $_SESSION['transient_token_expiry']);
+    
+    // Redirect to error page
+    $_SESSION['error_message'] = 'Direct access to process page is not allowed.';
+    log_message("Setting error_message in session: {$_SESSION['error_message']}, session_id=" . session_id(), 'process.log', 'make-market', 'DEBUG', $log_context);
+    session_write_close();
+    header('Location: /mm/error');
+    exit;
+}
+// Xóa transient token sau khi sử dụng
+unset($_SESSION['transient_token'], $_SESSION['transient_token_expiry']);
+log_message("Transient token validated and cleared, token=$transient_token, user_id=$user_id", 'process.log', 'make-market', 'INFO', $log_context);
 
 // Get transaction ID from query parameter
 $transaction_id = isset($_GET['id']) && is_numeric($_GET['id']) ? intval($_GET['id']) : 0;
