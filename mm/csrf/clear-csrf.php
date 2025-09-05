@@ -12,7 +12,7 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'mm/bootstrap.php';
 
-// Kiểm tra phương thức và AJAX
+// Method checkand AJAX
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || 
     !isset($_SERVER['HTTP_X_REQUESTED_WITH']) || 
     $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
@@ -22,10 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' ||
     exit;
 }
 
-// Kiểm tra CSRF token
+// Check CSRF token
 csrf_protect();
 
-// Xóa CSRF token
+// Delete CSRF token
 if (clear_csrf_token()) {
     log_message("CSRF token cleared successfully, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'make-market.log', 'make-market', 'INFO');
     echo json_encode(['status' => 'success', 'message' => 'CSRF token cleared'], JSON_UNESCAPED_UNICODE);
