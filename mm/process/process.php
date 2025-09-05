@@ -34,7 +34,7 @@ $headers = apache_request_headers();
 $cookies = isset($_SERVER['HTTP_COOKIE']) ? $_SERVER['HTTP_COOKIE'] : 'none';
 if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
     log_message(
-        "process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers),
+        "process.php: Request received, method=$request_method, uri=$request_uri, network=" . (defined('SOLANA_NETWORK') ? SOLANA_NETWORK : 'undefined') . ", session_id=$session_id, cookies=$cookies, headers=" . json_encode($headers) . ", raw_GET=" . json_encode($_GET),
         'process.log', 'make-market', 'DEBUG', $log_context
     );
 }
@@ -49,7 +49,7 @@ if ($request_method !== 'GET') {
 }
 
 // Check transient token
-$transient_token = isset($_GET['token']) ? $_GET['token'] : null;
+$transient_token = isset($_GET['token']) ? trim($_GET['token']) : null;
 if (!$transient_token || !isset($_SESSION['transient_token']) || $transient_token !== $_SESSION['transient_token'] || time() > $_SESSION['transient_token_expiry']) {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none';
     log_message(
