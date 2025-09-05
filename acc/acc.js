@@ -8,40 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
     log_message('acc.js loaded', 'accounts.log', 'accounts', 'DEBUG');
 
-    // Copy functionality
-    const copyIcons = document.querySelectorAll('.copy-icon');
-    copyIcons.forEach(icon => {
-        icon.addEventListener('click', (e) => {
-            console.log('Copy icon clicked');
-            log_message('Copy icon clicked', 'accounts.log', 'accounts', 'INFO');
-            const fullAddress = icon.getAttribute('data-full');
-            const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
-            console.log(`Attempting to copy address: ${shortAddress}`);
-            log_message(`Attempting to copy address: ${shortAddress}`, 'accounts.log', 'accounts', 'DEBUG');
-            navigator.clipboard.writeText(fullAddress).then(() => {
-                console.log('Copy successful');
-                log_message('Copy successful', 'accounts.log', 'accounts', 'INFO');
-                icon.classList.add('copied');
-                const tooltip = document.createElement('span');
-                tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
-                const parent = icon.parentNode;
-                parent.style.position = 'relative';
-                parent.appendChild(tooltip);
-                setTimeout(() => {
-                    icon.classList.remove('copied');
-                    tooltip.remove();
-                    console.log('Copy feedback removed');
-                    log_message('Copy feedback removed', 'accounts.log', 'accounts', 'DEBUG');
-                }, 2000);
-            }).catch(err => {
-                console.error('Clipboard API failed:', err.message);
-                log_message(`Clipboard API failed: ${err.message}`, 'accounts.log', 'accounts', 'ERROR');
-                showError(`Unable to copy: ${err.message}`);
-            });
-        });
-    });
-
     // Function to show error messages
     function showError(message) {
         console.log('Showing error:', message);
@@ -274,4 +240,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+});
+
+// Copy functionality
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('mm.js loaded');
+    log_message('mm.js loaded', 'accounts.log', 'accounts', 'DEBUG');
+
+    const copyIcons = document.querySelectorAll('.copy-icon');
+    copyIcons.forEach(icon => {
+        icon.addEventListener('click', (e) => {
+            console.log('Copy icon clicked');
+            log_message('Copy icon clicked', 'accounts.log', 'accounts', 'INFO');
+
+            const fullAddress = icon.getAttribute('data-full');
+            const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
+            console.log(`Attempting to copy address: ${shortAddress}`);
+            log_message(`Attempting to copy address: ${shortAddress}`, 'accounts.log', 'accounts', 'DEBUG');
+
+            navigator.clipboard.writeText(fullAddress).then(() => {
+                console.log('Copy successful');
+                log_message('Copy successful', 'accounts.log', 'accounts', 'INFO');
+                icon.classList.add('copied');
+                const tooltip = document.createElement('span');
+                tooltip.className = 'copy-tooltip';
+                tooltip.textContent = 'Copied!';
+                const parent = icon.parentNode;
+                parent.style.position = 'relative';
+                parent.appendChild(tooltip);
+                setTimeout(() => {
+                    icon.classList.remove('copied');
+                    tooltip.remove();
+                    console.log('Copy feedback removed');
+                    log_message('Copy feedback removed', 'accounts.log', 'accounts', 'DEBUG');
+                }, 2000);
+            }).catch(err => {
+                console.error('Clipboard API failed:', err.message);
+                log_message(`Clipboard API failed: ${err.message}`, 'accounts.log', 'accounts', 'ERROR');
+                showError(`Unable to copy: ${err.message}`);
+            });
+        });
+    });
 });
