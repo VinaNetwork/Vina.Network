@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Kiểm tra X-Auth-Token
+// Check X-Auth-Token
 $headers = getallheaders();
 $authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
 
