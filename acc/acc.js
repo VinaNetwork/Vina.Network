@@ -244,8 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('mm.js loaded');
-    log_message('mm.js loaded', 'accounts.log', 'accounts', 'DEBUG');
+    console.log('acc.js loaded');
+    log_message('acc.js loaded', 'accounts.log', 'accounts', 'DEBUG');
 
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
