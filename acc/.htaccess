@@ -1,3 +1,9 @@
+# ============================================================================
+# File: acc/.htaccess
+# Description: This file defines configuration rules for the Apache web server, such as redirects, URL rewriting, access control, caching, and security settings.
+# Created by: Vina Network
+# ============================================================================
+
 RewriteEngine On
 RewriteBase /acc/
 
