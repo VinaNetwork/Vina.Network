@@ -443,6 +443,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Creat transient token
+        $transient_token = bin2hex(random_bytes(16)); // Tạo token ngẫu nhiên
+        $_SESSION['transient_token'] = $transient_token; // Lưu vào session
+        $_SESSION['transient_token_expiry'] = time() + 300; // Token hết hạn sau 5 phút
+        log_message("Transient token generated: $transient_token for transaction ID=$transactionId", 'make-market.log', 'make-market', 'INFO');
+
         // Check for headers sent before redirect
         if (headers_sent($file, $line)) {
             log_message("Headers already sent in $file at line $line", 'make-market.log', 'make-market', 'ERROR');
