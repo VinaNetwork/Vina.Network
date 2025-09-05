@@ -25,12 +25,9 @@ $log_context = [
 ];
 log_message("Error: Page not found - REQUEST_URI: $request_uri, session_id=$session_id, error_message=" . (isset($_SESSION['error_message']) ? $_SESSION['error_message'] : 'none'), 'make-market.log', 'make-market', 'ERROR', $log_context);
 
-// Set HTTP status code
-http_response_code(404);
-
 // SEO meta
 $page_title = "Error - Vina Network";
-$page_description = "An error occurred while accessing the Make Market tool.";
+$page_description = "An error occurred while accessing the Make Market.";
 $page_keywords = "error, make market, Vina Network";
 $page_css = ['/css/404.css'];
 ?>
@@ -48,7 +45,7 @@ $page_css = ['/css/404.css'];
             <div class="alert alert-danger">
                 <?php echo htmlspecialchars($_SESSION['error_message']); ?>
             </div>
-            <?php unset($_SESSION['error_message']); // Xóa thông báo sau khi hiển thị ?>
+            <?php unset($_SESSION['error_message']); // Delete notification after display ?>
         <?php endif; ?>
         <a href="/mm" class="cta-button">Back to Make Market</a>
     </div>
