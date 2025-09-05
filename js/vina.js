@@ -183,9 +183,29 @@ function typewriterEffect(element, text, speed = 50, delay = 200) {
     }, delay);
 }
 
-// DOM Ready: Activate fade-in animation and typewriter effect
+// Back to Top Button Logic
+const backToTopButton = document.getElementById("back-to-top");
+if (backToTopButton) {
+    window.onscroll = function() {
+        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+            backToTopButton.classList.add("show");
+        } else {
+            backToTopButton.classList.remove("show");
+        }
+    };
+
+    backToTopButton.addEventListener("click", function() {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    });
+}
+
+// DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
-    const fadeElements = document.querySelectorAll('.fade-in'); // Elements with fade-in animation
+    // Activate fade-in animation and typewriter effect
+    const fadeElements = document.querySelectorAll('.fade-in');
     // Initialize IntersectionObserver for fade-in animations
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
@@ -221,22 +241,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
-
-// Back to Top Button Logic
-const backToTopButton = document.getElementById("back-to-top");
-if (backToTopButton) {
-    window.onscroll = function() {
-        if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
-            backToTopButton.classList.add("show");
-        } else {
-            backToTopButton.classList.remove("show");
-        }
-    };
-
-    backToTopButton.addEventListener("click", function() {
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
-    });
-}
