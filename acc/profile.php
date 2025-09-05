@@ -14,7 +14,6 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../';
 // constants | logging | config | error | session | database | header-auth | wallet-auth
 require_once $root_path . 'acc/bootstrap.php';
-use StephenHill\Base58;
 
 // Database connection
 $start_time = microtime(true);
@@ -32,37 +31,17 @@ try {
 
 // Check session and public key
 $public_key = $_SESSION['public_key'] ?? null;
+$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
-if (!$public_key) {
-    log_message("No public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
+log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
+if (!$public_key || $short_public_key === 'Invalid') {
+    log_message("No or invalid public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
     header('Location: /acc');
     exit;
 }
 
 // Regenerate session ID to prevent session fixation
 session_regenerate_id(true);
-
-// Validate public key
-$base58 = new Base58();
-$short_public_key = 'Invalid';
-try {
-    if (strlen($public_key) >= 8) {
-        $base58->decode($public_key);
-        $short_public_key = substr($public_key, 0, 4) . '...' . substr($public_key, -4);
-    }
-} catch (Exception $e) {
-    log_message("Invalid public_key format: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
-    header('Location: /acc');
-    exit;
-}
-
-if ($short_public_key === 'Invalid') {
-    log_message("Invalid public_key detected, redirecting to login", 'accounts.log', 'accounts', 'WARNING');
-    header('Location: /acc');
-    exit;
-}
-
-log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 
 // Fetch account information
 try {
@@ -144,8 +123,8 @@ $page_css = ['/acc/acc.css'];
 <?php require_once $root_path . 'include/footer.php';?>
 
 <script>console.log('Attempting to load JS files...');</script>
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/acc/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
+<script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/acc/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
