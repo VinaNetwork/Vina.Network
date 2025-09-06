@@ -5,10 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = __DIR__ . '/../../';
 // constants | logging | config | error | session | database | header-auth.php | network.php | csrf.php | vendor/autoload.php
 require_once $root_path . 'mm/bootstrap.php';
