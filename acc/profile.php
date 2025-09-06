@@ -36,7 +36,7 @@ log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not s
 log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key || $short_public_key === 'Invalid') {
     log_message("No or invalid public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
-    header('Location: /acc');
+    header('Location: /acc/connect');
     exit;
 }
 
@@ -50,7 +50,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
-        header('Location: /acc');
+        header('Location: /acc/connect');
         exit;
     }
     log_message("Profile accessed for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
-    header('Location: /acc');
+    header('Location: /acc/connect');
     exit;
 }
 
@@ -113,7 +113,7 @@ $page_css = ['/acc/acc.css'];
         </div>
         
         <form method="POST" id="logout-form" action="/acc/profile">
-            <button class="cta-button" type="submit" name="logout">Logout</button>
+            <button class="cta-button" type="submit" name="logout">Disconnect</button>
         </form>
         <div id="wallet-info" style="display: none;">
             <span id="status"></span>
