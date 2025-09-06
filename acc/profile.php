@@ -26,10 +26,8 @@ try {
 
 // Check session and public key
 $public_key = $_SESSION['public_key'] ?? null;
-$account_id = $_SESSION['id'] ?? null;
 $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
-log_message("Profile.php - Session id: " . ($account_id ? $account_id : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key || $short_public_key === 'Invalid') {
     log_message("No or invalid public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
@@ -50,9 +48,7 @@ try {
         header('Location: /acc/connect');
         exit;
     }
-    $account['id'] = $account_id;
-    log_message("Profile accessed for public_key: $short_public_key, role: {$account['role']}, is_active: " . ($account['is_active'] ? 'true' : 'false') . ", id: " . ($account_id ?? 'Not set'), 'accounts.log', 'accounts', 'INFO');
-    log_message("Account data: " . json_encode($account), 'accounts.log', 'accounts', 'DEBUG');
+    log_message("Profile accessed for public_key: $short_public_key, role: {$account['role']}, is_active: " . ($account['is_active'] ? 'true' : 'false'), 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
