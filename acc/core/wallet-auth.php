@@ -205,7 +205,7 @@ try {
 
     $start_time = microtime(true);
     try {
-		$stmt = $pdo->prepare("SELECT id, public_key, role, is_active, created_at, previous_login, last_login FROM accounts WHERE public_key = ?");
+        $stmt = $pdo->prepare("SELECT id, public_key, role, is_active, created_at, previous_login, last_login FROM accounts WHERE public_key = ?");
         $stmt->execute([$public_key]);
         $account = $stmt->fetch();
         $duration = (microtime(true) - $start_time) * 1000;
@@ -232,18 +232,21 @@ try {
         $stmt = $pdo->prepare("UPDATE accounts SET previous_login = last_login, last_login = ? WHERE public_key = ?");
         $stmt->execute([$current_time, $public_key]);
         $duration = (microtime(true) - $start_time) * 1000;
-        log_message("Login successful: public_key=$short_public_key, role={$account['role']} (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+        log_message("Login successful: public_key=$short_public_key, role={$account['role']}, id={$account['id']} (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
         $_SESSION['public_key'] = $public_key;
         $_SESSION['role'] = $account['role'];
+        $_SESSION['id'] = $account['id']; // Thêm id vào session
         echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => $redirect_url]);
     } else {
         $start_time = microtime(true);
         $stmt = $pdo->prepare("INSERT INTO accounts (public_key, role, is_active, created_at, last_login) VALUES (?, 'member', TRUE, ?, ?)");
         $stmt->execute([$public_key, $current_time, $current_time]);
+        $new_id = $pdo->lastInsertId(); // Lấy id của tài khoản mới
         $duration = (microtime(true) - $start_time) * 1000;
-        log_message("Registration successful: public_key=$short_public_key, role=member (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+        log_message("Registration successful: public_key=$short_public_key, role=member, id=$new_id (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
         $_SESSION['public_key'] = $public_key;
         $_SESSION['role'] = 'member';
+        $_SESSION['id'] = $new_id; // Thêm id vào session
         echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => $redirect_url]);
     }
 } catch (Exception $e) {
