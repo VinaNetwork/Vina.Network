@@ -45,7 +45,7 @@ session_regenerate_id(true);
 
 // Fetch account information
 try {
-    $stmt = $pdo->prepare("SELECT id, public_key, created_at, previous_login, last_login FROM accounts WHERE public_key = ?");
+    $stmt = $pdo->prepare("SELECT id, public_key, role, is_active, created_at, previous_login, last_login FROM accounts WHERE public_key = ?");
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
@@ -53,7 +53,7 @@ try {
         header('Location: /acc/connect');
         exit;
     }
-    log_message("Profile accessed for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
+    log_message("Profile accessed for public_key: $short_public_key, role: {$account['role']}, is_active: " . ($account['is_active'] ? 'true' : 'false'), 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
@@ -107,6 +107,8 @@ $page_css = ['/acc/acc.css'];
                         <?php endif; ?>
                     </td>
                 </tr>
+                <tr><th>Role:</th><td><?php echo htmlspecialchars($account['role']); ?></td></tr>
+                <tr><th>Status:</th><td><?php echo $account['is_active'] ? 'Active' : 'Locked'; ?></td></tr>
                 <tr><th>Created At:</th><td><?php echo htmlspecialchars($created_at); ?></td></tr>
                 <tr><th>Previous Login:</th><td><?php echo htmlspecialchars($last_login); ?></td></tr>
             </table>
