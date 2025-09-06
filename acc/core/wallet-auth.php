@@ -228,6 +228,7 @@ try {
             echo json_encode(['status' => 'error', 'message' => 'Account is disabled']);
             exit;
         }
+        // Update login times
         $start_time = microtime(true);
         $stmt = $pdo->prepare("UPDATE accounts SET previous_login = last_login, last_login = ? WHERE public_key = ?");
         $stmt->execute([$current_time, $public_key]);
@@ -235,18 +236,19 @@ try {
         log_message("Login successful: public_key=$short_public_key, role={$account['role']}, id={$account['id']} (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
         $_SESSION['public_key'] = $public_key;
         $_SESSION['role'] = $account['role'];
-        $_SESSION['id'] = $account['id']; // Thêm id vào session
+        $_SESSION['id'] = $account['id'];
         echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => $redirect_url]);
     } else {
+        // Register
         $start_time = microtime(true);
         $stmt = $pdo->prepare("INSERT INTO accounts (public_key, role, is_active, created_at, last_login) VALUES (?, 'member', TRUE, ?, ?)");
         $stmt->execute([$public_key, $current_time, $current_time]);
-        $new_id = $pdo->lastInsertId(); // Lấy id của tài khoản mới
+        $new_id = $pdo->lastInsertId(); // Get new account id
         $duration = (microtime(true) - $start_time) * 1000;
         log_message("Registration successful: public_key=$short_public_key, role=member, id=$new_id (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
         $_SESSION['public_key'] = $public_key;
         $_SESSION['role'] = 'member';
-        $_SESSION['id'] = $new_id; // Thêm id vào session
+        $_SESSION['id'] = $new_id; // Add id to session
         echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => $redirect_url]);
     }
 } catch (Exception $e) {
