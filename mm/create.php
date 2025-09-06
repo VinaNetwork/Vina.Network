@@ -6,12 +6,8 @@
 // ============================================================================
 
 ob_start();
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload.php
+// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
