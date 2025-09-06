@@ -29,6 +29,7 @@
                 <i class="fas fa-user"></i> Accounts <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
+                <li><a href="/acc/admin" class="dropdown-link"><i class="fas fa-wallet"></i> Admin</a></li>
                 <li><a href="/acc/connect" class="dropdown-link"><i class="fas fa-wallet"></i> Connect</a></li>
                 <li><a href="/acc/profile" class="dropdown-link"><i class="fas fa-address-card"></i> Profile</a></li>
             </ul>
