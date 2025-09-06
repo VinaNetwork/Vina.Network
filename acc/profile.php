@@ -121,7 +121,7 @@ $page_css = ['/acc/acc.css'];
 
 <script>console.log('Attempting to load JS files...');</script>
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script defer src="/acc/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
+<script defer src="/acc/profile.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/profile.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
