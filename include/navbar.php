@@ -5,14 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Access Conditions
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
-$root_path = __DIR__ . '/../';
-require_once $root_path . 'include/bootstrap.php';
-
 // Kiểm tra session và quyền admin
 $public_key = $_SESSION['public_key'] ?? null;
 $is_admin = false;
