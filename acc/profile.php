@@ -94,7 +94,7 @@ $page_css = ['/acc/acc.css'];
             <table>
                 <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr>
-                    <th>Wallet Address:</th>
+                    <th>Wallet address:</th>
                     <td>
                         <?php if ($short_public_key !== 'Invalid'): ?>
                             <a href="https://solscan.io/address/<?php echo htmlspecialchars($account['public_key']); ?>" target="_blank">
@@ -108,8 +108,8 @@ $page_css = ['/acc/acc.css'];
                 </tr>
                 <tr><th>Role:</th><td><?php echo htmlspecialchars($account['role']); ?></td></tr>
                 <tr><th>Status:</th><td><?php echo $account['is_active'] ? 'Active' : 'Locked'; ?></td></tr>
-                <tr><th>Created At:</th><td><?php echo htmlspecialchars($created_at); ?></td></tr>
-                <tr><th>Previous Login:</th><td><?php echo htmlspecialchars($last_login); ?></td></tr>
+                <tr><th>Created at:</th><td><?php echo htmlspecialchars($created_at); ?></td></tr>
+                <tr><th>Last login:</th><td><?php echo htmlspecialchars($last_login); ?></td></tr>
             </table>
         </div>
         
