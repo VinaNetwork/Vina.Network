@@ -5,17 +5,17 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Kiểm tra trạng thái đăng nhập và quyền admin
+// Check login status and admin rights
 $public_key = $_SESSION['public_key'] ?? null;
-$is_logged_in = !empty($public_key); // Người dùng đã đăng nhập nếu public_key tồn tại
+$is_logged_in = !empty($public_key); // User is logged in if public_key exists
 $is_admin = false;
 
 if ($is_logged_in) {
-    // Kiểm tra quyền admin
+    // Check admin rights
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
         $is_admin = true;
     } else {
-        // Kiểm tra role từ cơ sở dữ liệu nếu session không phải admin
+        // Check role from database if session is not admin
         try {
             $pdo = get_db_connection();
             $stmt = $pdo->prepare("SELECT role, is_active FROM accounts WHERE public_key = ?");
@@ -26,7 +26,7 @@ if ($is_logged_in) {
                 $is_admin = true;
             }
         } catch (PDOException $e) {
-            // Ghi log lỗi nhưng không chặn hiển thị navbar
+            // Log errors but do not block navbar display
             $short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
             log_message("Database query failed for role check in navbar: {$e->getMessage()}, public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
         }
