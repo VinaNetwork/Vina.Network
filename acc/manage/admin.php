@@ -13,10 +13,15 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'acc/bootstrap.php';
 
-// Kiểm tra quyền admin
-if (!isset($_SESSION['public_key']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    log_message("Unauthorized access attempt to admin page, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
-    header('Location: /acc/connect');
+// Kiểm tra session và quyền admin
+$public_key = $_SESSION['public_key'] ?? null;
+$role = $_SESSION['role'] ?? null;
+$short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+log_message("Attempting to access admin page, public_key: $short_public_key, role: " . ($role ?? 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
+
+if (!$public_key || !$role || $role !== 'admin') {
+    log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, role: " . ($role ?? 'Not set') . ", IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    header('Location: /acc/connect?error=Unauthorized access');
     exit;
 }
 
@@ -32,22 +37,22 @@ try {
 
 // Xử lý khóa/mở tài khoản
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['action'])) {
-    $public_key = $_POST['public_key'];
+    $target_public_key = $_POST['public_key'];
     $action = $_POST['action'];
-    $short_public_key = strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
+    $target_short_public_key = strlen($target_public_key) >= 8 ? substr($target_public_key, 0, 4) . '...' . substr($target_public_key, -4) : 'Invalid';
     
-    if ($public_key === $_SESSION['public_key']) {
-        log_message("Admin attempted to modify own account: public_key=$short_public_key", 'accounts.log', 'accounts', 'ERROR');
+    if ($target_public_key === $public_key) {
+        log_message("Admin attempted to modify own account: public_key=$target_short_public_key", 'accounts.log', 'accounts', 'ERROR');
         $error = "Cannot modify your own account.";
     } else {
         try {
             $is_active = ($action === 'lock') ? 0 : 1;
             $stmt = $pdo->prepare("UPDATE accounts SET is_active = ? WHERE public_key = ?");
-            $stmt->execute([$is_active, $public_key]);
-            log_message("Account $short_public_key " . ($action === 'lock' ? 'locked' : 'unlocked') . " by admin {$_SESSION['public_key']}", 'accounts.log', 'accounts', 'INFO');
-            $success = "Account $short_public_key has been " . ($action === 'lock' ? 'locked' : 'unlocked') . ".";
+            $stmt->execute([$is_active, $target_public_key]);
+            log_message("Account $target_short_public_key " . ($action === 'lock' ? 'locked' : 'unlocked') . " by admin $short_public_key", 'accounts.log', 'accounts', 'INFO');
+            $success = "Account $target_short_public_key has been " . ($action === 'lock' ? 'locked' : 'unlocked') . ".";
         } catch (PDOException $e) {
-            log_message("Failed to update account $short_public_key: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+            log_message("Failed to update account $target_short_public_key: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
             $error = "Failed to update account: {$e->getMessage()}";
         }
     }
@@ -108,7 +113,7 @@ $page_css = ['/acc/acc.css'];
                             <form method="POST" style="display: inline;">
                                 <input type="hidden" name="public_key" value="<?php echo htmlspecialchars($account['public_key']); ?>">
                                 <input type="hidden" name="action" value="<?php echo $account['is_active'] ? 'lock' : 'unlock'; ?>">
-                                <button type="submit" <?php echo $account['public_key'] === $_SESSION['public_key'] ? 'disabled' : ''; ?>>
+                                <button type="submit" <?php echo $account['public_key'] === $public_key ? 'disabled' : ''; ?>>
                                     <?php echo $account['is_active'] ? 'Lock' : 'Unlock'; ?>
                                 </button>
                             </form>
