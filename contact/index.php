@@ -5,7 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-$root_path = '../';
+$root_path = __DIR__ . '/../';
 require_once $root_path . 'bootstrap.php';
 
 // Head Section (Meta, Styles, Title) is included via header.php
