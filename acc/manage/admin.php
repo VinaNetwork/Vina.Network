@@ -13,12 +13,12 @@ if (!defined('VINANETWORK_ENTRY')) {
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'acc/bootstrap.php';
 
-// Kiểm tra session và quyền admin
+// Check session and admin rights
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 log_message("Attempting to access admin page, public_key: $short_public_key, session_role: " . ($_SESSION['role'] ?? 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
 
-// Kết nối cơ sở dữ liệu
+// Database connection
 try {
     $pdo = get_db_connection();
     log_message("Database connection successful for admin page", 'accounts.log', 'accounts', 'INFO');
@@ -28,7 +28,7 @@ try {
     exit;
 }
 
-// Kiểm tra role từ cơ sở dữ liệu
+// Check role from database
 if ($public_key) {
     try {
         $stmt = $pdo->prepare("SELECT role, is_active FROM accounts WHERE public_key = ?");
@@ -53,7 +53,7 @@ if ($public_key) {
     exit;
 }
 
-// Xử lý khóa/mở tài khoản
+// Account lock/unlock processing
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST['action'])) {
     $target_public_key = $_POST['public_key'];
     $action = $_POST['action'];
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     }
 }
 
-// Lấy danh sách tài khoản
+// Get list of accounts
 try {
     $stmt = $pdo->prepare("SELECT public_key, role, is_active, created_at, last_login FROM accounts ORDER BY created_at DESC");
     $stmt->execute();
