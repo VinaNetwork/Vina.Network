@@ -88,7 +88,7 @@ $page_css = ['/acc/acc.css'];
         <h1>Your Profile</h1>
         <div id="account-info" class="acc-info">
             <table>
-                <tr><th>ID:</th><td><?php var_dump($account); ?><?php echo htmlspecialchars($account['id']); ?></td></tr>
+                <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
                 <tr>
                     <th>Wallet Address:</th>
                     <td>
