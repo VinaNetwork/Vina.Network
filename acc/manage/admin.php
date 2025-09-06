@@ -35,7 +35,7 @@ if ($public_key) {
         $stmt->execute([$public_key]);
         $account = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($account && $account['is_active'] && $account['role'] === 'admin') {
-            $_SESSION['role'] = 'admin'; // Cập nhật session role
+            $_SESSION['role'] = 'admin'; // Update session roles
             log_message("Role verified from database for public_key: $short_public_key, role: admin", 'accounts.log', 'accounts', 'INFO');
         } else {
             log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, role: " . ($account['role'] ?? 'Not found') . ", is_active: " . ($account['is_active'] ?? 'Not found'), 'accounts.log', 'accounts', 'ERROR');
