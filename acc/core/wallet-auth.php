@@ -205,7 +205,7 @@ try {
 
     $start_time = microtime(true);
     try {
-        $stmt = $pdo->prepare("SELECT public_key, role, is_active FROM accounts WHERE public_key = ?");
+		$stmt = $pdo->prepare("SELECT id, public_key, role, is_active, created_at, previous_login, last_login FROM accounts WHERE public_key = ?");
         $stmt->execute([$public_key]);
         $account = $stmt->fetch();
         $duration = (microtime(true) - $start_time) * 1000;
