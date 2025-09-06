@@ -6,12 +6,14 @@
 // ============================================================================
 
 $root_path = __DIR__ . '/';
+// constants | logging | config | error | session | database
+require_once $root_path . 'bootstrap.php';
 $page_css = ['/css/home.css'];
-require_once $root_path . 'include/header.php';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+<?php require_once $root_path . 'include/header.php';?>
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="home-container">
