@@ -16,20 +16,20 @@
 }
 
 /* Account table */
-.account-table {
+.acc-list {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
 }
 
-.account-table th,
-.account-table td {
+.acc-list th,
+.acc-list td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
 }
 
-.account-table th {
+.acc-list th {
     background-color: #f2f2f2;
     font-weight: bold;
 }
