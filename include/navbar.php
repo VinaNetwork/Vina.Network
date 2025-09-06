@@ -58,7 +58,7 @@ if ($is_logged_in) {
             </a>
             <ul class="dropdown-menu">
                 <?php if ($is_admin): ?>
-                    <li><a href="/acc/admin" class="dropdown-link"><i class="fas fa-wallet"></i> Admin</a></li>
+                    <li><a href="/acc/admin" class="dropdown-link"><i class="fas fa-user-shield"></i> Admin</a></li>
                 <?php endif; ?>
                 <li><a href="/acc/connect" class="dropdown-link"><i class="fas fa-wallet"></i> Connect</a></li>
                 <?php if ($is_logged_in): ?>
@@ -73,9 +73,9 @@ if ($is_logged_in) {
                 <i class="fas fa-box"></i> Make Market <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/mm/create" class="dropdown-link"><i class="fa-solid fa-right-left"></i> Create</a></li>
+                <li><a href="/mm/create" class="dropdown-link"><i class="fas fa-plus-circle"></i> Create</a></li>
                 <?php if ($is_logged_in): ?>
-                    <li><a href="/mm/history" class="dropdown-link"><i class="fas fa-wallet"></i> History</a></li>
+                    <li><a href="/mm/history" class="dropdown-link"><i class="fas fa-history"></i> History</a></li>
                 <?php endif; ?>
             </ul>
         </li>
