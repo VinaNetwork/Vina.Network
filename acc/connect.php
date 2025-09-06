@@ -7,7 +7,7 @@
 
 ob_start();
 $root_path = __DIR__ . '/../';
-// constants | logging | config | error | session | database | header-auth | wallet-auth
+// constants | logging | config | error | session | database | header-auth
 require_once $root_path . 'acc/bootstrap.php';
 
 // Check if user is already logged in
