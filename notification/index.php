@@ -5,7 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-$root_path = '../';
+$root_path = __DIR__ . '/../';
 require_once $root_path . 'bootstrap.php';
 
 // Set path and SEO metadata for this page
