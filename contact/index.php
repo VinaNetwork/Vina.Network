@@ -12,16 +12,12 @@ require_once $root_path . 'bootstrap.php';
 $page_title = "Contact Us - Vina Network";
 $page_description = "Get in touch with Vina Network. Reach out via X, Telegram, or Email. We're here to assist you!";
 $page_keywords = "Vina Network, contact, X, Telegram, Email, support, Web3, cryptocurrency";
-$page_og_title = "Vina Network - Contact Us";
-$page_og_description = "Contact Vina Network via X, Telegram, or Email. Join our community today!";
-$page_og_url = BASE_URL . "contact/";
-$page_canonical = BASE_URL . "contact/";
 $page_css = ['/contact/contact.css'];
-include $root_path . 'include/header.php';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+<?php include $root_path . 'include/header.php'; ?>
 <body>
 	<!-- Navigation Bar -->
 	<?php include $root_path . 'include/navbar.php'; ?>
