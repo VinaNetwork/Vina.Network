@@ -5,10 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'acc/bootstrap.php';
 
