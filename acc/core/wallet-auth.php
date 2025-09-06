@@ -209,7 +209,7 @@ try {
 
     $start_time = microtime(true);
     try {
-        $stmt = $pdo->prepare("SELECT * FROM accounts WHERE public_key = ?");
+        $stmt = $pdo->prepare("SELECT public_key, role, is_active FROM accounts WHERE public_key = ?");
         $stmt->execute([$public_key]);
         $account = $stmt->fetch();
         $duration = (microtime(true) - $start_time) * 1000;
@@ -227,20 +227,27 @@ try {
     unset($_SESSION['redirect_url']);
 
     if ($account) {
+        if (!$account['is_active']) {
+            log_message("Login failed: Account disabled, public_key=$short_public_key, IP=$ip_address", 'accounts.log', 'accounts', 'ERROR');
+            echo json_encode(['status' => 'error', 'message' => 'Account is disabled']);
+            exit;
+        }
         $start_time = microtime(true);
         $stmt = $pdo->prepare("UPDATE accounts SET previous_login = last_login, last_login = ? WHERE public_key = ?");
         $stmt->execute([$current_time, $public_key]);
         $duration = (microtime(true) - $start_time) * 1000;
-        log_message("Login successful: public_key=$short_public_key, updated previous_login and last_login (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+        log_message("Login successful: public_key=$short_public_key, role={$account['role']} (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
         $_SESSION['public_key'] = $public_key;
+        $_SESSION['role'] = $account['role'];
         echo json_encode(['status' => 'success', 'message' => 'Login successful!', 'redirect' => $redirect_url]);
     } else {
         $start_time = microtime(true);
-        $stmt = $pdo->prepare("INSERT INTO accounts (public_key, created_at, last_login, previous_login) VALUES (?, ?, ?, NULL)");
+        $stmt = $pdo->prepare("INSERT INTO accounts (public_key, role, is_active, created_at, last_login) VALUES (?, 'member', TRUE, ?, ?)");
         $stmt->execute([$public_key, $current_time, $current_time]);
         $duration = (microtime(true) - $start_time) * 1000;
-        log_message("Registration successful: public_key=$short_public_key (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
+        log_message("Registration successful: public_key=$short_public_key, role=member (took {$duration}ms), IP=$ip_address", 'accounts.log', 'accounts', 'INFO');
         $_SESSION['public_key'] = $public_key;
+        $_SESSION['role'] = 'member';
         echo json_encode(['status' => 'success', 'message' => 'Registration successful!', 'redirect' => $redirect_url]);
     }
 } catch (Exception $e) {
