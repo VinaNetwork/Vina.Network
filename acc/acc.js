@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log('Sending logout request');
                         await log_message('Sending logout request', 'accounts.log', 'accounts', 'DEBUG');
 
-                        const response = await fetch('/acc/logout', {
+                        const response = await fetch('/acc/disconnect', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -101,9 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         await log_message(`Logout response: ${JSON.stringify(result)}`, 'accounts.log', 'accounts', result.status === 'error' ? 'ERROR' : 'INFO');
 
                         if (result.status === 'success') {
-                            console.log('Logout successful, redirecting to:', result.redirect || '/acc/');
-                            log_message(`Logout successful, redirecting to: ${result.redirect || '/acc/'}`, 'accounts.log', 'accounts', 'INFO');
-                            window.location.href = result.redirect || '/acc/';
+                            console.log('Logout successful, redirecting to:', result.redirect || '/acc/connect');
+                            log_message(`Logout successful, redirecting to: ${result.redirect || '/acc/connect'}`, 'accounts.log', 'accounts', 'INFO');
+                            window.location.href = result.redirect || '/acc/connect';
                         } else {
                             showError(result.message || 'Logout failed. Please try again.');
                         }
