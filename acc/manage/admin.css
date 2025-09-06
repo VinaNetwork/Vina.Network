@@ -1,0 +1,50 @@
+/* ============================================================================
+ * File: acc/manage/admin.css
+ * Description: CSS styles for the Admin.
+ * Created by: Vina Network
+ * ========================================================================== */
+
+/* Success and error messages */
+.success-message {
+    color: green;
+    margin-bottom: 10px;
+}
+
+.error-message {
+    color: red;
+    margin-bottom: 10px;
+}
+
+/* Account table */
+.account-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.account-table th,
+.account-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.account-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Action form */
+.action-form {
+    display: inline;
+}
+
+.action-form button {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.action-form button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
