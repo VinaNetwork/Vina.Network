@@ -5,12 +5,13 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Kiểm tra session và quyền admin
+// Kiểm tra trạng thái đăng nhập và quyền admin
 $public_key = $_SESSION['public_key'] ?? null;
+$is_logged_in = !empty($public_key); // Người dùng đã đăng nhập nếu public_key tồn tại
 $is_admin = false;
 
-if ($public_key) {
-    // Kiểm tra session trước
+if ($is_logged_in) {
+    // Kiểm tra quyền admin
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
         $is_admin = true;
     } else {
@@ -60,7 +61,9 @@ if ($public_key) {
                     <li><a href="/acc/admin" class="dropdown-link"><i class="fas fa-wallet"></i> Admin</a></li>
                 <?php endif; ?>
                 <li><a href="/acc/connect" class="dropdown-link"><i class="fas fa-wallet"></i> Connect</a></li>
-                <li><a href="/acc/profile" class="dropdown-link"><i class="fas fa-address-card"></i> Profile</a></li>
+                <?php if ($is_logged_in): ?>
+                    <li><a href="/acc/profile" class="dropdown-link"><i class="fas fa-address-card"></i> Profile</a></li>
+                <?php endif; ?>
             </ul>
         </li>
 
@@ -71,7 +74,9 @@ if ($public_key) {
             </a>
             <ul class="dropdown-menu">
                 <li><a href="/mm/create" class="dropdown-link"><i class="fa-solid fa-right-left"></i> Create</a></li>
-                <li><a href="/mm/history" class="dropdown-link"><i class="fas fa-wallet"></i> History</a></li>
+                <?php if ($is_logged_in): ?>
+                    <li><a href="/mm/history" class="dropdown-link"><i class="fas fa-wallet"></i> History</a></li>
+                <?php endif; ?>
             </ul>
         </li>
 
