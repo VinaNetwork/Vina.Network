@@ -7,6 +7,7 @@
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'tools/bootstrap.php';
+require_once $root_path . 'tools/core/tools-api.php';
 
 // Define cache directory and file
 $cache_dir = TOOLS_PATH . 'cache/';
@@ -18,16 +19,6 @@ if (!ensure_directory_and_file($cache_dir, $cache_file)) {
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
-
-// Load API helper
-$api_helper_path = $root_path . 'tools/core/tools-api.php';
-if (!file_exists($api_helper_path)) {
-    log_message("wallet_creators: tools-api.php not found at $api_helper_path", 'wallet-creators.log', 'tools', 'ERROR');
-    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
-    exit;
-}
-require_once $api_helper_path;
-log_message("wallet_creators: tools-api.php loaded", 'wallet-creators.log', 'tools', 'INFO');
 ?>
 
 <link rel="stylesheet" href="/tools/wallet-creators/wallet-creators.css">
