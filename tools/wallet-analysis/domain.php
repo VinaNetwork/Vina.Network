@@ -7,17 +7,7 @@
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'tools/bootstrap.php';
-
-// Load tools-api
-$api_helper_path = dirname(__DIR__) . '/tools-api.php';
-if (!file_exists($api_helper_path)) {
-    log_message("wallet_analysis_domain: tools-api.php not found at $api_helper_path", 'nft-analysis.log', 'tools', 'ERROR');
-    header('HTTP/1.1 500 Internal Server Error');
-    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
-    exit;
-}
-require_once $api_helper_path;
-log_message("wallet_analysis_domain: tools-api.php loaded", 'nft-analysis.log', 'tools', 'INFO');
+require_once $root_path . 'tools/core/tools-api.php';
 
 // Check session data
 $formatted_data = $_SESSION['wallet_analysis_data'] ?? null;
