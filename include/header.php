@@ -5,9 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-$root_path = __DIR__ . '/../';
-require_once $root_path . 'bootstrap.php';
-
 // Default meta values (can be overridden from each page)
 $page_title = isset($page_title) ? $page_title : 'Vina Network - Leading Web3 Blockchain Ecosystem';
 $page_description = isset($page_description) ? $page_description : 'Vina Network is a leading Web3 ecosystem focused on blockchain technology, cryptocurrencies ($VINA), stablecoins, and DeFi solutions. Join us!';
