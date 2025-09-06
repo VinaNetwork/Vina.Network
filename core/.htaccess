@@ -1,5 +1,8 @@
-# This .htaccess file only works on Apache servers. 
-# Ensure that 'AllowOverride All' is enabled in your Apache configuration 
+# ============================================================================
+# File: core/.htaccess
+# Description: This file defines configuration rules for the Apache web server, such as redirects, URL rewriting, access control, caching, and security settings.
+# Created by: Vina Network
+# ============================================================================
 
 # Deny all access to this directory
 <IfModule mod_authz_core.c>
