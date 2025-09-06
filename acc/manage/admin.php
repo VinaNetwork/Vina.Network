@@ -101,14 +101,14 @@ $page_css = ['/acc/acc.css', '/acc/manage/admin.css'];
 <?php require_once $root_path . 'include/navbar.php'; ?>
 <div class="acc-container">
     <div class="acc-content">
-        <h1>Admin - Manage Accounts</h1>
+        <h1>Manage Accounts</h1>
         <?php if (isset($success)): ?>
             <p class="success-message"><?php echo htmlspecialchars($success); ?></p>
         <?php endif; ?>
         <?php if (isset($error)): ?>
             <p class="error-message"><?php echo htmlspecialchars($error); ?></p>
         <?php endif; ?>
-        <table class="account-table">
+        <table class="acc-list">
             <thead>
                 <tr>
                     <th>Public Key</th>
@@ -131,7 +131,7 @@ $page_css = ['/acc/acc.css', '/acc/manage/admin.css'];
                             <form method="POST" class="action-form">
                                 <input type="hidden" name="public_key" value="<?php echo htmlspecialchars($account['public_key']); ?>">
                                 <input type="hidden" name="action" value="<?php echo $account['is_active'] ? 'lock' : 'unlock'; ?>">
-                                <button type="submit" <?php echo $account['public_key'] === $public_key ? 'disabled' : ''; ?>>
+                                <button class="cta-button" type="submit" <?php echo $account['public_key'] === $public_key ? 'disabled' : ''; ?>>
                                     <?php echo $account['is_active'] ? 'Lock' : 'Unlock'; ?>
                                 </button>
                             </form>
