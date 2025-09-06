@@ -7,29 +7,18 @@
 
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'tools/bootstrap.php';
+require_once $root_path . 'tools/core/tools-api.php';
+require_once $root_path . 'tools/nft-holders/nft-holders-helper.php';
 
 // Cache setup
 $cache_dir = TOOLS_PATH . 'cache/';
 $cache_file = $cache_dir . 'nft_holders_cache.json';
 log_message("nft_holders: Checking cache directory: $cache_dir, file: $cache_file", 'nft-holders.log', 'tools', 'DEBUG');
-
 if (!ensure_directory_and_file($cache_dir, $cache_file)) {
     log_message("nft_holders: Cache setup failed for $cache_dir or $cache_file", 'nft-holders.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Cache setup failed</p></div>';
     exit;
 }
-
-// Load API helper
-$api_helper_path = $root_path . 'tools/core/tools-api.php';
-if (!file_exists($api_helper_path)) {
-    log_message("nft_holders: tools-api.php not found at $api_helper_path", 'nft-holders.log', 'tools', 'ERROR');
-    echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
-    exit;
-}
-require_once $api_helper_path;
-
-// Load NFT holders helper
-require_once __DIR__ . '/nft-holders-helper.php';
 ?>
 
 <link rel="stylesheet" href="/tools/nft-holders/nft-holders.css">
