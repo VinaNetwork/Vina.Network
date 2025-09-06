@@ -24,14 +24,31 @@ try {
     exit;
 }
 
-// Check session and public key
-$public_key = $_SESSION['public_key'] ?? null;
-$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
-log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
-if (!$public_key || $short_public_key === 'Invalid') {
-    log_message("No or invalid public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
-    header('Location: /acc/connect');
+// Fetch account information from database using a unique identifier (e.g., user_id or token)
+$auth_token = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+if (strpos($auth_token, 'Bearer ') === 0) {
+    $auth_token = substr($auth_token, 7); // Extract token
+}
+$public_key = null;
+$short_public_key = 'Invalid';
+
+try {
+    $stmt = $pdo->prepare("SELECT public_key FROM accounts WHERE auth_token = ?");
+    $stmt->execute([$auth_token]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result && $result['public_key']) {
+        $public_key = $result['public_key'];
+        $short_public_key = substr($public_key, 0, 4) . '...' . substr($public_key, -4);
+        log_message("Profile.php - Retrieved public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
+    } else {
+        log_message("No account found for auth_token", 'accounts.log', 'accounts', 'ERROR');
+        header('Location: /acc/connect');
+        exit;
+    }
+} catch (PDOException $e) {
+    log_message("Database query failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving public key']);
     exit;
 }
 
