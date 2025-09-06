@@ -35,6 +35,9 @@ if (!$public_key || $short_public_key === 'Invalid') {
     exit;
 }
 
+// Log session data for debugging
+log_message("Session data: " . json_encode($_SESSION), 'accounts.log', 'accounts', 'DEBUG');
+
 // Regenerate session ID to prevent session fixation
 session_regenerate_id(true);
 
@@ -48,7 +51,9 @@ try {
         header('Location: /acc/connect');
         exit;
     }
-    log_message("Profile accessed for public_key: $short_public_key, role: {$account['role']}, is_active: " . ($account['is_active'] ? 'true' : 'false'), 'accounts.log', 'accounts', 'INFO');
+    // Log full account data
+    log_message("Account data retrieved: " . json_encode($account), 'accounts.log', 'accounts', 'DEBUG');
+    log_message("Profile accessed for public_key: $short_public_key, role: {$account['role']}, id: {$account['id']}, is_active: " . ($account['is_active'] ? 'true' : 'false'), 'accounts.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
     log_message("Database query failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
     header('Content-Type: application/json');
@@ -60,10 +65,12 @@ try {
 $created_at = preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['created_at']) ? $account['created_at'] : 'Invalid date';
 $last_login = $account['previous_login'] ? (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $account['previous_login']) ? $account['previous_login'] : 'Invalid date') : 'No previous login';
 
+// Log before rendering ID
+log_message("Preparing to render ID: {$account['id']} for public_key: $short_public_key, role: {$account['role']}", 'accounts.log', 'accounts', 'DEBUG');
+
 // Handle logout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     log_message("Logout attempt for public_key: $short_public_key", 'accounts.log', 'accounts', 'INFO');
-    
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
     header('Location: /acc/connect');
@@ -88,7 +95,16 @@ $page_css = ['/acc/acc.css'];
         <h1>Your Profile</h1>
         <div id="account-info" class="acc-info">
             <table>
-                <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
+                <tr>
+                    <th>ID:</th>
+                    <td>
+                        <?php 
+                        // Log the ID being rendered
+                        log_message("Rendering ID: " . ($account['id'] ?? 'Not set') . " for public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
+                        echo htmlspecialchars($account['id'] ?? 'N/A'); 
+                        ?>
+                    </td>
+                </tr>
                 <tr>
                     <th>Wallet address:</th>
                     <td>
