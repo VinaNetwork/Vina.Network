@@ -5,10 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = '../';
 require_once $root_path . 'bootstrap.php';
 
@@ -17,11 +13,11 @@ $page_title = "Notification - Vina Network";
 $page_og_url = BASE_URL . "notification/";
 $page_canonical = BASE_URL . "notification/";
 $page_css = ['/notification/notification.css'];
-include $root_path . 'include/header.php';
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+<?php include $root_path . 'include/header.php'; ?>
 <body>
 <!-- Include shared top navigation bar -->
 <?php include $root_path . 'include/navbar.php'; ?>
