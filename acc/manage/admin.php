@@ -90,7 +90,7 @@ try {
 $page_title = "Admin - Manage Accounts";
 $page_description = "Admin panel to manage user accounts on Vina Network";
 $page_keywords = "Vina Network, admin, manage accounts";
-$page_url = BASE_URL . "acc/manage/admin";
+$page_url = BASE_URL . "acc/admin";
 $page_css = ['/acc/acc.css', '/acc/manage/admin.css'];
 ?>
 
