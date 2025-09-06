@@ -5,11 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Access Conditions
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
+// Web root
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'acc/bootstrap.php';
 use StephenHill\Base58;
