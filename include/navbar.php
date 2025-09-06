@@ -41,7 +41,7 @@
             </a>
             <ul class="dropdown-menu">
                 <li><a href="/mm/create" class="dropdown-link"><i class="fa-solid fa-right-left"></i> Create</a></li>
-                <li><a href="/mm/history" class="dropdown-link"><i class="fas fa-wallet"></i> Process history</a></li>
+                <li><a href="/mm/history" class="dropdown-link"><i class="fas fa-wallet"></i> History</a></li>
             </ul>
         </li>
 
