@@ -10,8 +10,6 @@ require_once $root_path . 'bootstrap.php';
 
 // Set path and SEO metadata for this page
 $page_title = "Notification - Vina Network";
-$page_og_url = BASE_URL . "notification/";
-$page_canonical = BASE_URL . "notification/";
 $page_css = ['/notification/notification.css'];
 ?>
 
