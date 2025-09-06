@@ -5,10 +5,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-if (!defined('VINANETWORK_ENTRY')) {
-    define('VINANETWORK_ENTRY', true);
-}
-
 $root_path = __DIR__ . '/../../';
 require_once $root_path . 'tools/bootstrap.php';
 
@@ -24,7 +20,7 @@ if (!ensure_directory_and_file($cache_dir, $cache_file)) {
 }
 
 // Load API helper
-$api_helper_path = __DIR__ . '/../core/tools-api.php';
+$api_helper_path = $root_path . 'tools/core/tools-api.php';
 if (!file_exists($api_helper_path)) {
     log_message("nft_transactions: tools-api.php not found at $api_helper_path", 'nft-transactions.log', 'tools', 'ERROR');
     echo '<div class="result-error"><p>Server error: Missing tools-api.php</p></div>';
