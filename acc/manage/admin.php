@@ -141,7 +141,6 @@ $page_css = ['/acc/manage/admin.css'];
 <?php require_once $root_path . 'include/footer.php'; ?>
 
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/acc/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
