@@ -7,7 +7,7 @@
 ?>
 
 <!-- Load css -->
-<link rel="stylesheet" href="<?php echo BASE_URL; ?>css/widget.css">
+<link rel="stylesheet" href="/css/widget.css">
 <!-- Crypto Price Widget Section -->
 <section class="crypto-widget">
     <!-- Bitcoin ($BTC) Widget -->
