@@ -204,25 +204,31 @@ input {
   border: unset;
   cursor: pointer;
   box-shadow: var(--shadow-lg);
-  transition: transform var(--transition-normal), 
-              box-shadow var(--transition-normal);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
   font-family: inherit;
   font-size: inherit;
   font-weight: 500;
-  /* Improve performance */
   transform: translateZ(0);
 }
-
 .cta-button:hover {
   transform: scale(1.05);
   box-shadow: var(--shadow-xl);
 }
-
+.cta-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 212, 255, 0.3);
+}
 .cta-button:active {
   transform: scale(0.98);
 }
+.cta-button:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--admin-color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
-/*  Navbar - Optimized */
+/*  Navbar */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -234,9 +240,7 @@ input {
   top: 0;
   z-index: var(--z-navbar);
   box-shadow: var(--shadow-md);
-  transition: padding var(--transition-normal), 
-              background-color var(--transition-normal);
-  /* Improve performance */
+  transition: padding var(--transition-normal), background-color var(--transition-normal);
   transform: translateZ(0);
   will-change: padding, background-color;
   height: var(--navbar-height);
@@ -264,7 +268,7 @@ input {
 
 .navbar-logo img {
   height: 56px;
-  width: 56px; /* Explicit width to prevent layout shifts */
+  width: 56px;
 }
 
 .navbar-logo a {
@@ -390,7 +394,7 @@ input {
 
 .dropdown-menu img {
   height: 1.3em;
-  width: 1.3em; /* Prevent layout shifts */
+  width: 1.3em;
 }
 
 .dropdown-link {
@@ -400,7 +404,7 @@ input {
 
 .dropdown-menu i {
   margin-right: 6px;
-  width: 1rem; /* Fixed width for consistent alignment */
+  width: 1rem;
   text-align: center;
 }
 
@@ -568,6 +572,10 @@ footer {
   
   p:not(:last-child):has(+ p) {
     margin-bottom: 20px;
+  }
+
+  .cta-button {
+    min-width: 70px;
   }
 
   .navbar {
