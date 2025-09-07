@@ -20,6 +20,7 @@
   --color-gray-light: #f9f9f9;
   --color-note: #007acc;
   --color-warning: red;
+  --color-text-muted: #e0e0e0;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -223,7 +224,7 @@ input {
 }
 .cta-button:disabled {
   background: rgba(255, 255, 255, 0.2);
-  color: var(--admin-color-text-muted);
+  color: var(--color-text-muted);
   cursor: not-allowed;
   opacity: 0.6;
 }
