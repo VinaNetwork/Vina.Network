@@ -243,57 +243,51 @@
     padding: var(--acc-spacing-lg);
     margin: var(--acc-spacing-sm);
     max-width: 100%;
+    overflow-x: auto; /* Thêm cuộn ngang cho toàn bộ nội dung */
   }
   
   .acc-info {
     margin: var(--acc-spacing-lg) 0;
+    overflow-x: auto; /* Thêm cuộn ngang cho bảng */
+    width: 100%;
+  }
+  
+  .acc-info table {
+    width: auto; /* Cho phép bảng mở rộng theo nội dung */
+    min-width: 100%; /* Đảm bảo bảng ít nhất bằng chiều rộng container */
+    display: table; /* Giữ nguyên cấu trúc bảng */
   }
   
   .acc-info th,
   .acc-info td {
     padding: var(--acc-spacing-sm);
     font-size: 0.9rem;
+    white-space: nowrap; /* Ngăn nội dung xuống dòng */
   }
   
-  /* Stack table on mobile */
-  .acc-info table,
-  .acc-info thead,
-  .acc-info tbody,
-  .acc-info th,
-  .acc-info td,
-  .acc-info tr {
-    display: block;
-  }
-  
+  /* Giữ nguyên cấu trúc bảng thay vì chuyển sang block */
   .acc-info thead tr {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
+    position: static; /* Giữ nguyên vị trí */
   }
   
   .acc-info tr {
-    border: 1px solid var(--acc-color-table-border);
-    margin-bottom: var(--acc-spacing-sm);
-    border-radius: var(--acc-border-radius-sm);
-    overflow: hidden;
+    border: none; /* Bỏ border cho hàng */
+    margin-bottom: 0; /* Bỏ margin */
+    border-radius: 0; /* Bỏ border radius */
+    overflow: visible; /* Bỏ overflow */
+    display: table-row; /* Giữ nguyên hiển thị hàng */
   }
   
   .acc-info td {
-    border: none;
-    border-bottom: 1px solid var(--acc-color-table-border);
-    position: relative;
-    padding-left: 50%;
+    border: 1px solid var(--acc-color-table-border); /* Giữ border */
+    padding: var(--acc-spacing-sm); /* Giữ padding */
+    position: static; /* Bỏ position relative */
+    text-align: left; /* Giữ căn trái */
   }
   
+  /* Ẩn pseudo-elements đã sử dụng cho layout cũ */
   .acc-info td:before {
-    content: attr(data-label);
-    position: absolute;
-    left: var(--acc-spacing-sm);
-    width: 45%;
-    padding-right: var(--acc-spacing-sm);
-    white-space: nowrap;
-    font-weight: 600;
-    color: var(--acc-color-primary);
+    display: none; /* Ẩn label */
   }
 }
 
