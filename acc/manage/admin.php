@@ -143,9 +143,11 @@ $page_css = ['/acc/manage/admin.css'];
 </div>
 <?php require_once $root_path . 'include/footer.php'; ?>
 
+<!-- Scripts - Internal library -->
+<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
 <!-- Scripts - Source code -->
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/acc/manage/admin.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/acc/manage/admin.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
