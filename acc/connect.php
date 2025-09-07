@@ -70,7 +70,7 @@ $page_css = ['/acc/acc.css'];
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/acc/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
+<script src="/acc/js/acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
