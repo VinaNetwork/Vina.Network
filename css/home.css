@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------------
- * File: css/home.css (Optimized Version)
+ * File: css/home.css
  * Description: Custom CSS for the homepage (index.php) of the Vina Network.
  * Created by: Vina Network
  * -------------------------------------------------------------------------- */
@@ -213,6 +213,18 @@ section h3 {
   text-align: center;
   flex-grow: 1;
   margin-bottom: 0;
+}
+
+/*  Animations */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Keyframes animations */
