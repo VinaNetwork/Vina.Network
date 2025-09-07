@@ -129,21 +129,24 @@ input {
     background: rgba(26, 26, 26, 0.95);
 }
 
-.navbar-logo a {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-}
-.navbar-logo img {
-    height: 56px;
+.navbar img {
     object-fit: contain;
     border-radius: 50%;
     vertical-align: middle;
     transition: transform 0.3s ease;
 }
-.navbar-logo img:hover {
+.navbar img:hover {
     transform: scale(1.05);
+}
+
+.navbar-logo img {
+    height: 56px;
+}
+.navbar-logo a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
 }
 .navbar-logo .titleSite {
     color: #fff;
@@ -220,6 +223,9 @@ input {
 }
 .dropdown-menu.active + .dropdown-icon {
     transform: rotate(180deg);
+}
+.dropdown-menu img {
+	height: 56em;
 }
 .dropdown-link {
     color: #fff;
