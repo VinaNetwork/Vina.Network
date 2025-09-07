@@ -139,5 +139,6 @@ $page_css = ['/css/home.css'];
 
 <!-- Scripts -->
 <script src="js/vina.js"></script>
+<script src="js/home.js"></script>
 </body>
 </html>
