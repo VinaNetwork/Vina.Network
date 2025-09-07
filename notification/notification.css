@@ -1,57 +1,182 @@
 /* ============================================================================
- * File: notification/notification.css
+ * File: notification/notification.css (Optimized Version)
  * Description: CSS styles for the Notification page of Vina Network.
  * Created by: Vina Network
  * ========================================================================== */
 
+/* CSS Variables for consistent theming */
+:root {
+  --notification-spacing-xs: 0.5rem;
+  --notification-spacing-sm: 1rem;
+  --notification-spacing-md: 1.5rem;
+  --notification-spacing-lg: 2rem;
+  --notification-spacing-xl: 3rem;
+  
+  --notification-color-primary: #00d4ff;
+  --notification-color-text: #fff;
+  --notification-color-background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+  --notification-color-background-fallback: #1a1a1a;
+  
+  --notification-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --notification-shadow-hover: 0 6px 15px rgba(0, 0, 0, 0.2);
+  --notification-shadow-button: 0 4px 15px rgba(0, 212, 255, 0.4);
+  --notification-shadow-button-hover: 0 6px 20px rgba(0, 212, 255, 0.6);
+  
+  --notification-border-radius: 15px;
+  --notification-transition: all 0.3s ease;
+}
+
 /* Layout & Container Styling */
 .notification {
-    min-height: 100vh;
-    margin-top: 72px;
-    display: flex; 
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+  min-height: 100vh;
+  margin-top: 72px;
+  display: flex; 
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: var(--notification-spacing-md);
+  box-sizing: border-box;
 }
 
 /* Notification Card Styling */
 .notification-content {
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
-    border-radius: 15px; 
-    padding: 2rem;
-    margin: 2rem;
-    max-width: 600px; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: var(--notification-color-background-fallback);
+  background: var(--notification-color-background);
+  border-radius: var(--notification-border-radius); 
+  padding: var(--notification-spacing-xl);
+  margin: var(--notification-spacing-md);
+  max-width: 600px; 
+  width: 100%;
+  box-shadow: var(--notification-shadow);
+  transition: var(--notification-transition);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Hover Animation for Notification Card */
 .notification-content:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  box-shadow: var(--notification-shadow-hover);
 }
 
 /* Icon Styling */
 .notification-content i {
-    font-size: 4rem;
-    color: #00d4ff;
+  font-size: 4rem;
+  color: var(--notification-color-primary);
+  margin-bottom: var(--notification-spacing-md);
+  display: block;
+  transition: var(--notification-transition);
+}
+
+.notification-content:hover i {
+  transform: scale(1.05);
 }
 
 /* Heading Styling */
-.notification-content h1 {color: #00d4ff;}
+.notification-content h1 {
+  color: var(--notification-color-primary);
+  margin-bottom: var(--notification-spacing-md);
+  font-weight: 600;
+}
 
 /* Paragraph Styling */
 .notification-content p {
-    color: #fff;
-    margin-bottom: 20px !important;
+  color: var(--notification-color-text);
+  margin-bottom: var(--notification-spacing-lg) !important;
+  opacity: 0.9;
+}
+
+/* Button Styling */
+.notification-content .cta-button {
+  background: linear-gradient(45deg, var(--notification-color-primary), #007bff);
+  color: #fff;
+  padding: 0.8rem 1.5rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--notification-shadow-button);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.notification-content .cta-button:hover {
+  transform: scale(1.05);
+  box-shadow: var(--notification-shadow-button-hover);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Animation for content */
+.notification-content {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.8s ease forwards;
+  animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .notification-content,
+  .notification-content i,
+  .notification-content .cta-button {
+    transition: none;
+    animation: none;
+  }
+  
+  .notification-content:hover {
+    transform: none;
+  }
+  
+  .notification-content .cta-button:hover {
+    transform: none;
+  }
 }
 
 /* Responsive Design for Mobile Screens */
 @media screen and (max-width: 768px) {
-    .notification {
-        margin-top: 64px;
-        min-height: unset;
-    }
+  .notification {
+    margin-top: 64px;
+    min-height: calc(100vh - 64px);
+    padding: var(--notification-spacing-sm);
+  }
 
-    .notification-content i {font-size: 2rem;}
+  .notification-content {
+    padding: var(--notification-spacing-lg);
+    margin: var(--notification-spacing-sm);
+  }
+
+  .notification-content i {
+    font-size: 3rem;
+  }
+  
+  .notification-content .cta-button {
+    padding: 0.7rem 1.3rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .notification-content {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .notification-content {
+    border: 2px solid var(--notification-color-primary);
+  }
+  
+  .notification-content .cta-button {
+    border: 2px solid #fff;
+  }
 }
