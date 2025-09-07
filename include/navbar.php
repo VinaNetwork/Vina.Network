@@ -99,7 +99,7 @@ if ($is_logged_in) {
                 <i class="fas fa-coins"></i> Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/notification" class="dropdown-link"><i class="fa-solid fa-crown"></i> VINA</a></li>
+                <li><a href="/notification" class="dropdown-link"><img class="logo-coin logo-vina" src="/img/logo.png" alt="Vina Network Coin"> VINA</a></li>
             </ul>
         </li>
 
