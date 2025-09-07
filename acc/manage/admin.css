@@ -212,7 +212,6 @@
   .acc-list tr {
     border: 1px solid var(--admin-color-table-border);
     margin-bottom: var(--admin-spacing-sm);
-    border-radius: var(--admin-border-radius-sm);
     overflow: hidden;
   }
   
