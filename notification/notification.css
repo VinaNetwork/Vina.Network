@@ -145,7 +145,7 @@
 @media screen and (max-width: 768px) {
   .notification {
     margin-top: 64px;
-    min-height: calc(100vh - 64px);
+    min-height: unset;
     padding: var(--notification-spacing-sm);
   }
 
