@@ -95,8 +95,8 @@ $page_css = ['/acc/manage/admin.css'];
 <?php require_once $root_path . 'include/header.php'; ?>
 <body>
 <?php require_once $root_path . 'include/navbar.php'; ?>
-<div class="acc-container">
-    <div class="acc-content">
+<div class="admin-container">
+    <div class="admin-content">
         <h1>Manage Accounts</h1>
         <?php if (isset($success)): ?>
             <p class="success-message"><?php echo htmlspecialchars($success); ?></p>
