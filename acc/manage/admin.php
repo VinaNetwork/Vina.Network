@@ -145,6 +145,11 @@ $page_css = ['/acc/manage/admin.css'];
 
 <!-- Scripts - Internal library -->
 <script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<!-- Global variable -->
+<script>
+    // Passing JWT_SECRET into JavaScript securely
+    const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
+</script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/acc/manage/admin.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
