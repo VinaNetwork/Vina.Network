@@ -111,7 +111,6 @@
   border-collapse: collapse;
   margin-top: var(--acc-spacing-md);
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--acc-border-radius);
   overflow: hidden;
 }
 
@@ -255,45 +254,10 @@
     font-size: 0.9rem;
   }
   
-  /* Stack table on mobile */
-  .acc-info table,
-  .acc-info thead,
-  .acc-info tbody,
-  .acc-info th,
-  .acc-info td,
-  .acc-info tr {
-    display: block;
-  }
-  
   .acc-info thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
-  }
-  
-  .acc-info tr {
-    border: 1px solid var(--acc-color-table-border);
-    margin-bottom: var(--acc-spacing-sm);
-    border-radius: var(--acc-border-radius-sm);
-    overflow: hidden;
-  }
-  
-  .acc-info td {
-    border: none;
-    border-bottom: 1px solid var(--acc-color-table-border);
-    position: relative;
-    padding-left: 50%;
-  }
-  
-  .acc-info td:before {
-    content: attr(data-label);
-    position: absolute;
-    left: var(--acc-spacing-sm);
-    width: 45%;
-    padding-right: var(--acc-spacing-sm);
-    white-space: nowrap;
-    font-weight: 600;
-    color: var(--acc-color-primary);
   }
 }
 
