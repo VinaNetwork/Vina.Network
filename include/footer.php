@@ -1,3 +1,13 @@
+<?php
+// ============================================================================
+// File: include/footer.php
+// Description: Footer of Vina Network.
+// Created by: Vina Network
+// ============================================================================
+?>
+
+<!-- Load css -->
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>css/footer.css">
 <!-- Footer Section -->
 <footer>
 <div class="footer-container">
