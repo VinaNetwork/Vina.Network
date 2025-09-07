@@ -1,0 +1,49 @@
+/* ============================================================================
+ * File: css/widget.css
+ * Description: Stylesheet for widget.
+ * Created by: Vina Network
+ * ========================================================================== */
+
+/* CSS Variables for consistent theming and easier maintenance */
+:root {
+  /* Spacing */
+  --spacing-xl
+
+  /* Colors */
+  --color-white
+
+  /* Border */
+  --border-radius-md
+}
+
+/*  Crypto Widget */
+.crypto-widget {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  flex-wrap: wrap;
+}
+
+.coinmarketcap-currency-widget {
+  flex: 1;
+  background: var(--color-white);
+  border-radius: var(--border-radius-md);
+  min-width: 300px;
+}
+
+/*  Responsive Design (Mobile) */
+@media screen and (max-width: 768px) {
+  /*  Widget Section */
+  .crypto-widget {
+    flex-direction: column;
+    align-items: center;
+  }
+  .coinmarketcap-currency-widget {
+    width: 100%;
+    min-width: unset;
+  }
+}
