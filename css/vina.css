@@ -492,41 +492,71 @@ input {
 footer {
   background: var(--color-dark);
   color: var(--color-white);
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-xl) var(--spacing-md);
 }
 
 .footer-container {
   display: flex;
   justify-content: space-between;
-  margin: 0 auto;
   flex-wrap: wrap;
   max-width: var(--max-width);
+  margin: 0 auto;
+  gap: var(--spacing-lg);
 }
 
 .footer-column {
   flex: 1;
-  min-width: 200px;
-  margin: var(--spacing-md);
+  min-width: 220px;
 }
 
-.footer-column h4 { 
+.footer-column h4 {
   color: var(--color-primary);
+  margin-bottom: var(--spacing-sm);
 }
 
-.footer-column p a, 
-.footer-links a, 
-.footer-social a {
+.footer-column p {
+  font-size: var(--font-size-sm);
   color: var(--color-text-light);
-  transition: color var(--transition-normal);
+  line-height: 1.6;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .footer-links li {
-  padding: var(--spacing-xs) var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
+.footer-links a {
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  transition: color var(--transition-normal);
+}
+
+.footer-links a:hover {
+  color: var(--color-primary);
 }
 
 .footer-social {
   display: flex;
-  gap: var(--spacing-lg);
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.footer-social a {
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  transition: color var(--transition-normal);
+}
+
+.footer-social a:hover {
+  color: var(--color-primary);
 }
 
 .footer-bottom {
@@ -537,8 +567,9 @@ footer {
 }
 
 .footer-bottom p {
-  margin-bottom: 0;
+  margin: 0;
   font-size: var(--font-size-xs);
+  color: var(--color-text-light);
 }
 
 /*  Back to Top Button */
@@ -691,12 +722,15 @@ footer {
   }
   
   /*  Footer Section */
-  .footer-1 {
+.footer-container {
     flex-direction: column;
+    text-align: center;
+    gap: var(--spacing-md);
   }
-  
-  .footer-2 {
-    margin: var(--spacing-sm) 0;
+
+  .footer-social {
+    flex-direction: row;
+    justify-content: center;
   }
 }
 
