@@ -57,10 +57,10 @@ $page_css = ['/contact/contact.css'];
 			</div>
 		</div>
 	</div>
-	
-	<!-- Footer -->
 	<?php include $root_path . 'include/footer.php'; ?>
+	
 	<!-- Scripts -->
 	<script src="../js/vina.js"></script>
+	<script src="contact.js"></script>
 </body>
 </html>
