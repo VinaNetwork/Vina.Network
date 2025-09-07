@@ -221,7 +221,6 @@
     border-bottom: 1px solid var(--admin-color-table-border);
     position: relative;
     padding-left: 50%;
-    text-align: right;
   }
   
   .acc-list td:before {
@@ -233,6 +232,11 @@
     white-space: nowrap;
     font-weight: 600;
     color: var(--admin-color-primary);
+    text-align: left;
+  }
+
+  /* Status indicators */
+  .acc-list td:nth-child(3) {
     text-align: left;
   }
   
