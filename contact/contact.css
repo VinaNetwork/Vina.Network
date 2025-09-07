@@ -27,7 +27,7 @@
 
 /* Contact Section */
 .contact {
-  margin-top: 72px;
+  margin-top: 64px;
   text-align: center;
   padding: var(--contact-spacing-md);
   min-height: calc(100vh - 200px); /* Ensure footer is at bottom */
