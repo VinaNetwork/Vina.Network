@@ -96,10 +96,10 @@ if ($is_logged_in) {
         <!-- Meme Coin Dropdown -->
         <li class="navbar-item dropdown">
             <a href="#" class="navbar-link dropdown-toggle">
-                <i class="fas fa-coins"></i> Meme Coin <i class="dropdown-icon fas fa-caret-down"></i>
+                <i class="fas fa-coins"></i> Coin <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/notification" class="dropdown-link"><i class="fa-solid fa-crown"></i> Kimo</a></li>
+                <li><a href="/notification" class="dropdown-link"><i class="fa-solid fa-crown"></i> VINA</a></li>
             </ul>
         </li>
 
