@@ -1,0 +1,29 @@
+/* ============================================================================
+ * File: css/community.css
+ * Description: Stylesheet for community.
+ * Created by: Vina Network
+ * ========================================================================== */
+
+/* CSS Variables for consistent theming and easier maintenance */
+:root {
+  /* Colors */
+  --color-gray: #c3c7c4;
+  
+  /* Spacing */
+  --spacing-xl: 2rem;
+}
+
+/* Community Section */
+.community-content {
+  padding: var(--spacing-xl);
+  background: var(--color-gray);
+  text-align: center;
+}
+
+.community-link {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  flex-wrap: wrap;
+  margin: var(--spacing-xl) 0;
+}
