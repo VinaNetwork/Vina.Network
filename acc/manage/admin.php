@@ -107,12 +107,12 @@ $page_css = ['/acc/manage/admin.css'];
         <table class="acc-list">
             <thead>
                 <tr>
-                    <th>Public Key:</th>
-                    <th>Role:</th>
-                    <th>Status:</th>
-                    <th>Created At:</th>
-                    <th>Last Login:</th>
-                    <th>Actions:</th>
+                    <th>Public Key</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
