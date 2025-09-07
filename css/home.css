@@ -215,18 +215,6 @@ section h3 {
   margin-bottom: 0;
 }
 
-/*  Animations */
-.fade-in {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity var(--transition-slow), transform var(--transition-slow);
-}
-
-.fade-in.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 /* Keyframes animations */
 @keyframes gradientText {
   0%, 100% { background-position: 0% 50%; }
