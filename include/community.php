@@ -4,14 +4,10 @@
 // Description: Reusable section for displaying links to Vina Network's social media.
 // Created by: Vina Network
 // ============================================================================
-
-// Load css
-if (!isset($page_css)) {
-    $page_css = [];
-}
-$page_css[] = '/css/community.css';
 ?>
 
+<!-- Load css -->
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>css/community.css">
 <!-- Join Our Community -->
 <section class="community-content">
 	<h2>Join Our Community</h2>
