@@ -4,6 +4,28 @@
 // Created by: Vina Network
 // ============================================================================
 
+function initContactAnimations() {
+  const animatedElements = document.querySelectorAll('.fade-in');
+  
+  if (animatedElements.length > 0) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const delay = entry.target.getAttribute('data-delay') || 0;
+          setTimeout(() => {
+            entry.target.classList.add('visible');
+          }, parseInt(delay));
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    animatedElements.forEach(el => {
+      observer.observe(el);
+    });
+  }
+}
+
 // DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
     // Activate fade-in animation and typewriter effect
