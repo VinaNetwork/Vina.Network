@@ -8,9 +8,8 @@
 h1, h2, h3 {text-align: center;}
 
 /* Tools Container */
-.tools {margin-top: 72px;}
 .tools-container {
-    margin-top: 72px;
+    margin-top: 64px;
     max-width: 1000px;
     background: #ffffff;
     padding: 30px;
