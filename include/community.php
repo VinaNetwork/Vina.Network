@@ -7,7 +7,7 @@
 ?>
 
 <!-- Load css -->
-<link rel="stylesheet" href="<?php echo BASE_URL; ?>css/community.css">
+<link rel="stylesheet" href="/css/community.css">
 <!-- Join Our Community -->
 <section class="community-content">
 	<h2>Join Our Community</h2>
