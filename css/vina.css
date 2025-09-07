@@ -724,7 +724,7 @@ footer {
   /*  Footer Section */
 .footer-container {
     flex-direction: column;
-    text-align: center;
+    text-align: left;
     gap: var(--spacing-md);
   }
 
