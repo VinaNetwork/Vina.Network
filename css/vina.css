@@ -225,7 +225,7 @@ input {
     transform: rotate(180deg);
 }
 .dropdown-menu img {
-	height: 0.9rem;
+	height: 1.3em;
 }
 .dropdown-link {
     color: #fff;
