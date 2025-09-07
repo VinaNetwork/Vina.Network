@@ -628,7 +628,7 @@ footer {
   }
 
   .navbar-link {
-    justify-content: space-between;
+    justify-content: flex-start;
     width: 100%;
     padding: var(--spacing-md) 0;
   }
