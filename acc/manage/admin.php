@@ -118,12 +118,12 @@ $page_css = ['/acc/manage/admin.css'];
             <tbody>
                 <?php foreach ($accounts as $account): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars(substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4)); ?></td>
-                        <td><?php echo htmlspecialchars($account['role']); ?></td>
-                        <td><?php echo $account['is_active'] ? 'Active' : 'Locked'; ?></td>
-                        <td><?php echo htmlspecialchars($account['created_at']); ?></td>
-                        <td><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td>
-                        <td>
+                        <td data-label="Public Key"><?php echo htmlspecialchars(substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4)); ?></td>
+                        <td data-label="Role"><?php echo htmlspecialchars($account['role']); ?></td>
+                        <td data-label="Status"><?php echo $account['is_active'] ? 'Active' : 'Locked'; ?></td>
+                        <td data-label="Created At"><?php echo htmlspecialchars($account['created_at']); ?></td>
+                        <td data-label="Last Login"><?php echo htmlspecialchars($account['last_login'] ?: 'Never'); ?></td>
+                        <td data-label="Actions">
                             <form method="POST" class="action-form">
                                 <input type="hidden" name="public_key" value="<?php echo htmlspecialchars($account['public_key']); ?>">
                                 <input type="hidden" name="action" value="<?php echo $account['is_active'] ? 'lock' : 'unlock'; ?>">
