@@ -115,9 +115,7 @@
   border-collapse: collapse;
   margin-top: var(--admin-spacing-md);
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--admin-border-radius);
   overflow: hidden;
-  font-size: 0.95rem;
 }
 
 .acc-list th,
@@ -164,35 +162,9 @@
   margin: 0;
 }
 
-.action-form .cta-button {
-  background: linear-gradient(45deg, var(--admin-color-primary), var(--admin-color-primary-dark));
-  color: #fff;
-  padding: var(--admin-spacing-xs) var(--admin-spacing-md);
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  transition: var(--admin-transition);
-  text-decoration: none;
-  font-weight: 500;
-  min-width: 80px;
-}
-
-.action-form .cta-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 212, 255, 0.3);
-}
-
-.action-form .cta-button:disabled {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--admin-color-text-muted);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
 .action-form .cta-button[value="lock"] {
   background: linear-gradient(45deg, #ff6b6b, #dc3545);
 }
-
 .action-form .cta-button[value="unlock"] {
   background: linear-gradient(45deg, #28a745, #20c997);
 }
@@ -266,10 +238,6 @@
   
   .action-form {
     justify-content: flex-end;
-  }
-  
-  .action-form .cta-button {
-    min-width: 70px;
   }
 }
 
