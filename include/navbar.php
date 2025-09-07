@@ -35,7 +35,7 @@ if ($is_logged_in) {
 
 <!-- Main Navigation Bar -->
 <nav class="navbar" role="navigation" aria-label="Main navigation">
-    <div class="logo">
+    <div class="navbar-logo">
         <a href="/" aria-label="Vina Network Home">
             <img src="/img/logo.png" alt="Vina Network Logo">
             <span class="titleSite">Vina Network</span>
