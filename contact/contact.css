@@ -1,53 +1,220 @@
 /* ============================================================================
- * File: contact/contact.css
+ * File: contact/contact.css (Optimized Version)
  * Description: Styles specific to the Contact page of Vina Network.
  * Created by: Vina Network
  * ========================================================================== */
 
- /* Contact */
+/* CSS Variables for consistent theming */
+:root {
+  --contact-spacing-xs: 0.5rem;
+  --contact-spacing-sm: 1rem;
+  --contact-spacing-md: 1.5rem;
+  --contact-spacing-lg: 2rem;
+  --contact-spacing-xl: 3rem;
+  
+  --contact-color-primary: #4a90e2;
+  --contact-color-accent: #ff6f91;
+  --contact-color-accent-hover: #ff85a1;
+  --contact-color-text: #333;
+  --contact-color-background: #fff;
+  
+  --contact-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --contact-shadow-hover: 0 6px 12px rgba(0, 0, 0, 0.15);
+  
+  --contact-border-radius: 10px;
+  --contact-transition: all 0.3s ease;
+}
+
+/* Contact Section */
 .contact {
-    margin-top: 72px;
-    text-align: center;
+  margin-top: 72px;
+  text-align: center;
+  padding: var(--contact-spacing-md);
+  min-height: calc(100vh - 200px); /* Ensure footer is at bottom */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .contact-content {
-     margin: 20px;
-     padding: 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--contact-spacing-lg);
 }
 
-.contact-content h1 {color: #4a90e2;}
+.contact-content h1 {
+  color: var(--contact-color-primary);
+  margin-bottom: var(--contact-spacing-md);
+  font-size: 2.5rem;
+}
+
+.contact-content > p {
+  font-size: 1.2rem;
+  margin-bottom: var(--contact-spacing-xl);
+  color: var(--contact-color-text);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
 
 .contact-table {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    flex-wrap: wrap;
-    margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--contact-spacing-lg);
+  margin-top: var(--contact-spacing-xl);
+  justify-content: center;
 }
 
 .contact-item {
-    background-color: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    width: 300px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: var(--contact-color-background);
+  border-radius: var(--contact-border-radius);
+  padding: var(--contact-spacing-lg);
+  box-shadow: var(--contact-shadow);
+  transition: var(--contact-transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add subtle gradient border effect on hover */
+.contact-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--contact-color-primary), var(--contact-color-accent));
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+  transform-origin: left;
+}
+
+.contact-item:hover::before {
+  transform: scaleX(1);
 }
 
 .contact-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+  box-shadow: var(--contact-shadow-hover);
 }
 
 .contact-item i {
-    font-size: 2em;
-    color: #ff6f91;
+  font-size: 3rem;
+  color: var(--contact-color-accent);
+  margin-bottom: var(--contact-spacing-md);
+  transition: var(--contact-transition);
 }
 
-.contact-item a:hover {color: #ff85a1;}
+.contact-item:hover i {
+  transform: scale(1.1);
+}
+
+.contact-item h2 {
+  font-size: 1.5rem;
+  margin-bottom: var(--contact-spacing-sm);
+  color: var(--contact-color-text);
+}
+
+.contact-item p {
+  margin-bottom: var(--contact-spacing-lg);
+  color: var(--contact-color-text);
+  flex-grow: 1;
+  line-height: 1.6;
+}
+
+.contact-item a {
+  display: inline-block;
+  background: linear-gradient(45deg, var(--contact-color-primary), var(--contact-color-accent));
+  color: white;
+  padding: var(--contact-spacing-xs) var(--contact-spacing-md);
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--contact-transition);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.contact-item a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  color: white;
+  background: linear-gradient(45deg, var(--contact-color-accent), var(--contact-color-primary));
+}
+
+/* Animation for fade-in elements */
+.contact-item {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.contact-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /*  Responsive Design */
 @media screen and (max-width: 768px) {
-    .contact {margin-top: 64px;}
-    .contact-item { width: 100%;}
+  :root {
+    --contact-spacing-lg: 1.5rem;
+    --contact-spacing-xl: 2rem;
+  }
+  
+  .contact {
+    margin-top: 64px;
+    padding: var(--contact-spacing-sm);
+  }
+  
+  .contact-content {
+    padding: var(--contact-spacing-md);
+  }
+  
+  .contact-content h1 {
+    font-size: 2rem;
+  }
+  
+  .contact-content > p {
+    font-size: 1.1rem;
+  }
+  
+  .contact-table {
+    grid-template-columns: 1fr;
+    gap: var(--contact-spacing-md);
+  }
+  
+  .contact-item {
+    padding: var(--contact-spacing-md);
+  }
+  
+  .contact-item i {
+    font-size: 2.5rem;
+  }
+}
+
+/* Large screens */
+@media screen and (min-width: 1200px) {
+  .contact-table {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .contact-item,
+  .contact-item i,
+  .contact-item a,
+  .contact-item::before {
+    transition: none;
+  }
+  
+  .contact-item {
+    opacity: 1;
+    transform: none;
+  }
 }
