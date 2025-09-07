@@ -454,21 +454,6 @@ input {
   transform: translateY(0);
 }
 
-/* Community Section */
-.community {
-  padding: var(--spacing-xl);
-  background: var(--color-gray);
-  text-align: center;
-}
-
-.community-link {
-  display: flex;
-  justify-content: center;
-  gap: var(--spacing-xl);
-  flex-wrap: wrap;
-  margin: var(--spacing-xl) 0;
-}
-
 /*  Crypto Widget */
 .crypto-widget {
   text-align: center;
@@ -589,8 +574,8 @@ footer {
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: opacity var(--transition-normal), 
-              background-color var(--transition-normal),
-              transform var(--transition-normal);
+  background-color var(--transition-normal),
+  transform var(--transition-normal);
 }
 
 #back-to-top:hover {
@@ -715,7 +700,6 @@ footer {
     flex-direction: column;
     align-items: center;
   }
-  
   .coinmarketcap-currency-widget {
     width: 100%;
     min-width: unset;
