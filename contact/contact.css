@@ -1,5 +1,5 @@
 /* ============================================================================
- * File: contact/contact.css (Optimized Version)
+ * File: contact/contact.css
  * Description: Styles specific to the Contact page of Vina Network.
  * Created by: Vina Network
  * ========================================================================== */
@@ -148,6 +148,16 @@
 }
 
 /* Animation for fade-in elements */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .contact-item {
   opacity: 0;
   transform: translateY(20px);
