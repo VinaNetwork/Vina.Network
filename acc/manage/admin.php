@@ -118,7 +118,10 @@ $page_css = ['/acc/manage/admin.css'];
             <tbody>
                 <?php foreach ($accounts as $account): ?>
                     <tr>
-                        <td data-label="Public Key"><?php echo htmlspecialchars(substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4)); ?></td>
+                        <td data-label="Public Key">
+                            <?php echo htmlspecialchars(substr($account['public_key'], 0, 4) . '...' . substr($account['public_key'], -4)); ?>
+                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($account['public_key']); ?>"></i>
+                        </td>
                         <td data-label="Role"><?php echo htmlspecialchars($account['role']); ?></td>
                         <td data-label="Status"><?php echo $account['is_active'] ? 'Active' : 'Locked'; ?></td>
                         <td data-label="Created At"><?php echo htmlspecialchars($account['created_at']); ?></td>
