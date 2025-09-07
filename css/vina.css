@@ -469,9 +469,7 @@ footer {
 }
 
 .footer-column p {
-  font-size: var(--font-size-sm);
   color: var(--color-text-light);
-  line-height: 1.6;
 }
 
 .footer-links {
@@ -486,7 +484,6 @@ footer {
 
 .footer-links a {
   color: var(--color-text-light);
-  font-size: var(--font-size-sm);
   transition: color var(--transition-normal);
 }
 
@@ -502,7 +499,6 @@ footer {
 
 .footer-social a {
   color: var(--color-text-light);
-  font-size: var(--font-size-sm);
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
