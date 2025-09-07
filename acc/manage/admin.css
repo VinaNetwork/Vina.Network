@@ -1,61 +1,59 @@
 /* ============================================================================
- * File: acc/manage/admin.css
+ * File: acc/manage/admin.css (Optimized Version)
  * Description: CSS styles for the Admin page of Vina Network.
  * Created by: Vina Network
  * ========================================================================== */
 
 /* CSS Variables for consistent theming */
 :root {
-  --acc-spacing-xs: 0.25rem;
-  --acc-spacing-sm: 0.5rem;
-  --acc-spacing-md: 1rem;
-  --acc-spacing-lg: 1.5rem;
-  --acc-spacing-xl: 2rem;
-  --acc-spacing-xxl: 3rem;
+  --admin-spacing-xs: 0.25rem;
+  --admin-spacing-sm: 0.5rem;
+  --admin-spacing-md: 1rem;
+  --admin-spacing-lg: 1.5rem;
+  --admin-spacing-xl: 2rem;
+  --admin-spacing-xxl: 3rem;
   
-  --acc-color-primary: #00d4ff;
-  --acc-color-primary-dark: #007bff;
-  --acc-color-primary-darker: #0056b3;
-  --acc-color-success: #28a745;
-  --acc-color-text: #fff;
-  --acc-color-text-muted: #e0e0e0;
-  --acc-color-background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
-  --acc-color-background-fallback: #1a1a1a;
-  --acc-color-table-border: rgba(221, 221, 221, 0.3);
-  --acc-color-table-header: rgba(255, 255, 255, 0.1);
+  --admin-color-primary: #00d4ff;
+  --admin-color-primary-dark: #007bff;
+  --admin-color-success: #28a745;
+  --admin-color-error: #dc3545;
+  --admin-color-warning: #ffc107;
+  --admin-color-text: #fff;
+  --admin-color-text-muted: #e0e0e0;
+  --admin-color-background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+  --admin-color-background-fallback: #1a1a1a;
+  --admin-color-table-border: rgba(221, 221, 221, 0.3);
+  --admin-color-table-header: rgba(255, 255, 255, 0.1);
+  --admin-color-table-row-hover: rgba(255, 255, 255, 0.05);
   
-  --acc-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --acc-shadow-hover: 0 6px 15px rgba(0, 0, 0, 0.2);
-  --acc-shadow-tooltip: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --admin-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --admin-shadow-hover: 0 6px 15px rgba(0, 0, 0, 0.2);
   
-  --acc-border-radius: 10px;
-  --acc-border-radius-sm: 4px;
-  --acc-transition: all 0.3s ease;
+  --admin-border-radius: 10px;
+  --admin-border-radius-sm: 4px;
+  --admin-transition: all 0.3s ease;
   
-  --acc-navbar-height: 72px;
-  --acc-navbar-height-mobile: 64px;
+  --admin-navbar-height: 72px;
+  --admin-navbar-height-mobile: 64px;
 }
 
 /* Layout & Container Styling */
-.acc-container {
+.admin-container {
   min-height: 100vh;
-  margin-top: var(--acc-navbar-height);
+  margin-top: var(--admin-navbar-height);
   display: flex; 
   justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: var(--acc-spacing-md);
+  align-items: flex-start;
+  padding: var(--admin-spacing-md);
   box-sizing: border-box;
-  background: var(--acc-color-background-fallback);
-  background: var(--acc-color-background);
+  background: var(--admin-color-background-fallback);
+  background: var(--admin-color-background);
   background-attachment: fixed;
-  background-size: cover;
-  background-position: center;
   position: relative;
 }
 
 /* Add overlay for better readability */
-.acc-container::before {
+.admin-container::before {
   content: '';
   position: absolute;
   top: 0;
@@ -67,283 +65,261 @@
 }
 
 /* Content Card Styling */
-.acc-content {
-  background: var(--acc-color-background-fallback);
-  background: var(--acc-color-background);
-  border-radius: var(--acc-border-radius); 
-  padding: var(--acc-spacing-xl);
-  margin: var(--acc-spacing-md);
+.admin-content {
+  background: var(--admin-color-background-fallback);
+  background: var(--admin-color-background);
+  border-radius: var(--admin-border-radius); 
+  padding: var(--admin-spacing-xl);
+  margin: var(--admin-spacing-md);
   width: 100%;
-  max-width: 700px;
-  box-shadow: var(--acc-shadow);
-  transition: var(--acc-transition);
+  max-width: 1200px;
+  box-shadow: var(--admin-shadow);
   position: relative;
   z-index: 2;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.acc-content:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--acc-shadow-hover);
-}
-
 /* Heading Styling */
-.acc-content h1 {
-  color: var(--acc-color-primary);
-  margin-bottom: var(--acc-spacing-lg);
+.admin-content h1 {
+  color: var(--admin-color-primary);
+  margin-bottom: var(--admin-spacing-lg);
   font-weight: 600;
-  transition: var(--acc-transition);
+  text-align: center;
 }
 
-.acc-content:hover h1 {
-  color: var(--acc-color-text);
+/* Message Styling */
+.success-message {
+  color: var(--admin-color-success);
+  background-color: rgba(40, 167, 69, 0.1);
+  padding: var(--admin-spacing-md);
+  border-radius: var(--admin-border-radius);
+  border-left: 4px solid var(--admin-color-success);
+  margin-bottom: var(--admin-spacing-lg);
+  text-align: center;
 }
 
-/* Profile Section */
-.acc-info {
-  margin: var(--acc-spacing-xl) auto;
-  width: 100%;
+.error-message {
+  color: var(--admin-color-error);
+  background-color: rgba(220, 53, 69, 0.1);
+  padding: var(--admin-spacing-md);
+  border-radius: var(--admin-border-radius);
+  border-left: 4px solid var(--admin-color-error);
+  margin-bottom: var(--admin-spacing-lg);
+  text-align: center;
 }
 
-.acc-info table {
+/* Table Styling */
+.acc-list {
   width: 100%;
   border-collapse: collapse;
-  margin-top: var(--acc-spacing-md);
+  margin-top: var(--admin-spacing-md);
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--acc-border-radius);
+  border-radius: var(--admin-border-radius);
   overflow: hidden;
+  font-size: 0.95rem;
 }
 
-.acc-info th,
-.acc-info td {
-  padding: var(--acc-spacing-md);
-  border: 1px solid var(--acc-color-table-border);
+.acc-list th,
+.acc-list td {
+  padding: var(--admin-spacing-md);
+  border: 1px solid var(--admin-color-table-border);
   text-align: left;
-  color: var(--acc-color-text);
+  color: var(--admin-color-text);
 }
 
-.acc-info th {
-  background-color: var(--acc-color-table-header);
+.acc-list th {
+  background-color: var(--admin-color-table-header);
   font-weight: 600;
-  color: var(--acc-color-primary);
+  color: var(--admin-color-primary);
+  text-align: center;
 }
 
-.acc-info tr {
-  transition: var(--acc-transition);
+.acc-list tr {
+  transition: var(--admin-transition);
 }
 
-.acc-info tr:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+.acc-list tr:hover {
+  background-color: var(--admin-color-table-row-hover);
 }
 
-/* Wallet Info */
-#wallet-info {
-  margin: var(--acc-spacing-xl) 0;
-  color: var(--acc-color-text);
-  background: rgba(0, 0, 0, 0.2);
-  padding: var(--acc-spacing-md);
-  border-radius: var(--acc-border-radius);
-  border-left: 4px solid var(--acc-color-primary);
+/* Status indicators */
+.acc-list td:nth-child(3) {
+  font-weight: 500;
+  text-align: center;
 }
 
-/* Copy icon */
-.copy-icon {
-  cursor: pointer;
-  font-size: 1.2rem;
-  color: var(--acc-color-primary-dark);
-  transition: var(--acc-transition);
-  pointer-events: auto;
-  user-select: none;
-  display: inline-flex;
-  align-items: center;
+.acc-list td:nth-child(3):contains("Active") {
+  color: var(--admin-color-success);
+}
+
+.acc-list td:nth-child(3):contains("Locked") {
+  color: var(--admin-color-error);
+}
+
+/* Action buttons */
+.action-form {
+  display: flex;
   justify-content: center;
-  margin-left: var(--acc-spacing-xs);
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(0, 123, 255, 0.1);
+  margin: 0;
 }
 
-.copy-icon:hover {
-  color: var(--acc-color-primary-darker);
-  background: rgba(0, 123, 255, 0.2);
-  transform: scale(1.1);
+.action-form .cta-button {
+  background: linear-gradient(45deg, var(--admin-color-primary), var(--admin-color-primary-dark));
+  color: #fff;
+  padding: var(--admin-spacing-xs) var(--admin-spacing-md);
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: var(--admin-transition);
+  text-decoration: none;
+  font-weight: 500;
+  min-width: 80px;
 }
 
-.copy-icon.copied {
-  color: var(--acc-color-success);
-  background: rgba(40, 167, 69, 0.1);
+.action-form .cta-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 212, 255, 0.3);
 }
 
-.copy-tooltip {
-  position: absolute;
-  top: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--acc-color-success);
-  color: var(--acc-color-text);
-  padding: var(--acc-spacing-xs) var(--acc-spacing-sm);
-  border-radius: var(--acc-border-radius-sm);
-  font-size: 0.75rem;
-  z-index: 10;
-  box-shadow: var(--acc-shadow-tooltip);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
+.action-form .cta-button:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--admin-color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.copy-tooltip.show {
-  opacity: 1;
+.action-form .cta-button[value="lock"] {
+  background: linear-gradient(45deg, #ff6b6b, #dc3545);
 }
 
-/* Animation for content */
-.acc-content {
-  opacity: 0;
-  transform: translateY(20px) scale(0.98);
-  animation: accFadeIn 0.6s ease forwards;
-}
-
-@keyframes accFadeIn {
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .acc-content,
-  .acc-content h1,
-  .copy-icon,
-  .acc-info tr {
-    transition: none;
-    animation: none;
-  }
-  
-  .acc-content:hover {
-    transform: none;
-  }
-  
-  .copy-icon:hover {
-    transform: none;
-  }
+.action-form .cta-button[value="unlock"] {
+  background: linear-gradient(45deg, #28a745, #20c997);
 }
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
-  .acc-container {
+  .admin-container {
     min-height: unset;
-    margin-top: var(--acc-navbar-height-mobile);
-    padding: var(--acc-spacing-sm);
-    align-items: flex-start;
+    margin-top: var(--admin-navbar-height-mobile);
+    padding: var(--admin-spacing-sm);
   }
 
-  .acc-content {
-    padding: var(--acc-spacing-lg);
-    margin: var(--acc-spacing-sm);
+  .admin-content {
+    padding: var(--admin-spacing-lg);
+    margin: var(--admin-spacing-sm);
     max-width: 100%;
+    overflow-x: auto;
   }
   
-  .acc-info {
-    margin: var(--acc-spacing-lg) 0;
+  .acc-list {
+    font-size: 0.85rem;
   }
   
-  .acc-info th,
-  .acc-info td {
-    padding: var(--acc-spacing-sm);
-    font-size: 0.9rem;
+  .acc-list th,
+  .acc-list td {
+    padding: var(--admin-spacing-sm);
   }
   
   /* Stack table on mobile */
-  .acc-info table,
-  .acc-info thead,
-  .acc-info tbody,
-  .acc-info th,
-  .acc-info td,
-  .acc-info tr {
+  .acc-list,
+  .acc-list thead,
+  .acc-list tbody,
+  .acc-list th,
+  .acc-list td,
+  .acc-list tr {
     display: block;
   }
   
-  .acc-info thead tr {
+  .acc-list thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
   
-  .acc-info tr {
-    border: 1px solid var(--acc-color-table-border);
-    margin-bottom: var(--acc-spacing-sm);
-    border-radius: var(--acc-border-radius-sm);
+  .acc-list tr {
+    border: 1px solid var(--admin-color-table-border);
+    margin-bottom: var(--admin-spacing-sm);
+    border-radius: var(--admin-border-radius-sm);
     overflow: hidden;
   }
   
-  .acc-info td {
+  .acc-list td {
     border: none;
-    border-bottom: 1px solid var(--acc-color-table-border);
+    border-bottom: 1px solid var(--admin-color-table-border);
     position: relative;
     padding-left: 50%;
+    text-align: right;
   }
   
-  .acc-info td:before {
+  .acc-list td:before {
     content: attr(data-label);
     position: absolute;
-    left: var(--acc-spacing-sm);
+    left: var(--admin-spacing-sm);
     width: 45%;
-    padding-right: var(--acc-spacing-sm);
+    padding-right: var(--admin-spacing-sm);
     white-space: nowrap;
     font-weight: 600;
-    color: var(--acc-color-primary);
+    color: var(--admin-color-primary);
+    text-align: left;
+  }
+  
+  .action-form {
+    justify-content: flex-end;
+  }
+  
+  .action-form .cta-button {
+    min-width: 70px;
   }
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .acc-info th {
+  .acc-list th {
     background-color: rgba(255, 255, 255, 0.05);
   }
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .acc-content {
-    border: 2px solid var(--acc-color-primary);
+  .admin-content {
+    border: 2px solid var(--admin-color-primary);
   }
   
-  .acc-info th,
-  .acc-info td {
-    border: 2px solid var(--acc-color-table-border);
+  .acc-list th,
+  .acc-list td {
+    border: 2px solid var(--admin-color-table-border);
   }
 }
 
 /* Print styles */
 @media print {
-  .acc-container {
+  .admin-container {
     background: none !important;
     min-height: auto;
   }
   
-  .acc-container::before {
+  .admin-container::before {
     display: none;
   }
   
-  .acc-content {
+  .admin-content {
     background: none !important;
     box-shadow: none;
     border: 1px solid #000;
   }
   
-  .acc-content h1 {
+  .admin-content h1 {
     color: #000 !important;
   }
   
-  .acc-info th,
-  .acc-info td {
+  .acc-list th,
+  .acc-list td {
     color: #000 !important;
     border: 1px solid #000;
   }
   
-  .copy-icon {
+  .action-form .cta-button {
     display: none;
   }
 }
