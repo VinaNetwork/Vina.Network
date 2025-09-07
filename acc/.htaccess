@@ -14,10 +14,10 @@ RewriteRule ^disconnect$ disconnect.php [L,NC]
 
 # Endpoints
 RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
-RewriteRule ^get-logs$ core/get-logs.php [L,NC]
-
 # /profile
 RewriteRule ^profile$ profile.php [L]
 # Redirect 301 from /profile.php to /profile
 RewriteCond %{THE_REQUEST} \s/profile\.php[\s?] [NC]
 RewriteRule ^profile\.php$ /profile [R=301,L]
+# Get logs
+RewriteRule ^get-logs$ core/get-logs.php [L,NC]
