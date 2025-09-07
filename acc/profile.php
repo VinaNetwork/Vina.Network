@@ -119,6 +119,9 @@ $page_css = ['/acc/acc.css'];
 </div>
 <?php require_once $root_path . 'include/footer.php';?>
 
+<!-- Scripts - Internal library -->
+<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<!-- Scripts - Source code -->
 <script>console.log('Attempting to load JS files...');</script>
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 <script defer src="/acc/js/profile.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/profile.js')"></script>
