@@ -26,7 +26,7 @@ $page_css = ['/notification/notification.css'];
         <i class="fas fa-tools"></i>
         <h1>Products Under Development</h1>
         <p>We’re sorry, but our products are currently under development. Our team is working hard to bring you the best experience. Stay tuned for updates!</p>
-        <a href="https://www.vina.network/" class="cta-button">Back to Home</a>
+        <a href="/" class="cta-button">Back to Home</a>
     </div>
 </section>
 
