@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const csrfToken = await refreshCSRFToken();
             formData.set('csrf_token', csrfToken);
-            const response = await axios.post('/mm/private-key/add-private-key', formData, {
+            const response = await axios.post('/mm/add-private-key', formData, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-Token': csrfToken,
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const walletId = button.getAttribute('data-id');
             try {
                 const csrfToken = await refreshCSRFToken();
-                const response = await axios.post('/mm/private-key/delete-private-key', { walletId, csrf_token: csrfToken }, {
+                const response = await axios.post('/mm/delete-private-key', { walletId, csrf_token: csrfToken }, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-Token': csrfToken,
