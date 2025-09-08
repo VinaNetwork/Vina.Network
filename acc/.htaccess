@@ -7,17 +7,16 @@
 RewriteEngine On
 RewriteBase /acc/
 
-# Rewrite
+# Page
 RewriteRule ^admin$ manage/admin.php [L,NC]
 RewriteRule ^connect$ connect.php [L,NC]
-RewriteRule ^disconnect$ disconnect.php [L,NC]
-
-# Endpoints
-RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
-# /profile
+# Profile
 RewriteRule ^profile$ profile.php [L]
 # Redirect 301 from /profile.php to /profile
 RewriteCond %{THE_REQUEST} \s/profile\.php[\s?] [NC]
 RewriteRule ^profile\.php$ /profile [R=301,L]
-# Get logs
+
+# Endpoints
+RewriteRule ^disconnect$ disconnect.php [L,NC]
+RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
 RewriteRule ^get-logs$ core/get-logs.php [L,NC]
