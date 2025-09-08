@@ -517,9 +517,9 @@ $defaultSlippage = 0.5; // Slippage
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
             <label for="privateKey">🔑 Private Key:</label>
-            <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
+            <textarea name="privateKey" id="privateKey" required></textarea>
             <label for="tokenMint">🎯 Token Address:</label>
-            <input type="text" name="tokenMint" id="tokenMint" required placeholder="Enter token address...">
+            <input type="text" name="tokenMint" id="tokenMint" required>
             <label for="tradeDirection">📈 Trade Direction:</label>
             <select name="tradeDirection" id="tradeDirection" required>
                 <option value="buy">Buy</option>
@@ -527,9 +527,9 @@ $defaultSlippage = 0.5; // Slippage
                 <option value="both">Both (Buy and Sell)</option>
             </select>
             <label for="solAmount">💰 SOL Amount:</label>
-            <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Enter SOL Amount...">
+            <input type="number" step="0.01" name="solAmount" id="solAmount" required>
             <label for="tokenAmount">🪙 Token Amount:</label>
-            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" placeholder="Enter Token Amount..." disabled value="0">
+            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" disabled value="0">
             <label for="slippage">📉 Slippage (%):</label>
             <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
             <label for="delay">⏱️ Delay between 2 batch (seconds):</label>
