@@ -88,7 +88,7 @@ try {
 // SEO meta
 $page_title = "Danh sách Private Key - Vina Network";
 $page_description = "Xem và quản lý danh sách private key của bạn trên Vina Network.";
-$page_css = ['/mm/css/mm.css'];
+$page_css = ['mm/private-key/list-private-key.css'];
 ?>
 
 <!DOCTYPE html>
