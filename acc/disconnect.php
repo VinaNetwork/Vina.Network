@@ -1,12 +1,12 @@
 <?php
 // ============================================================================
-// File: acc/disconnect.php
+// File: acc/core/disconnect.php
 // Description: API to handle disconnect requests
 // Created by: Vina Network
 // ============================================================================
 
 ob_start();
-$root_path = __DIR__ . '/../';
+$root_path = __DIR__ . '/../../';
 // constants | logging | config | error | session | database | header-auth
 require_once $root_path . 'acc/bootstrap.php';
 
