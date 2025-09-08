@@ -225,6 +225,7 @@ $page_css = ['/mm/private-key/add-private-key.css'];
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <!-- Scripts - Source code -->
+<script defer src="/js/vina.js?t=<?php echo time(); ?>"></script>
 <script defer src="/mm/private-key/add-private-key.js?t=<?php echo time(); ?>"></script>
 </body>
 </html>
