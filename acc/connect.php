@@ -50,7 +50,7 @@ $page_css = ['/acc/acc.css'];
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="acc-container">
     <div class="acc-content">
-        <h1>Login with Phantom Wallet</h1>
+        <h1>Connect to Vina Network with Phantom wallet</h1>
         <button class="cta-button" id="connect-wallet">Connect Wallet</button>
         <div id="wallet-info" style="display: none;">
             <p><strong>Wallet Address:</strong> <span id="public-key"></span></p>
