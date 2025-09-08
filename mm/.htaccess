@@ -7,11 +7,14 @@
 RewriteEngine On
 RewriteBase /mm/
 
-# Rewrite Page
+# Create Page
 RewriteRule ^create$ create.php [L,NC,QSA]
-RewriteRule ^private-key$ private-key/private-key.php [L,NC,QSA]
 
-# If accessing /error then rewrite to file error.php
+# Private key page
+RewriteRule ^add-private-key$ private-key/add-private-key.php [L,NC,QSA]
+RewriteRule ^delete-private-key$ private-key/delete-private-key.php [L,NC,QSA]
+
+# Error page
 RewriteRule ^error$ error.php [L,QSA]
 # Redirect 301 from /error.php to /error
 RewriteCond %{THE_REQUEST} \s/error\.php[\s?] [NC]
