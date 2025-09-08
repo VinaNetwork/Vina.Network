@@ -399,18 +399,6 @@
   #account-info td {
     padding: var(--mm-spacing-xs);
     font-size: 0.9rem;
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  #account-info th {
-    border-bottom: none;
-    padding-bottom: var(--mm-spacing-xs);
-  }
-  
-  #account-info td {
-    padding-top: 0;
   }
   
   #makeMarketForm input,
