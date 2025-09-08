@@ -97,60 +97,62 @@ $page_css = ['mm/private-key/list-private-key.css'];
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
 <div class="mm-container">
-    <h1><i class="fas fa-key"></i> Danh sách Private Key</h1>
-    <div id="account-info">
-        <p>Tài khoản: 
-            <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
-                <?php echo htmlspecialchars($short_public_key); ?>
-            </a>
-            <i class="fas fa-copy copy-icon" title="Sao chép địa chỉ" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
-        </p>
-        <p><a href="/mm/private-key/add-private-key">Thêm Private Key mới</a></p>
-    </div>
+	<div class="mm-content">
+		<h1><i class="fas fa-key"></i> Danh sách Private Key</h1>
+		<div id="account-info">
+			<p>Tài khoản: 
+				<a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
+					<?php echo htmlspecialchars($short_public_key); ?>
+				</a>
+				<i class="fas fa-copy copy-icon" title="Sao chép địa chỉ" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
+			</p>
+			<p><a href="/mm/private-key/add-private-key">Thêm Private Key mới</a></p>
+		</div>
 
-    <!-- Bảng danh sách ví -->
-    <table class="wallet-table">
-        <thead>
-            <tr>
-                <th>Tên ví</th>
-                <th>Public Key</th>
-                <th>Private Key (rút gọn)</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($wallets)): ?>
-                <tr>
-                    <td colspan="6" style="text-align: center;">Chưa có ví nào được thêm.</td>
-                </tr>
-            <?php else: ?>
-                <?php foreach ($wallets as $wallet): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Ví #' . $wallet['id']); ?></td>
-                        <td>
-                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($wallet['public_key']); ?>" target="_blank">
-                                <?php echo htmlspecialchars($wallet['short_public_key']); ?>
-                            </a>
-                            <i class="fas fa-copy copy-icon" title="Sao chép public key" data-full="<?php echo htmlspecialchars($wallet['public_key']); ?>"></i>
-                        </td>
-                        <td>
-                            <?php echo htmlspecialchars($wallet['short_private_key']); ?>
-                            <!-- Không cung cấp sao chép private key để bảo mật -->
-                        </td>
-                        <td><?php echo htmlspecialchars($wallet['status']); ?></td>
-                        <td><?php echo htmlspecialchars($wallet['created_at']); ?></td>
-                        <td>
-                            <button class="deleteWallet cta-button" data-id="<?php echo $wallet['id']; ?>">Xóa</button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
+		<!-- Bảng danh sách ví -->
+		<table class="wallet-table">
+			<thead>
+				<tr>
+					<th>Tên ví</th>
+					<th>Public Key</th>
+					<th>Private Key (rút gọn)</th>
+					<th>Trạng thái</th>
+					<th>Ngày tạo</th>
+					<th>Hành động</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php if (empty($wallets)): ?>
+					<tr>
+						<td colspan="6" style="text-align: center;">Chưa có ví nào được thêm.</td>
+					</tr>
+				<?php else: ?>
+					<?php foreach ($wallets as $wallet): ?>
+						<tr>
+							<td><?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Ví #' . $wallet['id']); ?></td>
+							<td>
+								<a href="https://solscan.io/address/<?php echo htmlspecialchars($wallet['public_key']); ?>" target="_blank">
+									<?php echo htmlspecialchars($wallet['short_public_key']); ?>
+								</a>
+								<i class="fas fa-copy copy-icon" title="Sao chép public key" data-full="<?php echo htmlspecialchars($wallet['public_key']); ?>"></i>
+							</td>
+							<td>
+								<?php echo htmlspecialchars($wallet['short_private_key']); ?>
+								<!-- Không cung cấp sao chép private key để bảo mật -->
+							</td>
+							<td><?php echo htmlspecialchars($wallet['status']); ?></td>
+							<td><?php echo htmlspecialchars($wallet['created_at']); ?></td>
+							<td>
+								<button class="deleteWallet cta-button" data-id="<?php echo $wallet['id']; ?>">Xóa</button>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</tbody>
+		</table>
 
-    <div id="mm-result" class="status-box"></div>
+		<div id="mm-result" class="status-box"></div>
+	</div>
 </div>
 <?php include $root_path . 'include/footer.php'; ?>
 
