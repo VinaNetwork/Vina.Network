@@ -7,8 +7,15 @@
 RewriteEngine On
 RewriteBase /mm/
 
-# Rewrite
+# Rewrite Page
 RewriteRule ^create$ create.php [L,NC,QSA]
+RewriteRule ^private-key$ private-key/private-key.php [L,NC,QSA]
+
+# If accessing /error then rewrite to file error.php
+RewriteRule ^error$ error.php [L,QSA]
+# Redirect 301 from /error.php to /error
+RewriteCond %{THE_REQUEST} \s/error\.php[\s?] [NC]
+RewriteRule ^error\.php$ /error [R=301,L,QSA]
 
 # Rules for specific endpoints
 RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC,QSA]
@@ -21,9 +28,3 @@ RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
 RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC,QSA]
 RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
 RewriteRule ^get-logs$ core/get-logs.php [L,NC,QSA]
-
-# If accessing /error then rewrite to file error.php
-RewriteRule ^error$ error.php [L,QSA]
-# Redirect 301 from /error.php to /error
-RewriteCond %{THE_REQUEST} \s/error\.php[\s?] [NC]
-RewriteRule ^error\.php$ /error [R=301,L,QSA]
