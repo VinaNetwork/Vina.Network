@@ -239,7 +239,6 @@
   .acc-container {
     margin-top: var(--acc-navbar-height-mobile);
     padding: var(--acc-spacing-sm);
-    align-items: flex-start;
   }
 
   .acc-content {
