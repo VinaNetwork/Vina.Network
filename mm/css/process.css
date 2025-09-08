@@ -345,26 +345,10 @@
   .details-table th, 
   .details-table td {
     padding: var(--process-spacing-sm);
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
   }
   
   .details-table th {
-    border-bottom: none;
-    padding-bottom: var(--process-spacing-xs);
     background-color: rgba(255, 255, 255, 0.05);
-  }
-  
-  .details-table td {
-    padding-top: 0;
-    border-top: none;
-  }
-  
-  .details-table tr {
-    border-bottom: 2px solid var(--process-color-table-border);
-    margin-bottom: var(--process-spacing-sm);
-    display: block;
   }
   
   .details-table tr:last-child {
