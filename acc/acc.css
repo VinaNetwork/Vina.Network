@@ -144,6 +144,7 @@
   padding: var(--acc-spacing-md);
   border-radius: var(--acc-border-radius);
   border-left: 4px solid var(--acc-color-primary);
+  overflow-wrap: break-word;
 }
 
 /* Copy icon */
