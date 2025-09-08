@@ -72,7 +72,7 @@
   background: var(--acc-color-background);
   border-radius: var(--acc-border-radius); 
   padding: var(--acc-spacing-xl);
-  margin: var(--acc-spacing-md);
+  margin: auto;
   width: 100%;
   max-width: 700px;
   box-shadow: var(--acc-shadow);
