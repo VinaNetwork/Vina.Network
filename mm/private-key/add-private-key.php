@@ -203,6 +203,15 @@ $page_css = ['/mm/css/mm.css'];
     <div id="mm-result" class="status-box"></div>
 </div>
 <?php include $root_path . 'include/footer.php'; ?>
+
+<!-- Scripts - Internal library -->
+<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<!-- Global variable -->
+<script>
+    // Passing JWT_SECRET into JavaScript securely
+    const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
+</script>
+<!-- Scripts - Source code -->
 <script defer src="/mm/private-key/add-private-key.js?t=<?php echo time(); ?>"></script>
 </body>
 </html>
