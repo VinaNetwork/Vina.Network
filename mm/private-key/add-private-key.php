@@ -158,7 +158,7 @@ $existingWallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // SEO meta
 $page_title = "Quản lý Private Key - Vina Network";
 $page_description = "Thêm và quản lý private key cho giao dịch Solana trên Vina Network.";
-$page_css = ['/mm/add-private-key/add-private-key.php'];
+$page_css = ['/mm/private-key/add-private-key.css'];
 ?>
 
 <!DOCTYPE html>
