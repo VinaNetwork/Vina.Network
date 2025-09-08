@@ -209,17 +209,6 @@
   opacity: 1;
 }
 
-/* Status messages */
-#swap-status {
-  margin: var(--process-spacing-md) 0;
-  padding: var(--process-spacing-md);
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--process-border-radius);
-  border-left: 4px solid var(--process-color-primary);
-  color: var(--process-color-text);
-  font-weight: 500;
-}
-
 /* Status Box */
 .status-box {
   max-height: 300px;
