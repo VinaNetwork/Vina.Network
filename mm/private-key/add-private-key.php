@@ -167,53 +167,55 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
 <div class="mm-container">
-    <h1><i class="fas fa-key"></i> Quản lý Private Key</h1>
-    <div id="account-info">
-        <p>Tài khoản: <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank"><?php echo htmlspecialchars(substr($public_key, 0, 4) . '...' . substr($public_key, -4)); ?></a></p>
-    </div>
+	<div class="mm-content">
+		<h1><i class="fas fa-key"></i> Quản lý Private Key</h1>
+		<div id="account-info">
+			<p>Tài khoản: <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank"><?php echo htmlspecialchars(substr($public_key, 0, 4) . '...' . substr($public_key, -4)); ?></a></p>
+		</div>
 
-    <!-- Form thêm private key -->
-    <form id="addPrivateKeyForm" method="POST">
-        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-        <div id="privateKeysContainer">
-            <div class="privateKeyRow">
-                <label>Tên ví (tùy chọn):</label>
-                <input type="text" name="walletNames[]" placeholder="Nhập tên ví...">
-                <label>Private Key:</label>
-                <textarea name="privateKeys[]" required placeholder="Nhập private key..."></textarea>
-                <button type="button" class="removeKey">Xóa</button>
-            </div>
-        </div>
-        <button type="button" id="addPrivateKey">+ Thêm ví</button>
-        <button type="submit" class="cta-button">Lưu</button>
-    </form>
+		<!-- Form thêm private key -->
+		<form id="addPrivateKeyForm" method="POST">
+			<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+			<div id="privateKeysContainer">
+				<div class="privateKeyRow">
+					<label>Tên ví (tùy chọn):</label>
+					<input type="text" name="walletNames[]" placeholder="Nhập tên ví...">
+					<label>Private Key:</label>
+					<textarea name="privateKeys[]" required placeholder="Nhập private key..."></textarea>
+					<button type="button" class="removeKey">Xóa</button>
+				</div>
+			</div>
+			<button type="button" id="addPrivateKey">+ Thêm ví</button>
+			<button type="submit" class="cta-button">Lưu</button>
+		</form>
 
-    <!-- Danh sách ví hiện có -->
-    <h2>Danh sách ví</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Tên ví</th>
-                <th>Public Key</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($existingWallets as $wallet): ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Ví #' . $wallet['id']); ?></td>
-                    <td><a href="https://solscan.io/address/<?php echo htmlspecialchars($wallet['public_key']); ?>" target="_blank"><?php echo htmlspecialchars(substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)); ?></a></td>
-                    <td><?php echo htmlspecialchars($wallet['status']); ?></td>
-                    <td><?php echo htmlspecialchars($wallet['created_at']); ?></td>
-                    <td><button class="deleteWallet" data-id="<?php echo $wallet['id']; ?>">Xóa</button></td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+		<!-- Danh sách ví hiện có -->
+		<h2>Danh sách ví</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>Tên ví</th>
+					<th>Public Key</th>
+					<th>Trạng thái</th>
+					<th>Ngày tạo</th>
+					<th>Hành động</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ($existingWallets as $wallet): ?>
+					<tr>
+						<td><?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Ví #' . $wallet['id']); ?></td>
+						<td><a href="https://solscan.io/address/<?php echo htmlspecialchars($wallet['public_key']); ?>" target="_blank"><?php echo htmlspecialchars(substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)); ?></a></td>
+						<td><?php echo htmlspecialchars($wallet['status']); ?></td>
+						<td><?php echo htmlspecialchars($wallet['created_at']); ?></td>
+						<td><button class="deleteWallet" data-id="<?php echo $wallet['id']; ?>">Xóa</button></td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
 
-    <div id="mm-result" class="status-box"></div>
+		<div id="mm-result" class="status-box"></div>
+	</div>
 </div>
 <?php include $root_path . 'include/footer.php'; ?>
 
