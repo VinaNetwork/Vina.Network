@@ -154,6 +154,7 @@ $page_css = ['/mm/css/mm.css'];
 </div>
 <?php include $root_path . 'include/footer.php'; ?>
 
+<!-- Scripts - Internal library -->
 <script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>"></script>
 <!-- Global variable -->
 <script>
