@@ -233,7 +233,6 @@
 /* Responsive Design */
 @media screen and (max-width: 768px) {
   .acc-container {
-    min-height: unset;
     margin-top: var(--acc-navbar-height-mobile);
     padding: var(--acc-spacing-sm);
     align-items: flex-start;
