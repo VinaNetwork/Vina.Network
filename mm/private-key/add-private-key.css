@@ -1,6 +1,6 @@
 /* ============================================================================
- * File: mm/private-key/add-private-key.css
- * Description: Styles for the Make Market page
+ * File: mm/private-key/add-private-key.css (Optimized Version)
+ * Description: Styles for the Add Private Key page
  * Created by: Vina Network
  * ============================================================================ */
 
@@ -24,6 +24,9 @@
   --mm-color-background-fallback: #1a1a1a;
   --mm-color-table-border: rgba(221, 221, 221, 0.3);
   --mm-color-table-header: rgba(255, 255, 255, 0.1);
+  --mm-color-table-row: rgba(255, 255, 255, 0.05);
+  --mm-color-table-row-alt: rgba(255, 255, 255, 0.02);
+  --mm-color-table-row-hover: rgba(255, 255, 255, 0.08);
   --mm-color-input-background: rgba(255, 255, 255, 0.1);
   --mm-color-input-border: rgba(255, 255, 255, 0.3);
   --mm-color-input-focus: rgba(0, 212, 255, 0.3);
@@ -36,7 +39,7 @@
   --mm-border-radius-sm: 5px;
   --mm-transition: all 0.3s ease;
   
-  --mm-navbar-height: 64px;
+  --mm-navbar-height: 72px;
   --mm-navbar-height-mobile: 64px;
 }
 
@@ -74,7 +77,7 @@
   padding: var(--mm-spacing-xl);
   margin: var(--mm-spacing-md);
   width: 100%;
-  max-width: 700px;
+  max-width: 800px;
   box-shadow: var(--mm-shadow);
   position: relative;
   z-index: 2;
@@ -94,6 +97,14 @@
   margin-right: var(--mm-spacing-sm);
 }
 
+.mm-content h2 {
+  color: var(--mm-color-primary);
+  margin: var(--mm-spacing-xl) 0 var(--mm-spacing-lg);
+  font-weight: 600;
+  border-bottom: 2px solid var(--mm-color-primary);
+  padding-bottom: var(--mm-spacing-sm);
+}
+
 /* Account Info */
 #account-info {
   margin: var(--mm-spacing-xl) 0;
@@ -103,22 +114,10 @@
   border-left: 4px solid var(--mm-color-primary);
 }
 
-#account-info table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-#account-info th, 
-#account-info td {
-  padding: var(--mm-spacing-sm);
-  text-align: left;
+#account-info p {
+  margin: 0;
   color: var(--mm-color-text);
-}
-
-#account-info th {
-  font-weight: 600;
-  color: var(--mm-color-primary);
-  width: 30%;
+  font-weight: 500;
 }
 
 #account-info a {
@@ -130,6 +129,221 @@
 #account-info a:hover {
   color: var(--mm-color-text);
   text-decoration: underline;
+}
+
+/* Private Key Form */
+#addPrivateKeyForm {
+  margin: var(--mm-spacing-xl) 0;
+}
+
+.privateKeyRow {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--mm-border-radius);
+  padding: var(--mm-spacing-md);
+  margin-bottom: var(--mm-spacing-md);
+  border: 1px solid var(--mm-color-input-border);
+  position: relative;
+}
+
+.privateKeyRow label {
+  display: block;
+  margin: var(--mm-spacing-sm) 0 var(--mm-spacing-xs);
+  font-weight: 600;
+  color: var(--mm-color-text);
+}
+
+.privateKeyRow input[type="text"],
+.privateKeyRow textarea {
+  width: 100%;
+  padding: var(--mm-spacing-md);
+  border: 1px solid var(--mm-color-input-border);
+  border-radius: var(--mm-border-radius-sm);
+  background: var(--mm-color-input-background);
+  color: var(--mm-color-text);
+  font-size: 1rem;
+  transition: var(--mm-transition);
+  box-sizing: border-box;
+  font-family: monospace;
+}
+
+.privateKeyRow input[type="text"]:focus,
+.privateKeyRow textarea:focus {
+  outline: none;
+  border-color: var(--mm-color-primary);
+  box-shadow: var(--mm-shadow-focus);
+}
+
+.privateKeyRow textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.removeKey {
+  position: absolute;
+  top: var(--mm-spacing-sm);
+  right: var(--mm-spacing-sm);
+  background: var(--mm-color-error);
+  color: white;
+  border: none;
+  border-radius: var(--mm-border-radius-sm);
+  padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--mm-transition);
+}
+
+.removeKey:hover {
+  background: #c82333;
+  transform: scale(1.05);
+}
+
+#addPrivateKey {
+  background: var(--mm-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--mm-border-radius);
+  padding: var(--mm-spacing-sm) var(--mm-spacing-md);
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: var(--mm-spacing-md);
+  transition: var(--mm-transition);
+}
+
+#addPrivateKey:hover {
+  background: var(--mm-color-primary-dark);
+  transform: translateY(-2px);
+}
+
+/* Button Styles */
+.cta-button {
+  background: linear-gradient(45deg, var(--mm-color-primary), var(--mm-color-primary-dark));
+  color: #fff;
+  padding: var(--mm-spacing-md) var(--mm-spacing-lg);
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: var(--mm-transition);
+  width: 100%;
+  margin-top: var(--mm-spacing-md);
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.cta-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
+}
+
+.cta-button:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--mm-color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Wallet Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--mm-border-radius);
+  overflow: hidden;
+  margin: var(--mm-spacing-xl) 0;
+}
+
+table th,
+table td {
+  padding: var(--mm-spacing-md);
+  border: 1px solid var(--mm-color-table-border);
+  text-align: left;
+  color: var(--mm-color-text);
+}
+
+table th {
+  background-color: var(--mm-color-table-header);
+  font-weight: 600;
+  color: var(--mm-color-primary);
+}
+
+table tr {
+  transition: var(--mm-transition);
+  background-color: var(--mm-color-table-row);
+}
+
+table tr:nth-child(even) {
+  background-color: var(--mm-color-table-row-alt);
+}
+
+table tr:hover {
+  background-color: var(--mm-color-table-row-hover);
+}
+
+table a {
+  color: var(--mm-color-primary);
+  text-decoration: none;
+  transition: var(--mm-transition);
+}
+
+table a:hover {
+  color: var(--mm-color-text);
+  text-decoration: underline;
+}
+
+.deleteWallet {
+  background: var(--mm-color-error);
+  color: white;
+  border: none;
+  border-radius: var(--mm-border-radius-sm);
+  padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: var(--mm-transition);
+}
+
+.deleteWallet:hover {
+  background: #c82333;
+  transform: scale(1.05);
+}
+
+/* Status Box */
+.status-box {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--mm-color-input-border);
+  border-radius: var(--mm-border-radius);
+  padding: var(--mm-spacing-md);
+  margin-top: var(--mm-spacing-xl);
+  background-color: rgba(0, 0, 0, 0.3);
+  font-size: 0.95rem;
+  display: none;
+}
+
+.status-box.active {
+  display: block;
+}
+
+.status-box p {
+  margin: 0 0 var(--mm-spacing-sm);
+  color: var(--mm-color-text);
+  line-height: 1.5;
+}
+
+.status-box .success {
+  color: var(--mm-color-success);
+}
+
+.status-box .error {
+  color: var(--mm-color-error);
+}
+
+.status-box .cta-button {
+  margin-top: var(--mm-spacing-sm);
+  width: auto;
+  font-size: 0.9rem;
+  padding: var(--mm-spacing-sm) var(--mm-spacing-md);
 }
 
 /* Copy icon */
@@ -180,117 +394,17 @@
   opacity: 1;
 }
 
-/* Form Styles */
-#addPrivateKeyForm {
-  margin-top: var(--mm-spacing-xl);
-}
-
-#addPrivateKeyForm label {
-  display: block;
-  margin: var(--mm-spacing-md) 0 var(--mm-spacing-xs);
-  font-weight: 600;
-  color: var(--mm-color-text);
-}
-
-#addPrivateKeyForm input,
-#addPrivateKeyForm textarea,
-#addPrivateKeyForm select {
-  width: 100%;
-  padding: var(--mm-spacing-md);
-  border: 1px solid var(--mm-color-input-border);
-  border-radius: var(--mm-border-radius);
-  background: var(--mm-color-input-background);
-  color: var(--mm-color-text);
-  font-size: 1rem;
-  transition: var(--mm-transition);
-  box-sizing: border-box;
-}
-
-#addPrivateKeyForm input:focus,
-#addPrivateKeyForm textarea:focus,
-#addPrivateKeyForm select:focus {
-  outline: none;
-  border-color: var(--mm-color-primary);
-  box-shadow: var(--mm-shadow-focus);
-}
-
-#addPrivateKeyForm textarea {
-  min-height: 100px;
-  resize: vertical;
-  font-family: monospace;
-}
-
-#addPrivateKeyForm input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-#addPrivateKeyForm input[type="number"]::-webkit-outer-spin-button,
-#addPrivateKeyForm input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Status Box */
-.status-box {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid var(--mm-color-input-border);
-  border-radius: var(--mm-border-radius);
-  padding: var(--mm-spacing-md);
-  margin-top: var(--mm-spacing-xl);
-  background-color: rgba(0, 0, 0, 0.3);
-  display: none;
-}
-
-.status-box.active {
-  display: block;
-}
-
-.status-box p {
-  margin: 0;
-  color: var(--mm-color-error);
-}
-
-.status-box .success {
-  color: var(--mm-color-success);
-}
-
-.status-box .info {
-  color: var(--mm-color-primary);
-}
-
-/* Spinner animation */
-.spinner {
-  border: 3px solid rgba(243, 243, 243, 0.3);
-  border-top: 3px solid var(--mm-color-primary);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  animation: spin 1s linear infinite;
-  display: inline-block;
-  margin-right: var(--mm-spacing-sm);
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .copy-icon,
   .cta-button,
-  .check-box input[type="checkbox"],
-  #addPrivateKeyForm input,
-  #addPrivateKeyForm textarea,
-  #addPrivateKeyForm select {
+  .removeKey,
+  .deleteWallet,
+  #addPrivateKey,
+  table tr,
+  .privateKeyRow input[type="text"],
+  .privateKeyRow textarea {
     transition: none;
-  }
-  
-  .spinner {
-    animation: none;
-    border: 3px solid var(--mm-color-primary);
-    border-top: 3px solid transparent;
   }
 }
 
@@ -299,7 +413,6 @@
   .mm-container {
     margin-top: var(--mm-navbar-height-mobile);
     padding: var(--mm-spacing-sm);
-    align-items: flex-start;
   }
 
   .mm-content {
@@ -311,20 +424,82 @@
     font-size: 1.8rem;
   }
   
-  #account-info {
+  .mm-content h2 {
+    font-size: 1.4rem;
+  }
+  
+  .privateKeyRow {
     padding: var(--mm-spacing-sm);
   }
   
-  #account-info th, 
-  #account-info td {
-    padding: var(--mm-spacing-xs);
+  table {
     font-size: 0.9rem;
   }
   
-  #addPrivateKeyForm input,
-  #addPrivateKeyForm textarea,
-  #addPrivateKeyForm select {
+  table th,
+  table td {
     padding: var(--mm-spacing-sm);
+  }
+  
+  /* Stack table on mobile */
+  table,
+  table thead,
+  table tbody,
+  table th,
+  table td,
+  table tr {
+    display: block;
+  }
+  
+  table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  table tr {
+    border: 1px solid var(--mm-color-table-border);
+    margin-bottom: var(--mm-spacing-sm);
+    border-radius: var(--mm-border-radius-sm);
+  }
+  
+  table td {
+    border: none;
+    border-bottom: 1px solid var(--mm-color-table-border);
+    position: relative;
+    padding-left: 50%;
+  }
+  
+  table td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: var(--mm-spacing-sm);
+    width: 45%;
+    padding-right: var(--mm-spacing-sm);
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--mm-color-primary);
+  }
+}
+
+/* Extra small devices */
+@media screen and (max-width: 480px) {
+  .mm-content {
+    padding: var(--mm-spacing-md);
+  }
+  
+  .mm-content h1 {
+    font-size: 1.5rem;
+  }
+  
+  .privateKeyRow textarea {
+    min-height: 60px;
+    font-size: 0.9rem;
+  }
+  
+  table td:before {
+    width: 40%;
+    font-size: 0.8rem;
   }
 }
 
@@ -341,10 +516,14 @@
     border: 2px solid var(--mm-color-primary);
   }
   
-  #addPrivateKeyForm input,
-  #addPrivateKeyForm textarea,
-  #addPrivateKeyForm select {
+  .privateKeyRow input[type="text"],
+  .privateKeyRow textarea {
     border: 2px solid var(--mm-color-input-border);
+  }
+  
+  table th,
+  table td {
+    border: 2px solid var(--mm-color-table-border);
   }
 }
 
@@ -365,17 +544,22 @@
     border: 1px solid #000;
   }
   
-  .mm-content h1 {
+  .mm-content h1,
+  .mm-content h2 {
     color: #000 !important;
   }
   
-  #account-info th,
-  #account-info td {
+  table th,
+  table td {
     color: #000 !important;
     border: 1px solid #000;
   }
   
-  .copy-icon {
+  .copy-icon,
+  .removeKey,
+  .deleteWallet,
+  #addPrivateKey,
+  .cta-button {
     display: none;
   }
 }
