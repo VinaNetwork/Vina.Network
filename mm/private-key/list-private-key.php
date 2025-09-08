@@ -129,20 +129,20 @@ $page_css = ['mm/private-key/list-private-key.css'];
 				<?php else: ?>
 					<?php foreach ($wallets as $wallet): ?>
 						<tr>
-							<td><?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Ví #' . $wallet['id']); ?></td>
-							<td>
+							<td data-label="Tên ví"><?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Ví #' . $wallet['id']); ?></td>
+							<td data-label="Public Key">
 								<a href="https://solscan.io/address/<?php echo htmlspecialchars($wallet['public_key']); ?>" target="_blank">
 									<?php echo htmlspecialchars($wallet['short_public_key']); ?>
 								</a>
 								<i class="fas fa-copy copy-icon" title="Sao chép public key" data-full="<?php echo htmlspecialchars($wallet['public_key']); ?>"></i>
 							</td>
-							<td>
+							<td data-label="Private Key">
 								<?php echo htmlspecialchars($wallet['short_private_key']); ?>
 								<!-- Không cung cấp sao chép private key để bảo mật -->
 							</td>
-							<td><?php echo htmlspecialchars($wallet['status']); ?></td>
-							<td><?php echo htmlspecialchars($wallet['created_at']); ?></td>
-							<td>
+							<td data-label="Trạng thái"><?php echo htmlspecialchars($wallet['status']); ?></td>
+							<td data-label="Ngày tạo"><?php echo htmlspecialchars($wallet['created_at']); ?></td>
+							<td data-label="Hành động">
 								<button class="deleteWallet cta-button" data-id="<?php echo $wallet['id']; ?>">Xóa</button>
 							</td>
 						</tr>
