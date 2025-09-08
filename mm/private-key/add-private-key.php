@@ -13,10 +13,23 @@ use StephenHill\Base58;
 // Log request
 log_message("add-private-key.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'DEBUG');
 
-// CSRF bảo vệ
+// Protect POST requests with CSRF
 csrf_protect();
+
+// Set CSRF cookie for potential AJAX requests
+if (!set_csrf_cookie()) {
+    log_message("Failed to set CSRF cookie", 'make-market.log', 'make-market', 'ERROR');
+} else {
+    log_message("CSRF cookie set successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+}
+
+// Generate CSRF token
 $csrf_token = generate_csrf_token();
-set_csrf_cookie();
+if ($csrf_token === false) {
+    log_message("Failed to generate CSRF token", 'make-market.log', 'make-market', 'ERROR');
+} else {
+    log_message("CSRF token generated successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+}
 
 // Kết nối database
 try {
@@ -32,7 +45,7 @@ try {
 $public_key = $_SESSION['public_key'] ?? null;
 if (!$public_key) {
     log_message("Không tìm thấy public key trong session, chuyển hướng đến login", 'make-market.log', 'make-market', 'INFO');
-    $_SESSION['redirect_url'] = '/mm/private-key';
+    $_SESSION['redirect_url'] = '/mm/add-private-key';
     header('Location: /acc/connect');
     exit;
 }
