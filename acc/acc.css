@@ -95,8 +95,6 @@
 /* Heading Styling */
 .acc-content h1 {
   color: var(--acc-color-primary);
-  margin-bottom: var(--acc-spacing-lg);
-  font-weight: 600;
   transition: var(--acc-transition);
 }
 
