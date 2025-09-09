@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->commit();
             log_message("Lưu thành công " . count($validWallets) . " private key cho user_id=$user_id", 'private-key-page.log', 'make-market', 'INFO');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'message' => 'Lưu private key thành công']);
+            echo json_encode(['status' => 'success', 'message' => 'Lưu private key thành công', 'redirect' => '/mm/list-private-key']);
             exit;
         } catch (PDOException $e) {
             $pdo->rollBack();
@@ -152,14 +152,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Lấy danh sách ví hiện có
-$stmt = $pdo->prepare("SELECT id, wallet_name, public_key, created_at, status FROM private_key WHERE user_id = ?");
-$stmt->execute([$user_id]);
-$existingWallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 // SEO meta
-$page_title = "Quản lý Private Key - Vina Network";
-$page_description = "Thêm và quản lý private key cho giao dịch Solana trên Vina Network.";
+$page_title = "Thêm Private Key - Vina Network";
+$page_description = "Thêm private key cho giao dịch Solana trên Vina Network.";
 $page_css = ['/mm/private-key/add-private-key.css'];
 ?>
 
@@ -170,7 +165,7 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 <?php include $root_path . 'include/navbar.php'; ?>
 <div class="mm-container">
 	<div class="mm-content">
-		<h1><i class="fas fa-key"></i> Quản lý Private Key</h1>
+		<h1><i class="fas fa-key"></i> Thêm Private Key</h1>
 		
 		<!-- Form thêm private key -->
 		<form id="addPrivateKeyForm" method="POST">
@@ -184,34 +179,9 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 					<button type="button" class="removeKey">Xóa</button>
 				</div>
 			</div>
-			<button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Add private key</button>
+			<button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Thêm private key</button>
 			<button class="cta-button" type="submit">Lưu</button>
 		</form>
-
-		<!-- Danh sách ví hiện có -->
-		<h2>Danh sách ví</h2>
-		<table>
-			<thead>
-				<tr>
-					<th>Tên ví</th>
-					<th>Public Key</th>
-					<th>Trạng thái</th>
-					<th>Ngày tạo</th>
-					<th>Hành động</th>
-				</tr>
-			</thead>
-			<tbody>
-				<?php foreach ($existingWallets as $wallet): ?>
-					<tr>
-						<td><?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Ví #' . $wallet['id']); ?></td>
-						<td><a href="https://solscan.io/address/<?php echo htmlspecialchars($wallet['public_key']); ?>" target="_blank"><?php echo htmlspecialchars(substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)); ?></a></td>
-						<td><?php echo htmlspecialchars($wallet['status']); ?></td>
-						<td><?php echo htmlspecialchars($wallet['created_at']); ?></td>
-						<td><button class="cta-button deleteWallet" data-id="<?php echo $wallet['id']; ?>">Xóa</button></td>
-					</tr>
-				<?php endforeach; ?>
-			</tbody>
-		</table>
 
 		<div id="mm-result" class="status-box"></div>
 	</div>
