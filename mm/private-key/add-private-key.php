@@ -207,7 +207,7 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 						<td><a href="https://solscan.io/address/<?php echo htmlspecialchars($wallet['public_key']); ?>" target="_blank"><?php echo htmlspecialchars(substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)); ?></a></td>
 						<td><?php echo htmlspecialchars($wallet['status']); ?></td>
 						<td><?php echo htmlspecialchars($wallet['created_at']); ?></td>
-						<td><button class="deleteWallet" data-id="<?php echo $wallet['id']; ?>">Xóa</button></td>
+						<td><button class="cta-button deleteWallet" data-id="<?php echo $wallet['id']; ?>">Xóa</button></td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>
