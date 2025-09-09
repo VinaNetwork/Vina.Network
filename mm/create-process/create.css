@@ -160,7 +160,6 @@
 #makeMarketForm label {
   display: block;
   margin: var(--mm-spacing-md) 0 var(--mm-spacing-xs);
-  font-weight: 600;
   color: var(--mm-color-text);
 }
 
@@ -168,14 +167,12 @@
 #makeMarketForm textarea,
 #makeMarketForm select {
   width: 100%;
-  padding: var(--mm-spacing-md);
   border: 1px solid var(--mm-color-input-border);
-  border-radius: var(--mm-border-radius);
   background: var(--mm-color-input-background);
   color: var(--mm-color-text);
-  font-size: 1rem;
   transition: var(--mm-transition);
   box-sizing: border-box;
+  padding: var(--mm-spacing-md);
 }
 
 #makeMarketForm input:focus,
@@ -184,6 +181,7 @@
   outline: none;
   border-color: var(--mm-color-primary);
   box-shadow: var(--mm-shadow-focus);
+  background: var(--mm-color-input-focus);
 }
 
 #makeMarketForm textarea {
@@ -211,7 +209,7 @@
 }
 
 .check-box input[type="checkbox"] {
-  width: auto;
+  width: auto !important;
   margin: 0 var(--mm-spacing-sm) 0 0;
   transform: scale(1.2);
 }
@@ -226,28 +224,13 @@
   transform: scale(1.3);
 }
 
-/* Note text */
-.note {
-  font-size: 0.9rem;
-  color: var(--mm-color-text-muted);
-  margin: var(--mm-spacing-xs) 0 var(--mm-spacing-md);
-  font-style: italic;
-}
-
 /* Button Styles */
 .cta-button {
-  background: linear-gradient(45deg, var(--mm-color-primary), var(--mm-color-primary-dark));
-  color: #fff;
   padding: var(--mm-spacing-md) var(--mm-spacing-lg);
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
   font-size: 1.1rem;
   font-weight: 600;
-  transition: var(--mm-transition);
   width: 100%;
   margin-top: var(--mm-spacing-xl);
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
 }
 
 .cta-button:hover:not(:disabled) {
@@ -311,19 +294,19 @@
 }
 
 /* History Link */
-.history-link {
+.lists-process {
   margin-top: var(--mm-spacing-xl);
   text-align: right;
 }
 
-.history-link a {
+.lists-process a {
   color: var(--mm-color-primary);
   text-decoration: none;
   font-weight: 500;
   transition: var(--mm-transition);
 }
 
-.history-link a:hover {
+.lists-process a:hover {
   color: var(--mm-color-text);
   text-decoration: underline;
 }
@@ -428,7 +411,7 @@
   }
   
   .copy-icon,
-  .history-link,
+  .lists-process,
   .cta-button {
     display: none;
   }
