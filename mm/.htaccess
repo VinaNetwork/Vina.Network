@@ -8,7 +8,7 @@ RewriteEngine On
 RewriteBase /mm/
 
 # Create Page
-RewriteRule ^create$ create.php [L,NC,QSA]
+RewriteRule ^create$ create/create.php [L,NC,QSA]
 
 # Lists process
 RewriteRule ^lists-process$ lists-process/lists-process.php [L,NC,QSA]
