@@ -530,7 +530,7 @@ $defaultSlippage = 0.5; // Slippage
 
         <!-- Link to Transaction History -->
         <div class="lists-process">
-            <a href="/mm/lists-process">View lists process</a>
+            <a href="/mm/lists">View lists process</a>
         </div>
     </div>
 </div>
