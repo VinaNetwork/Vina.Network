@@ -35,7 +35,7 @@
   --mm-border-radius-sm: 5px;
   --mm-transition: all 0.3s ease;
   
-  --mm-navbar-height: 72px;
+  --mm-navbar-height: 64px;
   --mm-navbar-height-mobile: 64px;
 }
 
@@ -83,10 +83,7 @@
 
 .mm-content h1 {
   color: var(--mm-color-primary);
-  margin-bottom: var(--mm-spacing-lg);
-  font-weight: 600;
   text-align: center;
-  font-size: 2.2rem;
 }
 
 .mm-content h1 i {
@@ -98,7 +95,6 @@
   width: 100%;
   border-collapse: collapse;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--mm-border-radius);
   overflow: hidden;
   margin: var(--mm-spacing-xl) 0;
   font-size: 0.95rem;
@@ -298,10 +294,6 @@
     margin: var(--mm-spacing-sm);
     overflow-x: auto;
   }
-
-  .mm-content h1 {
-    font-size: 1.8rem;
-  }
   
   .wallet-table {
     font-size: 0.85rem;
@@ -362,27 +354,6 @@
   .deleteWallet {
     width: 100%;
     text-align: center;
-  }
-}
-
-/* Extra small devices */
-@media screen and (max-width: 480px) {
-  .mm-content {
-    padding: var(--mm-spacing-md);
-  }
-  
-  .mm-content h1 {
-    font-size: 1.5rem;
-  }
-  
-  .wallet-table td:before {
-    width: 40%;
-    font-size: 0.8rem;
-  }
-  
-  .deleteWallet {
-    font-size: 0.8rem;
-    padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
   }
 }
 
