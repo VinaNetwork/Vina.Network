@@ -86,7 +86,7 @@ try {
 $page_title = "Admin - Manage Accounts";
 $page_description = "Admin panel to manage user accounts on Vina Network";
 $page_keywords = "Vina Network, admin, manage accounts";
-$page_css = ['/manage/admin/adm.css'];
+$page_css = ['/manage/adm/admin.css'];
 ?>
 
 <!DOCTYPE html>
@@ -151,7 +151,7 @@ $page_css = ['/manage/admin/adm.css'];
 </script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script defer src="/manage/admin/adm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/manage/adm/admin.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
