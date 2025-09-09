@@ -42,30 +42,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('privateKeysContainer');
     const addButton = document.getElementById('addPrivateKey');
 
-    // Thêm private key mới
+    // Add new private key
     addButton.addEventListener('click', () => {
         const newRow = document.createElement('div');
         newRow.className = 'privateKeyRow';
         newRow.innerHTML = `
-            <label>Tên ví (tùy chọn):</label>
-            <input type="text" name="walletNames[]" placeholder="Nhập tên ví...">
+            <label>Wallet name (optional):</label>
+            <input type="text" name="walletNames[]" placeholder="Enter wallet name...">
             <label>Private Key:</label>
-            <textarea name="privateKeys[]" required placeholder="Nhập private key..."></textarea>
-            <button type="button" class="removeKey">Xóa</button>
+            <textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
+            <button type="button" class="removeKey">Remove</button>
         `;
         container.appendChild(newRow);
-        log_message('Thêm trường private key mới', 'private-key-page.log', 'make-market', 'INFO');
+        log_message('Added new private key field', 'private-key-page.log', 'make-market', 'INFO');
     });
 
-    // Xóa private key
+    // Remove private key
     container.addEventListener('click', (e) => {
         if (e.target.classList.contains('removeKey') && container.children.length > 1) {
             e.target.parentElement.remove();
-            log_message('Xóa trường private key', 'private-key-page.log', 'make-market', 'INFO');
+            log_message('Removed private key field', 'private-key-page.log', 'make-market', 'INFO');
         }
     });
 
-    // Xử lý gửi form
+    // Handle form submission
     document.getElementById('addPrivateKeyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showError(response.data.message);
             }
         } catch (error) {
-            showError(`Lỗi gửi form: ${error.response?.data?.message || error.message}`);
+            showError(`Form submission error: ${error.response?.data?.message || error.message}`);
         } finally {
             submitButton.disabled = false;
         }
@@ -106,6 +106,6 @@ function showSuccess(message) {
 
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
-    resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active', 'error');">Xóa thông báo</button>`;
+    resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active', 'error');">Clear notification</button>`;
     resultDiv.classList.add('active', 'error');
 }
