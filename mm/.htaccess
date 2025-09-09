@@ -11,7 +11,7 @@ RewriteBase /mm/
 RewriteRule ^create$ create-process/create.php [L,NC,QSA]
 
 # Lists process
-RewriteRule ^lists-process$ lists-process/lists-process.php [L,NC,QSA]
+RewriteRule ^lists$ lists-process/lists.php [L,NC,QSA]
 
 # Private key page
 RewriteRule ^add-private-key$ private-key/add-private-key.php [L,NC,QSA]
