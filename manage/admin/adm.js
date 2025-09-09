@@ -51,7 +51,7 @@ function log_message(message, log_file = 'manage-admin.log', module = 'accounts'
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
         return;
     }
-    axios.post('/acc/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
+    axios.post('/manage/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'X-Auth-Token': authToken
