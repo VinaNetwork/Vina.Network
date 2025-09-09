@@ -74,7 +74,7 @@ if ($is_logged_in) {
             <ul class="dropdown-menu">
                 <li><a href="/mm/create" class="dropdown-link"><i class="fas fa-plus-circle"></i> Create process</a></li>
                 <?php if ($is_logged_in): ?>
-                    <li><a href="/mm/history" class="dropdown-link"><i class="fa-solid fa-list-ol"></i> Lists process</a></li>
+                    <li><a href="/mm/lists-process" class="dropdown-link"><i class="fa-solid fa-list-ol"></i> Lists process</a></li>
                     <li><a href="/mm/add-private-key" class="dropdown-link"><i class="fa-solid fa-plus"></i> Add private key</a></li>
                     <li><a href="/mm/list-private-key" class="dropdown-link"><i class="fa-solid fa-list-ul"></i> Lists private key</a></li>
                 <?php endif; ?>
