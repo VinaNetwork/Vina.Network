@@ -202,7 +202,7 @@
 
 /* Checkbox styling */
 .check-box {
-  display: flex;
+  display: flex !important;
   align-items: center;
   margin: var(--mm-spacing-md) 0;
   cursor: pointer;
