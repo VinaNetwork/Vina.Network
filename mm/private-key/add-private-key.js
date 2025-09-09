@@ -63,6 +63,21 @@ function log_message(message, log_file = 'private-key-page.log', module = 'make-
     }).catch(err => console.error('Log error:', err.message));
 }
 
+// Refresh CSRF token
+async function refreshCSRFToken() {
+    const response = await axios.get('/mm/refresh-csrf', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Auth-Token': authToken
+        },
+        withCredentials: true
+    });
+    if (response.status !== 200 || !response.data.csrf_token) {
+        throw new Error('Failed to refresh CSRF token');
+    }
+    return response.data.csrf_token;
+}
+
 // Add Private key
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('privateKeysContainer');
