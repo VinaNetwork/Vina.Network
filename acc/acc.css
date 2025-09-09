@@ -1,5 +1,5 @@
 /* ============================================================================
- * File: acc/acc.css (Optimized Version)
+ * File: acc/acc.css
  * Description: CSS styles for the Accounts page of Vina Network.
  * Created by: Vina Network
  * ========================================================================== */
@@ -100,6 +100,10 @@
 
 .acc-content:hover h1 {
   color: var(--acc-color-text);
+}
+
+.acc-content {
+	margin-right: var(--acc-spacing-sm);
 }
 
 /* Profile Section */
