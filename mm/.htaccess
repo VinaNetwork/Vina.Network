@@ -10,6 +10,9 @@ RewriteBase /mm/
 # Create Page
 RewriteRule ^create$ create.php [L,NC,QSA]
 
+# Lists process
+RewriteRule ^lists-process$ lists-process/lists-process.php [L,NC,QSA]
+
 # Private key page
 RewriteRule ^add-private-key$ private-key/add-private-key.php [L,NC,QSA]
 RewriteRule ^delete-private-key$ private-key/delete-private-key.php [L,NC,QSA]
