@@ -1,10 +1,10 @@
 <?php
-// File: mm/private-key/list-private-key.php
+// File: mm/private-key/list/list-private-key.php
 // Description: Page displaying the list of user account private keys
 // Created by: Vina Network
 
 ob_start();
-$root_path = __DIR__ . '/../../';
+$root_path = __DIR__ . '/../../../';
 // constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
@@ -89,7 +89,7 @@ try {
 // SEO meta
 $page_title = "Private Key List - Vina Network";
 $page_description = "View and manage your private key list on Vina Network.";
-$page_css = ['/mm/private-key/list-private-key.css'];
+$page_css = ['/mm/private-key/list/list-private-key.css'];
 ?>
 
 <!DOCTYPE html>
@@ -157,7 +157,7 @@ $page_css = ['/mm/private-key/list-private-key.css'];
 </script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script defer src="/mm/private-key/list-private-key.js?t=<?php echo time(); ?>"></script>
+<script defer src="/mm/private-key/list/list-private-key.js?t=<?php echo time(); ?>"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
