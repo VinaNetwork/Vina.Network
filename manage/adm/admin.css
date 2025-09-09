@@ -88,6 +88,10 @@
   text-align: center;
 }
 
+.admin-content i {
+  margin-right: var(--admin-spacing-sm);
+}
+
 /* Message Styling */
 .success-message {
   color: var(--admin-color-success);
