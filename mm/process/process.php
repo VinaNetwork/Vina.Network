@@ -173,7 +173,7 @@ $page_og_title = "Make Market Process: Automate Solana Token Trading";
 $page_og_description = "Execute Solana token swaps using Jupiter Aggregator.";
 $page_og_url = BASE_URL . "mm/";
 $page_canonical = BASE_URL . "mm/";
-$page_css = ['/mm/css/process.css'];
+$page_css = ['/mm/process/process.css'];
 ?>
 
 <!DOCTYPE html>
