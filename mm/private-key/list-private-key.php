@@ -135,7 +135,7 @@ $page_css = ['/mm/private-key/list-private-key.css'];
 							<td data-label="Trạng thái"><?php echo htmlspecialchars($wallet['status']); ?></td>
 							<td data-label="Ngày tạo"><?php echo htmlspecialchars($wallet['created_at']); ?></td>
 							<td data-label="Hành động">
-								<button class="deleteWallet cta-button" data-id="<?php echo $wallet['id']; ?>">Xóa</button>
+								<button class="deleteWallet cta-button" data-id="<?php echo $wallet['id']; ?>"><i class="fas fa-trash"></i> Xóa</button>
 							</td>
 						</tr>
 					<?php endforeach; ?>
