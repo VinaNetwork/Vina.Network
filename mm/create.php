@@ -549,8 +549,8 @@ $defaultSlippage = 0.5; // Slippage
         <div id="mm-result" class="status-box"></div>
 
         <!-- Link to Transaction History -->
-        <div class="history-link">
-            <a href="/mm/history/">View Transaction History</a>
+        <div class="lists-process">
+            <a href="/mm/lists-process">View lists process</a>
         </div>
     </div>
 </div>
