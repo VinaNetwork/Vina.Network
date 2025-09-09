@@ -72,6 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
 
+        // Check for duplicate private keys in form
+        const privateKeyInputs = Array.from(container.querySelectorAll('textarea[name="privateKeys[]"]')).map(input => input.value.trim());
+        const uniqueKeys = new Set(privateKeyInputs.filter(key => key !== ''));
+        if (uniqueKeys.size < privateKeyInputs.length) {
+            showError('Có private key trùng lặp trong form');
+            submitButton.disabled = false;
+            return;
+        }
+
         try {
             const csrfToken = await refreshCSRFToken();
             formData.set('csrf_token', csrfToken);
@@ -86,7 +95,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.data.status === 'success') {
                 showSuccess(response.data.message);
-                setTimeout(() => window.location.href = '/mm/list-private-key', 1000);
+                // Reset form to one empty row
+                container.innerHTML = `
+                    <div class="privateKeyRow">
+                        <label>Wallet name (optional):</label>
+                        <input type="text" name="walletNames[]" placeholder="Enter wallet name...">
+                        <label>Private Key:</label>
+                        <textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
+                        <button type="button" class="removeKey">Remove</button>
+                    </div>
+                `;
+                setTimeout(() => window.location.href = '/mm lust-private-key', 1000);
             } else {
                 showError(response.data.message);
             }
