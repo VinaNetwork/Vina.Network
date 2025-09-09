@@ -1,5 +1,5 @@
 /* ============================================================================
- * File: mm/private-key/add-private-key.css (Optimized Version)
+ * File: mm/private-key/add-private-key.css
  * Description: Styles for the Add Private Key page
  * Created by: Vina Network
  * ============================================================================ */
@@ -39,7 +39,7 @@
   --mm-border-radius-sm: 5px;
   --mm-transition: all 0.3s ease;
   
-  --mm-navbar-height: 72px;
+  --mm-navbar-height: 64px;
   --mm-navbar-height-mobile: 64px;
 }
 
@@ -87,10 +87,7 @@
 
 .mm-content h1 {
   color: var(--mm-color-primary);
-  margin-bottom: var(--mm-spacing-lg);
-  font-weight: 600;
   text-align: center;
-  font-size: 2.2rem;
 }
 
 .mm-content h1 i {
@@ -100,35 +97,7 @@
 .mm-content h2 {
   color: var(--mm-color-primary);
   margin: var(--mm-spacing-xl) 0 var(--mm-spacing-lg);
-  font-weight: 600;
   border-bottom: 2px solid var(--mm-color-primary);
-  padding-bottom: var(--mm-spacing-sm);
-}
-
-/* Account Info */
-#account-info {
-  margin: var(--mm-spacing-xl) 0;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--mm-border-radius);
-  padding: var(--mm-spacing-md);
-  border-left: 4px solid var(--mm-color-primary);
-}
-
-#account-info p {
-  margin: 0;
-  color: var(--mm-color-text);
-  font-weight: 500;
-}
-
-#account-info a {
-  color: var(--mm-color-primary);
-  text-decoration: none;
-  transition: var(--mm-transition);
-}
-
-#account-info a:hover {
-  color: var(--mm-color-text);
-  text-decoration: underline;
 }
 
 /* Private Key Form */
@@ -155,15 +124,11 @@
 .privateKeyRow input[type="text"],
 .privateKeyRow textarea {
   width: 100%;
-  padding: var(--mm-spacing-md);
   border: 1px solid var(--mm-color-input-border);
-  border-radius: var(--mm-border-radius-sm);
   background: var(--mm-color-input-background);
   color: var(--mm-color-text);
-  font-size: 1rem;
   transition: var(--mm-transition);
   box-sizing: border-box;
-  font-family: monospace;
 }
 
 .privateKeyRow input[type="text"]:focus,
@@ -197,51 +162,10 @@
   transform: scale(1.05);
 }
 
-#addPrivateKey {
-  background: var(--mm-color-primary);
-  color: white;
-  border: none;
-  border-radius: var(--mm-border-radius);
-  padding: var(--mm-spacing-sm) var(--mm-spacing-md);
-  cursor: pointer;
-  font-weight: 600;
-  margin-bottom: var(--mm-spacing-md);
-  transition: var(--mm-transition);
-}
-
-#addPrivateKey:hover {
-  background: var(--mm-color-primary-dark);
-  transform: translateY(-2px);
-}
-
 /* Button Styles */
 .cta-button {
-  background: linear-gradient(45deg, var(--mm-color-primary), var(--mm-color-primary-dark));
-  color: #fff;
-  padding: var(--mm-spacing-md) var(--mm-spacing-lg);
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 600;
-  transition: var(--mm-transition);
   width: 100%;
   margin-top: var(--mm-spacing-md);
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
-}
-
-.cta-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
-}
-
-.cta-button:disabled {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--mm-color-text-muted);
-  cursor: not-allowed;
-  opacity: 0.6;
-  transform: none;
-  box-shadow: none;
 }
 
 /* Wallet Table */
@@ -249,7 +173,6 @@ table {
   width: 100%;
   border-collapse: collapse;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--mm-border-radius);
   overflow: hidden;
   margin: var(--mm-spacing-xl) 0;
 }
@@ -400,7 +323,6 @@ table a:hover {
   .cta-button,
   .removeKey,
   .deleteWallet,
-  #addPrivateKey,
   table tr,
   .privateKeyRow input[type="text"],
   .privateKeyRow textarea {
@@ -418,14 +340,6 @@ table a:hover {
   .mm-content {
     padding: var(--mm-spacing-lg);
     margin: var(--mm-spacing-sm);
-  }
-
-  .mm-content h1 {
-    font-size: 1.8rem;
-  }
-  
-  .mm-content h2 {
-    font-size: 1.4rem;
   }
   
   .privateKeyRow {
@@ -479,27 +393,6 @@ table a:hover {
     white-space: nowrap;
     font-weight: 600;
     color: var(--mm-color-primary);
-  }
-}
-
-/* Extra small devices */
-@media screen and (max-width: 480px) {
-  .mm-content {
-    padding: var(--mm-spacing-md);
-  }
-  
-  .mm-content h1 {
-    font-size: 1.5rem;
-  }
-  
-  .privateKeyRow textarea {
-    min-height: 60px;
-    font-size: 0.9rem;
-  }
-  
-  table td:before {
-    width: 40%;
-    font-size: 0.8rem;
   }
 }
 
@@ -558,7 +451,6 @@ table a:hover {
   .copy-icon,
   .removeKey,
   .deleteWallet,
-  #addPrivateKey,
   .cta-button {
     display: none;
   }
