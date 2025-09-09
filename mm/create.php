@@ -489,7 +489,7 @@ $defaultSlippage = 0.5; // Slippage
 <div class="mm-container">
     <div class="mm-content">
         <h1><i class="fas fa-chart-line"></i> Make Market</h1>
-        <div id="account-info">
+        <div class="mm-network">
             <p>Network: <?php echo htmlspecialchars(SOLANA_NETWORK); ?></p>
         </div>
 
