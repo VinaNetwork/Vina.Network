@@ -22,11 +22,6 @@
   --mm-color-text-muted: #e0e0e0;
   --mm-color-background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
   --mm-color-background-fallback: #1a1a1a;
-  --mm-color-table-border: rgba(221, 221, 221, 0.3);
-  --mm-color-table-header: rgba(255, 255, 255, 0.1);
-  --mm-color-table-row: rgba(255, 255, 255, 0.05);
-  --mm-color-table-row-alt: rgba(255, 255, 255, 0.02);
-  --mm-color-table-row-hover: rgba(255, 255, 255, 0.08);
   --mm-color-input-background: rgba(255, 255, 255, 0.1);
   --mm-color-input-border: rgba(255, 255, 255, 0.3);
   --mm-color-input-focus: rgba(0, 212, 255, 0.3);
@@ -168,58 +163,6 @@
   margin-top: var(--mm-spacing-md);
 }
 
-/* Wallet Table */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-  margin: var(--mm-spacing-xl) 0;
-}
-
-table th,
-table td {
-  padding: var(--mm-spacing-md);
-  border: 1px solid var(--mm-color-table-border);
-  text-align: left;
-  color: var(--mm-color-text);
-}
-
-table th {
-  background-color: var(--mm-color-table-header);
-  font-weight: 600;
-  color: var(--mm-color-primary);
-}
-
-table tr {
-  transition: var(--mm-transition);
-  background-color: var(--mm-color-table-row);
-}
-
-table tr:nth-child(even) {
-  background-color: var(--mm-color-table-row-alt);
-}
-
-table tr:hover {
-  background-color: var(--mm-color-table-row-hover);
-}
-
-table a {
-  color: var(--mm-color-primary);
-  text-decoration: none;
-  transition: var(--mm-transition);
-}
-
-table a:hover {
-  color: var(--mm-color-text);
-  text-decoration: underline;
-}
-
-.deleteWallet {
-  padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
-  font-size: 0.8rem;
-}
-
 /* Status Box */
 .status-box {
   max-height: 300px;
@@ -258,61 +201,11 @@ table a:hover {
   padding: var(--mm-spacing-sm) var(--mm-spacing-md);
 }
 
-/* Copy icon */
-.copy-icon {
-  cursor: pointer;
-  font-size: 1.1rem;
-  color: var(--mm-color-primary-dark);
-  transition: var(--mm-transition);
-  margin-left: var(--mm-spacing-xs);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(0, 123, 255, 0.1);
-}
-
-.copy-icon:hover {
-  color: var(--mm-color-primary);
-  background: rgba(0, 123, 255, 0.2);
-  transform: scale(1.1);
-}
-
-.copy-icon.copied {
-  color: var(--mm-color-success);
-  background: rgba(40, 167, 69, 0.1);
-}
-
-.copy-tooltip {
-  position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--mm-color-success);
-  color: var(--mm-color-text);
-  padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
-  border-radius: var(--mm-border-radius-sm);
-  font-size: 0.75rem;
-  z-index: 10;
-  box-shadow: var(--mm-shadow);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.copy-tooltip.show {
-  opacity: 1;
-}
-
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .copy-icon,
   .cta-button,
   .removeKey,
   .deleteWallet,
-  table tr,
   .privateKeyRow input[type="text"],
   .privateKeyRow textarea {
     transition: none;
@@ -334,55 +227,6 @@ table a:hover {
   .privateKeyRow {
     padding: var(--mm-spacing-sm);
   }
-  
-  table {
-    font-size: 0.9rem;
-  }
-  
-  table th,
-  table td {
-    padding: var(--mm-spacing-sm);
-  }
-  
-  /* Stack table on mobile */
-  table,
-  table thead,
-  table tbody,
-  table th,
-  table td,
-  table tr {
-    display: block;
-  }
-  
-  table thead tr {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-  }
-  
-  table tr {
-    border: 1px solid var(--mm-color-table-border);
-    margin-bottom: var(--mm-spacing-sm);
-    border-radius: var(--mm-border-radius-sm);
-  }
-  
-  table td {
-    border: none;
-    border-bottom: 1px solid var(--mm-color-table-border);
-    position: relative;
-    padding-left: 50%;
-  }
-  
-  table td:before {
-    content: attr(data-label);
-    position: absolute;
-    left: var(--mm-spacing-sm);
-    width: 45%;
-    padding-right: var(--mm-spacing-sm);
-    white-space: nowrap;
-    font-weight: 600;
-    color: var(--mm-color-primary);
-  }
 }
 
 /* Dark mode support */
@@ -401,11 +245,6 @@ table a:hover {
   .privateKeyRow input[type="text"],
   .privateKeyRow textarea {
     border: 2px solid var(--mm-color-input-border);
-  }
-  
-  table th,
-  table td {
-    border: 2px solid var(--mm-color-table-border);
   }
 }
 
@@ -431,13 +270,6 @@ table a:hover {
     color: #000 !important;
   }
   
-  table th,
-  table td {
-    color: #000 !important;
-    border: 1px solid #000;
-  }
-  
-  .copy-icon,
   .removeKey,
   .deleteWallet,
   .cta-button {
