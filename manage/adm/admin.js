@@ -1,5 +1,5 @@
 // ============================================================================
-// File: manage/admin/adm.js
+// File: manage/adm/admin.js
 // Description: JavaScript file
 // Created by: Vina Network
 // ============================================================================
