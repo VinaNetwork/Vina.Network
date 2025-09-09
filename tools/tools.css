@@ -10,10 +10,15 @@ h1, h2, h3 {text-align: center;}
 /* Tools Container */
 .tools-container {
     margin-top: 64px;
-    max-width: 1000px;
-    background: #ffffff;
     padding: 30px;
+}
+
+.tools-content {
+    max-width: 700px;
+    width: 100%;
     margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
 }
 
 /* Card-based tools navigation */
