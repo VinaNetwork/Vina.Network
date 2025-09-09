@@ -187,7 +187,8 @@ li {
 /* Input */
 input,
 textarea,
-textarea {
+textarea,
+select {
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
 }
