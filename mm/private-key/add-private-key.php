@@ -13,31 +13,31 @@ use Attestto\SolanaPhpSdk\Keypair;
 use StephenHill\Base58;
 
 // Log request
-log_message("add-private-key.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'DEBUG');
+log_message("add-private-key.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}", 'private-key-page.log', 'make-market', 'DEBUG');
 
 // Protect POST requests with CSRF
 csrf_protect();
 
 // Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Failed to set CSRF cookie", 'private-key-page.log', 'make-market', 'ERROR');
 } else {
-    log_message("CSRF cookie set successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+    log_message("CSRF cookie set successfully for Make Market page", 'private-key-page.log', 'make-market', 'INFO');
 }
 
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Failed to generate CSRF token", 'private-key-page.log', 'make-market', 'ERROR');
 } else {
-    log_message("CSRF token generated successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+    log_message("CSRF token generated successfully for Make Market page", 'private-key-page.log', 'make-market', 'INFO');
 }
 
 // Kết nối database
 try {
     $pdo = get_db_connection();
 } catch (Exception $e) {
-    log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cơ sở dữ liệu']);
     exit;
@@ -46,7 +46,7 @@ try {
 // Kiểm tra session
 $public_key = $_SESSION['public_key'] ?? null;
 if (!$public_key) {
-    log_message("Không tìm thấy public key trong session, chuyển hướng đến login", 'make-market.log', 'make-market', 'INFO');
+    log_message("Không tìm thấy public key trong session, chuyển hướng đến login", 'private-key-page.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm/add-private-key';
     header('Location: /acc/connect');
     exit;
@@ -58,13 +58,13 @@ try {
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        log_message("Không tìm thấy tài khoản cho public_key: $public_key", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Không tìm thấy tài khoản cho public_key: $public_key", 'private-key-page.log', 'make-market', 'ERROR');
         header('Location: /acc/connect');
         exit;
     }
     $user_id = $account['id'];
 } catch (PDOException $e) {
-    log_message("Lỗi truy vấn tài khoản: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Lỗi truy vấn tài khoản: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Lỗi truy vấn tài khoản']);
     exit;
@@ -133,19 +133,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$user_id, $wallet['public_key'], $wallet['private_key'], $wallet['wallet_name']]);
             }
             $pdo->commit();
-            log_message("Lưu thành công " . count($validWallets) . " private key cho user_id=$user_id", 'make-market.log', 'make-market', 'INFO');
+            log_message("Lưu thành công " . count($validWallets) . " private key cho user_id=$user_id", 'private-key-page.log', 'make-market', 'INFO');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'message' => 'Lưu private key thành công']);
             exit;
         } catch (PDOException $e) {
             $pdo->rollBack();
-            log_message("Lỗi lưu private key: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+            log_message("Lỗi lưu private key: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Lỗi lưu private key']);
             exit;
         }
     } else {
-        log_message("Lỗi xác thực private key: " . implode(", ", $errors), 'make-market.log', 'make-market', 'ERROR');
+        log_message("Lỗi xác thực private key: " . implode(", ", $errors), 'private-key-page.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => implode(", ", $errors)]);
         exit;
