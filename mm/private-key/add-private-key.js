@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.data.status === 'success') {
                 showSuccess(response.data.message);
-                setTimeout(() => window.location.reload(), 1000);
+                setTimeout(() => window.location.href = '/mm/list-private-key', 1000);
             } else {
                 showError(response.data.message);
             }
@@ -95,33 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             submitButton.disabled = false;
         }
-    });
-
-    // Xóa ví
-    document.querySelectorAll('.deleteWallet').forEach(button => {
-        button.addEventListener('click', async () => {
-            const walletId = button.getAttribute('data-id');
-            try {
-                const csrfToken = await refreshCSRFToken();
-                const response = await axios.post('/mm/delete-private-key', { walletId, csrf_token: csrfToken }, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-Token': csrfToken,
-                        'X-Auth-Token': authToken
-                    },
-                    withCredentials: true
-                });
-
-                if (response.data.status === 'success') {
-                    showSuccess('Xóa ví thành công');
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    showError(response.data.message);
-                }
-            } catch (error) {
-                showError(`Lỗi xóa ví: ${error.response?.data?.message || error.message}`);
-            }
-        });
     });
 });
 
