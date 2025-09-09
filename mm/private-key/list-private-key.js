@@ -1,26 +1,28 @@
+// ============================================================================
 // File: mm/private-key/list-private-key.js
 // Description: JavaScript cho trang danh sách private key
 // Created by: Vina Network
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('list-private-key.js loaded');
-    log_message('list-private-key.js loaded', 'make-market.log', 'make-market', 'DEBUG');
+    log_message('list-private-key.js loaded', 'private-key-page.log', 'make-market', 'DEBUG');
 
     // Sao chép public key
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
             console.log('Copy icon clicked');
-            log_message('Copy icon clicked', 'make-market.log', 'make-market', 'INFO');
+            log_message('Copy icon clicked', 'private-key-page.log', 'make-market', 'INFO');
 
             const fullAddress = icon.getAttribute('data-full');
             const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
             console.log(`Attempting to copy address: ${shortAddress}`);
-            log_message(`Attempting to copy address: ${shortAddress}`, 'make-market.log', 'make-market', 'DEBUG');
+            log_message(`Attempting to copy address: ${shortAddress}`, 'private-key-page.log', 'make-market', 'DEBUG');
 
             navigator.clipboard.writeText(fullAddress).then(() => {
                 console.log('Copy successful');
-                log_message('Copy successful', 'make-market.log', 'make-market', 'INFO');
+                log_message('Copy successful', 'private-key-page.log', 'make-market', 'INFO');
                 icon.classList.add('copied');
                 const tooltip = document.createElement('span');
                 tooltip.className = 'copy-tooltip';
@@ -32,11 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     icon.classList.remove('copied');
                     tooltip.remove();
                     console.log('Copy feedback removed');
-                    log_message('Copy feedback removed', 'make-market.log', 'make-market', 'DEBUG');
+                    log_message('Copy feedback removed', 'private-key-page.log', 'make-market', 'DEBUG');
                 }, 2000);
             }).catch(err => {
                 console.error('Clipboard API failed:', err.message);
-                log_message(`Clipboard API failed: ${err.message}`, 'make-market.log', 'make-market', 'ERROR');
+                log_message(`Clipboard API failed: ${err.message}`, 'private-key-page.log', 'make-market', 'ERROR');
                 showError(`Unable to copy: ${err.message}`);
             });
         });
@@ -50,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const csrfToken = await refreshCSRFToken();
-                const response = await axios.post('/mm/private-key/delete-private-key', {
+                const response = await axios.post('/mm/delete-private-key', {
                     walletId,
                     csrf_token: csrfToken
                 }, {
@@ -109,7 +111,7 @@ async function refreshCSRFToken() {
 }
 
 // Hàm ghi log
-function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
+function log_message(message, log_file = 'private-key-page.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) return;
     axios.post('/mm/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
         headers: {
