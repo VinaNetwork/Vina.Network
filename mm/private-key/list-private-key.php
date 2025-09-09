@@ -88,27 +88,18 @@ try {
 // SEO meta
 $page_title = "Danh sách Private Key - Vina Network";
 $page_description = "Xem và quản lý danh sách private key của bạn trên Vina Network.";
-$page_css = ['mm/private-key/list-private-key.css'];
+$page_css = ['/mm/private-key/list-private-key.css'];
 ?>
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <?php include $root_path . 'include/header.php'; ?>
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
 <div class="mm-container">
 	<div class="mm-content">
 		<h1><i class="fas fa-key"></i> Danh sách Private Key</h1>
-		<div id="account-info">
-			<p>Tài khoản: 
-				<a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
-					<?php echo htmlspecialchars($short_public_key); ?>
-				</a>
-				<i class="fas fa-copy copy-icon" title="Sao chép địa chỉ" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
-			</p>
-			<p><a href="/mm/private-key/add-private-key">Thêm Private Key mới</a></p>
-		</div>
-
+		
 		<!-- Bảng danh sách ví -->
 		<table class="wallet-table">
 			<thead>
