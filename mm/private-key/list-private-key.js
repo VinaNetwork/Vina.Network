@@ -1,6 +1,6 @@
 // ============================================================================
 // File: mm/private-key/list-private-key.js
-// Description: JavaScript cho trang danh sách private key
+// Description: JavaScript for private key list page
 // Created by: Vina Network
 // ============================================================================
 
@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('list-private-key.js loaded');
     log_message('list-private-key.js loaded', 'private-key-page.log', 'make-market', 'DEBUG');
 
-    // Sao chép public key
+    // Copy public key
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
@@ -44,11 +44,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Xóa ví
+    // Delete wallet
     document.querySelectorAll('.deleteWallet').forEach(button => {
         button.addEventListener('click', async () => {
             const walletId = button.getAttribute('data-id');
-            if (!confirm('Bạn có chắc chắn muốn xóa ví này?')) return;
+            if (!confirm('Are you sure you want to delete this wallet?')) return;
 
             try {
                 const csrfToken = await refreshCSRFToken();
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showError(response.data.message);
                 }
             } catch (error) {
-                showError(`Lỗi xóa ví: ${error.response?.data?.message || error.message}`);
+                showError(`Error deleting wallet: ${error.response?.data?.message || error.message}`);
             }
         });
     });
@@ -110,7 +110,7 @@ async function refreshCSRFToken() {
     return response.data.csrf_token;
 }
 
-// Hàm hiển thị thông báo thành công
+// Function to show success message
 function showSuccess(message) {
     const resultDiv = document.getElementById('mm-result');
     resultDiv.innerHTML = `<p>${message}</p>`;
@@ -121,9 +121,9 @@ function showSuccess(message) {
     }, 3000);
 }
 
-// Hàm hiển thị lỗi
+// Function to show error
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
-    resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active', 'error');">Xóa thông báo</button>`;
+    resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active', 'error');">Clear notification</button>`;
     resultDiv.classList.add('active', 'error');
 }
