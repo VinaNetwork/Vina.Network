@@ -318,7 +318,6 @@
     border-bottom: 1px solid var(--mm-color-table-border);
     position: relative;
     padding-left: 50%;
-    text-align: right;
   }
   
   .wallet-table td:before {
@@ -336,6 +335,10 @@
   .wallet-table td[colspan] {
     padding-left: var(--mm-spacing-sm);
     text-align: center;
+  }
+  
+  .wallet-table td:nth-child(4) {
+	text-align: left;
   }
   
   .deleteWallet {
