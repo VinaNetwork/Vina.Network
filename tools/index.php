@@ -95,7 +95,7 @@ $page_css = ['/tools/tools.css'];
     <p class="note" style="<?php echo $tool ? 'display: none;' : ''; ?>">Note: Only supports checking on the Solana blockchain.</p>
 
     <!-- Tool Content Loader -->
-    <div class="tools-content" style="<?php echo !$tool ? 'display: none;' : ''; ?>">
+    <div class="tools-item" style="<?php echo !$tool ? 'display: none;' : ''; ?>">
         <div class="tools-back">
             <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
         </div>
