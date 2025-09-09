@@ -106,7 +106,7 @@ $page_css = ['/mm/private-key/list-private-key.css'];
 				<tr>
 					<th>Tên ví</th>
 					<th>Public Key</th>
-					<th>Private Key (rút gọn)</th>
+					<th>Private Key</th>
 					<th>Trạng thái</th>
 					<th>Ngày tạo</th>
 					<th>Hành động</th>
