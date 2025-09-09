@@ -172,7 +172,6 @@
   color: var(--mm-color-text);
   transition: var(--mm-transition);
   box-sizing: border-box;
-  padding: var(--mm-spacing-md);
 }
 
 #makeMarketForm input:focus,
