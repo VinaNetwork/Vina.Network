@@ -57,7 +57,7 @@ if ($is_logged_in) {
             </a>
             <ul class="dropdown-menu">
                 <?php if ($is_admin): ?>
-                    <li><a href="/acc/admin" class="dropdown-link"><i class="fas fa-user-shield"></i> Admin</a></li>
+                    <li><a href="/manage/ad" class="dropdown-link"><i class="fas fa-user-shield"></i> Admin</a></li>
                 <?php endif; ?>
                 <li><a href="/acc/connect" class="dropdown-link"><i class="fas fa-wallet"></i> Connect</a></li>
                 <?php if ($is_logged_in): ?>
