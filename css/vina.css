@@ -186,11 +186,8 @@ li {
 
 /* Input */
 input {
-  border: unset;
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
-  font-family: inherit;
-  font-size: inherit;
 }
 
 /*  CTA Button Style */
