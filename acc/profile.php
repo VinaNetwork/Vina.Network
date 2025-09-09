@@ -85,7 +85,7 @@ $page_css = ['/acc/acc.css'];
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="acc-container">
     <div class="acc-content">
-        <h1>Your Profile</h1>
+        <h1><i class="fas fa-id-card"></i> Your Profile</h1>
         <div id="account-info" class="acc-info">
             <table>
                 <tr><th>ID:</th><td><?php echo htmlspecialchars($account['id']); ?></td></tr>
