@@ -549,7 +549,7 @@ $defaultSlippage = 0.5; // Slippage
 </script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script defer src="/mm/mm.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /mm/mm.js')"></script>
+<script defer src="/mm/create.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /mm/mm.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
