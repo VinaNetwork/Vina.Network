@@ -184,8 +184,8 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 					<button type="button" class="removeKey">Xóa</button>
 				</div>
 			</div>
-			<button type="button" id="addPrivateKey">+ Thêm ví</button>
-			<button type="submit" class="cta-button">Lưu</button>
+			<button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Add private key</button>
+			<button class="cta-button" type="submit">Lưu</button>
 		</form>
 
 		<!-- Danh sách ví hiện có -->
