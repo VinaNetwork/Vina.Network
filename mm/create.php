@@ -492,19 +492,6 @@ $defaultSlippage = 0.5; // Slippage
         <div id="account-info">
             <table>
                 <tr>
-                    <th>Account:</th>
-                    <td>
-                        <?php if ($short_public_key !== 'Invalid'): ?>
-                            <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank">
-                                <?php echo htmlspecialchars($short_public_key); ?>
-                            </a>
-                            <i class="fas fa-copy copy-icon" title="Copy full address" data-full="<?php echo htmlspecialchars($public_key); ?>"></i>
-                        <?php else: ?>
-                            <span>Invalid address</span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                <tr>
                     <th>Network:</th>
                     <td><?php echo htmlspecialchars(SOLANA_NETWORK); ?></td>
                 </tr>
