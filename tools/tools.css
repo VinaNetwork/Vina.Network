@@ -10,7 +10,6 @@ h1, h2, h3 {text-align: center;}
 /* Tools Container */
 .tools-container {
     margin-top: 64px;
-    padding: 30px;
 }
 
 .tools-content {
@@ -110,7 +109,7 @@ h1, h2, h3 {text-align: center;}
     margin: 20px 0;
 }
 .tools-form input {
-    width: 700px;
+    width: 450px;
 }
 .input-wrapper {
     position: relative;
