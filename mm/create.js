@@ -1,13 +1,13 @@
 // ============================================================================
-// File: mm/mm.js
+// File: mm/create.js
 // Description: JavaScript file for form handling and validation on Make Market page
 // Created by: Vina Network
 // ============================================================================
 
 // Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('mm.js loaded');
-    log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
+    console.log('create.js loaded');
+    log_message('create.js loaded', 'make-market.log', 'make-market', 'DEBUG');
 
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
