@@ -12,14 +12,14 @@ require_once $root_path . 'manage/bootstrap.php';
 // Check session and admin rights
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key && strlen($public_key) >= 8 ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
-log_message("Attempting to access admin page, public_key: $short_public_key, session_role: " . ($_SESSION['role'] ?? 'Not set'), 'accounts.log', 'accounts', 'DEBUG');
+log_message("Attempting to access admin page, public_key: $short_public_key, session_role: " . ($_SESSION['role'] ?? 'Not set'), 'manage-admin.log', 'accounts', 'DEBUG');
 
 // Database connection
 try {
     $pdo = get_db_connection();
-    log_message("Database connection successful for admin page", 'accounts.log', 'accounts', 'INFO');
+    log_message("Database connection successful for admin page", 'manage-admin.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
-    log_message("Database connection failed: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()}", 'manage-admin.log', 'accounts', 'ERROR');
     header('Location: /acc/connect?error=Database connection failed');
     exit;
 }
@@ -32,19 +32,19 @@ if ($public_key) {
         $account = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($account && $account['is_active'] && $account['role'] === 'admin') {
             $_SESSION['role'] = 'admin'; // Update session roles
-            log_message("Role verified from database for public_key: $short_public_key, role: admin", 'accounts.log', 'accounts', 'INFO');
+            log_message("Role verified from database for public_key: $short_public_key, role: admin", 'manage-admin.log', 'accounts', 'INFO');
         } else {
-            log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, role: " . ($account['role'] ?? 'Not found') . ", is_active: " . ($account['is_active'] ?? 'Not found'), 'accounts.log', 'accounts', 'ERROR');
+            log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, role: " . ($account['role'] ?? 'Not found') . ", is_active: " . ($account['is_active'] ?? 'Not found'), 'manage-admin.log', 'accounts', 'ERROR');
             header('Location: /acc/connect?error=Unauthorized access');
             exit;
         }
     } catch (PDOException $e) {
-        log_message("Database query failed for role check: {$e->getMessage()}, public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
+        log_message("Database query failed for role check: {$e->getMessage()}, public_key: $short_public_key", 'manage-admin.log', 'accounts', 'ERROR');
         header('Location: /acc/connect?error=Database error');
         exit;
     }
 } else {
-    log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, session_role: Not set, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'accounts.log', 'accounts', 'ERROR');
+    log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, session_role: Not set, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'manage-admin.log', 'accounts', 'ERROR');
     header('Location: /acc/connect?error=Unauthorized access');
     exit;
 }
@@ -56,17 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['public_key'], $_POST[
     $target_short_public_key = strlen($target_public_key) >= 8 ? substr($target_public_key, 0, 4) . '...' . substr($target_public_key, -4) : 'Invalid';
     
     if ($target_public_key === $public_key) {
-        log_message("Admin attempted to modify own account: public_key=$target_short_public_key", 'accounts.log', 'accounts', 'ERROR');
+        log_message("Admin attempted to modify own account: public_key=$target_short_public_key", 'manage-admin.log', 'accounts', 'ERROR');
         $error = "Cannot modify your own account.";
     } else {
         try {
             $is_active = ($action === 'lock') ? 0 : 1;
             $stmt = $pdo->prepare("UPDATE accounts SET is_active = ? WHERE public_key = ?");
             $stmt->execute([$is_active, $target_public_key]);
-            log_message("Account $target_short_public_key " . ($action === 'lock' ? 'locked' : 'unlocked') . " by admin $short_public_key", 'accounts.log', 'accounts', 'INFO');
+            log_message("Account $target_short_public_key " . ($action === 'lock' ? 'locked' : 'unlocked') . " by admin $short_public_key", 'manage-admin.log', 'accounts', 'INFO');
             $success = "Account $target_short_public_key has been " . ($action === 'lock' ? 'locked' : 'unlocked') . ".";
         } catch (PDOException $e) {
-            log_message("Failed to update account $target_short_public_key: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+            log_message("Failed to update account $target_short_public_key: {$e->getMessage()}", 'manage-admin.log', 'accounts', 'ERROR');
             $error = "Failed to update account: {$e->getMessage()}";
         }
     }
@@ -78,7 +78,7 @@ try {
     $stmt->execute();
     $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    log_message("Failed to fetch accounts: {$e->getMessage()}", 'accounts.log', 'accounts', 'ERROR');
+    log_message("Failed to fetch accounts: {$e->getMessage()}", 'manage-admin.log', 'accounts', 'ERROR');
     $error = "Failed to fetch accounts: {$e->getMessage()}";
 }
 
