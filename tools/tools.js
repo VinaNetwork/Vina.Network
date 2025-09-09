@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tool = urlParams.get('tool');
     const tab = urlParams.get('tab');
     const tabsContainer = document.querySelector('.tools-nav');
-    const contentContainer = document.querySelector('.tools-content');
+    const contentContainer = document.querySelector('.tools-item');
 
     console.log('Initial tool:', tool);
     console.log('Initial tab:', tab);
