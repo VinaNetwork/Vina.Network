@@ -102,7 +102,7 @@ body {
 /*  Typography System */
 h1, h2, h3, h4, h5, h6 {
   margin-bottom: var(--spacing-md);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.3;
 }
 
