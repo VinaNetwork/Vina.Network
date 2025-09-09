@@ -176,11 +176,11 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 					<input type="text" name="walletNames[]" placeholder="Nhập tên ví...">
 					<label>Private Key:</label>
 					<textarea name="privateKeys[]" required placeholder="Nhập private key..."></textarea>
-					<button type="button" class="removeKey">Xóa</button>
+					<button type="button" class="removeKey"><i class="fas fa-trash"></i> Xóa</button>
 				</div>
 			</div>
 			<button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Thêm private key</button>
-			<button class="cta-button" type="submit">Lưu</button>
+			<button class="cta-button" type="submit"><i class="fas fa-cloud"></i> Lưu</button>
 		</form>
 
 		<div id="mm-result" class="status-box"></div>
