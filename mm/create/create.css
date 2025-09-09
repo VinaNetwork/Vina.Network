@@ -1,0 +1,436 @@
+/* ============================================================================
+ * File: mm/create/create.css
+ * Description: Styles for the Make Market page
+ * Created by: Vina Network
+ * ============================================================================ */
+
+/* CSS Variables for consistent theming */
+:root {
+  --mm-spacing-xs: 0.25rem;
+  --mm-spacing-sm: 0.5rem;
+  --mm-spacing-md: 1rem;
+  --mm-spacing-lg: 1.5rem;
+  --mm-spacing-xl: 2rem;
+  --mm-spacing-xxl: 3rem;
+  
+  --mm-color-primary: #00d4ff;
+  --mm-color-primary-dark: #007bff;
+  --mm-color-success: #28a745;
+  --mm-color-error: #dc3545;
+  --mm-color-warning: #ffc107;
+  --mm-color-text: #fff;
+  --mm-color-text-muted: #e0e0e0;
+  --mm-color-background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+  --mm-color-background-fallback: #1a1a1a;
+  --mm-color-table-border: rgba(221, 221, 221, 0.3);
+  --mm-color-table-header: rgba(255, 255, 255, 0.1);
+  --mm-color-input-background: rgba(255, 255, 255, 0.1);
+  --mm-color-input-border: rgba(255, 255, 255, 0.3);
+  --mm-color-input-focus: rgba(0, 212, 255, 0.3);
+  
+  --mm-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --mm-shadow-hover: 0 6px 15px rgba(0, 0, 0, 0.2);
+  --mm-shadow-focus: 0 0 0 3px var(--mm-color-input-focus);
+  
+  --mm-border-radius: 10px;
+  --mm-border-radius-sm: 5px;
+  --mm-transition: all 0.3s ease;
+  
+  --mm-navbar-height: 64px;
+  --mm-navbar-height-mobile: 64px;
+}
+
+/* Make Market Container */
+.mm-container {
+  min-height: 100vh;
+  margin-top: var(--mm-navbar-height);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: var(--mm-spacing-md);
+  box-sizing: border-box;
+  background: var(--mm-color-background-fallback);
+  background: var(--mm-color-background);
+  background-attachment: fixed;
+  position: relative;
+}
+
+/* Add overlay for better readability */
+.mm-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.mm-content {
+  background: var(--mm-color-background-fallback);
+  background: var(--mm-color-background);
+  border-radius: var(--mm-border-radius);
+  padding: var(--mm-spacing-xl);
+  margin: var(--mm-spacing-md);
+  width: 100%;
+  max-width: 700px;
+  box-shadow: var(--mm-shadow);
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mm-content h1 {
+  color: var(--mm-color-primary);
+  margin-bottom: var(--mm-spacing-lg);
+  font-weight: 600;
+  text-align: center;
+  font-size: 2.2rem;
+}
+
+.mm-content h1 i {
+  margin-right: var(--mm-spacing-sm);
+}
+
+/* Network Info */
+.mm-network {
+  margin: var(--mm-spacing-xl) 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--mm-border-radius);
+  padding: var(--mm-spacing-md);
+  border-left: 4px solid var(--mm-color-primary);
+  color: var(--mm-color-primary);
+  font-weight: 600;
+}
+
+/* Copy icon */
+.copy-icon {
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--mm-color-primary-dark);
+  transition: var(--mm-transition);
+  margin-left: var(--mm-spacing-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.copy-icon:hover {
+  color: var(--mm-color-primary);
+  background: rgba(0, 123, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.copy-icon.copied {
+  color: var(--mm-color-success);
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.copy-tooltip {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--mm-color-success);
+  color: var(--mm-color-text);
+  padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
+  border-radius: var(--mm-border-radius-sm);
+  font-size: 0.75rem;
+  z-index: 10;
+  box-shadow: var(--mm-shadow);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.copy-tooltip.show {
+  opacity: 1;
+}
+
+/* Form Styles */
+#makeMarketForm {
+  margin-top: var(--mm-spacing-xl);
+}
+
+#makeMarketForm label {
+  display: block;
+  margin: var(--mm-spacing-md) 0 var(--mm-spacing-xs);
+  font-weight: 600;
+  color: var(--mm-color-text);
+}
+
+#makeMarketForm input,
+#makeMarketForm textarea,
+#makeMarketForm select {
+  width: 100%;
+  padding: var(--mm-spacing-md);
+  border: 1px solid var(--mm-color-input-border);
+  border-radius: var(--mm-border-radius);
+  background: var(--mm-color-input-background);
+  color: var(--mm-color-text);
+  font-size: 1rem;
+  transition: var(--mm-transition);
+  box-sizing: border-box;
+}
+
+#makeMarketForm input:focus,
+#makeMarketForm textarea:focus,
+#makeMarketForm select:focus {
+  outline: none;
+  border-color: var(--mm-color-primary);
+  box-shadow: var(--mm-shadow-focus);
+}
+
+#makeMarketForm textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: monospace;
+}
+
+#makeMarketForm input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+#makeMarketForm input[type="number"]::-webkit-outer-spin-button,
+#makeMarketForm input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Checkbox styling */
+.check-box {
+  display: flex;
+  align-items: center;
+  margin: var(--mm-spacing-md) 0;
+  cursor: pointer;
+}
+
+.check-box input[type="checkbox"] {
+  width: auto;
+  margin: 0 var(--mm-spacing-sm) 0 0;
+  transform: scale(1.2);
+}
+
+.check-box p {
+  margin: 0;
+  color: var(--mm-color-text);
+  font-weight: normal;
+}
+
+.check-box:hover input[type="checkbox"] {
+  transform: scale(1.3);
+}
+
+/* Note text */
+.note {
+  font-size: 0.9rem;
+  color: var(--mm-color-text-muted);
+  margin: var(--mm-spacing-xs) 0 var(--mm-spacing-md);
+  font-style: italic;
+}
+
+/* Button Styles */
+.cta-button {
+  background: linear-gradient(45deg, var(--mm-color-primary), var(--mm-color-primary-dark));
+  color: #fff;
+  padding: var(--mm-spacing-md) var(--mm-spacing-lg);
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: var(--mm-transition);
+  width: 100%;
+  margin-top: var(--mm-spacing-xl);
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+.cta-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
+}
+
+.cta-button:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--mm-color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Status Box */
+.status-box {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--mm-color-input-border);
+  border-radius: var(--mm-border-radius);
+  padding: var(--mm-spacing-md);
+  margin-top: var(--mm-spacing-xl);
+  background-color: rgba(0, 0, 0, 0.3);
+  display: none;
+}
+
+.status-box.active {
+  display: block;
+}
+
+.status-box p {
+  margin: 0;
+  color: var(--mm-color-error);
+}
+
+.status-box .success {
+  color: var(--mm-color-success);
+}
+
+.status-box .info {
+  color: var(--mm-color-primary);
+}
+
+/* Spinner animation */
+.spinner {
+  border: 3px solid rgba(243, 243, 243, 0.3);
+  border-top: 3px solid var(--mm-color-primary);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: var(--mm-spacing-sm);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* History Link */
+.history-link {
+  margin-top: var(--mm-spacing-xl);
+  text-align: right;
+}
+
+.history-link a {
+  color: var(--mm-color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--mm-transition);
+}
+
+.history-link a:hover {
+  color: var(--mm-color-text);
+  text-decoration: underline;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .copy-icon,
+  .cta-button,
+  .check-box input[type="checkbox"],
+  #makeMarketForm input,
+  #makeMarketForm textarea,
+  #makeMarketForm select {
+    transition: none;
+  }
+  
+  .spinner {
+    animation: none;
+    border: 3px solid var(--mm-color-primary);
+    border-top: 3px solid transparent;
+  }
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .mm-container {
+    margin-top: var(--mm-navbar-height-mobile);
+    padding: var(--mm-spacing-sm);
+    align-items: flex-start;
+  }
+
+  .mm-content {
+    padding: var(--mm-spacing-lg);
+    margin: var(--mm-spacing-sm);
+  }
+
+  .mm-content h1 {
+    font-size: 1.8rem;
+  }
+  
+  .mm-network {
+    padding: var(--mm-spacing-sm);
+    font-size: 0.9rem;
+  }
+  
+  #makeMarketForm input,
+  #makeMarketForm textarea,
+  #makeMarketForm select {
+    padding: var(--mm-spacing-sm);
+  }
+  
+  .cta-button {
+    padding: var(--mm-spacing-sm) var(--mm-spacing-md);
+    font-size: 1rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .mm-content {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.6));
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mm-content {
+    border: 2px solid var(--mm-color-primary);
+  }
+  
+  #makeMarketForm input,
+  #makeMarketForm textarea,
+  #makeMarketForm select {
+    border: 2px solid var(--mm-color-input-border);
+  }
+}
+
+/* Print styles */
+@media print {
+  .mm-container {
+    background: none !important;
+    min-height: auto;
+  }
+  
+  .mm-container::before {
+    display: none;
+  }
+  
+  .mm-content {
+    background: none !important;
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .mm-content h1 {
+    color: #000 !important;
+  }
+  
+  #account-info th,
+  #account-info td {
+    color: #000 !important;
+    border: 1px solid #000;
+  }
+  
+  .copy-icon,
+  .history-link,
+  .cta-button {
+    display: none;
+  }
+}
