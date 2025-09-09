@@ -1,5 +1,5 @@
 /* ============================================================================
- * File: mm/private-key/list-private-key.css (Optimized Version)
+ * File: mm/private-key/list-private-key.css
  * Description: Styles for the List Private Key page
  * Created by: Vina Network
  * ============================================================================ */
@@ -91,37 +91,6 @@
 
 .mm-content h1 i {
   margin-right: var(--mm-spacing-sm);
-}
-
-/* Account Info */
-#account-info {
-  margin: var(--mm-spacing-xl) 0;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--mm-border-radius);
-  padding: var(--mm-spacing-md);
-  border-left: 4px solid var(--mm-color-primary);
-}
-
-#account-info p {
-  margin: 0 0 var(--mm-spacing-sm);
-  color: var(--mm-color-text);
-  font-weight: 500;
-}
-
-#account-info p:last-child {
-  margin-bottom: 0;
-}
-
-#account-info a {
-  color: var(--mm-color-primary);
-  text-decoration: none;
-  transition: var(--mm-transition);
-  font-weight: 600;
-}
-
-#account-info a:hover {
-  color: var(--mm-color-text);
-  text-decoration: underline;
 }
 
 /* Wallet Table */
