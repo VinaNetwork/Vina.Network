@@ -100,6 +100,9 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 <div class="mm-container">
 	<div class="mm-content">
 		<h1><i class="fas fa-key"></i> Private Key List</h1>
+
+		<!-- Note about encrypted private key -->
+		<p class="note">Note: The "Encrypted Private Key" column displays a portion of the encrypted private key for security. Your original private key is securely stored and encrypted in our database.</p>
 		
 		<!-- Wallet list table -->
 		<table class="wallet-table">
@@ -107,7 +110,7 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 				<tr>
 					<th>Wallet Name</th>
 					<th>Public Key</th>
-					<th>Private Key</th>
+					<th>Encrypted Private Key</th>
 					<th>Status</th>
 					<th>Created Date</th>
 					<th>Action</th>
@@ -128,7 +131,7 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 								</a>
 								<i class="fas fa-copy copy-icon" title="Copy public key" data-full="<?php echo htmlspecialchars($wallet['public_key']); ?>"></i>
 							</td>
-							<td data-label="Private Key">
+							<td data-label="Encrypted Private Key">
 								<?php echo htmlspecialchars($wallet['short_private_key']); ?>
 								<!-- Do not provide copy private key for security -->
 							</td>
