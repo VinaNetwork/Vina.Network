@@ -98,7 +98,7 @@
 .mm-network {
   background: rgba(0, 0, 0, 0.2);
   border-radius: var(--mm-border-radius);
-  padding: var(--mm-spacing-md);
+  padding: var(--mm-spacing-sm);
   border-left: 4px solid var(--mm-color-primary);
   color: var(--mm-color-primary);
   font-weight: 600;
