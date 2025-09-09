@@ -1,5 +1,5 @@
 /* ============================================================================
- * File: mm/css/mm.css (Optimized Version)
+ * File: mm/css/create.css
  * Description: Styles for the Make Market page
  * Created by: Vina Network
  * ============================================================================ */
@@ -94,42 +94,15 @@
   margin-right: var(--mm-spacing-sm);
 }
 
-/* Account Info */
-#account-info {
+/* Network Info */
+.mm-network {
   margin: var(--mm-spacing-xl) 0;
   background: rgba(0, 0, 0, 0.2);
   border-radius: var(--mm-border-radius);
   padding: var(--mm-spacing-md);
   border-left: 4px solid var(--mm-color-primary);
-}
-
-#account-info table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-#account-info th, 
-#account-info td {
-  padding: var(--mm-spacing-sm);
-  text-align: left;
-  color: var(--mm-color-text);
-}
-
-#account-info th {
+  color: var(--mm-color-primary);
   font-weight: 600;
-  color: var(--mm-color-primary);
-  width: 30%;
-}
-
-#account-info a {
-  color: var(--mm-color-primary);
-  text-decoration: none;
-  transition: var(--mm-transition);
-}
-
-#account-info a:hover {
-  color: var(--mm-color-text);
-  text-decoration: underline;
 }
 
 /* Copy icon */
@@ -391,13 +364,8 @@
     font-size: 1.8rem;
   }
   
-  #account-info {
+  .mm-network {
     padding: var(--mm-spacing-sm);
-  }
-  
-  #account-info th, 
-  #account-info td {
-    padding: var(--mm-spacing-xs);
     font-size: 0.9rem;
   }
   
