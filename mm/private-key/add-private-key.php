@@ -117,12 +117,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'wallet_name' => $walletName
             ];
         } catch (Exception $e) {
-            $errors[] = "The $index private key is invalid.: {$e->getMessage()}";
+            $errors[] = "The $index private key is invalid: {$e->getMessage()}";
         }
     }
 
+    // Check for duplicate public keys
+    $existingPublicKeys = [];
+    $checkStmt = $pdo->prepare("SELECT public_key FROM private_key WHERE user_id = ?");
+    $checkStmt->execute([$user_id]);
+    while ($row = $checkStmt->fetch(PDO::FETCH_ASSOC)) {
+        $existingPublicKeys[] = $row['public_key'];
+    }
+
+    foreach ($validWallets as $index => $wallet) {
+        if (in_array($wallet['public_key'], $existingPublicKeys)) {
+            $errors[] = "Private key thứ $index đã tồn tại cho public key {$wallet['public_key']}";
+            unset($validWallets[$index]);
+        }
+    }
+    if (!empty($errors)) {
+        log_message("Private key authentication error: " . implode(", ", $errors), 'private-key-page.log', 'make-market', 'ERROR');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => implode(", ", $errors)]);
+        exit;
+    }
+
     // Save to database
-    if (empty($errors) && !empty($validWallets)) {
+    if (!empty($validWallets)) {
         try {
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("
