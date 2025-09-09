@@ -5,34 +5,35 @@
 
 ob_start();
 $root_path = __DIR__ . '/../../';
+// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
 // Log request
-log_message("list-private-key.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'DEBUG');
+log_message("list-private-key.php: Script started, REQUEST_METHOD: {$_SERVER['REQUEST_METHOD']}", 'private-key-page.log', 'make-market', 'DEBUG');
 
 // Protect POST requests with CSRF
 csrf_protect();
 
 // Set CSRF cookie for potential AJAX requests
 if (!set_csrf_cookie()) {
-    log_message("Failed to set CSRF cookie", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Failed to set CSRF cookie", 'private-key-page.log', 'make-market', 'ERROR');
 } else {
-    log_message("CSRF cookie set successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+    log_message("CSRF cookie set successfully for Make Market page", 'private-key-page.log', 'make-market', 'INFO');
 }
 
 // Generate CSRF token
 $csrf_token = generate_csrf_token();
 if ($csrf_token === false) {
-    log_message("Failed to generate CSRF token", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Failed to generate CSRF token", 'private-key-page.log', 'make-market', 'ERROR');
 } else {
-    log_message("CSRF token generated successfully for Make Market page", 'make-market.log', 'make-market', 'INFO');
+    log_message("CSRF token generated successfully for Make Market page", 'private-key-page.log', 'make-market', 'INFO');
 }
 
 // Kết nối database
 try {
     $pdo = get_db_connection();
 } catch (Exception $e) {
-    log_message("Database connection failed: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Database connection failed: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cơ sở dữ liệu']);
     exit;
@@ -42,7 +43,7 @@ try {
 $public_key = $_SESSION['public_key'] ?? null;
 $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 if (!$public_key) {
-    log_message("Không tìm thấy public key trong session, chuyển hướng đến login", 'make-market.log', 'make-market', 'INFO');
+    log_message("Không tìm thấy public key trong session, chuyển hướng đến login", 'private-key-page.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm/list-private-key';
     header('Location: /acc/connect');
     exit;
@@ -54,13 +55,13 @@ try {
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        log_message("Không tìm thấy tài khoản cho public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
+        log_message("Không tìm thấy tài khoản cho public_key: $short_public_key", 'private-key-page.log', 'make-market', 'ERROR');
         header('Location: /acc/connect');
         exit;
     }
     $user_id = $account['id'];
 } catch (PDOException $e) {
-    log_message("Lỗi truy vấn tài khoản: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Lỗi truy vấn tài khoản: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Lỗi truy vấn tài khoản']);
     exit;
@@ -79,7 +80,7 @@ try {
         $wallet['short_private_key'] = substr($wallet['private_key'], 0, 4) . '...' . substr($wallet['private_key'], -4);
     }
 } catch (PDOException $e) {
-    log_message("Lỗi truy vấn danh sách ví: {$e->getMessage()}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Lỗi truy vấn danh sách ví: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
     echo json_encode(['status' => 'error', 'message' => 'Lỗi truy vấn danh sách ví']);
     exit;
