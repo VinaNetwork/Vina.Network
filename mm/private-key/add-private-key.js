@@ -4,47 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Copy functionality
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('mm.js loaded');
-    log_message('mm.js loaded', 'private-key-page.log', 'make-market', 'DEBUG');
-
-    const copyIcons = document.querySelectorAll('.copy-icon');
-    copyIcons.forEach(icon => {
-        icon.addEventListener('click', (e) => {
-            console.log('Copy icon clicked');
-            log_message('Copy icon clicked', 'private-key-page.log', 'make-market', 'INFO');
-
-            const fullAddress = icon.getAttribute('data-full');
-            const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
-            console.log(`Attempting to copy address: ${shortAddress}`);
-            log_message(`Attempting to copy address: ${shortAddress}`, 'private-key-page.log', 'make-market', 'DEBUG');
-
-            navigator.clipboard.writeText(fullAddress).then(() => {
-                console.log('Copy successful');
-                log_message('Copy successful', 'private-key-page.log', 'make-market', 'INFO');
-                icon.classList.add('copied');
-                const tooltip = document.createElement('span');
-                tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
-                const parent = icon.parentNode;
-                parent.style.position = 'relative';
-                parent.appendChild(tooltip);
-                setTimeout(() => {
-                    icon.classList.remove('copied');
-                    tooltip.remove();
-                    console.log('Copy feedback removed');
-                    log_message('Copy feedback removed', 'private-key-page.log', 'make-market', 'DEBUG');
-                }, 2000);
-            }).catch(err => {
-                console.error('Clipboard API failed:', err.message);
-                log_message(`Clipboard API failed: ${err.message}`, 'private-key-page.log', 'make-market', 'ERROR');
-                showError(`Unable to copy: ${err.message}`);
-            });
-        });
-    });
-});
-
 // Log message function
 function log_message(message, log_file = 'private-key-page.log', module = 'make-market', log_type = 'INFO') {
     if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
