@@ -66,7 +66,7 @@ try {
 } catch (PDOException $e) {
     log_message("Account query error: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Lỗi truy vấn tài khoản']);
+    echo json_encode(['status' => 'error', 'message' => 'Account query error']);
     exit;
 }
 
@@ -135,13 +135,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->commit();
             log_message("Save successfully " . count($validWallets) . " private key cho user_id=$user_id", 'private-key-page.log', 'make-market', 'INFO');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'message' => 'Lưu private key thành công', 'redirect' => '/mm/list-private-key']);
+            echo json_encode(['status' => 'success', 'message' => 'Private key saved successfully', 'redirect' => '/mm/list-private-key']);
             exit;
         } catch (PDOException $e) {
             $pdo->rollBack();
             log_message("Error saving private key: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Lỗi lưu private key']);
+            echo json_encode(['status' => 'error', 'message' => 'Error saving private key']);
             exit;
         }
     } else {
@@ -180,7 +180,7 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 				</div>
 			</div>
 			<button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Add private key</button>
-			<button class="cta-button" type="submit"><i class="fas fa-cloud"></i> Lưu</button>
+			<button class="cta-button" type="submit"><i class="fas fa-cloud"></i> Save</button>
 		</form>
 
 		<div id="mm-result" class="status-box"></div>
