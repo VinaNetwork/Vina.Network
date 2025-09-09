@@ -76,31 +76,33 @@ $page_css = ['/tools/tools.css'];
 <body>
 <?php require_once $root_path . 'include/navbar.php';?>
 <div class="tools-container">
-    <h1>Vina Network Tools</h1>
-    <!-- Tool Navigation Menu -->
-    <div class="tools-nav" style="<?php echo $tool ? 'display: none;' : ''; ?>">
-        <?php foreach ($tools as $tool_key => $tool_data): ?>
-            <?php
-            $tool_info = getToolInfo($tool_data['file']);
-            $is_active = $tool_key === $tool ? 'active' : '';
-            ?>
-            <div class="tools-nav-card <?php echo $is_active; ?>" data-tool="<?php echo htmlspecialchars($tool_key); ?>">
-                <i class="<?php echo htmlspecialchars($tool_data['icon']); ?>"></i>
-                <h2><?php echo htmlspecialchars($tool_info['title']); ?></h2>
-                <p><?php echo htmlspecialchars($tool_info['description']); ?></p>
-            </div>
-        <?php endforeach; ?>
-    </div>
-    <!-- General Notice -->
-    <p class="note" style="<?php echo $tool ? 'display: none;' : ''; ?>">Note: Only supports checking on the Solana blockchain.</p>
+	<div class="tools-content">
+		<h1>Vina Network Tools</h1>
+		<!-- Tool Navigation Menu -->
+		<div class="tools-nav" style="<?php echo $tool ? 'display: none;' : ''; ?>">
+			<?php foreach ($tools as $tool_key => $tool_data): ?>
+				<?php
+				$tool_info = getToolInfo($tool_data['file']);
+				$is_active = $tool_key === $tool ? 'active' : '';
+				?>
+				<div class="tools-nav-card <?php echo $is_active; ?>" data-tool="<?php echo htmlspecialchars($tool_key); ?>">
+					<i class="<?php echo htmlspecialchars($tool_data['icon']); ?>"></i>
+					<h2><?php echo htmlspecialchars($tool_info['title']); ?></h2>
+					<p><?php echo htmlspecialchars($tool_info['description']); ?></p>
+				</div>
+			<?php endforeach; ?>
+		</div>
+		<!-- General Notice -->
+		<p class="note" style="<?php echo $tool ? 'display: none;' : ''; ?>">Note: Only supports checking on the Solana blockchain.</p>
 
-    <!-- Tool Content Loader -->
-    <div class="tools-item" style="<?php echo !$tool ? 'display: none;' : ''; ?>">
-        <div class="tools-back">
-            <button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
-        </div>
-        <!-- Content will be loaded via AJAX by tools.js -->
-    </div>
+		<!-- Tool Content Loader -->
+		<div class="tools-item" style="<?php echo !$tool ? 'display: none;' : ''; ?>">
+			<div class="tools-back">
+				<button class="back-button"><i class="fa-solid fa-arrow-left"></i> Back to Tools</button>
+			</div>
+			<!-- Content will be loaded via AJAX by tools.js -->
+		</div>
+	</div>
 </div>
 <?php require_once $root_path . 'include/footer.php';?>
 
