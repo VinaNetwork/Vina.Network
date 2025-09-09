@@ -63,6 +63,41 @@ function log_message(message, log_file = 'make-market.log', module = 'make-marke
     }).catch(err => console.error('Log error:', err.message));
 }
 
+// Refresh CSRF token
+async function refreshCSRFToken() {
+    const response = await axios.get('/mm/refresh-csrf', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Auth-Token': authToken
+        },
+        withCredentials: true
+    });
+    if (response.status !== 200 || !response.data.csrf_token) {
+        throw new Error('Failed to refresh CSRF token');
+    }
+    return response.data.csrf_token;
+}
+
+// Get SOLANA_NETWORK from server
+async function getSolanaNetwork() {
+    try {
+        const response = await axios.get('/mm/get-network', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken
+            },
+            withCredentials: true
+        });
+        if (response.status === 200 && response.data.network) {
+            return response.data.network;
+        }
+        throw new Error('Failed to fetch SOLANA_NETWORK');
+    } catch (error) {
+        log_message(`Failed to fetch SOLANA_NETWORK: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        throw error;
+    }
+}
+
 // Show error message
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
@@ -100,41 +135,6 @@ function getCookie(name) {
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
     return null;
-}
-
-// Refresh CSRF token
-async function refreshCSRFToken() {
-    const response = await axios.get('/mm/refresh-csrf', {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken
-        },
-        withCredentials: true
-    });
-    if (response.status !== 200 || !response.data.csrf_token) {
-        throw new Error('Failed to refresh CSRF token');
-    }
-    return response.data.csrf_token;
-}
-
-// Get SOLANA_NETWORK from server
-async function getSolanaNetwork() {
-    try {
-        const response = await axios.get('/mm/get-network', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken
-            },
-            withCredentials: true
-        });
-        if (response.status === 200 && response.data.network) {
-            return response.data.network;
-        }
-        throw new Error('Failed to fetch SOLANA_NETWORK');
-    } catch (error) {
-        log_message(`Failed to fetch SOLANA_NETWORK: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        throw error;
-    }
 }
 
 // Handle form submission
