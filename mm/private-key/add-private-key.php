@@ -1,7 +1,9 @@
 <?php
+// ============================================================================
 // File: mm/private-key/add-private-key.php
 // Description: Trang thêm và quản lý private key cho người dùng
 // Created by: Vina Network
+// ============================================================================
 
 ob_start();
 $root_path = __DIR__ . '/../../';
@@ -169,10 +171,7 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 <div class="mm-container">
 	<div class="mm-content">
 		<h1><i class="fas fa-key"></i> Quản lý Private Key</h1>
-		<div id="account-info">
-			<p>Tài khoản: <a href="https://solscan.io/address/<?php echo htmlspecialchars($public_key); ?>" target="_blank"><?php echo htmlspecialchars(substr($public_key, 0, 4) . '...' . substr($public_key, -4)); ?></a></p>
-		</div>
-
+		
 		<!-- Form thêm private key -->
 		<form id="addPrivateKeyForm" method="POST">
 			<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
