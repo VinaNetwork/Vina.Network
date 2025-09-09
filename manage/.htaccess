@@ -8,7 +8,7 @@ RewriteEngine On
 RewriteBase /manage/
 
 # Page
-RewriteRule ^adm$ adm/admin.php [L,NC]
+RewriteRule ^admin$ adm/admin.php [L,NC]
 
 # Endpoints
 RewriteRule ^get-logs$ core/get-logs.php [L,NC]
