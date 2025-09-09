@@ -209,22 +209,9 @@
 
 /* Delete button */
 .deleteWallet {
-  background: linear-gradient(45deg, var(--mm-color-error), #e83e8c);
-  color: white;
-  border: none;
-  border-radius: var(--mm-border-radius-sm);
   padding: var(--mm-spacing-sm) var(--mm-spacing-md);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: var(--mm-transition);
+  font-size: 0.8rem;
   width: 100%;
-}
-
-.deleteWallet:hover {
-  background: linear-gradient(45deg, #c82333, #dc3545);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
 }
 
 /* Status Box */
