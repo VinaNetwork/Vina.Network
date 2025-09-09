@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: manage/admin/adm.php
+// File: manage/adm/admin.php
 // Description: Admin page to manage user accounts (display, lock/unlock).
 // Created by: Vina Network
 // ============================================================================
