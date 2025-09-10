@@ -49,12 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Log message function
 function log_message(message, log_file = 'process.log', module = 'make-market', log_type = 'INFO') {
-    if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
-        return;
-    }
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
     const cookies = document.cookie || 'no cookies';
     const logMessage = `${message}, session_id=${session_id}, cookies=${cookies}`;
+
     fetch('/mm/get-logs', {
         method: 'POST',
         headers: {
