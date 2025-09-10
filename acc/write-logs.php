@@ -1,12 +1,12 @@
 <?php
 // ============================================================================
-// File: acc/core/write-logs.php
+// File: acc/write-logs.php
 // Description: Handles client-side logging using core logging utilities for multiple modules.
 // Created by: Vina Network
 // ============================================================================
 
 // Web root
-$root_path = __DIR__ . '/../../';
+$root_path = __DIR__ . '/../';
 require_once $root_path . 'acc/bootstrap.php';
 
 // Set response header
