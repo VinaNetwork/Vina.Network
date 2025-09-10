@@ -202,7 +202,6 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 					<input type="text" name="walletNames[]" placeholder="Enter wallet name...">
 					<label><i class="fas fa-key"></i> Private Key:</label>
 					<textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
-					<button type="button" class="removeKey"><i class="fas fa-trash"></i> Delete</button>
 				</div>
 			</div>
 			<button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Add private key</button>
