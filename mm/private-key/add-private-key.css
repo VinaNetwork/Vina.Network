@@ -133,6 +133,10 @@
   resize: vertical;
 }
 
+.wallet-name {
+  margin-bottom: var(--mm-spacing-md);
+}
+
 .removeKey {
   position: absolute;
   top: var(--mm-spacing-sm);
