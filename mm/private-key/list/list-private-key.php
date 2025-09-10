@@ -5,7 +5,6 @@
 
 ob_start();
 $root_path = __DIR__ . '/../../../';
-// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
 // Log request
@@ -73,12 +72,31 @@ try {
     $stmt->execute([$user_id]);
     $wallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Log fetched wallets for debugging
+    log_message("Wallets fetched: " . json_encode(array_map(function($w) {
+        return [
+            'id' => $w['id'],
+            'wallet_name' => $w['wallet_name'],
+            'public_key' => substr($w['public_key'], 0, 4) . '...',
+            'created_at' => $w['created_at']
+        ];
+    }, $wallets)), 'private-key-page.log', 'make-market', 'DEBUG');
+
     // Shorten public_key and private_key
-    foreach ($wallets as &$wallet) {
-        $wallet['short_public_key'] = substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4);
-        // Private key is encrypted, only take a portion to shorten (not decrypted)
-        $wallet['short_private_key'] = substr($wallet['private_key'], 0, 4) . '...' . substr($wallet['private_key'], -4);
+    $processed_wallets = [];
+    foreach ($wallets as $wallet) {
+        $processed_wallets[] = [
+            'id' => $wallet['id'],
+            'wallet_name' => $wallet['wallet_name'],
+            'public_key' => $wallet['public_key'],
+            'private_key' => $wallet['private_key'],
+            'status' => $wallet['status'],
+            'created_at' => $wallet['created_at'],
+            'short_public_key' => substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4),
+            'short_private_key' => substr($wallet['private_key'], 0, 4) . '...' . substr($wallet['private_key'], -4)
+        ];
     }
+    $wallets = $processed_wallets; // Replace original $wallets
 } catch (PDOException $e) {
     log_message("Wallet list query error: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
@@ -133,12 +151,11 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 							</td>
 							<td data-label="Encrypted Private Key">
 								<?php echo htmlspecialchars($wallet['short_private_key']); ?>
-								<!-- Do not provide copy private key for security -->
 							</td>
 							<td data-label="Status"><?php echo htmlspecialchars($wallet['status']); ?></td>
 							<td data-label="Created Date"><?php echo htmlspecialchars($wallet['created_at']); ?></td>
 							<td data-label="Action">
-								<button class="deleteWallet cta-button" data-id="<?php echo $wallet['id']; ?>"><i class="fas fa-trash"></i> Delete</button>
+								<button class="deleteWallet cta-button" data-id="<?php echo htmlspecialchars($wallet['id']); ?>"><i class="fas fa-trash"></i> Delete</button>
 							</td>
 						</tr>
 					<?php endforeach; ?>
