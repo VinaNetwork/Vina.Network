@@ -111,6 +111,10 @@
     display: none;
 }
 
+#makeMarketForm label.hidden {
+    display: none;
+}
+
 #makeMarketForm label {
   display: block;
   margin: var(--mm-spacing-md) 0 var(--mm-spacing-xs);
