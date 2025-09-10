@@ -90,7 +90,7 @@
   font-size: 2.2rem;
 }
 
-.mm-content h1 i {
+.mm-content i {
   margin-right: var(--mm-spacing-sm);
 }
 
@@ -102,54 +102,6 @@
   border-left: 4px solid var(--mm-color-primary);
   color: var(--mm-color-primary);
   font-weight: 600;
-}
-
-/* Copy icon */
-.copy-icon {
-  cursor: pointer;
-  font-size: 1.1rem;
-  color: var(--mm-color-primary-dark);
-  transition: var(--mm-transition);
-  margin-left: var(--mm-spacing-xs);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(0, 123, 255, 0.1);
-}
-
-.copy-icon:hover {
-  color: var(--mm-color-primary);
-  background: rgba(0, 123, 255, 0.2);
-  transform: scale(1.1);
-}
-
-.copy-icon.copied {
-  color: var(--mm-color-success);
-  background: rgba(40, 167, 69, 0.1);
-}
-
-.copy-tooltip {
-  position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--mm-color-success);
-  color: var(--mm-color-text);
-  padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
-  border-radius: var(--mm-border-radius-sm);
-  font-size: 0.75rem;
-  z-index: 10;
-  box-shadow: var(--mm-shadow);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.copy-tooltip.show {
-  opacity: 1;
 }
 
 /* Form Styles */
@@ -319,7 +271,6 @@
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .copy-icon,
   .cta-button,
   .check-box input[type="checkbox"],
   #makeMarketForm input,
@@ -410,13 +361,6 @@
     color: #000 !important;
   }
   
-  #account-info th,
-  #account-info td {
-    color: #000 !important;
-    border: 1px solid #000;
-  }
-  
-  .copy-icon,
   .lists-process,
   .cta-button {
     display: none;
