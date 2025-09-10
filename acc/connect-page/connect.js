@@ -10,9 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Log message function
     function log_message(message, log_file = 'accounts.log', module = 'accounts', log_type = 'INFO') {
-        if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
-            return;
-        }
         fetch('/acc/get-logs', {
             method: 'POST',
             headers: {
