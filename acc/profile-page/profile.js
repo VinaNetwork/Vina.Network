@@ -20,7 +20,7 @@ async function log_message(message, log_file = 'accounts.log', module = 'account
     const sanitizedMessage = message.replace(/privateKey=[^\s]+/g, 'privateKey=[HIDDEN]');
 
     try {
-        const response = await axios.post('/mm/write-logs', {
+        const response = await axios.post('/acc/write-logs', {
             message: sanitizedMessage,
             log_file,
             module,
