@@ -11,10 +11,7 @@ RewriteBase /acc/
 RewriteRule ^admin$ manage/admin.php [L,NC]
 RewriteRule ^connect$ connect.php [L,NC]
 # Profile
-RewriteRule ^profile$ profile.php [L]
-# Redirect 301 from /profile.php to /profile
-RewriteCond %{THE_REQUEST} \s/profile\.php[\s?] [NC]
-RewriteRule ^profile\.php$ /profile [R=301,L]
+RewriteRule ^profile$ profile-page/profile.php [L]
 
 # Endpoints
 RewriteRule ^disconnect$ core/disconnect.php [L,NC]
