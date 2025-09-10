@@ -68,7 +68,7 @@ try {
 
 // Get wallet list
 try {
-    $stmt = $pdo->prepare("SELECT id, wallet_name, public_key, private_key, status, created_at FROM private_key WHERE user_id = ? ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT id, wallet_name, public_key, status, created_at FROM private_key WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->execute([$user_id]);
     $wallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -82,18 +82,16 @@ try {
         ];
     }, $wallets)), 'private-key-page.log', 'make-market', 'DEBUG');
 
-    // Shorten public_key and private_key
+    // Shorten public_key
     $processed_wallets = [];
     foreach ($wallets as $wallet) {
         $processed_wallets[] = [
             'id' => $wallet['id'],
             'wallet_name' => $wallet['wallet_name'],
             'public_key' => $wallet['public_key'],
-            'private_key' => $wallet['private_key'],
             'status' => $wallet['status'],
             'created_at' => $wallet['created_at'],
-            'short_public_key' => substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4),
-            'short_private_key' => substr($wallet['private_key'], 0, 4) . '...' . substr($wallet['private_key'], -4)
+            'short_public_key' => substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)
         ];
     }
     $wallets = $processed_wallets; // Replace original $wallets
@@ -120,7 +118,7 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 		<h1><i class="fas fa-key"></i> Private Key List</h1>
 
 		<!-- Note about encrypted private key -->
-		<p class="note">Note: The "Encrypted Private Key" column displays a portion of the encrypted private key for security. Your original private key is securely stored and encrypted in our database.</p>
+		<p class="note">Note: Your private keys are securely stored and encrypted in our system.</p>
 		
 		<!-- Wallet list table -->
 		<table class="wallet-table">
@@ -128,7 +126,6 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 				<tr>
 					<th>Wallet Name</th>
 					<th>Public Key</th>
-					<th>Encrypted Private Key</th>
 					<th>Status</th>
 					<th>Created Date</th>
 					<th>Action</th>
@@ -137,7 +134,7 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 			<tbody>
 				<?php if (empty($wallets)): ?>
 					<tr>
-						<td colspan="6" style="text-align: center;">No wallets have been added yet.</td>
+						<td colspan="5" style="text-align: center;">No wallets have been added yet.</td>
 					</tr>
 				<?php else: ?>
 					<?php foreach ($wallets as $wallet): ?>
@@ -148,9 +145,6 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 									<?php echo htmlspecialchars($wallet['short_public_key']); ?>
 								</a>
 								<i class="fas fa-copy copy-icon" title="Copy public key" data-full="<?php echo htmlspecialchars($wallet['public_key']); ?>"></i>
-							</td>
-							<td data-label="Encrypted Private Key">
-								<?php echo htmlspecialchars($wallet['short_private_key']); ?>
 							</td>
 							<td data-label="Status"><?php echo htmlspecialchars($wallet['status']); ?></td>
 							<td data-label="Created Date"><?php echo htmlspecialchars($wallet['created_at']); ?></td>
