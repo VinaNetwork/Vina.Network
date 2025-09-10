@@ -154,9 +154,10 @@ $page_css = ['/mm/private-key/list/list-private-key.css'];
 						</tr>
 					<?php endforeach; ?>
 				<?php endif; ?>
-                <tr><td><a href="/mm/add-private-key" class="cta-button"><i class="fa-solid fa-plus"></i> Add Private key</a></td></tr>
 			</tbody>
 		</table>
+
+		<a href="/mm/add-private-key" class="cta-button"><i class="fa-solid fa-plus"></i> Add Private key</a>
 
 		<div id="mm-result" class="status-box"></div>
 	</div>
