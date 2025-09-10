@@ -5,18 +5,44 @@
 // ============================================================================
 
 // Log message function
-function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
-    axios.post('/mm/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken
-        },
-        withCredentials: true
-    }).then(response => {
-        if (response.status !== 200) {
-            console.error(`Log failed: HTTP ${response.status}, response=${response.statusText}`);
+async function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
+    // Check authToken
+    if (!authToken) {
+        console.error('Log failed: authToken is missing');
+        return;
+    }
+
+    // Filter sensitive information (if necessary)
+    const sanitizedMessage = message.replace(/privateKey=[^\s]+/g, 'privateKey=[HIDDEN]');
+
+    try {
+        const response = await axios.post('/mm/write-logs', {
+            message: sanitizedMessage,
+            log_file,
+            module,
+            log_type,
+            url: window.location.href,
+            userAgent: navigator.userAgent
+        }, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken
+            },
+            withCredentials: true
+        });
+
+        if (response.status === 200 && response.data.status === 'success') {
+            console.log(`Log sent successfully: ${sanitizedMessage}`);
+        } else {
+            console.error(`Log failed: HTTP ${response.status}, message=${response.data.message || response.statusText}`);
         }
-    }).catch(err => console.error('Log error:', err.message));
+    } catch (err) {
+        console.error('Log error:', {
+            message: err.message,
+            status: err.response?.status,
+            data: err.response?.data
+        });
+    }
 }
 
 // Refresh CSRF token
