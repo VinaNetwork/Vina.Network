@@ -64,10 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`Sending delete request for walletId: ${walletId}`);
                 log_message(`Sending delete request for walletId: ${walletId}`, 'private-key-page.log', 'make-market', 'DEBUG');
 
-                const response = await axios.post('/mm/delete-private-key', {
-                    walletId,
-                    csrf_token: csrfToken
-                }, {
+                const formData = new FormData();
+                formData.append('walletId', walletId);
+                formData.append('csrf_token', csrfToken);
+
+                const response = await axios.post('/mm/delete-private-key', formData, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-Token': csrfToken,
