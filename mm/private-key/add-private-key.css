@@ -95,11 +95,6 @@
   margin-right: var(--mm-spacing-sm);
 }
 
-/* Private Key Form */
-#addPrivateKeyForm {
-  margin: var(--mm-spacing-xl) 0;
-}
-
 .privateKeyRow {
   background: rgba(0, 0, 0, 0.2);
   border-radius: var(--mm-border-radius);
