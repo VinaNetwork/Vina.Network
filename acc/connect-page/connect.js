@@ -8,29 +8,45 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
     log_message('acc.js loaded', 'accounts.log', 'accounts', 'DEBUG');
 
-    // Log message function (axios version)
-function log_message(message, log_file = 'accounts.log', module = 'accounts', log_type = 'INFO') {
-    return axios.post('/acc/get-logs', 
-        { 
-            message, 
-            log_file, 
-            module, 
-            log_type, 
-            url: window.location.href, 
-            userAgent: navigator.userAgent 
-        },
-        {
+    // Log message function
+async function log_message(message, log_file = 'accounts.log', module = 'accounts', log_type = 'INFO') {
+    // Check authToken
+    if (!authToken) {
+        console.error('Log failed: authToken is missing');
+        return;
+    }
+
+    // Filter sensitive information (if necessary)
+    const sanitizedMessage = message.replace(/privateKey=[^\s]+/g, 'privateKey=[HIDDEN]');
+
+    try {
+        const response = await axios.post('/mm/write-logs', {
+            message: sanitizedMessage,
+            log_file,
+            module,
+            log_type,
+            url: window.location.href,
+            userAgent: navigator.userAgent
+        }, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-Auth-Token': authToken
             },
             withCredentials: true
+        });
+
+        if (response.status === 200 && response.data.status === 'success') {
+            console.log(`Log sent successfully: ${sanitizedMessage}`);
+        } else {
+            console.error(`Log failed: HTTP ${response.status}, message=${response.data.message || response.statusText}`);
         }
-    ).then(response => {
-        if (response.status !== 200) {
-            console.error(`Log failed: HTTP ${response.status}, response=${response.statusText}`);
-        }
-    }).catch(err => console.error('Log error:', err.message));
+    } catch (err) {
+        console.error('Log error:', {
+            message: err.message,
+            status: err.response?.status,
+            data: err.response?.data
+        });
+    }
 }
 
     // Function to show error messages
