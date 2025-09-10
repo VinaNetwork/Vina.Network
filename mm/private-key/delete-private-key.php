@@ -22,10 +22,16 @@ $public_key = $_SESSION['public_key'] ?? null;
 $walletId = $_POST['walletId'] ?? null;
 
 // Kiểm tra public_key và walletId
-if (!$public_key || !$walletId) {
-    log_message("Missing public_key or walletId", 'private-key-page.log', 'make-market', 'ERROR');
+if (!$public_key) {
+    log_message("Missing public_key in session, redirecting to login", 'private-key-page.log', 'make-market', 'ERROR');
     header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Missing information']);
+    echo json_encode(['status' => 'error', 'message' => 'Session expired, please log in again']);
+    exit;
+}
+if (!$walletId) {
+    log_message("Missing walletId in POST data", 'private-key-page.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Invalid wallet ID']);
     exit;
 }
 
