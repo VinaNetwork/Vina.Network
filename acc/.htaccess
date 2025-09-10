@@ -17,7 +17,7 @@ RewriteRule ^connect$ login/connect.php [L,NC]
 RewriteCond %{THE_REQUEST} \s/login/connect\.php [NC]
 RewriteRule ^login/connect\.php$ /acc/connect [R=301,L]
 # ====== Endpoints ======
-RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
+RewriteRule ^wallet-auth$ login/wallet-auth.php [L,NC]
 
 # Profile page
 RewriteRule ^profile$ profile-page/profile.php [L]
