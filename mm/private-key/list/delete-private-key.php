@@ -1,12 +1,12 @@
 <?php
 // ============================================================================
-// File: mm/private-key/delete-private-key.php
+// File: mm/private-key/list/delete-private-key.php
 // Description: API for deleting private key.
 // Created by: Vina Network
 // ============================================================================
 
 ob_start();
-$root_path = __DIR__ . '/../../';
+$root_path = __DIR__ . '/../../../';
 require_once $root_path . 'mm/bootstrap.php';
 
 // Log request
