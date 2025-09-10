@@ -48,10 +48,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.deleteWallet').forEach(button => {
         button.addEventListener('click', async () => {
             const walletId = button.getAttribute('data-id');
+            console.log(`Attempting to delete wallet with ID: ${walletId || 'null'}`);
+            log_message(`Attempting to delete wallet with ID: ${walletId || 'null'}`, 'private-key-page.log', 'make-market', 'DEBUG');
+
+            if (!walletId) {
+                showError('Invalid wallet ID');
+                log_message('No walletId found in button data-id', 'private-key-page.log', 'make-market', 'ERROR');
+                return;
+            }
+
             if (!confirm('Are you sure you want to delete this wallet?')) return;
 
             try {
                 const csrfToken = await refreshCSRFToken();
+                console.log(`Sending delete request for walletId: ${walletId}`);
+                log_message(`Sending delete request for walletId: ${walletId}`, 'private-key-page.log', 'make-market', 'DEBUG');
+
                 const response = await axios.post('/mm/delete-private-key', {
                     walletId,
                     csrf_token: csrfToken
@@ -69,9 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     setTimeout(() => window.location.reload(), 1000);
                 } else {
                     showError(response.data.message);
+                    log_message(`Delete failed: ${response.data.message}`, 'private-key-page.log', 'make-market', 'ERROR');
                 }
             } catch (error) {
-                showError(`Error deleting wallet: ${error.response?.data?.message || error.message}`);
+                const errorMessage = error.response?.data?.message || error.message;
+                showError(`Error deleting wallet: ${errorMessage}`);
+                log_message(`Error deleting wallet: ${errorMessage}`, 'private-key-page.log', 'make-market', 'ERROR');
             }
         });
     });
