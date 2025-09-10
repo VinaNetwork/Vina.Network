@@ -5,7 +5,7 @@
 // ============================================================================
 
 // Log message function
-async function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
+async function log_message(message, log_file = 'private-key-page.log', module = 'make-market', log_type = 'INFO') {
     // Check authToken
     if (!authToken) {
         console.error('Log failed: authToken is missing');
