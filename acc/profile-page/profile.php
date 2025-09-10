@@ -75,7 +75,7 @@ $page_title = "Vina Network - Profile";
 $page_description = "View your Vina Network account information";
 $page_keywords = "Vina Network, account, profile";
 $page_url = BASE_URL . "acc/profile";
-$page_css = ['/acc/profile-page/acc.css'];
+$page_css = ['/acc/profile-page/profile.css'];
 ?>
 
 <!DOCTYPE html>
