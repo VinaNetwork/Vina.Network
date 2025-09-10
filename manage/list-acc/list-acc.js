@@ -48,9 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Log message function
 function log_message(message, log_file = 'manage-list-acc.log', module = 'accounts', log_type = 'INFO') {
-    if (log_type === 'DEBUG' && (!window.ENVIRONMENT || window.ENVIRONMENT !== 'development')) {
-        return;
-    }
     axios.post('/manage/get-logs', { message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent }, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
