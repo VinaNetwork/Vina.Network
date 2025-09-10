@@ -53,7 +53,7 @@ function log_message(message, log_file = 'process.log', module = 'make-market', 
     const cookies = document.cookie || 'no cookies';
     const logMessage = `${message}, session_id=${session_id}, cookies=${cookies}`;
 
-    fetch('/mm/get-logs', {
+    fetch('/mm/write-logs', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
