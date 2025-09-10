@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: acc/core/disconnect.php
+// File: acc/profile-page/disconnect.php
 // Description: API to handle disconnect requests
 // Created by: Vina Network
 // ============================================================================
