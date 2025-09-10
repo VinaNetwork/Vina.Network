@@ -70,11 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const newRow = document.createElement('div');
         newRow.className = 'privateKeyRow';
         newRow.innerHTML = `
-            <label>Wallet name (optional):</label>
+            <label><i class="fas fa-wallet"></i> Wallet name (optional):</label>
             <input type="text" name="walletNames[]" placeholder="Enter wallet name...">
-            <label>Private Key:</label>
+            <label><i class="fas fa-key"></i> Private Key:</label>
             <textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
-            <button type="button" class="removeKey">Remove</button>
+            <button type="button" class="removeKey"><i class="fas fa-trash"></i> Delete</button>
         `;
         container.appendChild(newRow);
         log_message('Added new private key field', 'private-key-page.log', 'make-market', 'INFO');
@@ -119,14 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.data.status === 'success') {
                 showSuccess(response.data.message);
-                // Reset form to one empty row
+                // Reset form to one empty row without Delete button
                 container.innerHTML = `
                     <div class="privateKeyRow">
-                        <label>Wallet name (optional):</label>
+                        <label><i class="fas fa-wallet"></i> Wallet name (optional):</label>
                         <input type="text" name="walletNames[]" placeholder="Enter wallet name...">
-                        <label>Private Key:</label>
+                        <label><i class="fas fa-key"></i> Private Key:</label>
                         <textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
-                        <button type="button" class="removeKey">Remove</button>
                     </div>
                 `;
                 log_message('Private key added successfully, redirecting to list', 'private-key-page.log', 'make-market', 'INFO');
