@@ -199,7 +199,7 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 			<div id="privateKeysContainer">
 				<div class="privateKeyRow">
 					<label><i class="fas fa-wallet"></i> Wallet name (optional):</label>
-					<input type="text" name="walletNames[]" placeholder="Enter wallet name...">
+					<input class="wallet-name" type="text" name="walletNames[]" placeholder="Enter wallet name...">
 					<label><i class="fas fa-key"></i> Private Key:</label>
 					<textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
 				</div>
