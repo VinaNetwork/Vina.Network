@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const uniqueKeys = new Set(privateKeyInputs.filter(key => key !== ''));
         if (uniqueKeys.size < privateKeyInputs.length) {
             showError('Có private key trùng lặp trong form');
+            log_message('Duplicate private keys in form', 'private-key-page.log', 'make-market', 'ERROR');
             submitButton.disabled = false;
             return;
         }
@@ -105,12 +106,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button type="button" class="removeKey">Remove</button>
                     </div>
                 `;
-                setTimeout(() => window.location.href = '/mm lust-private-key', 1000);
+                log_message('Private key added successfully, redirecting to list', 'private-key-page.log', 'make-market', 'INFO');
+                setTimeout(() => window.location.href = '/mm/list-private-key', 1000);
             } else {
                 showError(response.data.message);
+                log_message(`Add private key failed: ${response.data.message}`, 'private-key-page.log', 'make-market', 'ERROR');
             }
         } catch (error) {
-            showError(`Form submission error: ${error.response?.data?.message || error.message}`);
+            const errorMessage = error.response?.data?.message || error.message;
+            showError(`Form submission error: ${errorMessage}`);
+            log_message(`Form submission error: ${errorMessage}`, 'private-key-page.log', 'make-market', 'ERROR');
         } finally {
             submitButton.disabled = false;
         }
