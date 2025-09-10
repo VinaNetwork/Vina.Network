@@ -7,7 +7,6 @@
 RewriteEngine On
 RewriteBase /acc/
 
-# ====== URL rules - Redirect ======
 # Admin page
 RewriteRule ^admin$ manage/admin.php [L,NC]
 RewriteCond %{THE_REQUEST} \s/manage/admin\.php [NC]
@@ -17,13 +16,15 @@ RewriteRule ^manage/admin\.php$ /acc/admin [R=301,L]
 RewriteRule ^connect$ connect-page/connect.php [L,NC]
 RewriteCond %{THE_REQUEST} \s/connect-page/connect\.php [NC]
 RewriteRule ^connect-page/connect\.php$ /acc/connect [R=301,L]
+# ====== Endpoints ======
+RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
 
 # Profile page
 RewriteRule ^profile$ profile-page/profile.php [L]
 RewriteCond %{THE_REQUEST} \s/profile-page/profile\.php [NC]
 RewriteRule ^profile-page/profile\.php$ /acc/profile [R=301,L]
-
 # ====== Endpoints ======
 RewriteRule ^disconnect$ core/disconnect.php [L,NC]
-RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
+
+# ====== Endpoints write logs ======
 RewriteRule ^write-logs$ core/write-logs.php [L,NC]
