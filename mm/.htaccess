@@ -7,34 +7,39 @@
 RewriteEngine On
 RewriteBase /mm/
 
-# Create Page
+# Create process page
 RewriteRule ^create$ create-process/create.php [L,NC,QSA]
-
-# Lists process
-RewriteRule ^lists$ lists-process/lists.php [L,NC,QSA]
+# ====== Endpoints ======
+RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC,QSA]
+RewriteRule ^clear-csrf$ csrf/clear-csrf.php [L,NC,QSA]
+RewriteRule ^get-network$ network/get-network.php [L,NC,QSA]
 
 # Private key page
 RewriteRule ^add-private-key$ private-key/add-private-key.php [L,NC,QSA]
 RewriteRule ^list-private-key$ private-key/list/list-private-key.php [L,NC,QSA]
+# ====== Endpoints ======
 RewriteRule ^delete-private-key$ private-key/list/delete-private-key.php [L,NC,QSA]
+
+# Swap process page
+RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC,QSA]
+# ====== Endpoints ======
+RewriteRule ^get-order/([0-9]+)$ process/get-order.php?id=$1 [L,NC,QSA]
+RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC,QSA]
+RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
+RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC,QSA]
+RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
+
+# ====== Endpoints write logs ======
+RewriteRule ^write-logs$ core/write-logs.php [L,NC,QSA]
+
+# Lists process page
+RewriteRule ^lists$ lists-process/lists.php [L,NC,QSA]
 
 # Error page
 RewriteRule ^error$ error.php [L,QSA]
 # Redirect 301 from /error.php to /error
 RewriteCond %{THE_REQUEST} \s/error\.php[\s?] [NC]
 RewriteRule ^error\.php$ /error [R=301,L,QSA]
-
-# Rules for specific endpoints
-RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC,QSA]
-RewriteRule ^clear-csrf$ csrf/clear-csrf.php [L,NC,QSA]
-RewriteRule ^get-network$ network/get-network.php [L,NC,QSA]
-RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC,QSA]
-RewriteRule ^get-order/([0-9]+)$ process/get-order.php?id=$1 [L,NC,QSA]
-RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC,QSA]
-RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
-RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC,QSA]
-RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
-RewriteRule ^write-logs$ core/write-logs.php [L,NC,QSA]
 
 # Block direct access to .htaccess files
 <Files ".htaccess">
