@@ -107,6 +107,10 @@
   margin-top: var(--mm-spacing-xl);
 }
 
+.hidden {
+    display: none;
+}
+
 #makeMarketForm label {
   display: block;
   margin: var(--mm-spacing-md) 0 var(--mm-spacing-xs);
