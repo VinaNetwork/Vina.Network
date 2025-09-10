@@ -48,25 +48,39 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Log message function
-function log_message(message, log_file = 'process.log', module = 'make-market', log_type = 'INFO') {
+async function log_message(message, log_file = 'process.log', module = 'make-market', log_type = 'INFO') {
+    if (!authToken) {
+        console.error('Log failed: authToken is missing');
+        return;
+    }
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
     const cookies = document.cookie || 'no cookies';
     const logMessage = `${message}, session_id=${session_id}, cookies=${cookies}`;
-
-    fetch('/mm/write-logs', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken
-        },
-        credentials: 'include', // Make sure cookies are sent
-        body: JSON.stringify({ message: logMessage, log_file, module, log_type })
-    }).then(response => {
-        if (!response.ok) {
-            console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}, cookies=${cookies}, response=${response.statusText}`);
+    const sanitizedMessage = logMessage.replace(/privateKey=[^\s]+/g, 'privateKey=[HIDDEN]');
+    try {
+        const response = await fetch('/mm/write-logs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken
+            },
+            credentials: 'include',
+            body: JSON.stringify({ message: sanitizedMessage, log_file, module, log_type })
+        });
+        if (response.ok && (await response.json()).status === 'success') {
+            console.log(`Log sent successfully: ${sanitizedMessage}`);
+        } else {
+            console.error(`Log failed: HTTP ${response.status}, session_id=${session_id}`);
         }
-    }).catch(err => console.error(`Log error: ${err.message}, session_id=${session_id}, cookies=${cookies}`));
+    } catch (err) {
+        console.error('Log error:', {
+            message: err.message,
+            status: err.response?.status,
+            data: await err.response?.json(),
+            session_id
+        });
+    }
 }
 
 // Delay function
