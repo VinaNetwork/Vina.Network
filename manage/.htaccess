@@ -11,4 +11,4 @@ RewriteBase /manage/
 RewriteRule ^list-accounts$ list-acc/list-acc.php [L,NC]
 
 # Endpoints
-RewriteRule ^get-logs$ core/get-logs.php [L,NC]
+RewriteRule ^write-logs$ core/write-logs.php [L,NC]
