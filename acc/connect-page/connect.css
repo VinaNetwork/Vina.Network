@@ -113,6 +113,17 @@
   animation: accFadeIn 0.6s ease forwards;
 }
 
+/* Wallet Info */
+#wallet-info {
+  margin: var(--acc-spacing-xl) 0;
+  color: var(--acc-color-text);
+  background: rgba(0, 0, 0, 0.2);
+  padding: var(--acc-spacing-md);
+  border-radius: var(--acc-border-radius);
+  border-left: 4px solid var(--acc-color-primary);
+  overflow-wrap: break-word;
+}
+
 @keyframes accFadeIn {
   to {
     opacity: 1;
