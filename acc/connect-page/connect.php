@@ -61,8 +61,9 @@ $page_css = ['/acc/connect-page/connect.css'];
 </div>
 <?php require_once $root_path . 'include/footer.php';?>
 
-<!-- Scripts - Internal library -->
 <script>console.log('Attempting to load JS files...');</script>
+<!-- Scripts - Internal library -->
+<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
 <script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
 <!-- Scripts - Source code -->
 <script>
