@@ -45,6 +45,7 @@ try {
 
 // Check session
 $public_key = $_SESSION['public_key'] ?? null;
+$short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($public_key, -4) : 'Invalid';
 if (!$public_key) {
     log_message("No public key found in session, redirecting to login", 'private-key-page.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm/add-private-key';
@@ -58,7 +59,7 @@ try {
     $stmt->execute([$public_key]);
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
-        log_message("Account not found for public_key: $public_key", 'private-key-page.log', 'make-market', 'ERROR');
+        log_message("Account not found for public_key: $short_public_key", 'private-key-page.log', 'make-market', 'ERROR');
         header('Location: /acc/connect');
         exit;
     }
@@ -75,10 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $privateKeys = $_POST['privateKeys'] ?? [];
     $walletNames = $_POST['walletNames'] ?? [];
     $errors = [];
+    $validWallets = [];
+    $base58 = new Base58();
 
     // Check and encrypt private keys
-    $base58 = new Base58();
-    $validWallets = [];
     foreach ($privateKeys as $index => $privateKey) {
         $privateKey = trim($privateKey);
         $walletName = trim($walletNames[$index] ?? "Wallet $index");
@@ -104,10 +105,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $keypair = Keypair::fromSecretKey($decodedKey);
             $publicKey = $keypair->getPublicKey()->toBase58();
 
+            // Check for duplicate public key
+            try {
+                $checkStmt = $pdo->prepare("SELECT id FROM private_key WHERE public_key = ? AND user_id = ?");
+                $checkStmt->execute([$publicKey, $user_id]);
+                if ($checkStmt->fetch()) {
+                    $errors[] = "Private key thứ $index đã tồn tại cho public key " . substr($publicKey, 0, 4) . "...";
+                    continue;
+                }
+            } catch (PDOException $e) {
+                $errors[] = "Error checking duplicate for private key $index: {$e->getMessage()}";
+                log_message("Duplicate check error for public_key=$publicKey, user_id=$user_id: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
+                continue;
+            }
+
             // Private key encryption
             $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
             if ($encryptedPrivateKey === false) {
                 $errors[] = "Error encrypting private key $index: " . openssl_error_string();
+                log_message("Encryption error for private key $index: " . openssl_error_string(), 'private-key-page.log', 'make-market', 'ERROR');
                 continue;
             }
 
@@ -118,25 +134,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
         } catch (Exception $e) {
             $errors[] = "The $index private key is invalid: {$e->getMessage()}";
+            log_message("Invalid private key $index: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
         }
     }
 
-    // Check for duplicate public keys
-    $existingPublicKeys = [];
-    $checkStmt = $pdo->prepare("SELECT public_key FROM private_key WHERE user_id = ?");
-    $checkStmt->execute([$user_id]);
-    while ($row = $checkStmt->fetch(PDO::FETCH_ASSOC)) {
-        $existingPublicKeys[] = $row['public_key'];
-    }
-
-    foreach ($validWallets as $index => $wallet) {
-        if (in_array($wallet['public_key'], $existingPublicKeys)) {
-            $errors[] = "Private key thứ $index đã tồn tại cho public key {$wallet['public_key']}";
-            unset($validWallets[$index]);
-        }
-    }
     if (!empty($errors)) {
-        log_message("Private key authentication error: " . implode(", ", $errors), 'private-key-page.log', 'make-market', 'ERROR');
+        log_message("Private key validation errors: " . implode(", ", $errors), 'private-key-page.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => implode(", ", $errors)]);
         exit;
@@ -147,14 +150,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("
-                INSERT INTO private_key (user_id, public_key, private_key, wallet_name)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO private_key (user_id, public_key, private_key, wallet_name, created_at)
+                VALUES (?, ?, ?, ?, ?)
             ");
             foreach ($validWallets as $wallet) {
-                $stmt->execute([$user_id, $wallet['public_key'], $wallet['private_key'], $wallet['wallet_name']]);
+                $stmt->execute([$user_id, $wallet['public_key'], $wallet['private_key'], $wallet['wallet_name'], date('Y-m-d H:i:s')]);
+                $new_id = $pdo->lastInsertId();
+                log_message("Inserted new private key with ID: $new_id for user_id=$user_id, public_key=" . substr($wallet['public_key'], 0, 4) . "...", 'private-key-page.log', 'make-market', 'INFO');
             }
             $pdo->commit();
-            log_message("Save successfully " . count($validWallets) . " private key cho user_id=$user_id", 'private-key-page.log', 'make-market', 'INFO');
+            log_message("Saved successfully " . count($validWallets) . " private key(s) for user_id=$user_id", 'private-key-page.log', 'make-market', 'INFO');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'message' => 'Private key saved successfully', 'redirect' => '/mm/list-private-key']);
             exit;
@@ -166,9 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } else {
-        log_message("Private key authentication error: " . implode(", ", $errors), 'private-key-page.log', 'make-market', 'ERROR');
+        log_message("No valid private keys to save", 'private-key-page.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => implode(", ", $errors)]);
+        echo json_encode(['status' => 'error', 'message' => 'No valid private keys provided']);
         exit;
     }
 }
