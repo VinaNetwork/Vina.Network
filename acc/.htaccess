@@ -7,10 +7,11 @@
 RewriteEngine On
 RewriteBase /acc/
 
-# Page
+# Admin page
 RewriteRule ^admin$ manage/admin.php [L,NC]
-RewriteRule ^connect$ connect.php [L,NC]
-# Profile
+# Connect page
+RewriteRule ^connect$ connect-page/connect.php [L,NC]
+# Profile page
 RewriteRule ^profile$ profile-page/profile.php [L]
 
 # Endpoints
