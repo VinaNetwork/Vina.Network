@@ -8,6 +8,7 @@
 :root {
   --mm-spacing-xs: 0.25rem;
   --mm-spacing-sm: 0.5rem;
+  --mm-spacing-ssm: 0.75rem;
   --mm-spacing-md: 1rem;
   --mm-spacing-lg: 1.5rem;
   --mm-spacing-xl: 2rem;
@@ -84,10 +85,7 @@
 
 .mm-content h1 {
   color: var(--mm-color-primary);
-  margin-bottom: var(--mm-spacing-lg);
-  font-weight: 600;
   text-align: center;
-  font-size: 2.2rem;
 }
 
 .mm-content i {
@@ -185,24 +183,8 @@
 /* Button Styles */
 .cta-button {
   padding: var(--mm-spacing-md) var(--mm-spacing-lg);
-  font-size: 1.1rem;
-  font-weight: 600;
   width: 100%;
   margin-top: var(--mm-spacing-xl);
-}
-
-.cta-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.6);
-}
-
-.cta-button:disabled {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--mm-color-text-muted);
-  cursor: not-allowed;
-  opacity: 0.6;
-  transform: none;
-  box-shadow: none;
 }
 
 /* Status Box */
@@ -298,25 +280,15 @@
     padding: var(--mm-spacing-lg);
     margin: var(--mm-spacing-sm);
   }
-
-  .mm-content h1 {
-    font-size: 1.8rem;
-  }
-  
-  .mm-network {
-    padding: var(--mm-spacing-sm);
-    font-size: 0.9rem;
-  }
   
   #makeMarketForm input,
   #makeMarketForm textarea,
   #makeMarketForm select {
-    padding: var(--mm-spacing-sm);
+    padding: var(--mm-spacing-ssm);
   }
   
   .cta-button {
     padding: var(--mm-spacing-sm) var(--mm-spacing-md);
-    font-size: 1rem;
   }
 }
 
