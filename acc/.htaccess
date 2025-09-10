@@ -27,4 +27,4 @@ RewriteRule ^profile-page/profile\.php$ /acc/profile [R=301,L]
 RewriteRule ^disconnect$ profile-page/disconnect.php [L,NC]
 
 # ====== Endpoints write logs ======
-RewriteRule ^write-logs$ core/write-logs.php [L,NC]
+RewriteRule ^write-logs$ write-logs.php [L,NC]
