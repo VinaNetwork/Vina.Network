@@ -352,27 +352,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const tradeDirectionSelect = document.getElementById('tradeDirection');
     const solAmountInput = document.getElementById('solAmount');
     const tokenAmountInput = document.getElementById('tokenAmount');
+    const solAmountLabel = document.querySelector('label[for="solAmount"]');
+    const tokenAmountLabel = document.querySelector('label[for="tokenAmount"]');
 
-    tradeDirectionSelect.addEventListener('change', () => {
+    // Function to update field visibility and state
+    function updateFields() {
         if (tradeDirectionSelect.value === 'buy') {
+            // Hide tokenAmount field and label
+            tokenAmountInput.classList.add('hidden');
+            tokenAmountLabel.classList.add('hidden');
+            // Show solAmount field and label
+            solAmountInput.classList.remove('hidden');
+            solAmountLabel.classList.remove('hidden');
+            // Set values and states
             tokenAmountInput.value = '0';
             tokenAmountInput.disabled = true;
             solAmountInput.disabled = false;
             solAmountInput.required = true;
-            log_message('Token amount set to 0 and disabled, SOL amount enabled for Buy direction', 'make-market.log', 'make-market', 'INFO');
+            log_message('Token amount hidden and disabled, SOL amount shown and enabled for Buy direction', 'make-market.log', 'make-market', 'INFO');
         } else if (tradeDirectionSelect.value === 'sell') {
+            // Hide solAmount field and label
+            solAmountInput.classList.add('hidden');
+            solAmountLabel.classList.add('hidden');
+            // Show tokenAmount field and label
+            tokenAmountInput.classList.remove('hidden');
+            tokenAmountLabel.classList.remove('hidden');
+            // Set values and states
             solAmountInput.value = '0';
             solAmountInput.disabled = true;
             solAmountInput.required = false;
             tokenAmountInput.disabled = false;
             tokenAmountInput.required = true;
-            log_message('SOL amount set to 0 and disabled, Token amount enabled for Sell direction', 'make-market.log', 'make-market', 'INFO');
+            log_message('SOL amount hidden and disabled, Token amount shown and enabled for Sell direction', 'make-market.log', 'make-market', 'INFO');
         } else if (tradeDirectionSelect.value === 'both') {
+            // Show both fields and labels
+            solAmountInput.classList.remove('hidden');
+            solAmountLabel.classList.remove('hidden');
+            tokenAmountInput.classList.remove('hidden');
+            tokenAmountLabel.classList.remove('hidden');
+            // Set states
             solAmountInput.disabled = false;
             solAmountInput.required = true;
             tokenAmountInput.disabled = false;
             tokenAmountInput.required = true;
-            log_message('SOL and Token amount inputs enabled for Both direction', 'make-market.log', 'make-market', 'INFO');
+            log_message('SOL and Token amount inputs shown and enabled for Both direction', 'make-market.log', 'make-market', 'INFO');
         }
-    });
+    }
+
+    // Initialize fields on page load
+    updateFields();
+
+    // Update fields when trade direction changes
+    tradeDirectionSelect.addEventListener('change', updateFields);
 });
