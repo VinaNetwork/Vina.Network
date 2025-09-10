@@ -8,23 +8,30 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('acc.js loaded');
     log_message('acc.js loaded', 'accounts.log', 'accounts', 'DEBUG');
 
-    // Log message function
-    function log_message(message, log_file = 'accounts.log', module = 'accounts', log_type = 'INFO') {
-        fetch('/acc/get-logs', {
-            method: 'POST',
+    // Log message function (axios version)
+function log_message(message, log_file = 'accounts.log', module = 'accounts', log_type = 'INFO') {
+    return axios.post('/acc/get-logs', 
+        { 
+            message, 
+            log_file, 
+            module, 
+            log_type, 
+            url: window.location.href, 
+            userAgent: navigator.userAgent 
+        },
+        {
             headers: {
-                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-Auth-Token': authToken
             },
-            credentials: 'include',
-            body: JSON.stringify({ message, log_file, module, log_type, url: window.location.href, userAgent: navigator.userAgent })
-        }).then(response => {
-            if (!response.ok) {
-                console.error(`Log failed: HTTP ${response.status}, response=${response.statusText}`);
-            }
-        }).catch(err => console.error(`Log error: ${err.message}`));
-    }
+            withCredentials: true
+        }
+    ).then(response => {
+        if (response.status !== 200) {
+            console.error(`Log failed: HTTP ${response.status}, response=${response.statusText}`);
+        }
+    }).catch(err => console.error('Log error:', err.message));
+}
 
     // Function to show error messages
     function showError(message) {
