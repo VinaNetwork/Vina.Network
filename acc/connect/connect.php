@@ -40,7 +40,7 @@ $page_title = "Connect Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
 $page_keywords = "Vina Network, connect wallet, login, register";
 $page_url = BASE_URL . "acc/connect";
-$page_css = ['/acc/connect-wallet/connect.css'];
+$page_css = ['/acc/connect/connect.css'];
 ?>
 
 <!DOCTYPE html>
@@ -71,7 +71,7 @@ $page_css = ['/acc/connect-wallet/connect.css'];
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script src="/acc/connect-wallet/connect.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
+<script src="/acc/connect/connect.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
