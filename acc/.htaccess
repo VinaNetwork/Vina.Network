@@ -26,4 +26,4 @@ RewriteRule ^profile-page/profile\.php$ /acc/profile [R=301,L]
 # ====== Endpoints ======
 RewriteRule ^disconnect$ core/disconnect.php [L,NC]
 RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
-RewriteRule ^get-logs$ core/get-logs.php [L,NC]
+RewriteRule ^write-logs$ core/write-logs.php [L,NC]
