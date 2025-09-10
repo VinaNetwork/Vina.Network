@@ -15,8 +15,8 @@ RewriteRule ^lists$ lists-process/lists.php [L,NC,QSA]
 
 # Private key page
 RewriteRule ^add-private-key$ private-key/add-private-key.php [L,NC,QSA]
-RewriteRule ^delete-private-key$ private-key/delete-private-key.php [L,NC,QSA]
 RewriteRule ^list-private-key$ private-key/list/list-private-key.php [L,NC,QSA]
+RewriteRule ^delete-private-key$ private-key/list/delete-private-key.php [L,NC,QSA]
 
 # Error page
 RewriteRule ^error$ error.php [L,QSA]
