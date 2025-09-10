@@ -13,9 +13,9 @@ RewriteCond %{THE_REQUEST} \s/manage/admin\.php [NC]
 RewriteRule ^manage/admin\.php$ /acc/admin [R=301,L]
 
 # Connect page
-RewriteRule ^connect$ connect-page/connect.php [L,NC]
-RewriteCond %{THE_REQUEST} \s/connect-page/connect\.php [NC]
-RewriteRule ^connect-page/connect\.php$ /acc/connect [R=301,L]
+RewriteRule ^connect$ connect-wallet/connect.php [L,NC]
+RewriteCond %{THE_REQUEST} \s/connect-wallet/connect\.php [NC]
+RewriteRule ^connect-wallet/connect\.php$ /acc/connect [R=301,L]
 # ====== Endpoints ======
 RewriteRule ^wallet-auth$ core/wallet-auth.php [L,NC]
 
