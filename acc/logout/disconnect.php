@@ -62,13 +62,15 @@ $page_css = ['/acc/logout/disconnect.css?t=' . time()];
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts - Internal library -->
     <script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
     <script defer src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
+    <!-- Scripts - Source code -->
     <script>
         // Pass JWT_SECRET securely to disconnect.js
         window.authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
     </script>
+    <script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
     <script defer src="/acc/logout/disconnect.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/logout/disconnect.js')"></script>
 </body>
 </html>
