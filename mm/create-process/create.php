@@ -295,8 +295,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
             exit;
         }
 
-        // Call decimals.php to get the decimals of the mint token
-        log_message("Calling decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
+        // Call check-decimals.php to get the decimals of the mint token
+        log_message("Calling check-decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
         try {
             ob_start();
             $_POST = [
@@ -305,25 +305,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
-            $_SERVER['REQUEST_URI'] = '/mm/create-process/decimals.php';
+            $_SERVER['REQUEST_URI'] = '/mm/create-process/check-decimals.php';
             $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
 
             // Refresh CSRF
             $csrf_token = generate_csrf_token();
-            log_message("CSRF token refreshed before calling decimals.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+            log_message("CSRF token refreshed before calling check-decimals.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
             $_POST['csrf_token'] = $csrf_token;
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
             // Call decimals.php
-            require_once $root_path . 'mm/create-process/decimals.php';
+            require_once $root_path . 'mm/create-process/check-decimals.php';
             $response = ob_get_clean();
 
             // Check feedback
             $data = json_decode($response, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                log_message("Failed to parse decimals.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+                log_message("Failed to parse check-decimals.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
                 header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'message' => 'Error parsing response from token decimals check']);
                 exit;
@@ -350,7 +350,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
 
         // Check wallet balance by calling balance.php, unless skipped or trade direction conditions are not met
         if (!$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
-            log_message("Calling balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, network=$network, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
+            log_message("Calling check-balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, network=$network, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
             try {
                 ob_start();
                 $_POST = [
@@ -365,19 +365,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
-                $_SERVER['REQUEST_URI'] = '/mm/create-process/balance.php';
+                $_SERVER['REQUEST_URI'] = '/mm/create-process/check-balance.php';
                 $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
 
                 // Refresh CSRF
                 $csrf_token = generate_csrf_token();
-                log_message("CSRF token refreshed before calling balance.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+                log_message("CSRF token refreshed before calling check-balance.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
                 $_POST['csrf_token'] = $csrf_token;
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call balance.php
-                require_once $root_path . 'mm/create-process/balance.php';
+                require_once $root_path . 'mm/create-process/check-balance.php';
                 $response = ob_get_clean();
 
                 // Check feedback
