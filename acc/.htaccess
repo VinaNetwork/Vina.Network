@@ -18,8 +18,6 @@ RewriteRule ^wallet-auth$ connect-phantom/wallet-auth.php [L,NC]
 RewriteRule ^profile$ profile-page/profile.php [L]
 RewriteCond %{THE_REQUEST} \s/acc/profile-page/profile\.php [NC]
 RewriteRule ^profile-page/profile\.php$ profile [R=301,L]
-# ====== Endpoints ======
-RewriteRule ^disconnect$ profile-page/disconnect.php [L,NC]
 
 # ====== Endpoints write logs ======
 RewriteRule ^write-logs$ write-logs.php [L,NC]
