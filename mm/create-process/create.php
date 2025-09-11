@@ -79,15 +79,15 @@ try {
 }
 
 // Fetch private keys for the user
+$noWallets = false;
+$wallets = [];
 try {
     $stmt = $pdo->prepare("SELECT id, wallet_name, public_key FROM private_key WHERE user_id = ? AND status = 'active'");
     $stmt->execute([$_SESSION['user_id']]);
     $wallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     if (empty($wallets)) {
         log_message("No active private keys found for user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'INFO');
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'No private keys available. Please add a private key first.']);
-        exit;
+        $noWallets = true;
     }
 } catch (PDOException $e) {
     log_message("Failed to fetch private keys: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
@@ -110,8 +110,8 @@ function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
     return false;
 }
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle form submission (only if wallets exist)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
     // Check X-Auth-Token for AJAX requests
     if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
         $headers = getallheaders();
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Log form data securely
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
             $logFormData = $form_data;
-            unset($logFormData['walletId']); // Remove walletId from JSON log
+            unset($logFormData['walletId']);
             $logFormData['walletId'] = $walletId;
             log_message("Form data: " . json_encode($logFormData), 'make-market.log', 'make-market', 'DEBUG');
             log_message(
@@ -535,49 +535,56 @@ $defaultSlippage = 0.5; // Slippage
         <h1><i class="fas fa-chart-line"></i> Make Market</h1>
         <p class="mm-network">Network: <?php echo htmlspecialchars(SOLANA_NETWORK); ?></p>
 
-        <!-- Form Make Market -->
-        <form id="makeMarketForm" autocomplete="off" method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
-            <label for="processName">Process Name:</label>
-            <input type="text" name="processName" id="processName" required>
-            <label for="walletId">🔑 Wallet:</label>
-            <select name="walletId" id="walletId" required>
-                <option value="">Select a wallet</option>
-                <?php foreach ($wallets as $wallet): ?>
-                    <option value="<?php echo htmlspecialchars($wallet['id']); ?>">
-                        <?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Wallet ' . substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <label for="tokenMint">🎯 Token Address:</label>
-            <input type="text" name="tokenMint" id="tokenMint" required placeholder="Enter token address...">
-            <label for="tradeDirection">📈 Trade Direction:</label>
-            <select name="tradeDirection" id="tradeDirection" required>
-                <option value="buy">Buy</option>
-                <option value="sell">Sell</option>
-                <option value="both">Both (Buy and Sell)</option>
-            </select>
-            <label for="solAmount">💰 SOL Amount:</label>
-            <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Enter SOL Amount...">
-            <label for="tokenAmount">🪙 Token Amount:</label>
-            <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" placeholder="Enter Token Amount..." disabled value="0">
-            <label for="slippage">📉 Slippage (%):</label>
-            <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
-            <label for="delay">⏱️ Delay between 2 batch (seconds):</label>
-            <input type="number" name="delay" id="delay" value="0" min="0">
-            <label for="loopCount">🔁 Loop Count:</label>
-            <input type="number" name="loopCount" id="loopCount" min="1" value="1">
-            <label for="batchSize">📦 Batch Size (2-10):</label>
-            <input type="number" name="batchSize" id="batchSize" min="2" max="10" value="2" required>
-            <label for="skipBalanceCheck" class="check-box">
-                <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
-                <p>Skip wallet balance check</p>
-            </label>
-            <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
-            <button class="cta-button" type="submit">🚀 Make Market</button>
-        </form>
+        <?php if ($noWallets): ?>
+            <div class="status-box active error">
+                <p>No private keys available. Please add a private key first.</p>
+                <a href="/mm/add-private-key" class="cta-button">Add Private Key</a>
+            </div>
+        <?php else: ?>
+            <!-- Form Make Market -->
+            <form id="makeMarketForm" autocomplete="off" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
+                <label for="processName">Process Name:</label>
+                <input type="text" name="processName" id="processName" required>
+                <label for="walletId">🔑 Wallet:</label>
+                <select name="walletId" id="walletId" required>
+                    <option value="">Select a wallet</option>
+                    <?php foreach ($wallets as $wallet): ?>
+                        <option value="<?php echo htmlspecialchars($wallet['id']); ?>">
+                            <?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Wallet ' . substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <label for="tokenMint">🎯 Token Address:</label>
+                <input type="text" name="tokenMint" id="tokenMint" required placeholder="Enter token address...">
+                <label for="tradeDirection">📈 Trade Direction:</label>
+                <select name="tradeDirection" id="tradeDirection" required>
+                    <option value="buy">Buy</option>
+                    <option value="sell">Sell</option>
+                    <option value="both">Both (Buy and Sell)</option>
+                </select>
+                <label for="solAmount">💰 SOL Amount:</label>
+                <input type="number" step="0.01" name="solAmount" id="solAmount" required placeholder="Enter SOL Amount...">
+                <label for="tokenAmount">🪙 Token Amount:</label>
+                <input type="number" step="0.000000001" name="tokenAmount" id="tokenAmount" placeholder="Enter Token Amount..." disabled value="0">
+                <label for="slippage">📉 Slippage (%):</label>
+                <input type="number" name="slippage" id="slippage" step="0.1" value="<?php echo $defaultSlippage; ?>">
+                <label for="delay">⏱️ Delay between 2 batch (seconds):</label>
+                <input type="number" name="delay" id="delay" value="0" min="0">
+                <label for="loopCount">🔁 Loop Count:</label>
+                <input type="number" name="loopCount" id="loopCount" min="1" value="1">
+                <label for="batchSize">📦 Batch Size (2-10):</label>
+                <input type="number" name="batchSize" id="batchSize" min="2" max="10" value="2" required>
+                <label for="skipBalanceCheck" class="check-box">
+                    <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
+                    <p>Skip wallet balance check</p>
+                </label>
+                <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
+                <button class="cta-button" type="submit">🚀 Make Market</button>
+            </form>
 
-        <div id="mm-result" class="status-box"></div>
+            <div id="mm-result" class="status-box"></div>
+        <?php endif; ?>
 
         <!-- Link to Transaction History -->
         <div class="lists-process">
