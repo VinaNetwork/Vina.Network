@@ -250,7 +250,6 @@
 .lists-process a {
   color: var(--mm-color-primary);
   text-decoration: none;
-  font-weight: 500;
   transition: var(--mm-transition);
 }
 
