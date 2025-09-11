@@ -9,9 +9,14 @@ RewriteBase /mm/
 
 # Create process page
 RewriteRule ^create$ create-process/create.php [L,NC,QSA]
-# ====== Endpoints ======
+# ====== Endpoints check wallet ======
+RewriteRule ^check-wallets$ create-process/check-wallets.php [L,NC,QSA]
+
+# ====== Rewrite & Endpoints CSRF ======
 RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC,QSA]
 RewriteRule ^clear-csrf$ csrf/clear-csrf.php [L,NC,QSA]
+
+# ====== Endpoints Network ======
 RewriteRule ^get-network$ network/get-network.php [L,NC,QSA]
 
 # Private key page
@@ -22,7 +27,7 @@ RewriteRule ^delete-private-key$ private-key/list/delete-private-key.php [L,NC,Q
 
 # Swap process page
 RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC,QSA]
-# ====== Endpoints ======
+# ====== Endpoints Process ======
 RewriteRule ^get-order/([0-9]+)$ process/get-order.php?id=$1 [L,NC,QSA]
 RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC,QSA]
 RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
