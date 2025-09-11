@@ -44,8 +44,8 @@ log_message("Session destroyed for public_key: $short_public_key, IP=$ip_address
 $page_title = "Logging out - Vina Network";
 $page_description = "Logging out from Vina Network";
 $page_keywords = "Vina Network, logout, disconnect";
-$page_url = BASE_URL . "acc/logout";
-$page_css = ['/acc/logout.css?t=' . time()];
+$page_url = BASE_URL . "acc/disconnect";
+$page_css = ['/acc/logout/disconnect.css'];
 ?>
 
 <!DOCTYPE html>
