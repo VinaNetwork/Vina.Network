@@ -12,7 +12,9 @@ RewriteBase /
 RewriteRule ^404$ 404.php [L]
 # Redirect 301 from /404.php to /404
 RewriteCond %{THE_REQUEST} \s/404\.php[\s?] [NC]
-RewriteRule ^404\.php$ /404 [R=301,L]
+RewriteRule ^404\.php$ 404 [R=301,L]
+# Redirect all non-existent pages to /404
+ErrorDocument 404 /404
 
 # ----------------------------------------------------------------------------
 # 🔐 SECURITY
