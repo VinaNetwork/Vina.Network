@@ -4,6 +4,9 @@
 // Created by: Vina Network
 // ============================================================================
 
+console.log('disconnect.js loaded');
+log_message('disconnect.js loaded', 'accounts.log', 'accounts', 'DEBUG');
+
 // authToken is passed from PHP
 const authToken = window.authToken || null;
 
@@ -56,17 +59,19 @@ function showError(message) {
     if (!walletInfo) {
         walletInfo = document.createElement('div');
         walletInfo.id = 'wallet-info';
+        walletInfo.className = 'wallet-info'; // Add class for CSS styling
         document.querySelector('.acc-content').appendChild(walletInfo);
     }
     if (!statusSpan) {
         statusSpan = document.createElement('span');
         statusSpan.id = 'status';
+        statusSpan.className = 'status-error'; // Add class for error styling
         walletInfo.appendChild(statusSpan);
+    } else {
+        statusSpan.className = 'status-error'; // Ensure error class is applied
     }
     
     statusSpan.textContent = message;
-    statusSpan.style.color = 'red';
-    walletInfo.style.display = 'block';
 }
 
 // Function to show success messages
@@ -79,21 +84,33 @@ function showSuccess(message) {
     if (!walletInfo) {
         walletInfo = document.createElement('div');
         walletInfo.id = 'wallet-info';
+        walletInfo.className = 'wallet-info'; // Add class for CSS styling
         document.querySelector('.acc-content').appendChild(walletInfo);
     }
     if (!statusSpan) {
         statusSpan = document.createElement('span');
         statusSpan.id = 'status';
+        statusSpan.className = 'status-success'; // Add class for success styling
         walletInfo.appendChild(statusSpan);
+    } else {
+        statusSpan.className = 'status-success'; // Ensure success class is applied
     }
     
     statusSpan.textContent = message;
-    statusSpan.style.color = 'green';
-    walletInfo.style.display = 'block';
 }
 
 // Disconnect wallet and redirect
 document.addEventListener('DOMContentLoaded', async () => {
+    if (typeof axios === 'undefined' || typeof solanaWeb3 === 'undefined') {
+        console.error('Required libraries not loaded');
+        await log_message('Required libraries not loaded (axios or solanaWeb3)', 'accounts.log', 'accounts', 'ERROR');
+        showError('Failed to load required libraries, redirecting...');
+        setTimeout(() => {
+            window.location.href = '/acc/connect-p';
+        }, 2000);
+        return;
+    }
+
     let walletInfo = document.getElementById('wallet-info');
     let statusSpan = document.getElementById('status');
     if (!walletInfo || !statusSpan) {
@@ -101,8 +118,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await log_message('DOM elements missing, creating dynamically', 'accounts.log', 'accounts', 'ERROR');
         walletInfo = document.createElement('div');
         walletInfo.id = 'wallet-info';
+        walletInfo.className = 'wallet-info'; // Add class for CSS styling
         statusSpan = document.createElement('span');
         statusSpan.id = 'status';
+        statusSpan.className = 'status-error'; // Default to error for DOM creation
         walletInfo.appendChild(statusSpan);
         document.querySelector('.acc-content').appendChild(walletInfo);
     }
@@ -133,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await log_message('Redirecting to /acc/connect-p after logout', 'accounts.log', 'accounts', 'INFO');
         setTimeout(() => {
             window.location.href = '/acc/connect-p';
-        }, 3000);
+        }, 1000);
     } catch (error) {
         await log_message(`Error during logout process: ${error.message}`, 'accounts.log', 'accounts', 'ERROR');
         showError(`Error during logout: ${error.message}`);
