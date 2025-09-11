@@ -195,7 +195,7 @@ $page_css = ['/acc/logout.css?t=' . time()];
                 await log_message('Redirecting to /acc/connect-p after logout', 'accounts.log', 'accounts', 'INFO');
                 setTimeout(() => {
                     window.location.href = '/acc/connect-p';
-                }, 1000);
+                }, 3000);
             } catch (error) {
                 await log_message(`Error during logout process: ${error.message}`, 'accounts.log', 'accounts', 'ERROR');
                 showError(`Error during logout: ${error.message}`);
