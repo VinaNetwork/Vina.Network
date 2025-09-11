@@ -6,8 +6,8 @@
 
 // DOM
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('admin.js loaded');
-    log_message('admin.js loaded', 'manage-list-acc.log', 'accounts', 'DEBUG');
+    console.log('list-acc.js loaded');
+    log_message('list-acc.js loaded', 'manage-list-acc.log', 'accounts', 'DEBUG');
 
     // Copy functionality
     const copyIcons = document.querySelectorAll('.copy-icon');
