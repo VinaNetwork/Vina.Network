@@ -14,6 +14,13 @@ RewriteRule ^connect-phantom/connect-p\.php$ connect-p [R=301,L]
 # ====== Endpoints ======
 RewriteRule ^wallet-auth$ connect-phantom/wallet-auth.php [L,NC]
 
+# Connect Jupiter wallet page
+RewriteRule ^connect-j$ connect-jupiter/connect-j.php [L,NC]
+RewriteCond %{THE_REQUEST} \s/acc/connect-jupiter/connect-j\.php [NC]
+RewriteRule ^connect-jupiter/connect-j\.php$ connect-j [R=301,L]
+# ====== Endpoints ======
+RewriteRule ^auth-j$ connect-jupiter/auth-j.php [L,NC]
+
 # Profile page
 RewriteRule ^profile$ profile-page/profile.php [L]
 RewriteCond %{THE_REQUEST} \s/acc/profile-page/profile\.php [NC]
