@@ -1,6 +1,6 @@
 /* ============================================================================
  * File: acc/logout/disconnect.css
- * Description: CSS styles for the Logout page.
+ * Description: Optimized CSS styles for the Logout page.
  * Created by: Vina Network
  * ========================================================================== */
 
@@ -36,7 +36,7 @@
   --acc-navbar-height-mobile: 64px;
 }
 
-/* Layout & Container Styling */
+/* Layout & Container Styling - Optimized */
 .acc-container {
   min-height: 100vh;
   margin-top: var(--acc-navbar-height);
@@ -52,6 +52,7 @@
   background-size: cover;
   background-position: center;
   position: relative;
+  will-change: transform; /* Optimize animations */
 }
 
 /* Add overlay for better readability */
@@ -66,7 +67,7 @@
   z-index: 1;
 }
 
-/* Content Card Styling */
+/* Content Card Styling - Optimized */
 .acc-content {
   background: var(--acc-color-background-fallback);
   background: var(--acc-color-background);
@@ -85,6 +86,8 @@
   flex-direction: column;
   justify-content: center;
   min-height: auto;
+  will-change: transform, box-shadow; /* Optimize animations */
+  transform: translateZ(0); /* Force GPU acceleration */
 }
 
 .acc-content:hover {
@@ -92,7 +95,7 @@
   box-shadow: var(--acc-shadow-hover);
 }
 
-/* Heading Styling */
+/* Heading Styling - Optimized */
 .acc-content h1 {
   color: var(--acc-color-primary);
   transition: var(--acc-transition);
@@ -102,11 +105,11 @@
   color: var(--acc-color-text);
 }
 
-.acc-content {
-	margin-right: var(--acc-spacing-sm);
+.acc-content p {
+  color: var(--acc-color-text-muted);
 }
 
-/* Wallet Info */
+/* Wallet Info - Optimized */
 #wallet-info {
   margin: var(--acc-spacing-xl) 0;
   color: var(--acc-color-text);
@@ -115,9 +118,20 @@
   border-radius: var(--acc-border-radius);
   border-left: 4px solid var(--acc-color-primary);
   overflow-wrap: break-word;
+  font-family: monospace;
+  font-size: 0.95rem;
+  transition: opacity 0.3s ease;
 }
 
-/* Animation for content */
+#wallet-info.success {
+  border-left-color: var(--acc-color-success);
+}
+
+#wallet-info.error {
+  border-left-color: #dc3545;
+}
+
+/* Animation for content - Optimized */
 .acc-content {
   opacity: 0;
   transform: translateY(20px) scale(0.98);
@@ -131,16 +145,39 @@
   }
 }
 
+/* Loading animation */
+.loading-dots {
+  display: inline-block;
+  margin-left: 4px;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .acc-content,
-  .acc-content h1 {
+  .acc-content h1,
+  #wallet-info {
     transition: none;
     animation: none;
   }
   
   .acc-content:hover {
     transform: none;
+  }
+  
+  .loading-dots::after {
+    animation: none;
+    content: '';
   }
 }
 
@@ -164,6 +201,15 @@
   .acc-content {
     border: 2px solid var(--acc-color-primary);
   }
+  
+  #wallet-info {
+    border: 2px solid var(--acc-color-primary);
+  }
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+  /* Already dark themed */
 }
 
 /* Print styles */
@@ -181,9 +227,37 @@
     background: none !important;
     box-shadow: none;
     border: 1px solid #000;
+    color: #000 !important;
   }
   
   .acc-content h1 {
     color: #000 !important;
+  }
+  
+  #wallet-info {
+    background: none !important;
+    border: 1px solid #000;
+    color: #000 !important;
+  }
+}
+
+/* Focus styles for accessibility */
+.acc-content:focus-within {
+  outline: 2px solid var(--acc-color-primary);
+  outline-offset: 2px;
+}
+
+/* Performance optimizations */
+@media (prefers-reduced-data: reduce) {
+  .acc-container {
+    background: var(--acc-color-background-fallback) !important;
+  }
+  
+  .acc-container::before {
+    display: none;
+  }
+  
+  .acc-content {
+    backdrop-filter: none;
   }
 }
