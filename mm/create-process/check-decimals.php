@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/create-process/decimals.php
+// File: mm/create-process/check-decimals.php
 // Description: Fetch decimals for a given token mint using Solana RPC getAccountInfo
 // Created by: Vina Network
 // ============================================================================
