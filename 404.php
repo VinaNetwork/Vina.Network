@@ -43,12 +43,11 @@ $page_css = ['css/404.css'];
         <a href="/" class="cta-button">Back to Home</a>
     </div>
 </div>
-
 <?php include $root_path . 'include/community.php'; ?>
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts -->
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script src="/js/vina.js"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
