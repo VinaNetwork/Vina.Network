@@ -9,7 +9,7 @@ RewriteBase /manage/
 
 # Page
 RewriteRule ^list-accounts$ list-acc/list-acc.php [L,NC]
-RewriteCond %{THE_REQUEST} \s/manage/connect-phantom/connect-p\.php [NC]
+RewriteCond %{THE_REQUEST} \s/manage/list-acc/list-acc\.php [NC]
 RewriteRule ^list-acc/list-acc\.php$ list-accounts [R=301,L]
 
 # ====== Endpoints ======
