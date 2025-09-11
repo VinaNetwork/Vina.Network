@@ -137,7 +137,7 @@ async function log_message(message, log_file = 'accounts.log', module = 'account
                         if (result.status === 'success') {
                             console.log('Logout successful, redirecting to:', result.redirect || '/acc/connect');
                             log_message(`Logout successful, redirecting to: ${result.redirect || '/acc/connect'}`, 'accounts.log', 'accounts', 'INFO');
-                            window.location.href = result.redirect || '/acc/connect';
+                            window.location.href = result.redirect || '/acc/connect-p';
                         } else {
                             showError(result.message || 'Logout failed. Please try again.');
                         }
