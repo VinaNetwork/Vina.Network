@@ -103,8 +103,6 @@
 /* Heading Styling */
 .content-404 h1 {
   color: var(--error-color-primary);
-  margin-bottom: var(--error-spacing-md);
-  font-weight: 700;
   transition: var(--error-transition);
 }
 
@@ -123,35 +121,13 @@
   transition: var(--error-transition);
 }
 
-.alert p {
-  margin: 0;
-  font-weight: 500;
-}
-
 .alert strong {
   color: var(--error-color-alert-text);
 }
 
 /* Button Styling */
 .content-404 .cta-button {
-  background: linear-gradient(45deg, var(--error-color-primary), #007bff);
-  color: #fff;
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  box-shadow: var(--error-shadow-button);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-  font-weight: 500;
-}
-
-.content-404 .cta-button:hover {
-  transform: scale(1.05);
-  box-shadow: var(--error-shadow-button-hover);
-  color: #fff;
-  text-decoration: none;
+  width: 100%;
 }
 
 /* Animation for 404 content */
@@ -191,7 +167,7 @@
 @media screen and (max-width: 768px) {
   .container-404 {
     margin-top: var(--error-navbar-height-mobile);
-    min-height: calc(100vh - var(--error-navbar-height-mobile));
+    min-height: unset;
     padding: var(--error-spacing-sm);
   }
 
@@ -206,10 +182,6 @@
   
   .alert {
     padding: var(--error-spacing-sm);
-  }
-  
-  .content-404 .cta-button {
-    padding: 0.7rem 1.3rem;
   }
 }
 
