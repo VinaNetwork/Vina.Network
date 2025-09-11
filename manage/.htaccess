@@ -13,4 +13,4 @@ RewriteCond %{THE_REQUEST} \s/manage/list-acc/list-acc\.php [NC]
 RewriteRule ^list-acc/list-acc\.php$ list-accounts [R=301,L]
 
 # ====== Endpoints ======
-RewriteRule ^write-logs$ core/write-logs.php [L,NC]
+RewriteRule ^write-logs$ write-logs.php [L,NC]
