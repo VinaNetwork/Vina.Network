@@ -109,9 +109,7 @@ $page_css = ['/acc/profile-page/profile.css'];
             </table>
         </div>
 
-        <form method="POST" id="logout-form" action="/acc/logout">
-            <button class="cta-button" type="submit" name="logout">Disconnect</button>
-        </form>
+        <a href="/acc/logout" class="cta-button">Disconnect</a>
         
         <div id="wallet-info" style="display: none;">
             <span id="status"></span>
