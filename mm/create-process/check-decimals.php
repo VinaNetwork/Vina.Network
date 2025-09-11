@@ -16,7 +16,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Check AJAX request (though called via include, for consistency)
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Non-AJAX request rejected in decimals.php", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Non-AJAX request rejected in check-decimals.php", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
     exit;
@@ -24,7 +24,7 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 
 // Get parameters from POST data
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("Invalid request method in decimals.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid request method in check-decimals.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Request method not supported']);
     exit;
@@ -42,7 +42,7 @@ $_POST[CSRF_TOKEN_NAME] = $csrf_token;
 try {
     csrf_protect();
 } catch (Exception $e) {
-    log_message("CSRF validation failed in decimals.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("CSRF validation failed in check-decimals.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
@@ -50,7 +50,7 @@ try {
 
 // Validate required input
 if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $token_mint)) {
-    log_message("Invalid token mint in decimals.php: $token_mint", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid token mint in check-decimals.php: $token_mint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address']);
     exit;
@@ -127,14 +127,14 @@ try {
     }
 
     if (isset($data['error'])) {
-        log_message("RPC failed in decimals.php: {$data['error']['message']}, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in check-decimals.php: {$data['error']['message']}, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $data['error']['message']]);
         exit;
     }
 
     if (!isset($data['result']['value']) || !isset($data['result']['value']['data']['parsed']['info']['decimals'])) {
-        log_message("RPC failed in decimals.php: No decimals found for token_mint=$token_mint, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in check-decimals.php: No decimals found for token_mint=$token_mint, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Invalid token mint or not a fungible token']);
         exit;
@@ -152,7 +152,7 @@ try {
         'decimals' => $decimals
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
-    log_message("Decimals fetch failed in decimals.php: {$e->getMessage()}, network=$network", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Decimals fetch failed in check-decimals.php: {$e->getMessage()}, network=$network", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $e->getMessage()]);
     exit;
