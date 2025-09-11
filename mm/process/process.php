@@ -89,7 +89,7 @@ if (!$user_public_key || !$user_id) {
     session_destroy(); // Clear session to avoid using old session
     $_SESSION['redirect_url'] = '/mm/process';
     session_write_close();
-    header('Location: /acc/connect');
+    header('Location: /acc/connect-p');
     exit;
 }
 
@@ -171,8 +171,8 @@ $page_description = "Execute your automated Solana token trading with Vina Netwo
 $page_keywords = "Solana trading, automated trading, Jupiter API, make market, Vina Network";
 $page_og_title = "Make Market Process: Automate Solana Token Trading";
 $page_og_description = "Execute Solana token swaps using Jupiter Aggregator.";
-$page_og_url = BASE_URL . "mm/";
-$page_canonical = BASE_URL . "mm/";
+$page_og_url = BASE_URL . "mm/create";
+$page_canonical = BASE_URL . "mm/create";
 $page_css = ['/mm/process/process.css'];
 ?>
 
