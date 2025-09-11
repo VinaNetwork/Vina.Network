@@ -108,10 +108,11 @@ $page_css = ['/acc/profile-page/profile.css'];
                 <tr><th>Last login:</th><td><?php echo htmlspecialchars($last_login); ?></td></tr>
             </table>
         </div>
-        
-        <form method="POST" id="logout-form" action="/acc/profile">
+
+        <form method="POST" id="logout-form" action="/acc/logout">
             <button class="cta-button" type="submit" name="logout">Disconnect</button>
         </form>
+        
         <div id="wallet-info" style="display: none;">
             <span id="status"></span>
         </div>
