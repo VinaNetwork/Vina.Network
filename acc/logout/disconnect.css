@@ -109,8 +109,9 @@
   color: var(--acc-color-text-muted);
 }
 
-/* Wallet Info - Optimized */
+/* Wallet Info */
 #wallet-info {
+  display: block;
   margin: var(--acc-spacing-xl) 0;
   color: var(--acc-color-text);
   background: rgba(0, 0, 0, 0.2);
