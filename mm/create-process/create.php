@@ -55,7 +55,7 @@ log_message("Session public_key: $short_public_key", 'make-market.log', 'make-ma
 if (!$public_key) {
     log_message("No public key in session, redirecting to login", 'make-market.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm/create';
-    header('Location: /acc/connect');
+    header('Location: /acc/connect-p');
     exit;
 }
 
@@ -67,7 +67,7 @@ try {
     if (!$account) {
         log_message("No account found for session public_key: $short_public_key", 'make-market.log', 'make-market', 'ERROR');
         $_SESSION['redirect_url'] = '/mm/create';
-        header('Location: /acc/connect');
+        header('Location: /acc/connect-p');
         exit;
     }
     $_SESSION['user_id'] = $account['id'];
@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
-            $_SERVER['REQUEST_URI'] = '/mm/core/decimals.php';
+            $_SERVER['REQUEST_URI'] = '/mm/create-process/decimals.php';
             $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
             // Call decimals.php
-            require_once $root_path . 'mm/core/decimals.php';
+            require_once $root_path . 'mm/create-process/decimals.php';
             $response = ob_get_clean();
 
             // Check feedback
@@ -321,7 +321,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
-                $_SERVER['REQUEST_URI'] = '/mm/core/balance.php';
+                $_SERVER['REQUEST_URI'] = '/mm/create-process/balance.php';
                 $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
@@ -333,7 +333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call balance.php
-                require_once $root_path . 'mm/core/balance.php';
+                require_once $root_path . 'mm/create-process/balance.php';
                 $response = ob_get_clean();
 
                 // Check feedback
