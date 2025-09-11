@@ -16,7 +16,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH'] !== 'XMLHttpRequest') {
-    log_message("Non-AJAX request rejected in balance.php", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Non-AJAX request rejected in check-balance.php", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
     exit;
@@ -24,7 +24,7 @@ if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || $_SERVER['HTTP_X_REQUESTED_WITH
 
 // Get parameters from POST data
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    log_message("Invalid request method in balance.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid request method in check-balance.php: {$_SERVER['REQUEST_METHOD']}", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Request method not supported']);
     exit;
@@ -48,7 +48,7 @@ $_POST[CSRF_TOKEN_NAME] = $csrf_token;
 try {
     csrf_protect();
 } catch (Exception $e) {
-    log_message("CSRF validation failed in balance.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
+    log_message("CSRF validation failed in check-balance.php: {$e->getMessage()}, provided_token=$csrf_token, session_id=" . (session_id() ?: 'none'), 'make-market.log', 'make-market', 'ERROR');
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
@@ -56,14 +56,14 @@ try {
 
 // Validate minimal required inputs
 if (empty($public_key)) {
-    log_message("Missing public key in balance.php", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Missing public key in check-balance.php", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Missing wallet address']);
     exit;
 }
 
 if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $token_mint)) {
-    log_message("Invalid token mint in balance.php: $token_mint", 'make-market.log', 'make-market', 'ERROR');
+    log_message("Invalid token mint in check-balance.php: $token_mint", 'make-market.log', 'make-market', 'ERROR');
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Invalid token mint address']);
     exit;
@@ -72,7 +72,7 @@ if (empty($token_mint) || !preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcde
 $short_public_key = substr($public_key, 0, 4) . '...';
 log_message("Parameters received: public_key=$short_public_key, sol_amount=$sol_amount, token_amount=$token_amount, token_mint=$token_mint, trade_direction=$trade_direction, loop_count=$loop_count, batch_size=$batch_size, network=$network", 'make-market.log', 'make-market', 'INFO');
 
-// Get decimals from session (set by decimals.php)
+// Get decimals from session (set by check-decimals.php)
 $decimals = isset($_SESSION['decimals_' . $token_mint]) ? intval($_SESSION['decimals_' . $token_mint]) : 9;
 if ($trade_direction === 'sell' || $trade_direction === 'both') {
     if (!isset($_SESSION['decimals_' . $token_mint])) {
@@ -86,7 +86,7 @@ if ($trade_direction === 'sell' || $trade_direction === 'both') {
 try {
     $rpc_endpoint = RPC_ENDPOINT;
     if (empty($rpc_endpoint)) {
-        log_message("RPC_ENDPOINT is not defined or empty in balance.php, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC_ENDPOINT is not defined or empty in check-balance.php, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing RPC endpoint']);
         exit;
@@ -126,7 +126,7 @@ try {
     curl_close($curl);
 
     if ($sol_err || $sol_http_code !== 200) {
-        log_message("RPC getBalance failed in balance.php: cURL error=$sol_err, HTTP=$sol_http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC getBalance failed in check-balance.php: cURL error=$sol_err, HTTP=$sol_http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking SOL balance']);
         if (isset($_SESSION['decimals_' . $token_mint])) {
@@ -138,7 +138,7 @@ try {
 
     $sol_data = json_decode($sol_response, true);
     if (json_last_error() !== JSON_ERROR_NONE || !isset($sol_data['result']['value'])) {
-        log_message("RPC getBalance failed in balance.php: Invalid JSON or no balance found for public_key=$short_public_key, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC getBalance failed in check-balance.php: Invalid JSON or no balance found for public_key=$short_public_key, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error checking SOL balance']);
         if (isset($_SESSION['decimals_' . $token_mint])) {
@@ -198,7 +198,7 @@ try {
         curl_close($curl);
 
         if ($err || $http_code !== 200) {
-            log_message("RPC $method failed in balance.php: cURL error=$err, HTTP=$http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
+            log_message("RPC $method failed in check-balance.php: cURL error=$err, HTTP=$http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Error checking token balance']);
             if (isset($_SESSION['decimals_' . $token_mint])) {
@@ -210,7 +210,7 @@ try {
 
         $data = json_decode($response, true);
         if (json_last_error() !== JSON_ERROR_NONE || !isset($data['result'])) {
-            log_message("RPC $method failed in balance.php: Invalid JSON or no result found, network=$network", 'make-market.log', 'make-market', 'ERROR');
+            log_message("RPC $method failed in check-balance.php: Invalid JSON or no result found, network=$network", 'make-market.log', 'make-market', 'ERROR');
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Error checking token balance']);
             if (isset($_SESSION['decimals_' . $token_mint])) {
@@ -221,7 +221,7 @@ try {
         }
 
         if (isset($data['error'])) {
-            log_message("RPC $method failed in balance.php: {$data['error']['message']}, network=$network", 'make-market.log', 'make-market', 'ERROR');
+            log_message("RPC $method failed in check-balance.php: {$data['error']['message']}, network=$network", 'make-market.log', 'make-market', 'ERROR');
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Error checking token balance: ' . $data['error']['message']]);
             if (isset($_SESSION['decimals_' . $token_mint])) {
