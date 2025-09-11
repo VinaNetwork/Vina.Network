@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: manage/list-acc/list-acc.php
-// Description: Account management page.
+// Description: List members of Vina Network page.
 // Created by: Vina Network
 // ============================================================================
 
@@ -20,7 +20,7 @@ try {
     log_message("Database connection successful for admin page", 'manage-list-acc.log', 'accounts', 'INFO');
 } catch (PDOException $e) {
     log_message("Database connection failed: {$e->getMessage()}", 'manage-list-acc.log', 'accounts', 'ERROR');
-    header('Location: /acc/connect?error=Database connection failed');
+    header('Location: /acc/connect-p?error=Database connection failed');
     exit;
 }
 
@@ -35,17 +35,17 @@ if ($public_key) {
             log_message("Role verified from database for public_key: $short_public_key, role: admin", 'manage-list-acc.log', 'accounts', 'INFO');
         } else {
             log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, role: " . ($account['role'] ?? 'Not found') . ", is_active: " . ($account['is_active'] ?? 'Not found'), 'manage-list-acc.log', 'accounts', 'ERROR');
-            header('Location: /acc/connect?error=Unauthorized access');
+            header('Location: /acc/connect-p?error=Unauthorized access');
             exit;
         }
     } catch (PDOException $e) {
         log_message("Database query failed for role check: {$e->getMessage()}, public_key: $short_public_key", 'manage-list-acc.log', 'accounts', 'ERROR');
-        header('Location: /acc/connect?error=Database error');
+        header('Location: /acc/connect-p?error=Database error');
         exit;
     }
 } else {
     log_message("Unauthorized access attempt to admin page, public_key: $short_public_key, session_role: Not set, IP=" . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 'manage-list-acc.log', 'accounts', 'ERROR');
-    header('Location: /acc/connect?error=Unauthorized access');
+    header('Location: /acc/connect-p?error=Unauthorized access');
     exit;
 }
 
