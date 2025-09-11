@@ -12,12 +12,12 @@ RewriteRule ^admin$ manage/admin.php [L,NC]
 RewriteCond %{THE_REQUEST} \s/manage/admin\.php [NC]
 RewriteRule ^manage/admin\.php$ /acc/admin [R=301,L]
 
-# Connect page
-RewriteRule ^connect$ login/connect.php [L,NC]
-RewriteCond %{THE_REQUEST} \s/login/connect\.php [NC]
-RewriteRule ^login/connect\.php$ /acc/connect [R=301,L]
+# Connect Phantom wallet page
+RewriteRule ^connect-phantom$ connect-phantom/connect-p.php [L,NC]
+RewriteCond %{THE_REQUEST} \s/connect-phantom/connect\.php [NC]
+RewriteRule ^connect-phantom/connect\.php$ /acc/connect-phantom [R=301,L]
 # ====== Endpoints ======
-RewriteRule ^wallet-auth$ login/wallet-auth.php [L,NC]
+RewriteRule ^wallet-auth$ connect-phantom/wallet-auth.php [L,NC]
 
 # Profile page
 RewriteRule ^profile$ profile-page/profile.php [L]
