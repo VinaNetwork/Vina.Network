@@ -45,7 +45,7 @@ $page_title = "Logging out - Vina Network";
 $page_description = "Logging out from Vina Network";
 $page_keywords = "Vina Network, logout, disconnect";
 $page_url = BASE_URL . "acc/logout";
-$page_css = ['/acc/connect-phantom/connect-p.css'];
+$page_css = ['/acc/logout.css']; // Updated to use dedicated logout CSS
 ?>
 
 <!DOCTYPE html>
@@ -112,16 +112,46 @@ $page_css = ['/acc/connect-phantom/connect-p.css'];
         function showError(message) {
             console.log('Showing error:', message);
             log_message(`Showing error: ${message}`, 'accounts.log', 'accounts', 'ERROR');
-            const statusSpan = document.getElementById('status') || document.createElement('span');
-            statusSpan.id = 'status';
-            statusSpan.textContent = message;
-            statusSpan.style.color = 'red';
-            const walletInfo = document.getElementById('wallet-info') || document.createElement('div');
-            walletInfo.id = 'wallet-info';
-            walletInfo.style.display = 'block';
-            if (!walletInfo.contains(statusSpan)) {
+            let walletInfo = document.getElementById('wallet-info');
+            let statusSpan = document.getElementById('status');
+            
+            if (!walletInfo) {
+                walletInfo = document.createElement('div');
+                walletInfo.id = 'wallet-info';
+                document.querySelector('.acc-content').appendChild(walletInfo);
+            }
+            if (!statusSpan) {
+                statusSpan = document.createElement('span');
+                statusSpan.id = 'status';
                 walletInfo.appendChild(statusSpan);
             }
+            
+            statusSpan.textContent = message;
+            statusSpan.style.color = 'red';
+            walletInfo.style.display = 'block';
+        }
+
+        // Function to show success messages
+        function showSuccess(message) {
+            console.log('Showing success:', message);
+            log_message(`Showing success: ${message}`, 'accounts.log', 'accounts', 'INFO');
+            let walletInfo = document.getElementById('wallet-info');
+            let statusSpan = document.getElementById('status');
+            
+            if (!walletInfo) {
+                walletInfo = document.createElement('div');
+                walletInfo.id = 'wallet-info';
+                document.querySelector('.acc-content').appendChild(walletInfo);
+            }
+            if (!statusSpan) {
+                statusSpan = document.createElement('span');
+                statusSpan.id = 'status';
+                walletInfo.appendChild(statusSpan);
+            }
+            
+            statusSpan.textContent = message;
+            statusSpan.style.color = 'green';
+            walletInfo.style.display = 'block';
         }
 
         // Disconnect wallet and redirect
@@ -134,26 +164,31 @@ $page_css = ['/acc/connect-phantom/connect-p.css'];
                     try {
                         await window.solana.disconnect();
                         await log_message('Phantom wallet disconnected successfully', 'accounts.log', 'accounts', 'INFO');
+                        showSuccess('Logout successful, redirecting...');
                     } catch (disconnectError) {
                         await log_message(`Failed to disconnect Phantom wallet: ${disconnectError.message}`, 'accounts.log', 'accounts', 'ERROR');
-                        console.error('Disconnect error:', disconnectError);
+                        showError(`Failed to disconnect wallet: ${disconnectError.message}`);
+                        setTimeout(() => {
+                            window.location.href = '/acc/connect-p';
+                        }, 2000);
+                        return;
                     }
                 } else {
                     await log_message('No Phantom wallet detected, skipping disconnect', 'accounts.log', 'accounts', 'INFO');
+                    showSuccess('Logout successful, redirecting...');
                 }
 
                 // Redirect to /acc/connect-p
-                statusSpan.textContent = 'Logout successful, redirecting...';
-                await log_message('Logout successful, redirecting to /acc/connect-p', 'accounts.log', 'accounts', 'INFO');
+                await log_message('Redirecting to /acc/connect-p after logout', 'accounts.log', 'accounts', 'INFO');
                 setTimeout(() => {
                     window.location.href = '/acc/connect-p';
-                }, 3000); // Delay 3 seconds to display notification
+                }, 1000);
             } catch (error) {
                 await log_message(`Error during logout process: ${error.message}`, 'accounts.log', 'accounts', 'ERROR');
                 showError(`Error during logout: ${error.message}`);
                 setTimeout(() => {
                     window.location.href = '/acc/connect-p';
-                }, 2000); // Delay redirect to show error
+                }, 2000);
             }
         });
     </script>
