@@ -52,6 +52,7 @@ $page_css = ['/acc/logout/disconnect.css?t=' . time()];
 <html lang="en">
 <?php require_once $root_path . 'include/header.php'; ?>
 <body>
+    <?php require_once $root_path . 'include/navbar.php';?>
     <div class="acc-container">
         <div class="acc-content">
             <h1>Logging out...</h1>
@@ -61,6 +62,7 @@ $page_css = ['/acc/logout/disconnect.css?t=' . time()];
             </div>
         </div>
     </div>
+    <?php require_once $root_path . 'include/footer.php';?>
 
     <!-- Scripts - Internal library -->
     <script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
