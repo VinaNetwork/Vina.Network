@@ -6,7 +6,7 @@
 // ============================================================================
 
 ob_start();
-$root_path = __DIR__ . '/../';
+$root_path = __DIR__ . '/../../';
 require_once $root_path . 'acc/bootstrap.php';
 
 // Set response headers
