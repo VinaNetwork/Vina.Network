@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: mm/create-process/balance.php
+// File: mm/create-process/check-balance.php
 // Description: Check wallet balance for SOL and Token using Solana RPC
 // Created by: Vina Network
 // ============================================================================
