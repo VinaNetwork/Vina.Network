@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: acc/logout.php
+// File: acc/logout/disconnect.php
 // Description: Handles user logout, disconnects Phantom wallet, and redirects to /acc/connect-p
 // Created by: Vina Network
 // ============================================================================
