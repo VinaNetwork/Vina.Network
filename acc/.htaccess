@@ -25,4 +25,4 @@ RewriteRule ^disconnect$ profile-page/disconnect.php [L,NC]
 RewriteRule ^write-logs$ write-logs.php [L,NC]
 
 # Logout/Disconnects Phantom wallet
-RewriteRule ^logout$ logout.php [L,NC]
+RewriteRule ^disconnect$ logout/disconnect.php [L,NC]
