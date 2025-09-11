@@ -143,7 +143,6 @@ $page_css = ['/acc/connect-phantom/connect-p.css'];
                 }
 
                 // Redirect to /acc/connect-p
-                // Trong logout.php, sửa phần redirect
                 statusSpan.textContent = 'Logout successful, redirecting...';
                 await log_message('Logout successful, redirecting to /acc/connect-p', 'accounts.log', 'accounts', 'INFO');
                 setTimeout(() => {
