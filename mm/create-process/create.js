@@ -6,15 +6,11 @@
 
 // Log message function
 async function log_message(message, log_file = 'make-market.log', module = 'make-market', log_type = 'INFO') {
-    // Check authToken
     if (!authToken) {
         console.error('Log failed: authToken is missing');
         return;
     }
-
-    // Filter sensitive information (if necessary)
     const sanitizedMessage = message.replace(/privateKey=[^\s]+/g, 'privateKey=[HIDDEN]');
-
     try {
         const response = await axios.post('/mm/write-logs', {
             message: sanitizedMessage,
@@ -30,7 +26,6 @@ async function log_message(message, log_file = 'make-market.log', module = 'make
             },
             withCredentials: true
         });
-
         if (response.status === 200 && response.data.status === 'success') {
             console.log(`Log sent successfully: ${sanitizedMessage}`);
         } else {
@@ -170,7 +165,7 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
 
     const params = {
         processName: formData.get('processName')?.trim() || '',
-        privateKey: formData.get('privateKey')?.trim() || '',
+        walletId: formData.get('walletId')?.trim() || '',
         tokenMint: formData.get('tokenMint')?.trim() || '',
         tradeDirection: formData.get('tradeDirection') || 'buy',
         solAmount: formData.get('tradeDirection') === 'sell' ? 0 : parseFloat(formData.get('solAmount')) || 0,
@@ -193,10 +188,10 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         submitButton.disabled = false;
         return;
     }
-    if (!params.privateKey) {
-        log_message('Private key is empty', 'make-market.log', 'make-market', 'ERROR');
-        showError('Private key is required.');
-        console.error('Private key is empty');
+    if (!params.walletId) {
+        log_message('Wallet selection is empty', 'make-market.log', 'make-market', 'ERROR');
+        showError('Please select a wallet.');
+        console.error('Wallet selection is empty');
         submitButton.disabled = false;
         return;
     }
@@ -204,13 +199,6 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
         log_message('Token mint is empty', 'make-market.log', 'make-market', 'ERROR');
         showError('Token mint address is required.');
         console.error('Token mint is empty');
-        submitButton.disabled = false;
-        return;
-    }
-    if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/.test(params.privateKey)) {
-        log_message('Private key is invalid format', 'make-market.log', 'make-market', 'ERROR');
-        showError('Private key is invalid format. Please check again.');
-        console.error('Private key is invalid format');
         submitButton.disabled = false;
         return;
     }
@@ -358,26 +346,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to update field visibility and state
     function updateFields() {
         if (tradeDirectionSelect.value === 'buy') {
-            // Hide tokenAmount field and label
             tokenAmountInput.classList.add('hidden');
             tokenAmountLabel.classList.add('hidden');
-            // Show solAmount field and label
             solAmountInput.classList.remove('hidden');
             solAmountLabel.classList.remove('hidden');
-            // Set values and states
             tokenAmountInput.value = '0';
             tokenAmountInput.disabled = true;
             solAmountInput.disabled = false;
             solAmountInput.required = true;
             log_message('Token amount hidden and disabled, SOL amount shown and enabled for Buy direction', 'make-market.log', 'make-market', 'INFO');
         } else if (tradeDirectionSelect.value === 'sell') {
-            // Hide solAmount field and label
             solAmountInput.classList.add('hidden');
             solAmountLabel.classList.add('hidden');
-            // Show tokenAmount field and label
             tokenAmountInput.classList.remove('hidden');
             tokenAmountLabel.classList.remove('hidden');
-            // Set values and states
             solAmountInput.value = '0';
             solAmountInput.disabled = true;
             solAmountInput.required = false;
@@ -385,12 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
             tokenAmountInput.required = true;
             log_message('SOL amount hidden and disabled, Token amount shown and enabled for Sell direction', 'make-market.log', 'make-market', 'INFO');
         } else if (tradeDirectionSelect.value === 'both') {
-            // Show both fields and labels
             solAmountInput.classList.remove('hidden');
             solAmountLabel.classList.remove('hidden');
             tokenAmountInput.classList.remove('hidden');
             tokenAmountLabel.classList.remove('hidden');
-            // Set states
             solAmountInput.disabled = false;
             solAmountInput.required = true;
             tokenAmountInput.disabled = false;
