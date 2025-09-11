@@ -62,7 +62,7 @@ log_message("Fetching decimals for token_mint: $token_mint, network: $network", 
 try {
     $rpc_endpoint = RPC_ENDPOINT; // Use RPC_ENDPOINT from mm/network.php
     if (empty($rpc_endpoint)) {
-        log_message("RPC_ENDPOINT is not defined or empty in decimals.php, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC_ENDPOINT is not defined or empty in check-decimals.php, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Server configuration error: Missing RPC endpoint']);
         exit;
@@ -101,18 +101,18 @@ try {
 
     // Log HTTP status and error (if any)
     if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-        log_message("RPC response in decimals.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
+        log_message("RPC response in check-decimals.php: HTTP=$http_code, error=" . ($err ?: 'none'), 'make-market.log', 'make-market', 'DEBUG');
     }
 
     if ($err) {
-        log_message("RPC failed in decimals.php: cURL error: $err, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in check-decimals.php: cURL error: $err, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals: ' . $err]);
         exit;
     }
 
     if ($http_code !== 200) {
-        log_message("RPC failed in decimals.php: HTTP $http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in check-decimals.php: HTTP $http_code, network=$network", 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
@@ -120,7 +120,7 @@ try {
 
     $data = json_decode($response, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        log_message("RPC failed in decimals.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
+        log_message("RPC failed in check-decimals.php: Invalid JSON response: " . json_last_error_msg(), 'make-market.log', 'make-market', 'ERROR');
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Error fetching token decimals']);
         exit;
