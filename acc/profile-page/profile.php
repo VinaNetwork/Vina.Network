@@ -99,7 +99,7 @@ $page_css = ['/acc/profile-page/profile.css'];
             </table>
         </div>
 
-        <a href="/acc/logout" class="cta-button">Disconnect</a>
+        <a href="/acc/disconnect" class="cta-button">Disconnect</a>
         
         <div id="wallet-info" style="display: none;">
             <span id="status"></span>
