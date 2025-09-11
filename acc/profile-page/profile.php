@@ -31,7 +31,7 @@ log_message("Profile.php - Session public_key: " . ($public_key ? 'Set' : 'Not s
 log_message("Profile.php - Short public_key: $short_public_key", 'accounts.log', 'accounts', 'DEBUG');
 if (!$public_key || $short_public_key === 'Invalid') {
     log_message("No or invalid public key in session, redirecting to login", 'accounts.log', 'accounts', 'INFO');
-    header('Location: /acc/connect');
+    header('Location: /acc/connect-p');
     exit;
 }
 
@@ -45,7 +45,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for public_key: $short_public_key", 'accounts.log', 'accounts', 'ERROR');
-        header('Location: /acc/connect');
+        header('Location: /acc/connect-p');
         exit;
     }
     log_message("Profile accessed for public_key: $short_public_key, role: {$account['role']}, is_active: " . ($account['is_active'] ? 'true' : 'false'), 'accounts.log', 'accounts', 'INFO');
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
     
     log_message("User logged out: public_key=$short_public_key", 'accounts.log', 'accounts', 'INFO');
     session_destroy();
-    header('Location: /acc/connect');
+    header('Location: /acc/connect-p');
     exit;
 }
 
