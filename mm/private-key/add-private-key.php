@@ -49,7 +49,7 @@ $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($pu
 if (!$public_key) {
     log_message("No public key found in session, redirecting to login", 'private-key-page.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm/add-private-key';
-    header('Location: /acc/connect');
+    header('Location: /acc/connect-p');
     exit;
 }
 
@@ -60,7 +60,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("Account not found for public_key: $short_public_key", 'private-key-page.log', 'make-market', 'ERROR');
-        header('Location: /acc/connect');
+        header('Location: /acc/connect-p');
         exit;
     }
     $user_id = $account['id'];
