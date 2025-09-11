@@ -8,9 +8,9 @@ RewriteEngine On
 RewriteBase /manage/
 
 # Page
-RewriteRule ^list-accounts$ list-acc/list-acc.php [L,NC]
-RewriteCond %{THE_REQUEST} \s/manage/list-acc/list-acc\.php [NC]
-RewriteRule ^list-acc/list-acc\.php$ list-accounts [R=301,L]
+RewriteRule ^list-accounts$ list-accounts/list-acc.php [L,NC]
+RewriteCond %{THE_REQUEST} \s/manage/list-accounts/list-acc\.php [NC]
+RewriteRule ^list-accounts/list-acc\.php$ list-accounts [R=301,L]
 
 # ====== Endpoints ======
 RewriteRule ^write-logs$ write-logs.php [L,NC]
