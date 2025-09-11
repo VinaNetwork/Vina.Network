@@ -5,7 +5,7 @@
 // Created by: Vina Network
 // ============================================================================
 
-$root_path = __DIR__ . '/../../';
+$root_path = __DIR__ . '/../';
 require_once $root_path . 'acc/bootstrap.php';
 
 // Set response header
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Kiểm tra X-Auth-Token
+// Check X-Auth-Token
 $headers = getallheaders();
 $authToken = isset($headers['X-Auth-Token']) ? $headers['X-Auth-Token'] : null;
 
