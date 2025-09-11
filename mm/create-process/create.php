@@ -7,7 +7,6 @@
 
 ob_start();
 $root_path = __DIR__ . '/../../';
-// constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
@@ -79,6 +78,24 @@ try {
     exit;
 }
 
+// Fetch private keys for the user
+try {
+    $stmt = $pdo->prepare("SELECT id, wallet_name, public_key FROM private_key WHERE user_id = ? AND status = 'active'");
+    $stmt->execute([$_SESSION['user_id']]);
+    $wallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (empty($wallets)) {
+        log_message("No active private keys found for user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'INFO');
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'No private keys available. Please add a private key first.']);
+        exit;
+    }
+} catch (PDOException $e) {
+    log_message("Failed to fetch private keys: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Error retrieving private keys']);
+    exit;
+}
+
 // Function to validate Trade Direction conditions
 function isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount) {
     if ($tradeDirection === 'buy') {
@@ -114,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Get form data
         $form_data = $_POST;
         $processName = $form_data['processName'] ?? '';
-        $privateKey = trim($form_data['privateKey'] ?? '');
+        $walletId = $form_data['walletId'] ?? '';
         $tokenMint = $form_data['tokenMint'] ?? '';
         $tradeDirection = $form_data['tradeDirection'] ?? 'buy';
         $solAmount = $tradeDirection === 'sell' ? 0 : floatval($form_data['solAmount'] ?? 0);
@@ -128,20 +145,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Log form data securely
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-            $obfuscatedPrivateKey = $privateKey ? substr($privateKey, 0, 4) . '...' . substr($privateKey, -4) : 'empty';
             $logFormData = $form_data;
-            unset($logFormData['privateKey']); // Remove privateKey from JSON log
-            $logFormData['privateKey_obfuscated'] = $obfuscatedPrivateKey;
+            unset($logFormData['walletId']); // Remove walletId from JSON log
+            $logFormData['walletId'] = $walletId;
             log_message("Form data: " . json_encode($logFormData), 'make-market.log', 'make-market', 'DEBUG');
             log_message(
-                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, privateKey_obfuscated=$obfuscatedPrivateKey, privateKey_length=" . strlen($privateKey) . ", skipBalanceCheck=$skipBalanceCheck",
+                "Form data: processName=$processName, walletId=$walletId, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipBalanceCheck=$skipBalanceCheck",
                 'make-market.log',
                 'make-market',
                 'DEBUG'
             );
         } else {
             log_message(
-                "Form data: processName=$processName, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipBalanceCheck=$skipBalanceCheck",
+                "Form data: processName=$processName, walletId=$walletId, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipBalanceCheck=$skipBalanceCheck",
                 'make-market.log',
                 'make-market',
                 'INFO'
@@ -149,16 +165,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Validate inputs
-        if (empty($processName) || empty($privateKey) || empty($tokenMint)) {
-            log_message("Missing required fields: processName=" . ($processName ?: 'empty') . ", privateKey=" . ($privateKey ? 'provided' : 'empty') . ", tokenMint=" . ($tokenMint ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+        if (empty($processName) || empty($walletId) || empty($tokenMint)) {
+            log_message("Missing required fields: processName=" . ($processName ?: 'empty') . ", walletId=" . ($walletId ?: 'empty') . ", tokenMint=" . ($tokenMint ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Missing required fields']);
-            exit;
-        }
-        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/', $privateKey)) {
-            log_message("Invalid private key format: length=" . strlen($privateKey), 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid private key format']);
             exit;
         }
         if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/', $tokenMint)) {
@@ -225,6 +235,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        // Fetch and decrypt private key from database
+        try {
+            $stmt = $pdo->prepare("SELECT private_key, public_key FROM private_key WHERE id = ? AND user_id = ? AND status = 'active'");
+            $stmt->execute([$walletId, $_SESSION['user_id']]);
+            $wallet = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$wallet) {
+                log_message("Invalid or inactive wallet ID: $walletId for user_id: {$_SESSION['user_id']}", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Invalid or inactive wallet selected']);
+                exit;
+            }
+            $encryptedPrivateKey = $wallet['private_key'];
+            $transactionPublicKey = $wallet['public_key'];
+
+            // Decrypt private key
+            $privateKey = openssl_decrypt($encryptedPrivateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
+            if ($privateKey === false) {
+                $error = openssl_error_string();
+                log_message("Failed to decrypt private key for wallet ID: $walletId, error: $error", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error decrypting private key']);
+                exit;
+            }
+            log_message("Private key decrypted successfully for wallet ID: $walletId", 'make-market.log', 'make-market', 'INFO');
+        } catch (PDOException $e) {
+            log_message("Failed to fetch private key: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Error retrieving private key']);
+            exit;
+        }
+
+        // Validate private key using SolanaPhpSdk
+        try {
+            $base58 = new Base58();
+            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+                log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
+            }
+            $decodedKey = $base58->decode($privateKey);
+            if (strlen($decodedKey) !== 64) {
+                log_message("Invalid private key length: " . strlen($decodedKey) . ", expected 64 bytes", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Invalid private key length']);
+                exit;
+            }
+            $keypair = Keypair::fromSecretKey($decodedKey);
+            $derivedPublicKey = $keypair->getPublicKey()->toBase58();
+            if ($derivedPublicKey !== $transactionPublicKey) {
+                log_message("Derived public key mismatch: derived=$derivedPublicKey, expected=$transactionPublicKey", 'make-market.log', 'make-market', 'ERROR');
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Public key mismatch for selected wallet']);
+                exit;
+            }
+            log_message("Private key validated: public_key=$transactionPublicKey", 'make-market.log', 'make-market', 'INFO');
+        } catch (Exception $e) {
+            log_message("Invalid private key: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid private key: ' . $e->getMessage()]);
+            exit;
+        }
+
         // Call decimals.php to get the decimals of the mint token
         log_message("Calling decimals.php for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
         try {
@@ -275,32 +345,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_message("Decimals check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
             header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'message' => 'Error checking token decimals: ' . $e->getMessage()]);
-            exit;
-        }
-
-        // Validate private key using SolanaPhpSdk and derive transactionPublicKey
-        try {
-            $base58 = new Base58();
-            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-                log_message("Decoding private key, length: " . strlen($privateKey), 'make-market.log', 'make-market', 'DEBUG');
-            }
-            $decodedKey = $base58->decode($privateKey);
-            if (strlen($decodedKey) !== 64) {
-                log_message("Invalid private key length: " . strlen($decodedKey) . ", expected 64 bytes", 'make-market.log', 'make-market', 'ERROR');
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Invalid private key length']);
-                exit;
-            }
-            $keypair = Keypair::fromSecretKey($decodedKey);
-            $transactionPublicKey = $keypair->getPublicKey()->toBase58();
-            if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-                log_message("Derived public key: $transactionPublicKey", 'make-market.log', 'make-market', 'DEBUG');
-            }
-            log_message("Private key validated: public_key=$transactionPublicKey", 'make-market.log', 'make-market', 'INFO');
-        } catch (Exception $e) {
-            log_message("Invalid private key: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Invalid private key: ' . $e->getMessage()]);
             exit;
         }
 
@@ -374,7 +418,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Encrypt private key
+        // Re-encrypt private key for storage
         $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
         if ($encryptedPrivateKey === false) {
             $error = openssl_error_string();
@@ -496,8 +540,15 @@ $defaultSlippage = 0.5; // Slippage
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?: ''); ?>">
             <label for="processName">Process Name:</label>
             <input type="text" name="processName" id="processName" required>
-            <label for="privateKey">🔑 Private Key:</label>
-            <textarea name="privateKey" id="privateKey" required placeholder="Enter private key..."></textarea>
+            <label for="walletId">🔑 Wallet:</label>
+            <select name="walletId" id="walletId" required>
+                <option value="">Select a wallet</option>
+                <?php foreach ($wallets as $wallet): ?>
+                    <option value="<?php echo htmlspecialchars($wallet['id']); ?>">
+                        <?php echo htmlspecialchars($wallet['wallet_name'] ?: 'Wallet ' . substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
             <label for="tokenMint">🎯 Token Address:</label>
             <input type="text" name="tokenMint" id="tokenMint" required placeholder="Enter token address...">
             <label for="tradeDirection">📈 Trade Direction:</label>
@@ -547,7 +598,7 @@ $defaultSlippage = 0.5; // Slippage
 </script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
-<script defer src="/mm/create-process/create.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /mm/mm.js')"></script>
+<script defer src="/mm/create-process/create.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /mm/create-process/create.js')"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
