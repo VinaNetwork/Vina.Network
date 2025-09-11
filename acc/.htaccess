@@ -7,11 +7,6 @@
 RewriteEngine On
 RewriteBase /acc/
 
-# Admin page
-RewriteRule ^admin$ manage/admin.php [L,NC]
-RewriteCond %{THE_REQUEST} \s/manage/admin\.php [NC]
-RewriteRule ^manage/admin\.php$ /acc/admin [R=301,L]
-
 # Connect Phantom wallet page
 RewriteRule ^connect-p$ connect-phantom/connect-p.php [L,NC]
 RewriteCond %{THE_REQUEST} \s/acc/connect-phantom/connect-p\.php [NC]
@@ -21,8 +16,8 @@ RewriteRule ^wallet-auth$ connect-phantom/wallet-auth.php [L,NC]
 
 # Profile page
 RewriteRule ^profile$ profile-page/profile.php [L]
-RewriteCond %{THE_REQUEST} \s/profile-page/profile\.php [NC]
-RewriteRule ^profile-page/profile\.php$ /acc/profile [R=301,L]
+RewriteCond %{THE_REQUEST} \s/acc/profile-page/profile\.php [NC]
+RewriteRule ^profile-page/profile\.php$ profile [R=301,L]
 # ====== Endpoints ======
 RewriteRule ^disconnect$ profile-page/disconnect.php [L,NC]
 
