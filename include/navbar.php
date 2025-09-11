@@ -59,10 +59,12 @@ if ($is_logged_in) {
                 <?php if ($is_admin): ?>
                     <li><a href="/manage/list-accounts" class="dropdown-link"><i class="fas fa-user-shield"></i> List accounts</a></li>
                 <?php endif; ?>
-                <li><a href="/acc/connect-p" class="dropdown-link"><i class="fas fa-wallet"></i> Connect</a></li>
+
                 <?php if ($is_logged_in): ?>
                     <li><a href="/acc/profile" class="dropdown-link"><i class="fas fa-address-card"></i> Profile</a></li>
                     <li><a href="/acc/disconnect" class="dropdown-link"><i class="fa-solid fa-right-from-bracket"></i> Disconnect</a></li>
+                <?php else: ?>
+                    <li><a href="/acc/connect-p" class="dropdown-link"><i class="fas fa-wallet"></i> Connect</a></li>
                 <?php endif; ?>
             </ul>
         </li>
