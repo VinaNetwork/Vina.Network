@@ -143,8 +143,12 @@ $page_css = ['/acc/connect-phantom/connect-p.css'];
                 }
 
                 // Redirect to /acc/connect-p
-                await log_message('Redirecting to /acc/connect-p after logout', 'accounts.log', 'accounts', 'INFO');
-                window.location.href = '/acc/connect-p';
+                // Trong logout.php, sửa phần redirect
+                statusSpan.textContent = 'Logout successful, redirecting...';
+                await log_message('Logout successful, redirecting to /acc/connect-p', 'accounts.log', 'accounts', 'INFO');
+                setTimeout(() => {
+                    window.location.href = '/acc/connect-p';
+                }, 3000); // Delay 3 seconds to display notification
             } catch (error) {
                 await log_message(`Error during logout process: ${error.message}`, 'accounts.log', 'accounts', 'ERROR');
                 showError(`Error during logout: ${error.message}`);
