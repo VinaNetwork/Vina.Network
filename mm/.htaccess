@@ -36,7 +36,7 @@ RewriteRule ^lists$ lists-process/lists.php [L,NC,QSA]
 RewriteRule ^error$ error.php [L,QSA]
 
 # ====== Endpoints write logs ======
-RewriteRule ^write-logs$ core/write-logs.php [L,NC,QSA]
+RewriteRule ^write-logs$ write-logs.php [L,NC,QSA]
 
 # Block direct access to .htaccess files
 <Files ".htaccess">
