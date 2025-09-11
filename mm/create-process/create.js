@@ -75,6 +75,26 @@ async function getSolanaNetwork() {
     }
 }
 
+// Check for available wallets
+async function checkWallets() {
+    try {
+        const response = await axios.get('/mm/check-wallets', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken
+            },
+            withCredentials: true
+        });
+        if (response.status === 200 && response.data.status === 'success') {
+            return response.data.wallets.length > 0;
+        }
+        throw new Error(response.data.message || 'Failed to check wallets');
+    } catch (error) {
+        log_message(`Failed to check wallets: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        return false;
+    }
+}
+
 // Show error message
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
@@ -84,11 +104,13 @@ function showError(message) {
         resultDiv.innerHTML = `<p>${message}. Please check your network connection or try again later.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     } else if (message.includes('Error checking token decimals')) {
         resultDiv.innerHTML = `<p>${message}. Please verify the token mint address and try again.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
+    } else if (message.includes('No private keys available')) {
+        resultDiv.innerHTML = `<p>${message}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
     } else {
         resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear notification</button>`;
     }
     resultDiv.classList.add('active');
-    document.querySelector('#makeMarketForm button').disabled = false;
+    document.querySelector('#makeMarketForm button')?.disabled = false;
     log_message(`Client-side error displayed: ${message}`, 'make-market.log', 'make-market', 'ERROR');
 }
 
@@ -115,7 +137,7 @@ function getCookie(name) {
 }
 
 // Handle form submission
-document.getElementById('makeMarketForm').addEventListener('submit', async (e) => {
+document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const resultDiv = document.getElementById('mm-result');
     const submitButton = document.querySelector('#makeMarketForm button');
@@ -332,8 +354,8 @@ document.getElementById('makeMarketForm').addEventListener('submit', async (e) =
     }
 });
 
-// Dynamic input handling based on tradeDirection
-document.addEventListener('DOMContentLoaded', () => {
+// Dynamic input handling based on tradeDirection and wallet check
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('mm.js loaded');
     log_message('mm.js loaded', 'make-market.log', 'make-market', 'DEBUG');
 
@@ -342,9 +364,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const tokenAmountInput = document.getElementById('tokenAmount');
     const solAmountLabel = document.querySelector('label[for="solAmount"]');
     const tokenAmountLabel = document.querySelector('label[for="tokenAmount"]');
+    const submitButton = document.querySelector('#makeMarketForm button');
+
+    // Check for available wallets
+    if (submitButton) {
+        const hasWallets = await checkWallets();
+        if (!hasWallets) {
+            submitButton.disabled = true;
+            showError('No private keys available. Please add a private key first.');
+        }
+    }
 
     // Function to update field visibility and state
     function updateFields() {
+        if (!tradeDirectionSelect) return;
         if (tradeDirectionSelect.value === 'buy') {
             tokenAmountInput.classList.add('hidden');
             tokenAmountLabel.classList.add('hidden');
@@ -383,5 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFields();
 
     // Update fields when trade direction changes
-    tradeDirectionSelect.addEventListener('change', updateFields);
+    if (tradeDirectionSelect) {
+        tradeDirectionSelect.addEventListener('change', updateFields);
+    }
 });
