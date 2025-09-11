@@ -78,6 +78,8 @@ async function getSolanaNetwork() {
 // Check for available wallets
 async function checkWallets() {
     try {
+        console.log('Calling /mm/check-wallets');
+        log_message('Calling /mm/check-wallets', 'make-market.log', 'make-market', 'DEBUG');
         const response = await axios.get('/mm/check-wallets', {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -86,11 +88,15 @@ async function checkWallets() {
             withCredentials: true
         });
         if (response.status === 200 && response.data.status === 'success') {
-            return response.data.wallets.length > 0;
+            const walletCount = response.data.wallets.length;
+            log_message(`Check wallets successful: found ${walletCount} active wallets`, 'make-market.log', 'make-market', 'INFO');
+            console.log(`Check wallets successful: found ${walletCount} active wallets`);
+            return walletCount > 0;
         }
         throw new Error(response.data.message || 'Failed to check wallets');
     } catch (error) {
         log_message(`Failed to check wallets: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
+        console.error('Failed to check wallets:', error.message);
         return false;
     }
 }
