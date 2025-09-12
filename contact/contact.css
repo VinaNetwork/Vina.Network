@@ -45,18 +45,13 @@
 
 .contact-content h1 {
   color: var(--contact-color-primary);
-  margin-bottom: var(--contact-spacing-md);
-  font-size: 2.5rem;
 }
 
 .contact-content > p {
-  font-size: 1.2rem;
-  margin-bottom: var(--contact-spacing-xl);
   color: var(--contact-color-text);
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-  line-height: 1.6;
 }
 
 .contact-table {
@@ -116,16 +111,12 @@
 }
 
 .contact-item h2 {
-  font-size: 1.5rem;
-  margin-bottom: var(--contact-spacing-sm);
   color: var(--contact-color-text);
 }
 
 .contact-item p {
-  margin-bottom: var(--contact-spacing-lg);
   color: var(--contact-color-text);
   flex-grow: 1;
-  line-height: 1.6;
 }
 
 .contact-item a {
@@ -135,7 +126,6 @@
   padding: var(--contact-spacing-xs) var(--contact-spacing-md);
   border-radius: 50px;
   text-decoration: none;
-  font-weight: 500;
   transition: var(--contact-transition);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
@@ -183,14 +173,6 @@
   
   .contact-content {
     padding: var(--contact-spacing-md);
-  }
-  
-  .contact-content h1 {
-    font-size: 2rem;
-  }
-  
-  .contact-content > p {
-    font-size: 1.1rem;
   }
   
   .contact-table {
