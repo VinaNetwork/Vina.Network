@@ -1,0 +1,49 @@
+# ============================================================================
+# File: mm/.htaccess
+# Description: This file defines configuration rules for the Apache web server, such as redirects, URL rewriting, access control, caching, and security settings.
+# Created by: Vina Network
+# ============================================================================
+
+RewriteEngine On
+RewriteBase /mm/
+
+# Create process page
+RewriteRule ^create-process$ create/create-process.php [L,NC,QSA]
+# ====== Endpoints check wallet ======
+RewriteRule ^check-wallets$ create/check-wallets.php [L,NC,QSA]
+
+# Private key page
+RewriteRule ^add-private-key$ private-key/add-pk.php [L,NC,QSA]
+RewriteRule ^list-private-key$ private-key/list/list-pk.php [L,NC,QSA]
+# ====== Endpoints Private key ======
+RewriteRule ^delete-private-key$ private-key/list/delete-pk.php [L,NC,QSA]
+
+# Swap process page
+RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC,QSA]
+# ====== Endpoints Process ======
+RewriteRule ^get-order/([0-9]+)$ process/get-order.php?id=$1 [L,NC,QSA]
+RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC,QSA]
+RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
+RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC,QSA]
+RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
+
+# Lists process page
+RewriteRule ^lists-process$ lists/lists-process.php [L,NC,QSA]
+
+# Error page
+RewriteRule ^error$ error.php [L,QSA]
+
+# ====== Endpoints CSRF ======
+RewriteRule ^refresh-csrf$ endpoints/refresh-csrf.php [L,NC,QSA]
+RewriteRule ^clear-csrf$ endpoints/clear-csrf.php [L,NC,QSA]
+
+# ====== Endpoints Network ======
+RewriteRule ^get-network$ endpoints/get-network.php [L,NC,QSA]
+
+# ====== Endpoints write logs ======
+RewriteRule ^write-logs$ endpoints/write-logs.php [L,NC,QSA]
+
+# Block direct access to .htaccess files
+<Files ".htaccess">
+    Require all denied
+</Files>
