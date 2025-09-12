@@ -50,7 +50,7 @@ $page_css = ['/css/error.css'];
 <?php include $root_path . 'include/community.php'; ?>
 <?php include $root_path . 'include/footer.php'; ?>
 
-<!-- Scripts -->
+<!-- Scripts - Source code -->
 <script src="/js/vina.js"></script>
 </body>
 </html>
