@@ -7,12 +7,15 @@
 RewriteEngine On
 RewriteBase /acc/
 
-# Connect Phantom wallet page
+# Connect page (Phantom wallet)
 RewriteRule ^connect-p$ connect-phantom/connect-p.php [L,NC]
 RewriteCond %{THE_REQUEST} \s/acc/connect-phantom/connect-p\.php [NC]
 RewriteRule ^connect-phantom/connect-p\.php$ connect-p [R=301,L]
-# ====== Endpoints ======
+# ====== Endpoints Wallet Auth ======
 RewriteRule ^wallet-auth$ connect-phantom/wallet-auth.php [L,NC]
+
+# Disconnects page (Phantom wallet)
+RewriteRule ^disconnect$ logout/disconnect.php [L,NC]
 
 # Profile page
 RewriteRule ^profile$ profile-page/profile.php [L]
@@ -21,6 +24,3 @@ RewriteRule ^profile-page/profile\.php$ profile [R=301,L]
 
 # ====== Endpoints write logs ======
 RewriteRule ^write-logs$ write-logs.php [L,NC]
-
-# Logout/Disconnects Phantom wallet
-RewriteRule ^disconnect$ logout/disconnect.php [L,NC]
