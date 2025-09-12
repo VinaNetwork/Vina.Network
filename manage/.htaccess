@@ -1,0 +1,16 @@
+# ============================================================================
+# File: manage/.htaccess
+# Description: This file defines configuration rules for the Apache web server, such as redirects, URL rewriting, access control, caching, and security settings.
+# Created by: Vina Network
+# ============================================================================
+
+RewriteEngine On
+RewriteBase /manage/
+
+# ====== List users page ======
+RewriteRule ^list-users$ users/list-users.php [L,NC]
+RewriteCond %{THE_REQUEST} \s/manage/users/list-users\.php [NC]
+RewriteRule ^users/list-users\.php$ list-users [R=301,L]
+
+# ====== Endpoints write logs ======
+RewriteRule ^write-logs$ write-logs.php [L,NC]
