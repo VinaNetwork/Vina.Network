@@ -44,7 +44,7 @@ $short_public_key = $public_key ? substr($public_key, 0, 4) . '...' . substr($pu
 if (!$public_key) {
     log_message("No public key found in session, redirecting to login", 'private-key-page.log', 'make-market', 'INFO');
     $_SESSION['redirect_url'] = '/mm/list-private-key';
-    header('Location: /acc/connect');
+    header('Location: /acc/connect-p');
     exit;
 }
 
@@ -55,7 +55,7 @@ try {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$account) {
         log_message("No account found for public_key: $short_public_key", 'private-key-page.log', 'make-market', 'ERROR');
-        header('Location: /acc/connect');
+        header('Location: /acc/connect-p');
         exit;
     }
     $user_id = $account['id'];
@@ -165,14 +165,14 @@ $page_css = ['/mm/private-key/list/list-pk.css'];
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>"></script>
+<script defer src="/js/libs/axios.min.js"></script>
 <!-- Global variable -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <!-- Scripts - Source code -->
-<script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/js/vina.js"></script>
 <script defer src="/mm/private-key/list/list-pk.js?t=<?php echo time(); ?>"></script>
 </body>
 </html>
