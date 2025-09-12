@@ -19,9 +19,9 @@ require_once $root_path . 'core/error.php'; 			  // PHP configuration
 require_once $root_path . 'core/session.php'; 		      // Initialize session with security options
 require_once $root_path . 'core/db.php'; 				  // Database connection management
 require_once $root_path . 'core/header-auth.php'; 		  // Security Headers
+require_once $root_path . 'core/csrf.php'; 	              // CSRF Token
 require_once $root_path . '../vendor/autoload.php'; 	  // Solana Library
 
 // Custom configuration
-require_once $root_path . 'mm/csrf/csrf.php'; 	          // CSRF Token
 require_once $root_path . 'mm/network/network.php';       // Network configuration
 ?>
