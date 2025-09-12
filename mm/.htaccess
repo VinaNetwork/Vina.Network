@@ -12,17 +12,10 @@ RewriteRule ^create$ create-process/create.php [L,NC,QSA]
 # ====== Endpoints check wallet ======
 RewriteRule ^check-wallets$ create-process/check-wallets.php [L,NC,QSA]
 
-# ====== Rewrite & Endpoints CSRF ======
-RewriteRule ^refresh-csrf$ csrf/refresh-csrf.php [L,NC,QSA]
-RewriteRule ^clear-csrf$ csrf/clear-csrf.php [L,NC,QSA]
-
-# ====== Endpoints Network ======
-RewriteRule ^get-network$ network/get-network.php [L,NC,QSA]
-
 # Private key page
 RewriteRule ^add-private-key$ private-key/add-private-key.php [L,NC,QSA]
 RewriteRule ^list-private-key$ private-key/list/list-private-key.php [L,NC,QSA]
-# ====== Endpoints ======
+# ====== Endpoints Private key ======
 RewriteRule ^delete-private-key$ private-key/list/delete-private-key.php [L,NC,QSA]
 
 # Swap process page
@@ -40,8 +33,13 @@ RewriteRule ^lists$ lists-process/lists.php [L,NC,QSA]
 # Error page
 RewriteRule ^error$ error.php [L,QSA]
 
+# ====== Endpoints CSRF ======
+RewriteRule ^refresh-csrf$ endpoints/refresh-csrf.php [L,NC,QSA]
+RewriteRule ^clear-csrf$ endpoints/clear-csrf.php [L,NC,QSA]
+# ====== Endpoints Network ======
+RewriteRule ^get-network$ network/get-network.php [L,NC,QSA]
 # ====== Endpoints write logs ======
-RewriteRule ^write-logs$ write-logs.php [L,NC,QSA]
+RewriteRule ^write-logs$ endpoints/write-logs.php [L,NC,QSA]
 
 # Block direct access to .htaccess files
 <Files ".htaccess">
