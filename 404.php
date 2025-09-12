@@ -33,8 +33,8 @@ $page_css = ['css/404.css'];
 <?php include $root_path . 'include/header.php'; ?>
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
-<div class="container-404">
-    <div class="content-404">
+<div class="container-error">
+    <div class="content-error">
         <i class="fas fa-exclamation-triangle"></i>
         <h1>404</h1>
         <div class="alert">
