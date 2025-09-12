@@ -5,19 +5,38 @@
  * ========================================================================== */
 
 /* Headings */
-h1, h2, h3 {text-align: center;}
+h1, h2, h3 {
+    text-align: center;
+}
+
+h1 {
+    color: #00d4ff;
+}
 
 /* Tools Container */
 .tools-container {
     margin-top: 64px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+    background-attachment: fixed;
+    position: relative;
 }
 
 .tools-content {
-    max-width: 700px;
+    max-width: 1000px;
     width: 100%;
-    margin: 0 auto;
-    padding: 20px;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+    margin: 1rem;
+    padding: 2rem;
+    background: #1a1a1a;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 2;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Card-based tools navigation */
@@ -205,6 +224,11 @@ h1, h2, h3 {text-align: center;}
     border-radius: 10px;
     margin: 20px 0;
     border: 1px solid #ef9a9a;
+}
+
+/* Tools about */
+.tools-about {
+    color: #fff;
 }
 
 /* Copy icon */
