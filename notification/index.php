@@ -21,18 +21,16 @@ $page_css = ['/notification/notification.css'];
 <?php include $root_path . 'include/navbar.php'; ?>
 
 <!-- Notification section showing under-construction message -->
-<section class="notification">
+<div class="notification">
     <div class="notification-content">
         <i class="fas fa-tools"></i>
         <h1>Products Under Development</h1>
         <p>We’re sorry, but our products are currently under development. Our team is working hard to bring you the best experience. Stay tuned for updates!</p>
         <a href="/" class="cta-button">Back to Home</a>
     </div>
-</section>
+</div>
 
-<!-- Include community -->
 <?php include $root_path . 'include/community.php'; ?>
-<!-- Include footer -->
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Shared JavaScript files -->
