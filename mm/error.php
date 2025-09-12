@@ -25,7 +25,7 @@ log_message("Error: Page not found - REQUEST_URI: $request_uri, session_id=$sess
 $page_title = "Error - Vina Network";
 $page_description = "An error occurred while accessing the Make Market.";
 $page_keywords = "error, make market, Vina Network";
-$page_css = ['/css/404.css'];
+$page_css = ['/css/error.css'];
 ?>
 
 <!DOCTYPE html>
@@ -51,7 +51,7 @@ $page_css = ['/css/404.css'];
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts -->
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script src="/js/vina.js"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
