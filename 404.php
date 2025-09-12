@@ -25,7 +25,7 @@ http_response_code(404);
 $page_title = "Page Not Found - Vina Network";
 $page_description = "The page you are looking for does not exist.";
 $page_keywords = "404, page not found, Vina Network";
-$page_css = ['css/404.css'];
+$page_css = ['css/error.css'];
 ?>
 
 <!DOCTYPE html>
