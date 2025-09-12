@@ -129,7 +129,6 @@ $page_css = ['/css/home.css'];
     </section>
 </div>
 <?php require_once $root_path . 'include/community.php'; ?>
-<?php require_once $root_path . 'include/widget.php'; ?>
 <?php require_once $root_path . 'include/footer.php';?>
 
 <!-- Back to Top Button -->
@@ -137,8 +136,8 @@ $page_css = ['/css/home.css'];
 	<i class="fas fa-arrow-up" aria-hidden="true"></i>
 </button>
 
-<!-- Scripts -->
-<script src="js/vina.js"></script>
-<script src="js/home.js"></script>
+<!-- Scripts - Source code -->
+<script src="/js/vina.js"></script>
+<script src="/js/home.js"></script>
 </body>
 </html>
