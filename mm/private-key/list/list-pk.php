@@ -165,15 +165,15 @@ $page_css = ['/mm/private-key/list/list-pk.css'];
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/axios.min.js"></script>
+<script src="/js/libs/axios.min.js"></script>
 <!-- Global variable -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <!-- Scripts - Source code -->
-<script defer src="/js/vina.js"></script>
-<script defer src="/mm/private-key/list/list-pk.js?t=<?php echo time(); ?>"></script>
+<script src="/js/vina.js"></script>
+<script src="/mm/private-key/list/list-pk.js"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
