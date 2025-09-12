@@ -126,6 +126,7 @@
   text-decoration: none;
   transition: var(--contact-transition);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-top: var(--contact-spacing-sm);
 }
 
 .contact-item a:hover {
