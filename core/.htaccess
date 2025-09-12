@@ -10,7 +10,6 @@
 <IfModule mod_authz_core.c>
     Require all denied
 </IfModule>
-
 <IfModule !mod_authz_core.c>
     Order deny,allow
     Deny from all
@@ -34,8 +33,6 @@
 # Prevent execution even if somehow accessed
 <IfModule mod_php.c>
     php_flag engine Off
-    php_flag expose_php Off
-    # Extreme limits for core directory
     php_value upload_max_filesize 1K
     php_value post_max_size 1K
     php_value memory_limit 16M
@@ -49,7 +46,6 @@
 # ----------------------------------------------------------------------------
 # PREVENT INFORMATION LEAKAGE
 # ----------------------------------------------------------------------------
-# Prevent access to .ht files
 <Files ~ "^\.ht">
     Require all denied
 </Files>
@@ -57,8 +53,8 @@
 # ----------------------------------------------------------------------------
 # ERROR PAGES - Custom error responses
 # ----------------------------------------------------------------------------
-ErrorDocument 403 "Access Forbidden - Unauthorized access attempt to core directory"
-ErrorDocument 404 "File Not Found - The requested resource does not exist"
+ErrorDocument 403 /403.php
+ErrorDocument 404 /404.php
 
 # ----------------------------------------------------------------------------
 # LOGGING - Enhanced logging for access attempts
@@ -72,11 +68,8 @@ ErrorDocument 404 "File Not Found - The requested resource does not exist"
 # REQUEST FILTERING - Additional core-specific protection
 # ----------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
-    # Block common attack patterns targeting core files
     RewriteCond %{QUERY_STRING} (config|db|bootstrap|database|password) [NC]
     RewriteRule .* - [F]
-    
-    # Block attempts to access core files with various extensions
     RewriteRule ^(.*/)?(config|db|bootstrap|database)\.(php|inc|json|txt)/?$ - [F]
 </IfModule>
 
