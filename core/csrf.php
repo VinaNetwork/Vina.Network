@@ -12,10 +12,10 @@ if (!defined('VINANETWORK_ENTRY')) {
 }
 
 // CSRF Configuration
-define('CSRF_TOKEN_NAME', 'csrf_token'); // Name of the CSRF token field in forms
-define('CSRF_TOKEN_LENGTH', 32); // Length of the CSRF token
+define('CSRF_TOKEN_NAME', 'csrf_token');          // Name of the CSRF token field in forms
+define('CSRF_TOKEN_LENGTH', 32);                  // Length of the CSRF token
 define('CSRF_TOKEN_COOKIE', 'csrf_token_cookie'); // Name of the CSRF cookie (for AJAX requests)
-define('CSRF_TOKEN_TTL', 86400); // Token time-to-live in seconds (24h)
+define('CSRF_TOKEN_TTL', 86400);                  // Token time-to-live in seconds (24h)
 
 // Ensure session is active
 function ensure_session() {
