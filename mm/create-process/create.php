@@ -601,8 +601,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
             }
 
             // Create transient token
-            $transient_token = bin2hex(random_bytes(16)); // Generate random token
-            $_SESSION['transient_token'] = $transient_token; // Save to session
+            $transient_token = bin2hex(random_bytes(16));      // Generate random token
+            $_SESSION['transient_token'] = $transient_token;   // Save to session
             $_SESSION['transient_token_expiry'] = time() + 60; // Token expires in 1 minute
             log_message("Transient token generated: $transient_token for transaction ID=$transactionId", 'make-market.log', 'make-market', 'INFO');
 
@@ -643,10 +643,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
 $page_title = "Make Market - Automated Solana Token Trading | Vina Network";
 $page_description = "Automate token trading on Solana with Vina Network's Make Market tool, using Jupiter API. Secure, fast, and customizable.";
 $page_keywords = "Solana trading, automated token trading, Jupiter API, make market, Vina Network, Solana token, crypto trading";
-$page_og_title = "Make Market: Automate Solana Token Trading with Vina Network";
-$page_og_description = "Use Vina Network's Make Market to automatically buy and sell Solana tokens with Jupiter API. Try now!";
-$page_og_url = BASE_URL . "mm/create";
-$page_canonical = BASE_URL . "mm/create";
+$page_url = BASE_URL . "mm/create";
 $page_css = ['/mm/create-process/create.css'];
 $defaultSlippage = 0.5; // Slippage
 ?>
@@ -770,16 +767,16 @@ $defaultSlippage = 0.5; // Slippage
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
-<script defer src="/js/libs/anchor.umd.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/anchor.umd.js')"></script>
-<script defer src="/js/libs/spl-token.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/spl-token.iife.js')"></script>
+<script defer src="/js/libs/axios.min.js"></script>
+<script defer src="/js/libs/anchor.umd.js"></script>
+<script defer src="/js/libs/spl-token.iife.js"></script>
 <!-- Global variable -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <!-- Scripts - Source code -->
-<script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/js/vina.js"></script>
 <script defer src="/mm/create-process/create.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /mm/create-process/create.js')"></script>
 </body>
 </html>
