@@ -26,9 +26,9 @@ $page_css = ['/contact/contact.css'];
 	<div class="contact">
 		<div class="contact-content">
 			<h1 class="fade-in" data-delay="0">Contact Us</h1>
-			<p class="fade-in" data-delay="200">
+			<h3 class="fade-in" data-delay="200">
 				We'd love to hear from you! Reach out to Vina Network via X, Telegram, or Email.
-			</p>
+			</h3>
 		
 			<div class="contact-table">
 				<!-- X (Twitter) Contact Option -->
