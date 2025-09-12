@@ -143,14 +143,14 @@ $page_css = ['/manage/list-acc/list-acc.css'];
 <?php require_once $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<script defer src="/js/libs/axios.min.js"></script>
 <!-- Global variable -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <!-- Scripts - Source code -->
-<script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/js/vina.js"></script>
 <script defer src="/manage/list-acc/list-acc.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
 </body>
 </html>
