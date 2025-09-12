@@ -37,7 +37,7 @@ RewriteRule ^error$ error.php [L,QSA]
 RewriteRule ^refresh-csrf$ endpoints/refresh-csrf.php [L,NC,QSA]
 RewriteRule ^clear-csrf$ endpoints/clear-csrf.php [L,NC,QSA]
 # ====== Endpoints Network ======
-RewriteRule ^get-network$ network/get-network.php [L,NC,QSA]
+RewriteRule ^get-network$ endpoints/get-network.php [L,NC,QSA]
 # ====== Endpoints write logs ======
 RewriteRule ^write-logs$ endpoints/write-logs.php [L,NC,QSA]
 
