@@ -1,5 +1,5 @@
 /* ============================================================================
- * File: notification/notification.css (Optimized Version)
+ * File: notification/notification.css
  * Description: CSS styles for the Notification page of Vina Network.
  * Created by: Vina Network
  * ========================================================================== */
@@ -75,37 +75,12 @@
 /* Heading Styling */
 .notification-content h1 {
   color: var(--notification-color-primary);
-  margin-bottom: var(--notification-spacing-md);
-  font-weight: 600;
 }
 
 /* Paragraph Styling */
 .notification-content p {
   color: var(--notification-color-text);
-  margin-bottom: var(--notification-spacing-lg) !important;
   opacity: 0.9;
-}
-
-/* Button Styling */
-.notification-content .cta-button {
-  background: linear-gradient(45deg, var(--notification-color-primary), #007bff);
-  color: #fff;
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  box-shadow: var(--notification-shadow-button);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-  font-weight: 500;
-}
-
-.notification-content .cta-button:hover {
-  transform: scale(1.05);
-  box-shadow: var(--notification-shadow-button-hover);
-  color: #fff;
-  text-decoration: none;
 }
 
 /* Animation for content */
@@ -156,10 +131,6 @@
 
   .notification-content i {
     font-size: 3rem;
-  }
-  
-  .notification-content .cta-button {
-    padding: 0.7rem 1.3rem;
   }
 }
 
