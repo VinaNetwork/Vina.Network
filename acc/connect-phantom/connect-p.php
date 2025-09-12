@@ -39,7 +39,7 @@ $_SESSION['login_nonce'] = $nonce;
 $page_title = "Connect Phantom Wallet to Vina Network";
 $page_description = "Connect your Solana wallet to register or login to Vina Network";
 $page_keywords = "Vina Network, connect wallet, login, register";
-$page_url = BASE_URL . "acc/connect-phantom";
+$page_url = BASE_URL . "acc/connect-p";
 $page_css = ['/acc/connect-phantom/connect-p.css'];
 ?>
 
