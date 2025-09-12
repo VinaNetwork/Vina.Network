@@ -258,31 +258,32 @@ $page_css = ['/mm/process/process.css'];
             <p id="swap-status">Preparing swap...</p>
         </div>
         <div id="process-result" class="status-box"></div>
-        <div class="action-buttons">
-            <?php if ($show_cancel_button): ?>
+        
+        <?php if ($show_cancel_button): ?>
+            <div class="action-buttons">
                 <form id="cancel-form" method="POST" action="/mm/get-status">
                     <input type="hidden" name="id" value="<?php echo htmlspecialchars($transaction_id); ?>">
                     <input type="hidden" name="status" value="canceled">
                     <input type="hidden" name="error" value="Transaction canceled by user">
                     <button type="submit" class="cta-button cancel-btn" id="cancel-btn">Cancel</button>
                 </form>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
-<script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
-<script src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
-<script src="/js/libs/bs58.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/bs58.js')"></script>
+<script src="/js/libs/solana.web3.iife.js"></script>
+<script src="/js/libs/axios.min.js"></script>
+<script src="/js/libs/bs58.js"></script>
 <!-- Global variable -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <!-- Scripts - Source code -->
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script src="/js/vina.js"></script>
 <script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 <!-- Note: Transaction processing is handled by /mm/process/process.js via Jupiter API -->
 </body>
