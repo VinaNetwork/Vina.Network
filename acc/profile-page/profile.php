@@ -109,7 +109,7 @@ $page_css = ['/acc/profile-page/profile.css'];
 <?php require_once $root_path . 'include/footer.php';?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<script defer src="/js/libs/axios.min.js"></script>
 <!-- Global variable -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
@@ -117,7 +117,7 @@ $page_css = ['/acc/profile-page/profile.css'];
 </script>
 <!-- Scripts - Source code -->
 <script>console.log('Attempting to load JS files...');</script>
-<script defer src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script defer src="/js/vina.js"></script>
 <script defer src="/acc/profile-page/profile.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/profile.js')"></script>
 </body>
 </html>
