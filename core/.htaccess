@@ -1,10 +1,12 @@
 # ============================================================================
 # File: core/.htaccess
-# Description: This file defines configuration rules for the Apache web server, such as redirects, URL rewriting, access control, caching, and security settings.
+# Description: Enhanced security configuration for core directory
 # Created by: Vina Network
 # ============================================================================
 
-# Deny all access to this directory
+# ----------------------------------------------------------------------------
+# ACCESS CONTROL - Strict directory protection
+# ----------------------------------------------------------------------------
 <IfModule mod_authz_core.c>
     Require all denied
 </IfModule>
@@ -13,3 +15,71 @@
     Order deny,allow
     Deny from all
 </IfModule>
+
+# ----------------------------------------------------------------------------
+# FILE SPECIFIC RESTRICTIONS
+# ----------------------------------------------------------------------------
+<FilesMatch "\.(php|inc|html?|txt|json|log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ----------------------------------------------------------------------------
+# CORE-SPECIFIC SECURITY MEASURES
+# ----------------------------------------------------------------------------
+# Prevent execution even if somehow accessed
+<IfModule mod_php.c>
+    php_flag engine Off
+    php_flag expose_php Off
+    # Extreme limits for core directory
+    php_value upload_max_filesize 1K
+    php_value post_max_size 1K
+    php_value memory_limit 16M
+</IfModule>
+
+# Block all except essential HTTP methods
+<LimitExcept GET POST HEAD>
+    Deny from all
+</LimitExcept>
+
+# ----------------------------------------------------------------------------
+# PREVENT INFORMATION LEAKAGE
+# ----------------------------------------------------------------------------
+# Prevent access to .ht files
+<Files ~ "^\.ht">
+    Require all denied
+</Files>
+
+# ----------------------------------------------------------------------------
+# ERROR PAGES - Custom error responses
+# ----------------------------------------------------------------------------
+ErrorDocument 403 "Access Forbidden - Unauthorized access attempt to core directory"
+ErrorDocument 404 "File Not Found - The requested resource does not exist"
+
+# ----------------------------------------------------------------------------
+# LOGGING - Enhanced logging for access attempts
+# ----------------------------------------------------------------------------
+<IfModule mod_log_config.c>
+    LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" [CORE-ACCESS-DENIED]" core_access
+    CustomLog logs/core_access.log core_access
+</IfModule>
+
+# ----------------------------------------------------------------------------
+# REQUEST FILTERING - Additional core-specific protection
+# ----------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    # Block common attack patterns targeting core files
+    RewriteCond %{QUERY_STRING} (config|db|bootstrap|database|password) [NC]
+    RewriteRule .* - [F]
+    
+    # Block attempts to access core files with various extensions
+    RewriteRule ^(.*/)?(config|db|bootstrap|database)\.(php|inc|json|txt)/?$ - [F]
+</IfModule>
+
+# ============================================================================
+# END OF CORE HTACCESS CONFIGURATION
+# ============================================================================
