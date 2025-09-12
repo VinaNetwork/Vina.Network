@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// File: notification/notification.php
+// File: notification/index.php
 // Description: Notification page for products currently under development.
 // Created by: Vina Network
 // ============================================================================
@@ -36,6 +36,6 @@ $page_css = ['/notification/notification.css'];
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Shared JavaScript files -->
-<script src="../js/vina.js"></script>
+<script src="/js/vina.js"></script>
 </body>
 </html>
