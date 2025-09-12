@@ -22,7 +22,7 @@ $log_context = [
 log_message("Error: Page not found - REQUEST_URI: $request_uri, session_id=$session_id, error_message=" . (isset($_SESSION['error_message']) ? $_SESSION['error_message'] : 'none'), 'make-market.log', 'make-market', 'ERROR', $log_context);
 
 // SEO meta
-$page_title = "Error - Vina Network";
+$page_title = "Error - Make Market page";
 $page_description = "An error occurred while accessing the Make Market.";
 $page_keywords = "error, make market, Vina Network";
 $page_css = ['/css/error.css'];
@@ -33,8 +33,8 @@ $page_css = ['/css/error.css'];
 <?php include $root_path . 'include/header.php'; ?>
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
-<div class="container-404">
-    <div class="content-404">
+<div class="container-error">
+    <div class="content-error">
         <i class="fas fa-exclamation-triangle"></i>
         <h1>Error</h1>
         <?php if (isset($_SESSION['error_message'])): ?>
