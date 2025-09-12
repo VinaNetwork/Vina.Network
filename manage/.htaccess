@@ -7,7 +7,7 @@
 RewriteEngine On
 RewriteBase /manage/
 
-# Page
+# ====== List accounts page ======
 RewriteRule ^list-accounts$ list-acc/list-acc.php [L,NC]
 RewriteCond %{THE_REQUEST} \s/manage/list-acc/list-acc\.php [NC]
 RewriteRule ^list-acc/list-acc\.php$ list-accounts [R=301,L]
