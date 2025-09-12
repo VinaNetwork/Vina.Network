@@ -222,7 +222,7 @@ $page_css = ['/mm/private-key/add-pk.css'];
 </script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js"></script>
-<script defer src="/mm/private-key/add-pk.js?t=<?php echo time(); ?>"></script>
+<script defer src="/mm/private-key/add-pk.js"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
