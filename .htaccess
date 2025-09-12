@@ -1,6 +1,6 @@
 # ============================================================================
 # File: .htaccess
-# Description: This file defines configuration rules for the Apache web server, such as redirects, URL rewriting, access control, caching, and security settings.
+# Description: Optimized Apache web server configuration
 # Created by: Vina Network
 # ============================================================================
 
@@ -8,28 +8,20 @@
 RewriteEngine On
 RewriteBase /
 
-# If accessing /404 then rewrite to file 404.php
-RewriteRule ^404$ 404.php [L]
-# Redirect 301 from /404.php to /404
-RewriteCond %{THE_REQUEST} \s/404\.php[\s?] [NC]
-RewriteRule ^404\.php$ 404 [R=301,L]
-# Redirect all non-existent pages to /404
-ErrorDocument 404 /404
+# Redirect all non-existent pages to 404.php
+ErrorDocument 404 /404.php
 
 # ----------------------------------------------------------------------------
 # 🔐 SECURITY
 # ----------------------------------------------------------------------------
 
-# Block direct access to sensitive files
-<FilesMatch "^(config\.php|db\.php|bootstrap\.php|\.htaccess|\.env|composer\.json|composer\.lock|php\.ini|LICENSE|README\.md)$">
+# Block direct access to sensitive files and hidden files
+<FilesMatch "^\.|\.(env|htaccess|git)|^(config\.php|db\.php|bootstrap\.php|composer\.json|composer\.lock|php\.ini|LICENSE|README\.md)$">
     Require all denied
 </FilesMatch>
 
 # Block direct URL access to private folders
 RewriteRule ^(config|logs|include)/ - [F,L]
-
-# Block access to hidden files (e.g., .git, .env)
-RedirectMatch 404 /\.(?!well-known)
 
 # Disable directory listing
 Options -Indexes
@@ -42,26 +34,12 @@ Options -Indexes
 
 # 🔐 SECURITY HEADERS
 <IfModule mod_headers.c>
-    # Prevent MIME type sniffing
     Header always set X-Content-Type-Options "nosniff"
-    
-    # Clickjacking protection
     Header always set X-Frame-Options "SAMEORIGIN"
-    
-    # XSS protection
     Header always set X-XSS-Protection "1; mode=block"
-    
-    # Referrer policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    
-    # Permissions policy
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-    
-    # Prevent exposure of PHP version
-    Header unset X-Powered-By
     Header always unset X-Powered-By
-    
-    # CSP Header (recommended)
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:;"
 </IfModule>
 
@@ -69,14 +47,13 @@ Options -Indexes
 # ⚡ PERFORMANCE: COMPRESSION
 # ----------------------------------------------------------------------------
 
-# Enable Brotli compression
 <IfModule mod_brotli.c>
     AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css application/json application/javascript font/woff2 application/xml image/x-icon
 </IfModule>
-
-# Enable Deflate compression
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/json application/javascript font/woff2 application/xml image/x-icon
+<IfModule !mod_brotli.c>
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/json application/javascript font/woff2 application/xml image/x-icon
+    </IfModule>
 </IfModule>
 
 # ----------------------------------------------------------------------------
@@ -85,39 +62,21 @@ Options -Indexes
 
 <IfModule mod_expires.c>
     ExpiresActive On
-    # Images and favicon
     ExpiresByType image/jpg "access plus 1 month"
     ExpiresByType image/jpeg "access plus 1 month"
     ExpiresByType image/png "access plus 1 month"
     ExpiresByType image/gif "access plus 1 month"
     ExpiresByType image/webp "access plus 1 month"
     ExpiresByType image/x-icon "access plus 1 year"
-    # CSS & JS
     ExpiresByType text/css "access plus 1 week"
     ExpiresByType application/javascript "access plus 1 week"
     ExpiresByType text/javascript "access plus 1 week"
-    # Fonts
     ExpiresByType font/woff2 "access plus 1 month"
-    # HTML, JSON, XML
     ExpiresByType text/html "access plus 1 hour"
     ExpiresByType application/json "access plus 1 hour"
     ExpiresByType application/xml "access plus 1 hour"
 </IfModule>
 
-<IfModule mod_headers.c>
-    <FilesMatch "\.(jpg|jpeg|png|gif|webp|woff2|ico)$">
-        Header set Cache-Control "public, max-age=2592000"
-    </FilesMatch>
-    <FilesMatch "\.(css|js)$">
-        Header set Cache-Control "public, max-age=604800"
-    </FilesMatch>
-    <FilesMatch "\.(html|json|xml)$">
-        Header set Cache-Control "public, max-age=3600"
-    </FilesMatch>
-
-    # Disable ETag headers
-    Header unset ETag
-</IfModule>
 FileETag None
 
 # ----------------------------------------------------------------------------
