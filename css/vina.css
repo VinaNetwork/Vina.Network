@@ -129,18 +129,8 @@ h4 {
 }
 
 p {
-  margin-bottom: var(--spacing-md);
   font-size: var(--font-size-lg);
   line-height: 1.8;
-}
-
-/* Margin adjustment between paragraphs */
-p:not(:last-child):has(+ :not(p)) {
-  margin-bottom: 0;
-}
-
-p:not(:last-child):has(+ p) {
-  margin-bottom: 30px;
 }
 
 a {
