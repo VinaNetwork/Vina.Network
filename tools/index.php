@@ -63,10 +63,6 @@ $tool = isset($_GET['tool']) && array_key_exists($_GET['tool'], $tools) ? $_GET[
 $page_title = "Vina Network - Solana NFT Tools & Solana Checker";
 $page_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
 $page_keywords = "Vina Network, Solana NFT, check Solana NFT holders, NFT Info, Wallet Analysis, blockchain, NFT";
-$page_og_title = "Vina Network - Solana NFT Tools & Solana Checker";
-$page_og_description = "Discover Solana NFT tools on Vina Network: Check NFT Info, Check NFT Holders & Wallet Analysis. Try now!";
-$page_og_url = BASE_URL . "tools/";
-$page_canonical = BASE_URL . "tools/";
 $page_css = ['/tools/tools.css'];
 ?>
 
@@ -108,8 +104,8 @@ $page_css = ['/tools/tools.css'];
 
 <!-- Load JavaScript files with timestamp and error fallback -->
 <script>console.log('Attempting to load JS files...');</script>
-<script src="../js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load js/vina.js')"></script>
-<script src="tools.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load tools/tools.js')"></script>
+<script src="/js/vina.js"></script>
+<script src="/tools/tools.js"></script>
 </body>
 </html>
 <?php ob_end_flush(); ?>
