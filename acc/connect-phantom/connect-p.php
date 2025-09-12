@@ -7,7 +7,7 @@
 
 ob_start();
 $root_path = __DIR__ . '/../../';
-// constants | logging | config | error | session | database | header-auth
+// constants | logging | config | error | session | database | header-auth | vendor/autoload
 require_once $root_path . 'acc/bootstrap.php';
 
 // Check if user is already logged in
@@ -63,14 +63,14 @@ $page_css = ['/acc/connect-phantom/connect-p.css'];
 
 <script>console.log('Attempting to load JS files...');</script>
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
-<script src="/js/libs/solana.web3.iife.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/solana.web3.iife.js')"></script>
+<script defer src="/js/libs/axios.min.js"></script>
+<script src="/js/libs/solana.web3.iife.js"></script>
 <!-- Scripts - Source code -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
-<script src="/js/vina.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/vina.js')"></script>
+<script src="/js/vina.js"></script>
 <script src="/acc/connect-phantom/connect-p.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /acc/acc.js')"></script>
 </body>
 </html>
