@@ -141,7 +141,7 @@
   color: white;
   border: none;
   border-radius: var(--mm-border-radius-sm);
-  padding: var(--mm-spacing-xs) var(--mm-spacing-sm);
+  padding: var(--mm-spacing-sm);
   cursor: pointer;
   font-size: 0.8rem;
   transition: var(--mm-transition);
