@@ -7,6 +7,7 @@
 
 ob_start();
 $root_path = __DIR__ . '/../../';
+// constants | logging | config | error | session | database | header-auth | CSRF | Network | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
 use Attestto\SolanaPhpSdk\Keypair;
