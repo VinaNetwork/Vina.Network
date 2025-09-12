@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $checkStmt = $pdo->prepare("SELECT id FROM private_key WHERE public_key = ? AND user_id = ?");
                 $checkStmt->execute([$publicKey, $user_id]);
                 if ($checkStmt->fetch()) {
-                    $errors[] = "Private key thứ $index đã tồn tại cho public key " . substr($publicKey, 0, 4) . "...";
+                    $errors[] = "Private key $index already exists for public key " . substr($publicKey, 0, 4) . "...";
                     continue;
                 }
             } catch (PDOException $e) {
@@ -214,14 +214,14 @@ $page_css = ['/mm/private-key/add-private-key.css'];
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
-<script defer src="/js/libs/axios.min.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load /js/libs/axios.min.js')"></script>
+<script defer src="/js/libs/axios.min.js"></script>
 <!-- Global variable -->
 <script>
     // Passing JWT_SECRET into JavaScript securely
     const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
 </script>
 <!-- Scripts - Source code -->
-<script defer src="/js/vina.js?t=<?php echo time(); ?>"></script>
+<script defer src="/js/vina.js"></script>
 <script defer src="/mm/private-key/add-private-key.js?t=<?php echo time(); ?>"></script>
 </body>
 </html>
