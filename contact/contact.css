@@ -30,10 +30,11 @@
   margin-top: 64px;
   text-align: center;
   padding: var(--contact-spacing-md);
-  min-height: calc(100vh - 200px); /* Ensure footer is at bottom */
+  min-height: calc(100vh - 200px);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
 }
 
 .contact-content {
@@ -47,11 +48,8 @@
   color: var(--contact-color-primary);
 }
 
-.contact-content > p {
-  color: var(--contact-color-text);
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+.contact-content h3 {
+  color: #fff;
 }
 
 .contact-table {
@@ -74,6 +72,7 @@
   height: 100%;
   position: relative;
   overflow: hidden;
+  cursor: grab;
 }
 
 /* Add subtle gradient border effect on hover */
