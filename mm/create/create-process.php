@@ -754,14 +754,14 @@ $defaultSlippage = 0.5; // Slippage
                     <p>Skip wallet balance check</p>
                 </label>
                 <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
-                <button class="cta-button" type="submit">🚀 Make Market</button>
+                <button class="cta-button" type="submit">🚀 Create Process</button>
             </form>
             <div id="mm-result" class="status-box"></div>
         <?php endif; ?>
 
         <!-- Link to Transaction History -->
         <div class="lists-process">
-            <a href="/mm/lists">View lists process</a>
+            <a href="/mm/lists-process">View lists process</a>
         </div>
     </div>
 </div>
