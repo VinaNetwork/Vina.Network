@@ -90,11 +90,6 @@
   margin-right: var(--process-spacing-sm);
 }
 
-/* Transaction Details */
-.transaction-details {
-  margin: var(--process-spacing-xl) 0;
-}
-
 .details-table {
   width: 100%;
   border-collapse: collapse;
