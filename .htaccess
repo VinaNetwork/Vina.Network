@@ -15,22 +15,26 @@ ErrorDocument 404 /404.php
 # 🔐 SECURITY
 # ----------------------------------------------------------------------------
 
-# Block direct access to sensitive files and hidden files
-<FilesMatch "^\.|\.(env|htaccess|git)|^(config\.php|db\.php|bootstrap\.php|composer\.json|composer\.lock|php\.ini|LICENSE|README\.md)$">
+# Block direct access to sensitive files
+<FilesMatch "^(\.htaccess|\.env|composer\.json|composer\.lock|php\.ini|LICENSE|README\.md)$">
     Require all denied
 </FilesMatch>
 
 # Block direct URL access to private folders
 RewriteRule ^(config|logs|include)/ - [F,L]
 
+# Block access to hidden files
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
 # Disable directory listing
 Options -Indexes
 
 # Block dangerous HTTP methods
-<IfModule mod_rewrite.c>
-    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|DELETE|PUT) [NC]
-    RewriteRule .* - [F]
-</IfModule>
+<LimitExcept GET POST HEAD>
+    Require all denied
+</LimitExcept>
 
 # 🔐 SECURITY HEADERS
 <IfModule mod_headers.c>
