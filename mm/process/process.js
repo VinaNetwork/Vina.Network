@@ -435,7 +435,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         params.network = 'devnet';
     }
     
-    const maxRetries = 3;
+    const maxRetries = 1;
     let attempt = 1;
     while (attempt <= maxRetries) {
         try {
