@@ -11,6 +11,9 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
+$root_path = __DIR__ . '/../';
+require_once $root_path . 'core/constants.php'; // Dynamic Domain Name Definition
+
 // Prevent clickjacking (block iframe embedding from other domains)
 header("X-Frame-Options: DENY");
 // Prevent the browser from MIME type sniffing
@@ -45,10 +48,7 @@ header("Pragma: no-cache");
 header("Content-Security-Policy: "
     . "default-src 'self'; "
     . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://www.googletagmanager.com; "
-    . "connect-src 'self' $csp_base https://quote-api.jup.ag https://*.jup.ag wss://*.jup.ag "
-    . "https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://api.devnet.solana.com https://api.testnet.solana.com "
-    . "https://www.google-analytics.com "
-    . "https://*.phantom.app; "
+    . "connect-src 'self' $csp_base https://quote-api.jup.ag https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://api.devnet.solana.com https://api.testnet.solana.com https://www.google-analytics.com wss://quote-api.jup.ag wss://api.mainnet-beta.solana.com wss://mainnet.helius-rpc.com wss://api.devnet.solana.com wss://api.testnet.solana.com https://*.phantom.app; "
     . "img-src 'self' $csp_base data: https:; "
     . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     . "font-src 'self' https://fonts.gstatic.com; "
