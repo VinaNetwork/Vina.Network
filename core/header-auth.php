@@ -45,7 +45,7 @@ header("Pragma: no-cache");
 header("Content-Security-Policy: "
     . "default-src 'self'; "
     . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://www.googletagmanager.com; "
-    . "connect-src 'self' $csp_base https://*.jup.ag wss://*.jup.ag "
+    . "connect-src 'self' $csp_base https://quote-api.jup.ag https://*.jup.ag wss://*.jup.ag "
     . "https://api.mainnet-beta.solana.com https://mainnet.helius-rpc.com https://api.devnet.solana.com https://api.testnet.solana.com "
     . "https://www.google-analytics.com "
     . "https://*.phantom.app; "
