@@ -91,18 +91,27 @@ function delay(ms) {
 // Show error message
 async function showError(message, detailedError = null) {
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
+    console.log('showError called:', { message, detailedError });
 
-    // Handle specific error cases to display friendly messages
     if (detailedError) {
-        // Parse detailedError if it's a stringified JSON
-        let parsedError;
+        let parsedError = {};
         try {
-            parsedError = typeof detailedError === 'string' && detailedError.startsWith('HTTP') 
-                ? JSON.parse(detailedError.split(': ')[1]) 
-                : {};
+            // Handle errors from getQuote
+            if (typeof detailedError === 'string' && detailedError.startsWith('Invalid response: status=')) {
+                const jsonMatch = detailedError.match(/data=(.*)$/);
+                if (jsonMatch && jsonMatch[1]) {
+                    parsedError = JSON.parse(jsonMatch[1]);
+                }
+            } else if (typeof detailedError === 'string' && detailedError.startsWith('HTTP')) {
+                parsedError = JSON.parse(detailedError.split(': ')[1]);
+            } else if (typeof detailedError === 'string') {
+                parsedError = JSON.parse(detailedError);
+            }
         } catch (e) {
-            parsedError = {};
+            console.error('Failed to parse detailedError:', e.message, detailedError);
         }
+
+        console.log('Parsed error:', parsedError);
 
         // Jupiter API specific errors
         if (parsedError?.message?.includes('The token') && parsedError?.errorCode === 'TOKEN_NOT_TRADABLE') {
@@ -122,6 +131,8 @@ async function showError(message, detailedError = null) {
         }
     }
 
+    console.log('User friendly message:', userFriendlyMessage);
+
     const resultDiv = document.getElementById('process-result');
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
@@ -130,6 +141,8 @@ async function showError(message, detailedError = null) {
         </div>
     `;
     resultDiv.classList.add('active');
+    console.log('Result div content:', resultDiv.innerHTML);
+
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
