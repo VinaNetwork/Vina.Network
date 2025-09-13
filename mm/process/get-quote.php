@@ -155,12 +155,17 @@ try {
     if ($httpCode !== 200) {
         $errorData = json_decode($response, true);
         $errorMessage = isset($errorData['error']) ? $errorData['error'] : 'Unknown error from Jupiter API';
+        $errorCode = isset($errorData['errorCode']) ? $errorData['errorCode'] : 'UNKNOWN';
         log_message(
-            "Jupiter API error: status=$httpCode, message=$errorMessage, inputMint=$inputMint, outputMint=$outputMint, network=$network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
+            "Jupiter API error: status=$httpCode, message=$errorMessage, errorCode=$errorCode, inputMint=$inputMint, outputMint=$outputMint, network=$network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'),
             'process.log', 'make-market', 'ERROR', $log_context
         );
         http_response_code($httpCode);
-        echo json_encode(['status' => 'error', 'message' => "Jupiter API error: $errorMessage"], JSON_UNESCAPED_UNICODE);
+        echo json_encode([
+            'status' => 'error',
+            'message' => "Jupiter API error: $errorMessage",
+            'errorCode' => $errorCode
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
