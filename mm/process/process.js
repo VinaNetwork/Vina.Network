@@ -477,10 +477,14 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             prioritizationFeeLamports: networkConfig.prioritizationFeeLamports,
             testnet: networkConfig.network === 'devnet'
         };
+        const headers = {
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(networkConfig.network === 'devnet' ? { 'x-jupiter-network': 'devnet' } : {})
+        };
         log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
             timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            headers
         });
         log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
         if (response.status !== 200 || !response.data) {
