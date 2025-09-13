@@ -91,24 +91,9 @@ function delay(ms) {
 // Show error message
 async function showError(message, detailedError = null) {
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
-
-    // Parse detailedError nếu nó là chuỗi JSON
-    let errorData = null;
-    try {
-        if (typeof detailedError === 'string' && detailedError.includes('HTTP')) {
-            const jsonMatch = detailedError.match(/\{.*\}/);
-            if (jsonMatch) {
-                errorData = JSON.parse(jsonMatch[0]);
-            }
-        } else {
-            errorData = detailedError;
-        }
-    } catch (e) {
-        console.error('Failed to parse detailedError:', e.message);
-    }
-
-    // Kiểm tra lỗi cụ thể
-    if (errorData?.error === 'TOKEN_NOT_TRADABLE' || detailedError?.includes('TOKEN_NOT_TRADABLE')) {
+    
+    // Handle specific error cases to display friendly messages
+    if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
         userFriendlyMessage = 'Token is not tradable. Please check the liquidity of the token or choose another token.';
     } else if (detailedError?.includes('Network Error')) {
         userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
@@ -125,14 +110,14 @@ async function showError(message, detailedError = null) {
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
-
+    
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     log_message(
         `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
         'process.log', 'make-market', 'ERROR'
     );
     console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
-
+    
     await updateTransactionStatus('failed', detailedError || message);
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
@@ -428,7 +413,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         outputMint,
         amount: Math.floor(amount),
         slippageBps,
-        testnet: networkConfig.network === 'devnet' ? true : undefined
+        testnet: networkConfig.network === 'devnet' ? true : undefined // Only add testnet if devnet
     };
     try {
         log_message(
@@ -455,7 +440,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
             'process.log', 'make-market', 'ERROR'
         );
         console.error('Failed to get quote:', errorMessage);
-        throw new Error(err.response?.data?.error || errorMessage); // Truyền lỗi cụ thể từ API
+        throw new Error(errorMessage);
     }
 }
 
