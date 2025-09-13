@@ -94,6 +94,13 @@ async function showError(message, detailedError = null) {
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
     let errorCode = 'UNKNOWN';
 
+    // Log ngay đầu hàm để xác nhận showError được gọi
+    log_message(
+        `showError called: message=${message}, detailedError=${JSON.stringify(detailedError)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+        'process.log', 'make-market', 'DEBUG'
+    );
+    console.log('showError called:', { message, detailedError });
+
     // Kiểm tra errorCode từ detailedError
     if (detailedError?.cause?.errorCode) {
         errorCode = detailedError.cause.errorCode;
@@ -104,6 +111,10 @@ async function showError(message, detailedError = null) {
             errorCode = parsedError.errorCode || 'UNKNOWN';
         } catch (e) {
             console.error('Failed to parse detailedError:', e);
+            log_message(
+                `Failed to parse detailedError: ${e.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'ERROR'
+            );
         }
     }
 
@@ -526,7 +537,7 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
             }
             throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
         } catch (err) {
-            let errorCode = err.cause?.errorCode || 'UNKNOWN';
+            let errorCode = 'UNKNOWN';
             let errorMessage = err.message;
             const errorDetails = {
                 message: err.message,
@@ -548,9 +559,21 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                 cookies: document.cookie || 'no cookies'
             };
 
+            // Phân tích phản hồi lỗi từ axios
+            if (err.response?.data?.status === 'error') {
+                errorCode = err.response.data.errorCode || 'UNKNOWN';
+                errorMessage = err.response.data.message || err.message;
+                errorDetails.message = errorMessage;
+                errorDetails.response = { status: err.response.status, data: err.response.data };
+            } else if (err.code === 'ECONNABORTED') {
+                errorMessage = `Timeout Error: Request to /mm/get-quote timed out after 60 seconds`;
+            } else {
+                errorMessage = `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-quote'}`;
+            }
+
             console.error(`Failed to get quote (attempt ${attempt}/${maxRetries}):`, errorDetails);
             log_message(
-                `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, details=${JSON.stringify(errorDetails)}`,
+                `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, errorCode=${errorCode}, details=${JSON.stringify(errorDetails)}`,
                 'process.log', 'make-market', 'ERROR'
             );
 
