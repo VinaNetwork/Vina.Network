@@ -56,8 +56,8 @@ if (!defined('EXPLORER_QUERY')) {
 
 // Define Jupiter API
 define('JUPITER_API', match (SOLANA_NETWORK) {
-    'devnet'  => 'https://quote-api.jup.ag/v6/quote',
-    'mainnet' => 'https://quote-api.jup.ag/v6/quote',
+    'devnet'  => 'https://quote-api.jup.ag/v6',
+    'mainnet' => 'https://quote-api.jup.ag/v6',
 });
 
 // Log loaded configuration
