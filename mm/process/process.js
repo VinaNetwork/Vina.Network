@@ -91,12 +91,27 @@ function delay(ms) {
 // Show error message
 async function showError(message, detailedError = null) {
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
-    
-    // Handle specific error cases to display friendly messages
-    if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
+    let errorData = null;
+
+    try {
+        if (typeof detailedError === 'string' && detailedError.includes('HTTP')) {
+            const jsonMatch = detailedError.match(/\{.*\}/);
+            if (jsonMatch) {
+                errorData = JSON.parse(jsonMatch[0]);
+            }
+        } else {
+            errorData = detailedError;
+        }
+    } catch (e) {
+        console.error('Failed to parse detailedError:', e.message);
+    }
+
+    if (errorData?.error === 'TOKEN_NOT_TRADABLE' || detailedError?.includes('TOKEN_NOT_TRADABLE')) {
         userFriendlyMessage = 'Token is not tradable. Please check the liquidity of the token or choose another token.';
+    } else if (detailedError?.includes('Timeout Error')) {
+        userFriendlyMessage = 'Request to Jupiter API timed out. Please try again later.';
     } else if (detailedError?.includes('Network Error')) {
-        userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
+        userFriendlyMessage = 'Unable to connect to Jupiter API. Please try again later or contact support.';
     }
 
     const resultDiv = document.getElementById('process-result');
@@ -110,14 +125,14 @@ async function showError(message, detailedError = null) {
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
-    
+
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     log_message(
-        `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+        `Process stopped: ${userFriendlyMessage}, detailedError=${JSON.stringify(detailedError)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
         'process.log', 'make-market', 'ERROR'
     );
-    console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
-    
+    console.error(`Process stopped: ${userFriendlyMessage}, detailedError=${JSON.stringify(detailedError)}`);
+
     await updateTransactionStatus('failed', detailedError || message);
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
@@ -413,7 +428,6 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
         outputMint,
         amount: Math.floor(amount),
         slippageBps,
-        testnet: networkConfig.network === 'devnet' ? true : undefined // Only add testnet if devnet
     };
     try {
         log_message(
