@@ -26,6 +26,7 @@ RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC,QSA]
 RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
 RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC,QSA]
 RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
+RewriteRule ^get-quote$ process/get-quote.php [L,NC,QSA]
 
 # Lists process page
 RewriteRule ^lists-process$ lists/lists-process.php [L,NC,QSA]
