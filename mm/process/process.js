@@ -483,13 +483,15 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
             console.log('Quote retrieved:', response.data.data);
             return response.data.data;
         } catch (err) {
+            let errorCode = 'UNKNOWN';
+            let errorMessage = err.message;
             const errorDetails = {
                 message: err.message,
                 code: err.code || 'N/A',
                 url: err.config?.url || '/mm/get-quote',
                 response: err.response ? {
                     status: err.response.status,
-                    data: JSON.stringify(err.response.data),
+                    data: err.response.data,
                     headers: JSON.stringify(err.response.headers)
                 } : null,
                 stack: err.stack || 'no stack trace',
@@ -502,11 +504,23 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                 session_id: document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none',
                 cookies: document.cookie || 'no cookies'
             };
-            const errorMessage = err.response
-                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-                : err.code === 'ECONNABORTED'
-                ? `Timeout Error: Request to /mm/get-quote timed out after 60 seconds`
-                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-quote'}`;
+
+            // Phân tích phản hồi từ Jupiter API
+            if (err.response?.data) {
+                try {
+                    const responseData = typeof err.response.data === 'string' ? JSON.parse(err.response.data) : err.response.data;
+                    errorCode = responseData.errorCode || 'UNKNOWN';
+                    errorMessage = responseData.message || err.message;
+                } catch (parseError) {
+                    console.error('Failed to parse Jupiter API response:', parseError);
+                    errorMessage = `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`;
+                }
+            } else if (err.code === 'ECONNABORTED') {
+                errorMessage = `Timeout Error: Request to /mm/get-quote timed out after 60 seconds`;
+            } else {
+                errorMessage = `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-quote'}`;
+            }
+
             console.error(`Failed to get quote (attempt ${attempt}/${maxRetries}):`, errorDetails);
             log_message(
                 `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, details=${JSON.stringify(errorDetails)}`,
@@ -520,11 +534,11 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                     `Browser offline detected: ${offlineError}, transactionId=${transactionId}, network=${networkConfig.network}, session_id=${errorDetails.session_id}`,
                     'process.log', 'make-market', 'ERROR'
                 );
-                throw new Error(offlineError);
+                throw new Error(offlineError, { cause: { errorCode: 'OFFLINE', details: errorDetails } });
             }
 
             if (attempt === maxRetries || err.response) {
-                throw new Error(errorMessage);
+                throw new Error(errorMessage, { cause: { errorCode, details: errorDetails } });
             }
             attempt++;
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
