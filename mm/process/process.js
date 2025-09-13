@@ -958,6 +958,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
         await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
     } catch (err) {
-        await showError('Error during swap process: ' + err.message, err.message);
+        await showError('Error during swap process: ' + err.message, err.cause || err);
     }
 });
