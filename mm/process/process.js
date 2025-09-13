@@ -985,6 +985,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
         await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
     } catch (err) {
+        console.log('Main process error:', err, 'Cause:', err.cause);
+        log_message(
+            `Main process error: message=${err.message}, cause=${JSON.stringify(err.cause)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+            'process.log', 'make-market', 'ERROR'
+        );
         await showError('Error during swap process: ' + err.message, err.cause || err);
     }
 });
