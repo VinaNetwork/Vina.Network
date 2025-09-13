@@ -1,5 +1,4 @@
 <?php
-// ============================================================================
 // File: mm/endpoints/get-network.php
 // Description: API endpoint to return SOLANA_NETWORK and related configurations
 // Created by: Vina Network
@@ -28,7 +27,7 @@ echo json_encode([
     'network' => SOLANA_NETWORK,
     'explorerUrl' => EXPLORER_URL,
     'explorerQuery' => EXPLORER_QUERY,
-    'jupiterApi' => defined('JUPITER_API') ? JUPITER_API : 'https://quote-api.jup.ag/v6',
+    'jupiterApi' => JUPITER_API, // Use JUPITER_API defined in network.php
     'solMint' => 'So11111111111111111111111111111111111111112',
     'prioritizationFeeLamports' => defined('PRIORITIZATION_FEE_LAMPORTS') ? PRIORITIZATION_FEE_LAMPORTS : 10000
 ], JSON_UNESCAPED_UNICODE);
