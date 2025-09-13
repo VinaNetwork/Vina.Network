@@ -11,9 +11,6 @@ if (!defined('VINANETWORK_ENTRY')) {
     exit('No direct access allowed!');
 }
 
-$root_path = __DIR__ . '/../';
-require_once $root_path . 'core/constants.php'; // Dynamic Domain Name Definition
-
 // Prevent clickjacking (block iframe embedding from other domains)
 header("X-Frame-Options: DENY");
 // Prevent the browser from MIME type sniffing
