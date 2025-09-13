@@ -90,6 +90,7 @@ function delay(ms) {
 
 // Show error message
 async function showError(message, detailedError = null) {
+    const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
     let errorCode = 'UNKNOWN';
 
@@ -97,7 +98,6 @@ async function showError(message, detailedError = null) {
     if (detailedError?.cause?.errorCode) {
         errorCode = detailedError.cause.errorCode;
     } else if (typeof detailedError === 'string' && detailedError.startsWith('HTTP')) {
-        // Phân tích chuỗi JSON trong detailedError
         try {
             const jsonMatch = detailedError.match(/{.*}/);
             const parsedError = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
@@ -122,18 +122,40 @@ async function showError(message, detailedError = null) {
             userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
             break;
         default:
-            if (detailedError?.includes('Network Error') || detailedError?.includes('Timeout Error')) {
+            if (detailedError?.message?.includes('Network Error') || detailedError?.message?.includes('Timeout Error')) {
                 userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
-            } else if (detailedError?.includes('HTTP 401')) {
+            } else if (detailedError?.message?.includes('HTTP 401')) {
                 userFriendlyMessage = 'Authentication error. Please log in again to continue.';
-            } else if (detailedError?.includes('HTTP 429')) {
+            } else if (detailedError?.message?.includes('HTTP 429')) {
                 userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
-            } else if (detailedError?.includes('HTTP 500')) {
+            } else if (detailedError?.message?.includes('HTTP 500')) {
                 userFriendlyMessage = 'Server error. Please try again later or contact support.';
             }
     }
 
+    // Log lỗi
+    log_message(
+        `Process stopped: ${userFriendlyMessage}, errorCode=${errorCode}, Details: ${JSON.stringify(detailedError)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+        'process.log', 'make-market', 'ERROR'
+    );
+    console.error(`Process stopped: ${userFriendlyMessage}, errorCode=${errorCode}, Details: ${JSON.stringify(detailedError)}`);
+
+    // Kiểm tra DOM
     const resultDiv = document.getElementById('process-result');
+    const swapStatus = document.getElementById('swap-status');
+    const transactionStatus = document.getElementById('transaction-status');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    if (!resultDiv || !swapStatus || !transactionStatus) {
+        log_message(
+            `DOM elements missing: resultDiv=${!!resultDiv}, swapStatus=${!!swapStatus}, transactionStatus=${!!transactionStatus}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+            'process.log', 'make-market', 'ERROR'
+        );
+        console.error('DOM elements missing:', { resultDiv: !!resultDiv, swapStatus: !!swapStatus, transactionStatus: !!transactionStatus });
+        return;
+    }
+
+    // Cập nhật giao diện
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
             <strong>Error:</strong> ${userFriendlyMessage}
@@ -141,19 +163,21 @@ async function showError(message, detailedError = null) {
         </div>
     `;
     resultDiv.classList.add('active');
-    document.getElementById('swap-status').textContent = '';
-    document.getElementById('transaction-status').textContent = 'Failed';
-    document.getElementById('transaction-status').classList.add('text-danger');
+    swapStatus.textContent = '';
+    transactionStatus.textContent = 'Failed';
+    transactionStatus.classList.add('text-danger');
 
-    const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-    log_message(
-        `Process stopped: ${userFriendlyMessage}, Details: ${JSON.stringify(detailedError)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-        'process.log', 'make-market', 'ERROR'
-    );
-    console.error(`Process stopped: ${userFriendlyMessage}, Details: ${JSON.stringify(detailedError)}`);
+    // Cập nhật trạng thái giao dịch
+    try {
+        await updateTransactionStatus('failed', userFriendlyMessage);
+    } catch (updateErr) {
+        log_message(
+            `Failed to update transaction status in showError: ${updateErr.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+            'process.log', 'make-market', 'ERROR'
+        );
+        console.error('Failed to update transaction status in showError:', updateErr);
+    }
 
-    await updateTransactionStatus('failed', userFriendlyMessage);
-    const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
     }
@@ -476,14 +500,33 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                 'process.log', 'make-market', 'INFO'
             );
 
-            if (response.status !== 200 || !response.data || response.data.status !== 'success') {
-                throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
+            if (response.status === 200 && response.data) {
+                if (response.data.status === 'success') {
+                    console.log('Quote retrieved:', response.data.data);
+                    return response.data.data;
+                } else if (response.data.status === 'error') {
+                    const errorCode = response.data.errorCode || 'UNKNOWN';
+                    const errorMessage = response.data.message || 'Unknown error from Jupiter API';
+                    const errorDetails = {
+                        message: errorMessage,
+                        code: 'API_ERROR',
+                        url: '/mm/get-quote',
+                        response: { status: response.status, data: response.data },
+                        inputMint,
+                        outputMint,
+                        amount: amount / 1e9,
+                        slippageBps,
+                        network: networkConfig.network,
+                        userAgent: navigator.userAgent || 'unknown',
+                        session_id: document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none',
+                        cookies: document.cookie || 'no cookies'
+                    };
+                    throw new Error(errorMessage, { cause: { errorCode, details: errorDetails } });
+                }
             }
-
-            console.log('Quote retrieved:', response.data.data);
-            return response.data.data;
+            throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
         } catch (err) {
-            let errorCode = 'UNKNOWN';
+            let errorCode = err.cause?.errorCode || 'UNKNOWN';
             let errorMessage = err.message;
             const errorDetails = {
                 message: err.message,
@@ -504,22 +547,6 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                 session_id: document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none',
                 cookies: document.cookie || 'no cookies'
             };
-
-            // Phân tích phản hồi từ Jupiter API
-            if (err.response?.data) {
-                try {
-                    const responseData = typeof err.response.data === 'string' ? JSON.parse(err.response.data) : err.response.data;
-                    errorCode = responseData.errorCode || 'UNKNOWN';
-                    errorMessage = responseData.message || err.message;
-                } catch (parseError) {
-                    console.error('Failed to parse Jupiter API response:', parseError);
-                    errorMessage = `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`;
-                }
-            } else if (err.code === 'ECONNABORTED') {
-                errorMessage = `Timeout Error: Request to /mm/get-quote timed out after 60 seconds`;
-            } else {
-                errorMessage = `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-quote'}`;
-            }
 
             console.error(`Failed to get quote (attempt ${attempt}/${maxRetries}):`, errorDetails);
             log_message(
