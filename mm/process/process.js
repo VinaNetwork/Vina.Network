@@ -423,17 +423,11 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                 `Requesting quote from Jupiter API (attempt ${attempt}/${maxRetries}): url=${networkConfig.jupiterApi}, params=${JSON.stringify(params)}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                 'process.log', 'make-market', 'DEBUG'
             );
-            const headers = { 'Accept': 'application/json' };
-            if (networkConfig.network === 'devnet') {
-                headers['x-jupiter-network'] = 'devnet';
-            }
-
             const response = await axios.get(networkConfig.jupiterApi, {
                 params,
                 timeout: 30000,
-                headers
+                headers: { 'Accept': 'application/json' }
             });
-
             log_message(
                 `Quote response: url=${networkConfig.jupiterApi}, status=${response.status}, data=${JSON.stringify(response.data)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                 'process.log', 'make-market', 'INFO'
