@@ -408,55 +408,87 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
 
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig) {
-    console.log('Axios available:', typeof axios !== 'undefined'); // Debug
-    const params = {
-        inputMint,
-        outputMint,
-        amount: Math.floor(amount),
-        slippageBps
-    };
+    console.log('Axios available:', typeof axios !== 'undefined');
     const maxRetries = 1;
     let attempt = 1;
     while (attempt <= maxRetries) {
         try {
+            const requestBody = {
+                inputMint,
+                outputMint,
+                amount: Math.floor(amount),
+                slippageBps,
+                network: networkConfig.network
+            };
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken
+            };
             log_message(
-                `Requesting quote from Jupiter API (attempt ${attempt}/${maxRetries}): url=${networkConfig.jupiterApi}, params=${JSON.stringify(params)}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                `Requesting quote from /mm/get-quote (attempt ${attempt}/${maxRetries}): body=${JSON.stringify(requestBody)}, headers=${JSON.stringify(headers)}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}, cookies=${document.cookie}`,
                 'process.log', 'make-market', 'DEBUG'
             );
-            const headers = { 'Accept': 'application/json' };
-            if (networkConfig.network === 'devnet') {
-                headers['x-jupiter-network'] = 'devnet';
-            }
 
-            const response = await axios.get(networkConfig.jupiterApi, {
-                params,
-                timeout: 30000,
-                headers
+            const response = await axios.post('/mm/get-quote', requestBody, {
+                timeout: 60000,
+                headers,
+                withCredentials: true
             });
 
             log_message(
-                `Quote response: url=${networkConfig.jupiterApi}, status=${response.status}, data=${JSON.stringify(response.data)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                `Response from /mm/get-quote: status=${response.status}, data=${JSON.stringify(response.data)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                 'process.log', 'make-market', 'INFO'
             );
-            console.log('Quote retrieved:', response.data);
-            return response.data;
+
+            if (response.status !== 200 || !response.data || response.data.status !== 'success') {
+                throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
+            }
+
+            console.log('Quote retrieved:', response.data.data);
+            return response.data.data;
         } catch (err) {
             const errorDetails = {
                 message: err.message,
                 code: err.code || 'N/A',
-                url: err.config?.url || networkConfig.jupiterApi,
-                response: err.response ? { status: err.response.status, data: err.response.data } : null
+                url: err.config?.url || '/mm/get-quote',
+                response: err.response ? {
+                    status: err.response.status,
+                    data: JSON.stringify(err.response.data),
+                    headers: JSON.stringify(err.response.headers)
+                } : null,
+                stack: err.stack || 'no stack trace',
+                inputMint,
+                outputMint,
+                amount: amount / 1e9,
+                slippageBps,
+                network: networkConfig.network,
+                userAgent: navigator.userAgent || 'unknown',
+                session_id: document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none',
+                cookies: document.cookie || 'no cookies'
             };
             const errorMessage = err.response
                 ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
                 : err.code === 'ECONNABORTED'
-                ? `Timeout Error: Request to ${networkConfig.jupiterApi} timed out after 30 seconds`
-                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || networkConfig.jupiterApi}`;
+                ? `Timeout Error: Request to /mm/get-quote timed out after 60 seconds`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-quote'}`;
+            console.error(`Failed to get quote (attempt ${attempt}/${maxRetries}):`, errorDetails);
             log_message(
-                `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, details=${JSON.stringify(errorDetails)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, slippageBps=${slippageBps}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, details=${JSON.stringify(errorDetails)}`,
                 'process.log', 'make-market', 'ERROR'
             );
-            console.error('Failed to get quote:', errorMessage);
+
+            if (!navigator.onLine) {
+                const offlineError = 'Browser is offline. Please check your internet connection.';
+                console.error(offlineError);
+                log_message(
+                    `Browser offline detected: ${offlineError}, transactionId=${transactionId}, network=${networkConfig.network}, session_id=${errorDetails.session_id}`,
+                    'process.log', 'make-market', 'ERROR'
+                );
+                throw new Error(offlineError);
+            }
+
             if (attempt === maxRetries || err.response) {
                 throw new Error(errorMessage);
             }
