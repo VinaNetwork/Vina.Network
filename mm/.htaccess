@@ -7,16 +7,16 @@
 RewriteEngine On
 RewriteBase /mm/
 
-# Create process page
-RewriteRule ^create-process$ create/create-process.php [L,NC,QSA]
-# ====== Endpoints check wallet ======
-RewriteRule ^check-wallets$ create/check-wallets.php [L,NC,QSA]
-
 # Private key page
 RewriteRule ^add-private-key$ private-key/add-pk.php [L,NC,QSA]
 RewriteRule ^list-private-key$ private-key/list/list-pk.php [L,NC,QSA]
 # ====== Endpoints Private key ======
 RewriteRule ^delete-private-key$ private-key/list/delete-pk.php [L,NC,QSA]
+
+# Create process page
+RewriteRule ^create-process$ create/create-process.php [L,NC,QSA]
+# ====== Endpoints check wallet ======
+RewriteRule ^check-wallets$ create/check-wallets.php [L,NC,QSA]
 
 # Swap process page
 RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC,QSA]
