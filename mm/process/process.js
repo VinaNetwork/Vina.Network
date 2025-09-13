@@ -90,105 +90,59 @@ function delay(ms) {
 
 // Show error message
 async function showError(message, detailedError = null) {
-    const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
-    let errorCode = 'UNKNOWN';
 
-    // Log ngay đầu hàm để xác nhận showError được gọi
-    log_message(
-        `showError called: message=${message}, detailedError=${JSON.stringify(detailedError)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-        'process.log', 'make-market', 'DEBUG'
-    );
-    console.log('showError called:', { message, detailedError });
-
-    // Kiểm tra errorCode từ detailedError
-    if (detailedError?.cause?.errorCode) {
-        errorCode = detailedError.cause.errorCode;
-    } else if (typeof detailedError === 'string' && detailedError.startsWith('HTTP')) {
+    // Handle specific error cases to display friendly messages
+    if (detailedError) {
+        // Parse detailedError if it's a stringified JSON
+        let parsedError;
         try {
-            const jsonMatch = detailedError.match(/{.*}/);
-            const parsedError = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
-            errorCode = parsedError.errorCode || 'UNKNOWN';
+            parsedError = typeof detailedError === 'string' && detailedError.startsWith('HTTP') 
+                ? JSON.parse(detailedError.split(': ')[1]) 
+                : {};
         } catch (e) {
-            console.error('Failed to parse detailedError:', e);
-            log_message(
-                `Failed to parse detailedError: ${e.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-                'process.log', 'make-market', 'ERROR'
-            );
+            parsedError = {};
+        }
+
+        // Jupiter API specific errors
+        if (parsedError?.message?.includes('The token') && parsedError?.errorCode === 'TOKEN_NOT_TRADABLE') {
+            userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or check its liquidity.';
+        } else if (parsedError?.errorCode === 'INSUFFICIENT_LIQUIDITY') {
+            userFriendlyMessage = 'There is not enough liquidity for this token pair. Please try a different token or adjust the amount.';
+        } else if (parsedError?.errorCode === 'NO_ROUTE_FOUND') {
+            userFriendlyMessage = 'No trading route is available for this token pair. Please select a different token.';
+        } else if (detailedError.includes('Network Error') || detailedError.includes('Timeout Error')) {
+            userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
+        } else if (detailedError.includes('HTTP 401')) {
+            userFriendlyMessage = 'Authentication error. Please log in again to continue.';
+        } else if (detailedError.includes('HTTP 429')) {
+            userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (detailedError.includes('HTTP 500')) {
+            userFriendlyMessage = 'Server error. Please try again later or contact support.';
         }
     }
 
-    // Xử lý các trường hợp lỗi cụ thể
-    switch (errorCode) {
-        case 'TOKEN_NOT_TRADABLE':
-            userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or check its liquidity.';
-            break;
-        case 'INSUFFICIENT_LIQUIDITY':
-            userFriendlyMessage = 'There is not enough liquidity for this token pair. Please try a different token or adjust the amount.';
-            break;
-        case 'NO_ROUTE_FOUND':
-            userFriendlyMessage = 'No trading route is available for this token pair. Please select a different token.';
-            break;
-        case 'OFFLINE':
-            userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
-            break;
-        default:
-            if (detailedError?.message?.includes('Network Error') || detailedError?.message?.includes('Timeout Error')) {
-                userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
-            } else if (detailedError?.message?.includes('HTTP 401')) {
-                userFriendlyMessage = 'Authentication error. Please log in again to continue.';
-            } else if (detailedError?.message?.includes('HTTP 429')) {
-                userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
-            } else if (detailedError?.message?.includes('HTTP 500')) {
-                userFriendlyMessage = 'Server error. Please try again later or contact support.';
-            }
-    }
-
-    // Log lỗi
-    log_message(
-        `Process stopped: ${userFriendlyMessage}, errorCode=${errorCode}, Details: ${JSON.stringify(detailedError)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-        'process.log', 'make-market', 'ERROR'
-    );
-    console.error(`Process stopped: ${userFriendlyMessage}, errorCode=${errorCode}, Details: ${JSON.stringify(detailedError)}`);
-
-    // Kiểm tra DOM
     const resultDiv = document.getElementById('process-result');
-    const swapStatus = document.getElementById('swap-status');
-    const transactionStatus = document.getElementById('transaction-status');
-    const cancelBtn = document.getElementById('cancel-btn');
-
-    if (!resultDiv || !swapStatus || !transactionStatus) {
-        log_message(
-            `DOM elements missing: resultDiv=${!!resultDiv}, swapStatus=${!!swapStatus}, transactionStatus=${!!transactionStatus}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-            'process.log', 'make-market', 'ERROR'
-        );
-        console.error('DOM elements missing:', { resultDiv: !!resultDiv, swapStatus: !!swapStatus, transactionStatus: !!transactionStatus });
-        return;
-    }
-
-    // Cập nhật giao diện
     resultDiv.innerHTML = `
         <div class="alert alert-danger">
             <strong>Error:</strong> ${userFriendlyMessage}
-            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Detail: ${JSON.stringify(detailedError)}` : ''}
+            ${detailedError && window.ENVIRONMENT === 'development' ? `<br>Detail: ${detailedError}` : ''}
         </div>
     `;
     resultDiv.classList.add('active');
-    swapStatus.textContent = '';
-    transactionStatus.textContent = 'Failed';
-    transactionStatus.classList.add('text-danger');
+    document.getElementById('swap-status').textContent = '';
+    document.getElementById('transaction-status').textContent = 'Failed';
+    document.getElementById('transaction-status').classList.add('text-danger');
 
-    // Cập nhật trạng thái giao dịch
-    try {
-        await updateTransactionStatus('failed', userFriendlyMessage);
-    } catch (updateErr) {
-        log_message(
-            `Failed to update transaction status in showError: ${updateErr.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-            'process.log', 'make-market', 'ERROR'
-        );
-        console.error('Failed to update transaction status in showError:', updateErr);
-    }
+    const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
+    log_message(
+        `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+        'process.log', 'make-market', 'ERROR'
+    );
+    console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
 
+    await updateTransactionStatus('failed', detailedError || message);
+    const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
         cancelBtn.style.display = 'none';
     }
@@ -511,41 +465,20 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                 'process.log', 'make-market', 'INFO'
             );
 
-            if (response.status === 200 && response.data) {
-                if (response.data.status === 'success') {
-                    console.log('Quote retrieved:', response.data.data);
-                    return response.data.data;
-                } else if (response.data.status === 'error') {
-                    const errorCode = response.data.errorCode || 'UNKNOWN';
-                    const errorMessage = response.data.message || 'Unknown error from Jupiter API';
-                    const errorDetails = {
-                        message: errorMessage,
-                        code: 'API_ERROR',
-                        url: '/mm/get-quote',
-                        response: { status: response.status, data: response.data },
-                        inputMint,
-                        outputMint,
-                        amount: amount / 1e9,
-                        slippageBps,
-                        network: networkConfig.network,
-                        userAgent: navigator.userAgent || 'unknown',
-                        session_id: document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none',
-                        cookies: document.cookie || 'no cookies'
-                    };
-                    throw new Error(errorMessage, { cause: { errorCode, details: errorDetails } });
-                }
+            if (response.status !== 200 || !response.data || response.data.status !== 'success') {
+                throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
             }
-            throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
+
+            console.log('Quote retrieved:', response.data.data);
+            return response.data.data;
         } catch (err) {
-            let errorCode = 'UNKNOWN';
-            let errorMessage = err.message;
             const errorDetails = {
                 message: err.message,
                 code: err.code || 'N/A',
                 url: err.config?.url || '/mm/get-quote',
                 response: err.response ? {
                     status: err.response.status,
-                    data: err.response.data,
+                    data: JSON.stringify(err.response.data),
                     headers: JSON.stringify(err.response.headers)
                 } : null,
                 stack: err.stack || 'no stack trace',
@@ -558,22 +491,14 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                 session_id: document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none',
                 cookies: document.cookie || 'no cookies'
             };
-
-            // Phân tích phản hồi lỗi từ axios
-            if (err.response?.data?.status === 'error') {
-                errorCode = err.response.data.errorCode || 'UNKNOWN';
-                errorMessage = err.response.data.message || err.message;
-                errorDetails.message = errorMessage;
-                errorDetails.response = { status: err.response.status, data: err.response.data };
-            } else if (err.code === 'ECONNABORTED') {
-                errorMessage = `Timeout Error: Request to /mm/get-quote timed out after 60 seconds`;
-            } else {
-                errorMessage = `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-quote'}`;
-            }
-
+            const errorMessage = err.response
+                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                : err.code === 'ECONNABORTED'
+                ? `Timeout Error: Request to /mm/get-quote timed out after 60 seconds`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-quote'}`;
             console.error(`Failed to get quote (attempt ${attempt}/${maxRetries}):`, errorDetails);
             log_message(
-                `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, errorCode=${errorCode}, details=${JSON.stringify(errorDetails)}`,
+                `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, details=${JSON.stringify(errorDetails)}`,
                 'process.log', 'make-market', 'ERROR'
             );
 
@@ -584,11 +509,11 @@ async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfi
                     `Browser offline detected: ${offlineError}, transactionId=${transactionId}, network=${networkConfig.network}, session_id=${errorDetails.session_id}`,
                     'process.log', 'make-market', 'ERROR'
                 );
-                throw new Error(offlineError, { cause: { errorCode: 'OFFLINE', details: errorDetails } });
+                throw new Error(offlineError);
             }
 
             if (attempt === maxRetries || err.response) {
-                throw new Error(errorMessage, { cause: { errorCode, details: errorDetails } });
+                throw new Error(errorMessage);
             }
             attempt++;
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
@@ -1008,11 +933,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         await updateTransactionStatus(successCount === totalTransactions ? 'success' : 'partial', `Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`);
         await showSuccess(`Completed ${successCount} of ${totalTransactions} transactions on ${networkConfig.network}`, swapResult.results, networkConfig);
     } catch (err) {
-        console.log('Main process error:', err, 'Cause:', err.cause);
-        log_message(
-            `Main process error: message=${err.message}, cause=${JSON.stringify(err.cause)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-            'process.log', 'make-market', 'ERROR'
-        );
-        await showError('Error during swap process: ' + err.message, err.cause || err);
+        await showError('Error during swap process: ' + err.message, err.message);
     }
 });
