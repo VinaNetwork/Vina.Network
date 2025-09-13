@@ -7,7 +7,6 @@
 
 ob_start();
 $root_path = __DIR__ . '/../../';
-// constants | logging | config | error | session | database | header-auth | CSRF | Network | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
 // Solana Library
@@ -88,7 +87,7 @@ if (!$user_public_key || !$user_id) {
         'process.log', 'make-market', 'INFO', $log_context
     );
     session_destroy(); // Clear session to avoid using old session
-    $_SESSION['redirect_url'] = '/mm/create-process';
+    $_SESSION['redirect_url'] = '/mm/process';
     session_write_close();
     header('Location: /acc/connect-p');
     exit;
@@ -172,8 +171,8 @@ $page_description = "Execute your automated Solana token trading with Vina Netwo
 $page_keywords = "Solana trading, automated trading, Jupiter API, make market, Vina Network";
 $page_og_title = "Make Market Process: Automate Solana Token Trading";
 $page_og_description = "Execute Solana token swaps using Jupiter Aggregator.";
-$page_og_url = BASE_URL . "mm/create-process";
-$page_canonical = BASE_URL . "mm/create-process";
+$page_og_url = BASE_URL . "mm/create";
+$page_canonical = BASE_URL . "mm/create";
 $page_css = ['/mm/process/process.css'];
 ?>
 
@@ -285,7 +284,7 @@ $page_css = ['/mm/process/process.css'];
 </script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js"></script>
-<script type="module" src="/mm/process/process.js"></script>
+<script type="module" src="/mm/process/process.js?t=<?php echo time(); ?>" onerror="console.error('Failed to load process.js')"></script>
 <!-- Note: Transaction processing is handled by /mm/process/process.js via Jupiter API -->
 </body>
 </html>
