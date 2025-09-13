@@ -54,12 +54,9 @@ if (!defined('EXPLORER_QUERY')) {
     });
 }
 
-// Define Jupiter API
+// Define Jupiter API (1 endpoint)
 if (!defined('JUPITER_API')) {
-    define('JUPITER_API', match (SOLANA_NETWORK) {
-        'devnet'  => 'https://quote-api.jup.ag/v6/quote?network=devnet',
-        'mainnet' => 'https://quote-api.jup.ag/v6/quote',
-    });
+    define('JUPITER_API', 'https://quote-api.jup.ag/v6/quote');
 }
 
 // Log loaded configuration
