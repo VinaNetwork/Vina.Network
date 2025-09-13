@@ -91,12 +91,27 @@ function delay(ms) {
 // Show error message
 async function showError(message, detailedError = null) {
     let userFriendlyMessage = 'An error occurred during the transaction. Please try again later.';
-    
-    // Handle specific error cases to display friendly messages
-    if (detailedError?.includes('TOKEN_NOT_TRADABLE')) {
+    let errorData = null;
+
+    try {
+        if (typeof detailedError === 'string' && detailedError.includes('HTTP')) {
+            const jsonMatch = detailedError.match(/\{.*\}/);
+            if (jsonMatch) {
+                errorData = JSON.parse(jsonMatch[0]);
+            }
+        } else {
+            errorData = detailedError;
+        }
+    } catch (e) {
+        console.error('Failed to parse detailedError:', e.message);
+    }
+
+    if (errorData?.error === 'TOKEN_NOT_TRADABLE' || detailedError?.includes('TOKEN_NOT_TRADABLE')) {
         userFriendlyMessage = 'Token is not tradable. Please check the liquidity of the token or choose another token.';
+    } else if (detailedError?.includes('Timeout Error')) {
+        userFriendlyMessage = 'Request to Jupiter API timed out. Please try again later.';
     } else if (detailedError?.includes('Network Error')) {
-        userFriendlyMessage = 'Network connection error. Please check your internet connection and try again.';
+        userFriendlyMessage = 'Unable to connect to Jupiter API. Please try again later or contact support.';
     }
 
     const resultDiv = document.getElementById('process-result');
@@ -110,14 +125,14 @@ async function showError(message, detailedError = null) {
     document.getElementById('swap-status').textContent = '';
     document.getElementById('transaction-status').textContent = 'Failed';
     document.getElementById('transaction-status').classList.add('text-danger');
-    
+
     const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
     log_message(
-        `Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+        `Process stopped: ${userFriendlyMessage}, detailedError=${JSON.stringify(detailedError)}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
         'process.log', 'make-market', 'ERROR'
     );
-    console.error(`Process stopped: ${userFriendlyMessage}${detailedError ? `, Details: ${detailedError}` : ''}`);
-    
+    console.error(`Process stopped: ${userFriendlyMessage}, detailedError=${JSON.stringify(detailedError)}`);
+
     await updateTransactionStatus('failed', detailedError || message);
     const cancelBtn = document.getElementById('cancel-btn');
     if (cancelBtn) {
@@ -408,73 +423,130 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
 
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig) {
+    console.log('Axios available:', typeof axios !== 'undefined');
     const params = {
         inputMint,
         outputMint,
         amount: Math.floor(amount),
-        slippageBps,
-        testnet: networkConfig.network === 'devnet' ? true : undefined // Only add testnet if devnet
+        slippageBps
     };
-    try {
-        log_message(
-            `Requesting quote from Jupiter API: url=${networkConfig.jupiterApi}/quote, params=${JSON.stringify(params)}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-            'process.log', 'make-market', 'DEBUG'
-        );
-        const response = await axios.get(`${networkConfig.jupiterApi}/quote`, {
-            params,
-            timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        log_message(
-            `Quote response: url=${networkConfig.jupiterApi}/quote, status=${response.status}, data=${JSON.stringify(response.data)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-            'process.log', 'make-market', 'INFO'
-        );
-        console.log('Quote retrieved:', response.data);
-        return response.data;
-    } catch (err) {
-        const errorMessage = err.response
-            ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/quote`}`;
-        log_message(
-            `Failed to get quote: error=${errorMessage}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, slippageBps=${slippageBps}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
-            'process.log', 'make-market', 'ERROR'
-        );
-        console.error('Failed to get quote:', errorMessage);
-        throw new Error(errorMessage);
+
+    if (networkConfig.network === 'devnet') {
+        params.network = 'devnet';
+    }
+    
+    const maxRetries = 1;
+    let attempt = 1;
+    while (attempt <= maxRetries) {
+        try {
+            log_message(
+                `Requesting quote from Jupiter API (attempt ${attempt}/${maxRetries}): url=${networkConfig.jupiterApi}, params=${JSON.stringify(params)}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'DEBUG'
+            );
+            const response = await axios.get(networkConfig.jupiterApi, {
+                params,
+                timeout: 30000,
+                headers: { 'Accept': 'application/json' }
+            });
+            log_message(
+                `Quote response: url=${networkConfig.jupiterApi}, status=${response.status}, data=${JSON.stringify(response.data)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'INFO'
+            );
+            console.log('Quote retrieved:', response.data);
+            return response.data;
+        } catch (err) {
+            const errorDetails = {
+                message: err.message,
+                code: err.code || 'N/A',
+                url: err.config?.url || networkConfig.jupiterApi,
+                response: err.response ? { status: err.response.status, data: err.response.data } : null
+            };
+            const errorMessage = err.response
+                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                : err.code === 'ECONNABORTED'
+                ? `Timeout Error: Request to ${networkConfig.jupiterApi} timed out after 30 seconds`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || networkConfig.jupiterApi}`;
+            log_message(
+                `Failed to get quote (attempt ${attempt}/${maxRetries}): error=${errorMessage}, details=${JSON.stringify(errorDetails)}, inputMint=${inputMint}, outputMint=${outputMint}, amount=${amount / 1e9}, slippageBps=${slippageBps}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'ERROR'
+            );
+            console.error('Failed to get quote:', errorMessage);
+            if (attempt === maxRetries || err.response) {
+                throw new Error(errorMessage);
+            }
+            attempt++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
     }
 }
 
-// Get swap transaction
-async function getSwapTransaction(quote, publicKey, networkConfig) {
-    try {
-        const requestBody = {
-            quoteResponse: quote,
-            userPublicKey: publicKey,
-            wrapAndUnwrapSol: true,
-            dynamicComputeUnitLimit: true,
-            prioritizationFeeLamports: networkConfig.prioritizationFeeLamports,
-            testnet: networkConfig.network === 'devnet'
-        };
-        log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
-            timeout: 15000,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        if (response.status !== 200 || !response.data) {
-            throw new Error('Failed to prepare swap transaction from Jupiter API');
+// Get swap transaction from Jupiter API
+async function getSwapTransaction(quoteResponse, walletPublicKey, networkConfig) {
+    const maxRetries = 3;
+    let attempt = 1;
+
+    while (attempt <= maxRetries) {
+        try {
+            const url = `${networkConfig.jupiterApi.replace('/quote', '')}/swap`; 
+            // Nếu jupiterApi = https://quote-api.jup.ag/v6/quote
+            // thì url = https://quote-api.jup.ag/v6/swap
+
+            const body = {
+                quoteResponse,
+                userPublicKey: walletPublicKey,
+                wrapAndUnwrapSol: true,
+                dynamicComputeUnitLimit: true,
+                prioritizationFeeLamports: networkConfig.prioritizationFeeLamports || 10000
+            };
+
+            // Nếu đang devnet → thêm network param
+            if (networkConfig.network === 'devnet') {
+                body.network = 'devnet';
+            }
+
+            log_message(
+                `Requesting swap transaction (attempt ${attempt}/${maxRetries}): url=${url}, body=${JSON.stringify(body)}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'DEBUG'
+            );
+
+            const response = await axios.post(url, body, {
+                timeout: 30000,
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+            });
+
+            log_message(
+                `Swap transaction response: status=${response.status}, data=${JSON.stringify(response.data)}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'INFO'
+            );
+
+            console.log('Swap transaction retrieved:', response.data);
+            return response.data;
+        } catch (err) {
+            const errorDetails = {
+                message: err.message,
+                code: err.code || 'N/A',
+                url: err.config?.url || 'unknown',
+                response: err.response ? { status: err.response.status, data: err.response.data } : null
+            };
+            const errorMessage = err.response
+                ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+                : err.code === 'ECONNABORTED'
+                ? `Timeout Error: Request to swap API timed out after 30 seconds`
+                : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || 'unknown'}`;
+
+            log_message(
+                `Failed to get swap transaction (attempt ${attempt}/${maxRetries}): error=${errorMessage}, details=${JSON.stringify(errorDetails)}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
+                'process.log', 'make-market', 'ERROR'
+            );
+
+            console.error('Failed to get swap transaction:', errorMessage);
+
+            if (attempt === maxRetries || err.response) {
+                throw new Error(errorMessage);
+            }
+            attempt++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
-        const { swapTransaction } = response.data;
-        log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-        console.log('Swap transaction prepared:', swapTransaction);
-        return swapTransaction;
-    } catch (err) {
-        const errorMessage = err.response
-            ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
-        log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-        console.error('Swap transaction failed:', errorMessage);
-        throw new Error(errorMessage);
     }
 }
 
