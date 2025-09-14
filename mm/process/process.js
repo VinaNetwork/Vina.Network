@@ -259,7 +259,7 @@ async function getNetworkConfig() {
             if (!result.network || !['mainnet', 'devnet'].includes(result.network)) {
                 throw new Error(`Invalid network: ${result.network || 'undefined'}`);
             }
-            if (!result.jupiterApi || !result.jupiterApi.includes('jup.ag')) {
+            if (!result.jupiterApi) {
                 throw new Error(`Invalid Jupiter API URL: ${result.jupiterApi || 'undefined'}`);
             }
             if (!result.explorerUrl) {
