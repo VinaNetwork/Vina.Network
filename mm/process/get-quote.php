@@ -163,7 +163,7 @@ try {
         http_response_code($httpCode);
         echo json_encode([
             'status' => 'error',
-            'message' => "Jupiter API error: $errorMessage",
+            'message' => $errorMessage,
             'errorCode' => $errorCode
         ], JSON_UNESCAPED_UNICODE);
         exit;
