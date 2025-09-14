@@ -25,15 +25,9 @@ RewriteRule ^get-order/([0-9]+)$ process/get-order.php?id=$1 [L,NC,QSA]
 RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC,QSA]
 RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
 RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC,QSA]
-RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
 RewriteRule ^get-quote$ process/get-quote.php [L,NC,QSA]
 RewriteRule ^get-swap$ process/get-swap.php [L,NC,QSA]
-
-# Lists process page
-RewriteRule ^lists-process$ lists/lists-process.php [L,NC,QSA]
-
-# Error page
-RewriteRule ^error$ error.php [L,QSA]
+RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
 
 # ====== Endpoints CSRF ======
 RewriteRule ^refresh-csrf$ endpoints/refresh-csrf.php [L,NC,QSA]
@@ -44,6 +38,12 @@ RewriteRule ^get-network$ endpoints/get-network.php [L,NC,QSA]
 
 # ====== Endpoints write logs ======
 RewriteRule ^write-logs$ endpoints/write-logs.php [L,NC,QSA]
+
+# Lists process page
+RewriteRule ^lists-process$ lists/lists-process.php [L,NC,QSA]
+
+# Error page
+RewriteRule ^error$ error.php [L,QSA]
 
 # Block direct access to .htaccess files
 <Files ".htaccess">
