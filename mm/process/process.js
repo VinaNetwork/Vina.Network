@@ -313,10 +313,18 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
                 withCredentials: true
             });
             log_message(`Response from /mm/get-decimals: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${cookies}, session_id=${session_id}`, 'process.log', 'make-market', 'DEBUG');
+            
+            // Check response from API
             if (response.status !== 200 || !response.data || response.data.status !== 'success') {
                 throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
             }
-            const decimals = parseInt(response.data.decimals) || 9;
+            
+            // Check validity of decimals
+            const decimals = parseInt(response.data.decimals);
+            if (isNaN(decimals) || decimals < 0) {
+                throw new Error(`Invalid decimals value: received=${response.data.decimals}`);
+            }
+            
             log_message(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}, session_id=${session_id}, cookies=${cookies}`, 'process.log', 'make-market', 'INFO');
             console.log(`Token decimals retrieved from database: mint=${tokenMint}, decimals=${decimals}, network=${solanaNetwork}`);
             return decimals;
