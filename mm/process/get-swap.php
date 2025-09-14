@@ -96,8 +96,7 @@ try {
     $headers = [
         'Content-Type: application/json',
         'Accept: application/json',
-        'User-Agent: Mozilla/5.0 (compatible; VinaNetwork/1.0)',
-        'Origin: https://vina.network'
+        'User-Agent: VinaNetwork/1.0'
     ];
     if ($network === 'devnet') {
         $headers[] = 'x-jupiter-network: devnet';
