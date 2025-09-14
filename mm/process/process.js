@@ -209,71 +209,6 @@ async function updateTransactionStatus(status, error = null) {
     }
 }
 
-// Cancel transaction
-async function cancelTransaction(transactionId) {
-    const maxRetries = 2;
-    let attempt = 0;
-    while (attempt < maxRetries) {
-        try {
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken
-            };
-            log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/get-status/${transactionId}`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user' }),
-                credentials: 'include'
-            });
-            const responseBody = await response.text();
-            log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
-            if (!response.ok) {
-                let result;
-                try {
-                    result = JSON.parse(responseBody);
-                } catch (e) {
-                    result = {};
-                }
-                if (response.status === 401) {
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                    return;
-                }
-                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
-            }
-            const result = JSON.parse(responseBody);
-            if (result.status !== 'success') {
-                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
-            }
-            log_message(`Transaction canceled: ID=${transactionId}`, 'process.log', 'make-market', 'INFO');
-            console.log(`Transaction canceled: ID=${transactionId}`);
-            document.getElementById('transaction-status').textContent = 'Canceled';
-            document.getElementById('transaction-status').classList.add('text-danger');
-            document.getElementById('swap-status').textContent = '';
-            document.getElementById('process-result').innerHTML = `
-                <div class="alert alert-danger">
-                    <strong>Canceled:</strong> Transaction canceled by user
-                </div>
-            `;
-            document.getElementById('process-result').classList.add('active');
-            const cancelBtn = document.getElementById('cancel-btn');
-            if (cancelBtn) {
-                cancelBtn.style.display = 'none';
-            }
-            return;
-        } catch (err) {
-            log_message(`Failed to cancel transaction: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error('Failed to cancel transaction:', err.message);
-            if (attempt === maxRetries - 1) {
-                showError('Failed to cancel transaction: ' + err.message, err.message);
-            }
-            attempt++;
-            await delay(1000 * attempt);
-        }
-    }
-}
 
 // Get network configuration
 async function getNetworkConfig() {
@@ -711,6 +646,72 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
             console.error('Swap execution failed:', errorMessage);
             if (attempt === maxRetries - 1) {
                 throw err;
+            }
+            attempt++;
+            await delay(1000 * attempt);
+        }
+    }
+}
+
+// Cancel transaction
+async function cancelTransaction(transactionId) {
+    const maxRetries = 2;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken
+            };
+            log_message(`Canceling transaction: ID=${transactionId}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const response = await fetch(`/mm/get-status/${transactionId}`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ id: transactionId, status: 'canceled', error: 'Transaction canceled by user' }),
+                credentials: 'include'
+            });
+            const responseBody = await response.text();
+            log_message(`Response from /mm/get-status/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            if (!response.ok) {
+                let result;
+                try {
+                    result = JSON.parse(responseBody);
+                } catch (e) {
+                    result = {};
+                }
+                if (response.status === 401) {
+                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
+            }
+            const result = JSON.parse(responseBody);
+            if (result.status !== 'success') {
+                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
+            }
+            log_message(`Transaction canceled: ID=${transactionId}`, 'process.log', 'make-market', 'INFO');
+            console.log(`Transaction canceled: ID=${transactionId}`);
+            document.getElementById('transaction-status').textContent = 'Canceled';
+            document.getElementById('transaction-status').classList.add('text-danger');
+            document.getElementById('swap-status').textContent = '';
+            document.getElementById('process-result').innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Canceled:</strong> Transaction canceled by user
+                </div>
+            `;
+            document.getElementById('process-result').classList.add('active');
+            const cancelBtn = document.getElementById('cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.style.display = 'none';
+            }
+            return;
+        } catch (err) {
+            log_message(`Failed to cancel transaction: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Failed to cancel transaction:', err.message);
+            if (attempt === maxRetries - 1) {
+                showError('Failed to cancel transaction: ' + err.message, err.message);
             }
             attempt++;
             await delay(1000 * attempt);
