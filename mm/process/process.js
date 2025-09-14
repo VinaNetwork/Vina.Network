@@ -334,6 +334,75 @@ async function getTokenDecimals(tokenMint, solanaNetwork) {
     }
 }
 
+// Create sub-transaction records
+async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork) {
+    const maxRetries = 2;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            const totalTransactions = tradeDirection === 'both' ? loopCount * batchSize * 2 : loopCount * batchSize;
+            const subTransactions = [];
+            for (let loop = 1; loop <= loopCount; loop++) {
+                for (let batchIndex = 0; batchIndex < batchSize; batchIndex++) {
+                    if (tradeDirection === 'buy' || tradeDirection === 'both') {
+                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'buy' });
+                    }
+                    if (tradeDirection === 'sell' || tradeDirection === 'both') {
+                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'sell' });
+                    }
+                }
+            }
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Auth-Token': authToken
+            };
+            log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+            const response = await fetch(`/mm/create-tx/${transactionId}`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    id: transactionId,
+                    sub_transactions: subTransactions,
+                    network: solanaNetwork
+                }),
+                credentials: 'include'
+            });
+            const responseBody = await response.text();
+            log_message(`Response from /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
+            if (!response.ok) {
+                let result;
+                try {
+                    result = JSON.parse(responseBody);
+                } catch (e) {
+                    result = {};
+                }
+                if (response.status === 401) {
+                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
+            }
+            const result = JSON.parse(responseBody);
+            if (result.status !== 'success') {
+                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
+            }
+            log_message(`Created ${totalTransactions} sub-transactions for transaction ID=${transactionId}, IDs: ${result.sub_transaction_ids.join(',')}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
+            console.log(`Created ${totalTransactions} sub-transactions:`, result.sub_transaction_ids);
+            return result.sub_transaction_ids;
+        } catch (err) {
+            log_message(`Failed to create sub-transactions: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
+            console.error('Failed to create sub-transactions:', err.message);
+            if (attempt === maxRetries - 1) {
+                throw err;
+            }
+            attempt++;
+            await delay(1000 * attempt);
+        }
+    }
+}
+
 // Get quote from Jupiter API
 async function getQuote(inputMint, outputMint, amount, slippageBps, networkConfig) {
     console.log('Axios available:', typeof axios !== 'undefined');
@@ -464,75 +533,6 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
         log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Swap transaction failed:', errorMessage);
         throw new Error(errorMessage);
-    }
-}
-
-// Create sub-transaction records
-async function createSubTransactions(transactionId, loopCount, batchSize, tradeDirection, solanaNetwork) {
-    const maxRetries = 2;
-    let attempt = 0;
-    while (attempt < maxRetries) {
-        try {
-            const totalTransactions = tradeDirection === 'both' ? loopCount * batchSize * 2 : loopCount * batchSize;
-            const subTransactions = [];
-            for (let loop = 1; loop <= loopCount; loop++) {
-                for (let batchIndex = 0; batchIndex < batchSize; batchIndex++) {
-                    if (tradeDirection === 'buy' || tradeDirection === 'both') {
-                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'buy' });
-                    }
-                    if (tradeDirection === 'sell' || tradeDirection === 'both') {
-                        subTransactions.push({ loop, batch_index: batchIndex, direction: 'sell' });
-                    }
-                }
-            }
-            const headers = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken
-            };
-            log_message(`Creating sub-transactions: ID=${transactionId}, total=${totalTransactions}, headers=${JSON.stringify(headers)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-            const response = await fetch(`/mm/create-tx/${transactionId}`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    id: transactionId,
-                    sub_transactions: subTransactions,
-                    network: solanaNetwork
-                }),
-                credentials: 'include'
-            });
-            const responseBody = await response.text();
-            log_message(`Response from /mm/create-tx/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
-            if (!response.ok) {
-                let result;
-                try {
-                    result = JSON.parse(responseBody);
-                } catch (e) {
-                    result = {};
-                }
-                if (response.status === 401) {
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-                    return;
-                }
-                throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
-            }
-            const result = JSON.parse(responseBody);
-            if (result.status !== 'success') {
-                throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
-            }
-            log_message(`Created ${totalTransactions} sub-transactions for transaction ID=${transactionId}, IDs: ${result.sub_transaction_ids.join(',')}, network=${solanaNetwork}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
-            console.log(`Created ${totalTransactions} sub-transactions:`, result.sub_transaction_ids);
-            return result.sub_transaction_ids;
-        } catch (err) {
-            log_message(`Failed to create sub-transactions: ${err.message}, transactionId=${transactionId}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
-            console.error('Failed to create sub-transactions:', err.message);
-            if (attempt === maxRetries - 1) {
-                throw err;
-            }
-            attempt++;
-            await delay(1000 * attempt);
-        }
     }
 }
 
