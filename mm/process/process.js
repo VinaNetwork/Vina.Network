@@ -503,26 +503,29 @@ async function getSwapTransaction(quote, publicKey, networkConfig) {
             testnet: networkConfig.network === 'devnet'
         };
         const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            ...(networkConfig.network === 'devnet' ? { 'x-jupiter-network': 'devnet' } : {})
+            'X-Auth-Token': authToken
         };
-        log_message(`Requesting swap transaction from Jupiter API, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        const response = await axios.post(`${networkConfig.jupiterApi}/swap`, requestBody, {
+        log_message(`Requesting swap transaction from /mm/get-swap, body=${JSON.stringify(requestBody)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        const response = await axios.post('/mm/get-swap', requestBody, {
             timeout: 15000,
-            headers
+            headers,
+            withCredentials: true
         });
-        log_message(`Response from ${networkConfig.jupiterApi}/swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
-        if (response.status !== 200 || !response.data) {
-            throw new Error('Failed to prepare swap transaction from Jupiter API');
+        log_message(`Response from /mm/get-swap: status=${response.status}, data=${JSON.stringify(response.data)}, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
+        if (response.status !== 200 || !response.data || response.data.status !== 'success') {
+            throw new Error(`Invalid response: status=${response.status}, data=${JSON.stringify(response.data)}`);
         }
-        const { swapTransaction } = response.data;
+        const { swapTransaction } = response.data.data;
         log_message(`Swap transaction prepared: ${swapTransaction.substring(0, 20)}..., network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'INFO');
         console.log('Swap transaction prepared:', swapTransaction);
         return swapTransaction;
     } catch (err) {
         const errorMessage = err.response
             ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
-            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || `${networkConfig.jupiterApi}/swap`}`;
+            : `Network Error: ${err.message}, code=${err.code || 'N/A'}, url=${err.config?.url || '/mm/get-swap'}`;
         log_message(`Swap transaction failed: ${errorMessage}, network=${networkConfig.network}, session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`, 'process.log', 'make-market', 'ERROR');
         console.error('Swap transaction failed:', errorMessage);
         throw new Error(errorMessage);
