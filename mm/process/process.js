@@ -186,7 +186,7 @@ async function updateTransactionStatus(status, error = null) {
                     result = {};
                 }
                 if (response.status === 401) {
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.href = '/acc/connect-p?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
@@ -240,7 +240,7 @@ async function getNetworkConfig() {
             );
             if (response.status === 401) {
                 log_message(`Unauthorized response from /mm/get-network, redirecting to login`, 'process.log', 'make-market', 'ERROR');
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = '/acc/connect-p?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
             if (!response.ok) {
@@ -380,7 +380,7 @@ async function createSubTransactions(transactionId, loopCount, batchSize, tradeD
                     result = {};
                 }
                 if (response.status === 401) {
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.href = '/acc/connect-p?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
@@ -609,7 +609,7 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
                         `session_id=${document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none'}`,
                         'process.log', 'make-market', 'ERROR'
                     );
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.href = '/acc/connect-p?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
@@ -683,7 +683,7 @@ async function cancelTransaction(transactionId) {
                     result = {};
                 }
                 if (response.status === 401) {
-                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                    window.location.href = '/acc/connect-p?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                     return;
                 }
                 throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
@@ -772,7 +772,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             log_message(`Response from /mm/get-order/${transactionId}: status=${response.status}, headers=${JSON.stringify([...response.headers.entries()])}, response_body=${responseBody}`, 'process.log', 'make-market', 'DEBUG');
             if (response.status === 401) {
                 log_message(`Unauthorized response from /mm/get-order/${transactionId}, redirecting to login`, 'process.log', 'make-market', 'ERROR');
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = '/acc/connect-p?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
                 return;
             }
             if (!response.ok) {
