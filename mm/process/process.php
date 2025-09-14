@@ -281,6 +281,7 @@ $page_css = ['/mm/process/process.css'];
 </script>
 <!-- Scripts - Source code -->
 <script src="/js/vina.js"></script>
+<script src="/mm/process/copy.js"></script>
 <script type="module" src="/mm/process/process.js"></script>
 <!-- Note: Transaction processing is handled by /mm/process/process.js via Jupiter API -->
 </body>
