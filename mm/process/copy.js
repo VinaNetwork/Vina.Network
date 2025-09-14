@@ -6,7 +6,7 @@
 
 // Copy functionality
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('process.js loaded');
+    console.log('copy.js loaded');
     const copyIcons = document.querySelectorAll('.copy-icon');
     copyIcons.forEach(icon => {
         icon.addEventListener('click', (e) => {
