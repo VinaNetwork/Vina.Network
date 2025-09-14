@@ -256,7 +256,7 @@ async function getNetworkConfig() {
             if (result.status !== 'success') {
                 throw new Error(result.message || `Invalid response: ${JSON.stringify(result)}`);
             }
-            if (!result.network || !['mainnet', 'devnet'].includes(result.network)) {
+            if (!result.network) {
                 throw new Error(`Invalid network: ${result.network || 'undefined'}`);
             }
             if (!result.jupiterApi) {
