@@ -129,7 +129,9 @@ async function showSuccess(message, results = [], networkConfig) {
         <div class="alert alert-${results.some(r => r.status === 'error') ? 'warning' : 'success'}">
             <strong>${results.some(r => r.status === 'error') ? 'Partial Success' : 'Success'}:</strong> ${message}
     `;
-    if (results.length > 0) {
+    if (results.length === 0) {
+        html += '<p>No transaction results available.</p>';
+    } else {
         html += '<ul>';
         results.forEach(result => {
             html += `<li>Loop ${result.loop}, Batch ${result.batch_index} (${result.direction}): ${
