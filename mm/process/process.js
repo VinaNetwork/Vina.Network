@@ -71,7 +71,7 @@ async function showError(message, detailedError = null) {
         console.log('Parsed error:', parsedError);
 
         // Jupiter API specific errors
-        if (parsedError?.message?.includes('The token') && parsedError?.errorCode === 'TOKEN_NOT_TRADABLE') {
+        if (parsedError?.errorCode === 'TOKEN_NOT_TRADABLE') {
             userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or check its liquidity.';
         } else if (parsedError?.errorCode === 'INSUFFICIENT_LIQUIDITY') {
             userFriendlyMessage = 'There is not enough liquidity for this token pair. Please try a different token or adjust the amount.';
