@@ -4,49 +4,6 @@
 // Created by: Vina Network
 // ============================================================================
 
-// Copy functionality
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('process.js loaded');
-    const copyIcons = document.querySelectorAll('.copy-icon');
-    copyIcons.forEach(icon => {
-        icon.addEventListener('click', (e) => {
-            console.log('Copy icon clicked');
-            const fullAddress = icon.getAttribute('data-full');
-            const shortAddress = fullAddress.length >= 8 ? fullAddress.substring(0, 4) + '...' : 'Invalid';
-            console.log(`Attempting to copy address: ${shortAddress}`);
-            navigator.clipboard.writeText(fullAddress).then(() => {
-                console.log('Copy successful');
-                icon.classList.add('copied');
-                const tooltip = document.createElement('span');
-                tooltip.className = 'copy-tooltip';
-                tooltip.textContent = 'Copied!';
-                const parent = icon.parentNode;
-                parent.style.position = 'relative';
-                parent.appendChild(tooltip);
-                setTimeout(() => {
-                    icon.classList.remove('copied');
-                    tooltip.remove();
-                    console.log('Copy feedback removed');
-                }, 2000);
-            }).catch(err => {
-                console.error('Clipboard API failed:', err.message);
-                showError(`Unable to copy: ${err.message}`);
-            });
-        });
-    });
-
-    // Handle form submission for Cancel button
-    const cancelForm = document.getElementById('cancel-form');
-    if (cancelForm) {
-        cancelForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
-            log_message(`Cancel form submitted for transaction ID=${transactionId}, cookies=${document.cookie}`, 'process.log', 'make-market', 'INFO');
-            await cancelTransaction(transactionId);
-        });
-    }
-});
-
 // Log message function
 async function log_message(message, log_file = 'process.log', module = 'make-market', log_type = 'INFO') {
     if (!authToken) {
@@ -762,6 +719,17 @@ async function executeSwapTransactions(transactionId, swapTransactions, subTrans
 document.addEventListener('DOMContentLoaded', async () => {
     log_message(`process.js loaded, cookies=${document.cookie}`, 'process.log', 'make-market', 'DEBUG');
     console.log('process.js loaded');
+
+    // Handle form submission for Cancel button
+    const cancelForm = document.getElementById('cancel-form');
+    if (cancelForm) {
+        cancelForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const transactionId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
+            log_message(`Cancel form submitted for transaction ID=${transactionId}, cookies=${document.cookie}`, 'process.log', 'make-market', 'INFO');
+            await cancelTransaction(transactionId);
+        });
+    }
 
     // Initialize network configuration
     let networkConfig;
