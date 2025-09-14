@@ -13,7 +13,6 @@ async function log_message(message, log_file = 'process.log', module = 'make-mar
     const session_id = document.cookie.match(/PHPSESSID=([^;]+)/)?.[1] || 'none';
     const cookies = document.cookie || 'no cookies';
     const logMessage = `${message}, session_id=${session_id}, cookies=${cookies}`;
-    const sanitizedMessage = logMessage.replace(/privateKey=[^\s]+/g, 'privateKey=[HIDDEN]');
     try {
         const response = await fetch('/mm/write-logs', {
             method: 'POST',
