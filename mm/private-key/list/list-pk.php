@@ -68,7 +68,7 @@ try {
 
 // Get wallet list
 try {
-    $stmt = $pdo->prepare("SELECT id, wallet_name, public_key, status, created_at FROM private_key WHERE user_id = ? ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT id, wallet_name, public_key, created_at FROM private_key WHERE user_id = ? ORDER BY created_at DESC");
     $stmt->execute([$user_id]);
     $wallets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -89,7 +89,6 @@ try {
             'id' => $wallet['id'],
             'wallet_name' => $wallet['wallet_name'],
             'public_key' => $wallet['public_key'],
-            'status' => $wallet['status'],
             'created_at' => $wallet['created_at'],
             'short_public_key' => substr($wallet['public_key'], 0, 4) . '...' . substr($wallet['public_key'], -4)
         ];
@@ -126,7 +125,6 @@ $page_css = ['/mm/private-key/list/list-pk.css'];
 				<tr>
 					<th>Wallet Name</th>
 					<th>Public Key</th>
-					<th>Status</th>
 					<th>Created Date</th>
 					<th>Action</th>
 				</tr>
@@ -146,7 +144,6 @@ $page_css = ['/mm/private-key/list/list-pk.css'];
 								</a>
 								<i class="fas fa-copy copy-icon" title="Copy public key" data-full="<?php echo htmlspecialchars($wallet['public_key']); ?>"></i>
 							</td>
-							<td data-label="Status"><?php echo htmlspecialchars($wallet['status']); ?></td>
 							<td data-label="Created Date"><?php echo htmlspecialchars($wallet['created_at']); ?></td>
 							<td data-label="Action">
 								<button class="deleteWallet cta-button" data-id="<?php echo htmlspecialchars($wallet['id']); ?>"><i class="fas fa-trash"></i> Delete</button>
