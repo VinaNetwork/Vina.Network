@@ -380,7 +380,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
-                $_SERVER['REQUEST_URI'] = '/mm/endpoints-create/check-decimals.php';
+                $_SERVER['REQUEST_URI'] = '/mm/endpoints-c/check-decimals.php';
                 $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
@@ -392,7 +392,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
                 // Call decimals.php
-                require_once $root_path . 'mm/endpoints-create/check-decimals.php';
+                require_once $root_path . 'mm/endpoints-c/check-decimals.php';
                 $response = ob_get_clean();
 
                 // Check feedback
@@ -453,7 +453,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                     'csrf_token' => $csrf_token
                 ];
                 $_SERVER['REQUEST_METHOD'] = 'POST';
-                $_SERVER['REQUEST_URI'] = '/mm/endpoints-create/check-balance.php';
+                $_SERVER['REQUEST_URI'] = '/mm/endpoints-c/check-balance.php';
                 $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 $_COOKIE['PHPSESSID'] = session_id();
@@ -465,7 +465,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                 $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
                 
                 // Call check-balance.php
-                require_once $root_path . 'mm/endpoints-create/check-balance.php';
+                require_once $root_path . 'mm/endpoints-c/check-balance.php';
                 $response = ob_get_clean();
 
                 // Check feedback
