@@ -104,25 +104,49 @@ async function checkWallets() {
 // Show error message
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
-    if (message.includes('Insufficient SOL balance')) {
-        resultDiv.innerHTML = `<p>${message}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
-    } else if (message.includes('Connection error while checking wallet balance')) {
-        resultDiv.innerHTML = `<p>${message}. Please check your network connection or try again later.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
-    } else if (message.includes('Error checking token decimals')) {
-        resultDiv.innerHTML = `<p>${message}. Please verify the token mint address and try again.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
-    } else if (message.includes('Token is not tradable')) {
-        resultDiv.innerHTML = `<p>${message}. Please verify the token mint address or enable "Skip Token Tradability Check" to proceed.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
-    } else if (message.includes('No private keys available')) {
-        resultDiv.innerHTML = `<p>${message}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
-    } else {
-        resultDiv.innerHTML = `<p>${message}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
+    let userFriendlyMessage = 'An error occurred while submitting the form. Please try again.';
+
+    // Parse error message if it's JSON
+    let parsedError = {};
+    try {
+        if (typeof message === 'string' && message.includes('{"status":"error"')) {
+            parsedError = JSON.parse(message);
+            message = parsedError.message || message;
+        }
+    } catch (e) {
+        console.error('Failed to parse error message:', e.message, message);
     }
+
+    // Handle specific errors
+    if (message.includes('Insufficient SOL balance')) {
+        userFriendlyMessage = `${message}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
+    } else if (message.includes('Connection error while checking wallet balance')) {
+        userFriendlyMessage = `${message}. Please check your network connection or try again later.`;
+    } else if (message.includes('Error checking token decimals')) {
+        userFriendlyMessage = `${message}. Please verify the token mint address and try again.`;
+    } else if (parsedError.errorCode === 'TOKEN_NOT_TRADABLE' || message.includes('The output token is not tradable')) {
+        userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
+    } else if (message.includes('Error checking token tradability')) {
+        userFriendlyMessage = `${message}. Please try again or contact support.`;
+    } else if (message.includes('No private keys available')) {
+        userFriendlyMessage = `${message}`;
+        resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
+        resultDiv.classList.add('active');
+        const submitButton = document.querySelector('#makeMarketForm button');
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+        log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
+        return;
+    }
+
+    resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
     resultDiv.classList.add('active');
     const submitButton = document.querySelector('#makeMarketForm button');
     if (submitButton) {
         submitButton.disabled = false;
     }
-    log_message(`Client-side error displayed: ${message}`, 'make-market.log', 'make-market', 'ERROR');
+    log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
 }
 
 // Function to validate Trade Direction conditions
