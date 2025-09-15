@@ -170,7 +170,7 @@ $show_cancel_button = in_array($transaction['status'], ['new', 'pending', 'proce
 $page_title = "Make Market Process - Vina Network";
 $page_description = "Execute your automated Solana token trading with Vina Network's Make Market tool.";
 $page_keywords = "Solana trading, automated trading, Jupiter API, make market, Vina Network";
-$page_css = ['/mm/process/process.css'];
+$page_css = ['/mm/css/process.css'];
 ?>
 
 <!DOCTYPE html>
