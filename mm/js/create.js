@@ -102,10 +102,17 @@ async function checkWallets() {
 }
 
 // Show error message
-function showError(error) {
+async function showError(error) {
     const resultDiv = document.getElementById('mm-result');
     let userFriendlyMessage = 'An error occurred while submitting the form. Please try again.';
     let parsedError = {};
+    let message = '';
+    let errorCode = 'none';
+    let httpStatus = 'unknown';
+
+    // Log raw error for debugging
+    console.log('showError called:', { error });
+    log_message(`showError called: ${JSON.stringify(error)}`, 'make-market.log', 'make-market', 'DEBUG');
 
     // Parse error response
     try {
@@ -115,22 +122,32 @@ function showError(error) {
             } else if (typeof error.response.data === 'object') {
                 parsedError = error.response.data;
             }
-        } else if (typeof error === 'string' && error.includes('{"status":"error"')) {
-            parsedError = JSON.parse(error);
+            message = parsedError.message || error.response.data.message || 'Unknown error';
+            errorCode = parsedError.errorCode || 'none';
+            httpStatus = error.response.status || 'unknown';
+        } else if (typeof error === 'string') {
+            if (error.includes('{"status":"error"')) {
+                parsedError = JSON.parse(error);
+                message = parsedError.message || error;
+                errorCode = parsedError.errorCode || 'none';
+            } else {
+                message = error;
+            }
+        } else {
+            message = error.message || 'Unknown error';
+            errorCode = error.errorCode || 'none';
+            httpStatus = error.status || 'unknown';
         }
     } catch (e) {
         console.error('Failed to parse error response:', e.message, error);
         log_message(`Failed to parse error response: ${e.message}, raw_error=${JSON.stringify(error)}`, 'make-market.log', 'make-market', 'ERROR');
+        message = 'Failed to process error response. Please try again.';
     }
 
-    // Extract message and errorCode
-    const message = parsedError.message || (error.response?.data?.message || error.message || error);
-    const errorCode = parsedError.errorCode || 'none';
-    const httpStatus = error.response?.status || 'unknown';
-
-    // Log error details
+    // Log parsed error details
+    console.log('Parsed error:', parsedError);
     log_message(
-        `Error submitting form: ${message}, HTTP ${httpStatus}, errorCode=${errorCode}, response=${JSON.stringify(error.response?.data || 'none')}`,
+        `Error submitting form: ${message}, HTTP ${httpStatus}, errorCode=${errorCode}, response=${JSON.stringify(parsedError || 'none')}`,
         'make-market.log', 'make-market', 'ERROR'
     );
 
@@ -159,12 +176,18 @@ function showError(error) {
         }
         log_message(`Client-side error displayed: ${userFriendlyMessage}, errorCode=${errorCode}`, 'make-market.log', 'make-market', 'ERROR');
         return;
-    } else if (errorCode) {
+    } else {
         userFriendlyMessage = `Error: ${message} (Code: ${errorCode}). Please try again or contact support.`;
     }
 
-    resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
+    resultDiv.innerHTML = `
+        <div class="alert alert-danger">
+            <strong>Error:</strong> ${userFriendlyMessage}
+            ${window.ENVIRONMENT === 'development' ? `<br>Detail: ${JSON.stringify(parsedError || error)}` : ''}
+        </div>
+    `;
     resultDiv.classList.add('active');
+
     const submitButton = document.querySelector('#makeMarketForm button');
     if (submitButton) {
         submitButton.disabled = false;
