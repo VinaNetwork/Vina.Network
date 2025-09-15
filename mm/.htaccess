@@ -14,7 +14,7 @@ RewriteRule ^list-private-key$ private-key/list/list-pk.php [L,NC,QSA]
 RewriteRule ^delete-private-key$ private-key/list/delete-pk.php [L,NC,QSA]
 
 # Create process page
-RewriteRule ^create$ create.php [L,NC,QSA]
+RewriteRule ^create-process$ create.php [L,NC,QSA]
 # ====== Endpoints check wallet ======
 RewriteRule ^check-wallets$ endpoints-c/check-wallets.php [L,NC,QSA]
 
