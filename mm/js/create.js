@@ -115,19 +115,22 @@ function showError(message) {
         }
     } catch (e) {
         console.error('Failed to parse error message:', e.message, message);
+        log_message(`Failed to parse error message: ${e.message}, raw_message=${message}`, 'make-market.log', 'make-market', 'ERROR');
     }
 
     // Handle specific errors
-    if (message.includes('Insufficient SOL balance')) {
+    if (parsedError.errorCode === 'TOKEN_NOT_TRADABLE') {
+        userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
+    } else if (message.includes('Insufficient SOL balance')) {
         userFriendlyMessage = `${message}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
     } else if (message.includes('Connection error while checking wallet balance')) {
         userFriendlyMessage = `${message}. Please check your network connection or try again later.`;
     } else if (message.includes('Error checking token decimals')) {
         userFriendlyMessage = `${message}. Please verify the token mint address and try again.`;
-    } else if (parsedError.errorCode === 'TOKEN_NOT_TRADABLE' || message.includes('The output token is not tradable')) {
-        userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
     } else if (message.includes('Error checking token tradability')) {
         userFriendlyMessage = `${message}. Please try again or contact support.`;
+    } else if (parsedError.errorCode) {
+        userFriendlyMessage = `Error: ${message} (Code: ${parsedError.errorCode}). Please try again or contact support.`;
     } else if (message.includes('No private keys available')) {
         userFriendlyMessage = `${message}`;
         resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
