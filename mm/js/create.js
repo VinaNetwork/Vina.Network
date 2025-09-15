@@ -62,6 +62,10 @@ function showError(message) {
         log_message(`Failed to parse error message: ${e.message}, raw_message=${JSON.stringify(message)}`, 'make-market.log', 'make-market', 'ERROR');
     }
 
+    // Log debug information
+    console.log('showError called with message:', message, 'parsedError:', parsedError);
+    log_message(`showError called with message: ${JSON.stringify(message)}, parsedError: ${JSON.stringify(parsedError)}`, 'make-market.log', 'make-market', 'DEBUG');
+
     // Extract message and errorCode from parsedError
     const errorMessage = parsedError.message || (typeof message === 'string' ? message : 'Unknown error');
     const errorCode = parsedError.errorCode || '';
@@ -69,6 +73,10 @@ function showError(message) {
     // Handle specific errors
     if (errorCode === 'TOKEN_NOT_TRADABLE') {
         userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
+    } else if (errorCode === 'INSUFFICIENT_LIQUIDITY') {
+        userFriendlyMessage = 'The token pool has insufficient liquidity. Please try a different token or adjust your transaction.';
+    } else if (errorCode === 'NO_ROUTE_FOUND') {
+        userFriendlyMessage = 'No trading route found for this token. Please try a different token or contact support.';
     } else if (errorMessage.includes('Insufficient SOL balance')) {
         userFriendlyMessage = `${errorMessage}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
     } else if (errorMessage.includes('Connection error while checking wallet balance')) {
