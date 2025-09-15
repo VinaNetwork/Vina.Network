@@ -214,8 +214,8 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         loopCount: parseInt(formData.get('loopCount')) || 1,
         batchSize: parseInt(formData.get('batchSize')) || 2,
         csrf_token: csrfToken,
+        skipTokenCheck: formData.get('skipTokenCheck') === '1' ? 1 : 0,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
-        skipTokenCheck: formData.get('skipTokenCheck') === '1' ? 1 : 0
     };
     log_message(`Processed Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('Processed Form data:', params);
