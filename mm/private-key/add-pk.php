@@ -1,7 +1,7 @@
 <?php
 // ============================================================================
 // File: mm/private-key/add-pk.php
-// Description: Add private key page with client-side encryption.
+// Description: Add private key page.
 // Created by: Vina Network
 // ============================================================================
 
@@ -73,31 +73,37 @@ try {
 
 // Process form add private key
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $encryptedKeys = json_decode($_POST['encryptedKeys'] ?? '[]', true);
+    $privateKeys = $_POST['privateKeys'] ?? [];
+    $walletNames = $_POST['walletNames'] ?? [];
     $errors = [];
     $validWallets = [];
     $base58 = new Base58();
 
-    // Validate encrypted keys
-    foreach ($encryptedKeys as $index => $keyData) {
-        $walletName = trim($keyData['walletName'] ?? "Wallet $index");
-        $iv = $keyData['iv'] ?? null;
-        $ciphertext = $keyData['ciphertext'] ?? null;
-        $authTag = $keyData['authTag'] ?? null;
+    // Check and encrypt private keys
+    foreach ($privateKeys as $index => $privateKey) {
+        $privateKey = trim($privateKey);
+        $walletName = trim($walletNames[$index] ?? "Wallet $index");
 
-        if (!$iv || !$ciphertext || !$authTag) {
-            $errors[] = "Invalid encrypted data for wallet $index";
+        if (empty($privateKey)) {
+            $errors[] = "Private key $index is empty";
             continue;
         }
 
-        // Derive public key from private key (giả định client đã gửi public key tương ứng)
+        // Check format
+        if (!preg_match('/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{64,128}$/', $privateKey)) {
+            $errors[] = "Private key $index is not in correct format";
+            continue;
+        }
+
+        // Decrypt and derive public key
         try {
-            $publicKey = $keyData['publicKey'] ?? null;
-            if (!$publicKey) {
-                // Nếu client không gửi public key, bạn có thể yêu cầu client gửi hoặc bỏ qua bước này
-                $errors[] = "Public key missing for wallet $index";
+            $decodedKey = $base58->decode($privateKey);
+            if (strlen($decodedKey) !== 64) {
+                $errors[] = "Private key $index has invalid length";
                 continue;
             }
+            $keypair = Keypair::fromSecretKey($decodedKey);
+            $publicKey = $keypair->getPublicKey()->toBase58();
 
             // Check for duplicate public key
             try {
@@ -108,28 +114,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
             } catch (PDOException $e) {
-                $errors[] = "Error checking duplicate for wallet $index: {$e->getMessage()}";
+                $errors[] = "Error checking duplicate for private key $index: {$e->getMessage()}";
                 log_message("Duplicate check error for public_key=$publicKey, user_id=$user_id: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
+                continue;
+            }
+
+            // Private key encryption
+            $encryptedPrivateKey = openssl_encrypt($privateKey, 'AES-256-CBC', JWT_SECRET, 0, substr(JWT_SECRET, 0, 16));
+            if ($encryptedPrivateKey === false) {
+                $errors[] = "Error encrypting private key $index: " . openssl_error_string();
+                log_message("Encryption error for private key $index: " . openssl_error_string(), 'private-key-page.log', 'make-market', 'ERROR');
                 continue;
             }
 
             $validWallets[] = [
                 'public_key' => $publicKey,
-                'private_key' => json_encode([
-                    'iv' => $iv,
-                    'ciphertext' => $ciphertext,
-                    'authTag' => $authTag
-                ]),
+                'private_key' => $encryptedPrivateKey,
                 'wallet_name' => $walletName
             ];
         } catch (Exception $e) {
-            $errors[] = "Invalid data for wallet $index: {$e->getMessage()}";
-            log_message("Invalid data for wallet $index: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
+            $errors[] = "The $index private key is invalid: {$e->getMessage()}";
+            log_message("Invalid private key $index: {$e->getMessage()}", 'private-key-page.log', 'make-market', 'ERROR');
         }
     }
 
     if (!empty($errors)) {
-        log_message("Validation errors: " . implode(", ", $errors), 'private-key-page.log', 'make-market', 'ERROR');
+        log_message("Private key validation errors: " . implode(", ", $errors), 'private-key-page.log', 'make-market', 'ERROR');
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => implode(", ", $errors)]);
         exit;
@@ -180,31 +190,36 @@ $page_css = ['/mm/private-key/add-pk.css'];
 <body>
 <?php include $root_path . 'include/navbar.php'; ?>
 <div class="mm-container">
-    <div class="mm-content">
-        <h1><i class="fas fa-key"></i> Add Private Key</h1>
-        
-        <!-- Form to add private key -->
-        <form id="addPrivateKeyForm" method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
-            <div id="privateKeysContainer">
-                <div class="privateKeyRow">
-                    <label><i class="fas fa-wallet"></i> Wallet name (optional):</label>
-                    <input class="wallet-name" type="text" name="walletNames[]" placeholder="Enter wallet name...">
-                    <label><i class="fas fa-key"></i> Private Key:</label>
-                    <textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
-                </div>
-            </div>
-            <button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Add private key</button>
-            <button class="cta-button" type="submit"><i class="fas fa-cloud"></i> Save</button>
-        </form>
+	<div class="mm-content">
+		<h1><i class="fas fa-key"></i> Add Private Key</h1>
+		
+		<!-- Form to add private key -->
+		<form id="addPrivateKeyForm" method="POST">
+			<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+			<div id="privateKeysContainer">
+				<div class="privateKeyRow">
+					<label><i class="fas fa-wallet"></i> Wallet name (optional):</label>
+					<input class="wallet-name" type="text" name="walletNames[]" placeholder="Enter wallet name...">
+					<label><i class="fas fa-key"></i> Private Key:</label>
+					<textarea name="privateKeys[]" required placeholder="Enter private key..."></textarea>
+				</div>
+			</div>
+			<button class="cta-button" type="button" id="addPrivateKey"><i class="fa-solid fa-plus"></i> Add private key</button>
+			<button class="cta-button" type="submit"><i class="fas fa-cloud"></i> Save</button>
+		</form>
 
-        <div id="mm-result" class="status-box"></div>
-    </div>
+		<div id="mm-result" class="status-box"></div>
+	</div>
 </div>
 <?php include $root_path . 'include/footer.php'; ?>
 
 <!-- Scripts - Internal library -->
 <script defer src="/js/libs/axios.min.js"></script>
+<!-- Global variable -->
+<script>
+    // Passing JWT_SECRET into JavaScript securely
+    const authToken = '<?php echo htmlspecialchars(JWT_SECRET); ?>';
+</script>
 <!-- Scripts - Source code -->
 <script defer src="/js/vina.js"></script>
 <script defer src="/mm/private-key/add-pk.js"></script>
