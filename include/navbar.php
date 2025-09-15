@@ -75,7 +75,7 @@ if ($is_logged_in) {
                 <i class="fas fa-box"></i> Make Market <i class="dropdown-icon fas fa-caret-down"></i>
             </a>
             <ul class="dropdown-menu">
-                <li><a href="/mm/create" class="dropdown-link"><i class="fas fa-plus-circle"></i> Create process</a></li>
+                <li><a href="/mm/create-process" class="dropdown-link"><i class="fas fa-plus-circle"></i> Create process</a></li>
                 <?php if ($is_logged_in): ?>
                     <li><a href="/mm/lists-process" class="dropdown-link"><i class="fa-solid fa-list-ol"></i> Lists process</a></li>
                     <li><a href="/mm/add-private-key" class="dropdown-link"><i class="fa-solid fa-plus"></i> Add private key</a></li>
