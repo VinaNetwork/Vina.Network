@@ -19,15 +19,15 @@ RewriteRule ^create-process$ create.php [L,NC,QSA]
 RewriteRule ^check-wallets$ endpoints-c/check-wallets.php [L,NC,QSA]
 
 # Swap process page
-RewriteRule ^process/([0-9]+)/?$ process/process.php?id=$1 [L,NC,QSA]
+RewriteRule ^process/([0-9]+)/?$ process.php?id=$1 [L,NC,QSA]
 # ====== Endpoints Process ======
-RewriteRule ^get-order/([0-9]+)$ process/get-order.php?id=$1 [L,NC,QSA]
-RewriteRule ^get-status/([0-9]+)$ process/get-status.php?id=$1 [L,NC,QSA]
-RewriteRule ^get-decimals$ process/get-decimals.php [L,NC,QSA]
-RewriteRule ^create-tx/([0-9]+)$ process/create-tx.php?id=$1 [L,NC,QSA]
-RewriteRule ^get-quote$ process/get-quote.php [L,NC,QSA]
-RewriteRule ^get-swap$ process/get-swap.php [L,NC,QSA]
-RewriteRule ^swap-jupiter$ process/swap-jupiter.php [L,NC,QSA]
+RewriteRule ^get-order/([0-9]+)$ endpoints-p/get-order.php?id=$1 [L,NC,QSA]
+RewriteRule ^get-status/([0-9]+)$ endpoints-p/get-status.php?id=$1 [L,NC,QSA]
+RewriteRule ^get-decimals$ endpoints-p/get-decimals.php [L,NC,QSA]
+RewriteRule ^create-tx/([0-9]+)$ endpoints-p/create-tx.php?id=$1 [L,NC,QSA]
+RewriteRule ^get-quote$ endpoints-p/get-quote.php [L,NC,QSA]
+RewriteRule ^get-swap$ endpoints-p/get-swap.php [L,NC,QSA]
+RewriteRule ^swap-jupiter$ endpoints-p/swap-jupiter.php [L,NC,QSA]
 
 # ====== Endpoints CSRF ======
 RewriteRule ^refresh-csrf$ endpoints/refresh-csrf.php [L,NC,QSA]
