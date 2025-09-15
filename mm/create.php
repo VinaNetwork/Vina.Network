@@ -146,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
         $batchSize = intval($form_data['batchSize'] ?? 2);
         $network = SOLANA_NETWORK;
         $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
+        $skipTokenCheck = isset($form_data['skipTokenCheck']) && $form_data['skipTokenCheck'] == '1';
 
         // Log form data securely
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
@@ -154,14 +155,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
             $logFormData['walletId'] = $walletId;
             log_message("Form data: " . json_encode($logFormData), 'make-market.log', 'make-market', 'DEBUG');
             log_message(
-                "Form data: processName=$processName, walletId=$walletId, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipBalanceCheck=$skipBalanceCheck",
+                "Form data: processName=$processName, walletId=$walletId, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipTokenCheck=$skipTokenCheck, skipBalanceCheck=$skipBalanceCheck",
                 'make-market.log',
                 'make-market',
                 'DEBUG'
             );
         } else {
             log_message(
-                "Form data: processName=$processName, walletId=$walletId, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipBalanceCheck=$skipBalanceCheck",
+                "Form data: processName=$processName, walletId=$walletId, tokenMint=$tokenMint, solAmount=$solAmount, tokenAmount=$tokenAmount, tradeDirection=$tradeDirection, slippage=$slippage, delay=$delay, loopCount=$loopCount, batchSize=$batchSize, network=$network, skipTokenCheck=$skipTokenCheck, skipBalanceCheck=$skipBalanceCheck",
                 'make-market.log',
                 'make-market',
                 'INFO'
@@ -435,6 +436,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                 }
             }
         }
+
+        // Check token tradability by calling check-token.php, unless skipped
+    if (!$errorMessage && !$skipTokenCheck) {
+        log_message("Calling check-token.php for token_mint=$tokenMint, network=$network", 'make-market.log', 'make-market', 'INFO');
+        try {
+            ob_start();
+            $_POST = [
+                'token_mint' => $tokenMint,
+                'network' => $network,
+                'csrf_token' => $csrf_token
+            ];
+            $_SERVER['REQUEST_METHOD'] = 'POST';
+            $_SERVER['REQUEST_URI'] = '/mm/endpoints-c/check-token.php';
+            $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+            $_COOKIE['PHPSESSID'] = session_id();
+
+            // Refresh CSRF
+            $csrf_token = generate_csrf_token();
+            log_message("CSRF token refreshed before calling check-token.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+            $_POST['csrf_token'] = $csrf_token;
+            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+
+            // Call check-token.php
+            require_once $root_path . 'mm/endpoints-c/check-token.php';
+            $response = ob_get_clean();
+
+            // Check feedback
+            $data = json_decode($response, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                log_message("Failed to parse check-token.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
+                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Error parsing response from token tradability check']);
+                    exit;
+                } else {
+                    $errorMessage = 'Error parsing response from token tradability check';
+                }
+            }
+
+            if ($data['status'] !== 'success') {
+                log_message("Token tradability check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
+                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
+                    exit;
+                } else {
+                    $errorMessage = $data['message'];
+                }
+            }
+
+            log_message("Token tradability check passed for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
+        } catch (Exception $e) {
+            if (!session_id()) {
+                session_start();
+            }
+            log_message("Token tradability check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error checking token tradability: ' . $e->getMessage()]);
+                exit;
+            } else {
+                $errorMessage = 'Error checking token tradability: ' . $e->getMessage();
+            }
+        }
+    } else {
+        log_message("Token tradability check skipped: skipTokenCheck=$skipTokenCheck", 'make-market.log', 'make-market', 'INFO');
+    }
 
         // Check wallet balance by calling check-balance.php, unless skipped or trade direction conditions are not met
         if (!$errorMessage && !$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
