@@ -405,8 +405,8 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
 
 // Dynamic input handling based on tradeDirection and wallet check
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('create-process.js loaded');
-    log_message('create-process.js loaded', 'make-market.log', 'make-market', 'DEBUG');
+    console.log('create.js loaded');
+    log_message('create.js loaded', 'make-market.log', 'make-market', 'DEBUG');
 
     const tradeDirectionSelect = document.getElementById('tradeDirection');
     const solAmountInput = document.getElementById('solAmount');
