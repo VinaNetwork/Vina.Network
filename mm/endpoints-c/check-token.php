@@ -9,22 +9,10 @@ $root_path = __DIR__ . '/../../';
 // constants | logging | config | error | session | database | header-auth | network | csrf | vendor/autoload
 require_once $root_path . 'mm/bootstrap.php';
 
-// Debug: Log ngay đầu file để xác nhận script được gọi
-file_put_contents('/var/www/vinanetwork/web/logs/make-market/make-market.log', 
-    "[" . date('Y-m-d H:i:s') . "] [DEBUG] check-token.php: Script started\n", 
-    FILE_APPEND
-);
-
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
-// Debug: Log sau khi include bootstrap
-file_put_contents('/var/www/vinanetwork/web/logs/make-market/make-market.log', 
-    "[" . date('Y-m-d H:i:s') . "] [DEBUG] check-token.php: Bootstrap loaded\n", 
-    FILE_APPEND
-);
 
 // Check AJAX request
 if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
