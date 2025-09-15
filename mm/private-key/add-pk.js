@@ -1,20 +1,51 @@
+// mm/private-key/add-pk.js
 // ============================================================================
 // File: mm/private-key/add-pk.js
-// Description: JavaScript file for form handling and validation
+// Description: JavaScript file for form handling, validation, and client-side encryption
 // Created by: Vina Network
 // ============================================================================
 
-// Log message function
+// Hàm tạo khóa mã hóa ngẫu nhiên
+async function generateEncryptionKey() {
+    return await window.crypto.subtle.generateKey(
+        {
+            name: 'AES-GCM',
+            length: 256
+        },
+        true, // Có thể xuất khóa
+        ['encrypt', 'decrypt']
+    );
+}
+
+// Hàm mã hóa private key
+async function encryptPrivateKey(privateKey, encryptionKey) {
+    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // IV ngẫu nhiên cho AES-GCM
+    const encodedPrivateKey = new TextEncoder().encode(privateKey);
+    const encrypted = await window.crypto.subtle.encrypt(
+        {
+            name: 'AES-GCM',
+            iv: iv
+        },
+        encryptionKey,
+        encodedPrivateKey
+    );
+    return {
+        iv: Array.from(iv), // Lưu IV để giải mã sau này
+        ciphertext: Array.from(new Uint8Array(encrypted)), // Dữ liệu mã hóa
+        authTag: Array.from(new Uint8Array(encrypted.slice(-16))) // Authentication tag (cho AES-GCM)
+    };
+}
+
+// Hàm xuất khóa mã hóa để người dùng lưu trữ
+async function exportEncryptionKey(encryptionKey) {
+    const exportedKey = await window.crypto.subtle.exportKey('raw', encryptionKey);
+    return Array.from(new Uint8Array(exportedKey));
+}
+
+// Log message function (giữ nguyên từ mã của bạn)
 async function log_message(message, log_file = 'private-key-page.log', module = 'make-market', log_type = 'INFO') {
-    // Check authToken
-    if (!authToken) {
-        console.error('Log failed: authToken is missing');
-        return;
-    }
-
-    // Filter sensitive information (if necessary)
+    // Loại bỏ authToken vì không nên nhúng JWT_SECRET vào client-side
     const sanitizedMessage = message.replace(/privateKey=[^\s]+/g, 'privateKey=[HIDDEN]');
-
     try {
         const response = await axios.post('/mm/write-logs', {
             message: sanitizedMessage,
@@ -25,12 +56,10 @@ async function log_message(message, log_file = 'private-key-page.log', module = 
             userAgent: navigator.userAgent
         }, {
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-Auth-Token': authToken
+                'X-Requested-With': 'XMLHttpRequest'
             },
             withCredentials: true
         });
-
         if (response.status === 200 && response.data.status === 'success') {
             console.log(`Log sent successfully: ${sanitizedMessage}`);
         } else {
@@ -45,12 +74,11 @@ async function log_message(message, log_file = 'private-key-page.log', module = 
     }
 }
 
-// Refresh CSRF token
+// Refresh CSRF token (giữ nguyên từ mã của bạn)
 async function refreshCSRFToken() {
     const response = await axios.get('/mm/refresh-csrf', {
         headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-Auth-Token': authToken
+            'X-Requested-With': 'XMLHttpRequest'
         },
         withCredentials: true
     });
@@ -60,12 +88,13 @@ async function refreshCSRFToken() {
     return response.data.csrf_token;
 }
 
-// Add Private key
+// Handle form submission
 document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('privateKeysContainer');
     const addButton = document.getElementById('addPrivateKey');
+    const form = document.getElementById('addPrivateKeyForm');
 
-    // Add new private key
+    // Add new private key field
     addButton.addEventListener('click', () => {
         const newRow = document.createElement('div');
         newRow.className = 'privateKeyRow';
@@ -80,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         log_message('Added new private key field', 'private-key-page.log', 'make-market', 'INFO');
     });
 
-    // Remove private key
+    // Remove private key field
     container.addEventListener('click', (e) => {
         if (e.target.classList.contains('removeKey') && container.children.length > 1) {
             e.target.parentElement.remove();
@@ -89,14 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Handle form submission
-    document.getElementById('addPrivateKeyForm').addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
         const submitButton = e.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
 
-        // Check for duplicate private keys in form
+        // Lấy danh sách private key và wallet name
         const privateKeyInputs = Array.from(container.querySelectorAll('textarea[name="privateKeys[]"]')).map(input => input.value.trim());
+        const walletNames = Array.from(container.querySelectorAll('input[name="walletNames[]"]')).map(input => input.value.trim());
         const uniqueKeys = new Set(privateKeyInputs.filter(key => key !== ''));
         if (uniqueKeys.size < privateKeyInputs.length) {
             showError('There is a duplicate private key in the form');
@@ -106,20 +135,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const csrfToken = await refreshCSRFToken();
-            formData.set('csrf_token', csrfToken);
+            // Tạo khóa mã hóa
+            const encryptionKey = await generateEncryptionKey();
+            const exportedKey = await exportEncryptionKey(encryptionKey);
+
+            // Mã hóa tất cả private key
+            const encryptedKeys = [];
+            for (let i = 0; i < privateKeyInputs.length; i++) {
+                if (privateKeyInputs[i]) {
+                    const encrypted = await encryptPrivateKey(privateKeyInputs[i], encryptionKey);
+                    encryptedKeys.push({
+                        walletName: walletNames[i] || `Wallet ${i}`,
+                        iv: encrypted.iv,
+                        ciphertext: encrypted.ciphertext,
+                        authTag: encrypted.authTag
+                    });
+                }
+            }
+
+            // Yêu cầu người dùng lưu khóa mã hóa
+            const keyBlob = new Blob([JSON.stringify(exportedKey)], { type: 'application/json' });
+            const keyUrl = URL.createObjectURL(keyBlob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = keyUrl;
+            downloadLink.download = 'encryption_key.json';
+            downloadLink.textContent = 'Download your encryption key';
+            document.getElementById('mm-result').innerHTML = `
+                <p>Please download and securely store your encryption key. You will need it to decrypt your private keys later.</p>
+            `;
+            document.getElementById('mm-result').appendChild(downloadLink);
+            document.getElementById('mm-result').classList.add('active', 'success');
+
+            // Gửi dữ liệu mã hóa lên server
+            const formData = new FormData();
+            formData.append('csrf_token', await refreshCSRFToken());
+            formData.append('encryptedKeys', JSON.stringify(encryptedKeys));
+
             const response = await axios.post('/mm/add-private-key', formData, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-Token': csrfToken,
-                    'X-Auth-Token': authToken
+                    'X-CSRF-Token': formData.get('csrf_token')
                 },
                 withCredentials: true
             });
 
             if (response.data.status === 'success') {
                 showSuccess(response.data.message);
-                // Reset form to one empty row without Delete button
                 container.innerHTML = `
                     <div class="privateKeyRow">
                         <label><i class="fas fa-wallet"></i> Wallet name (optional):</label>
