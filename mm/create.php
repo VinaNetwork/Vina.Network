@@ -145,9 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
         $loopCount = intval($form_data['loopCount'] ?? 1);
         $batchSize = intval($form_data['batchSize'] ?? 2);
         $network = SOLANA_NETWORK;
-        $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
         $skipTokenCheck = isset($form_data['skipTokenCheck']) && $form_data['skipTokenCheck'] == '1';
-
+        $skipBalanceCheck = isset($form_data['skipBalanceCheck']) && $form_data['skipBalanceCheck'] == '1';
+        
         // Log form data securely
         if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
             $logFormData = $form_data;
@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
                 'csrf_token' => $csrf_token
             ];
             $_SERVER['REQUEST_METHOD'] = 'POST';
-            $_SERVER['REQUEST_URI'] = '/mm/endpoints-c/check-token.php';
+            $_SERVER['REQUEST_URI'] = '/mm/check-token';
             $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
             $_COOKIE['PHPSESSID'] = session_id();
@@ -460,7 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
             $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
             // Call check-token.php
-            require_once $root_path . 'mm/endpoints-c/check-token.php';
+            require_once $root_path . 'mm/check-token';
             $response = ob_get_clean();
 
             // Check feedback
@@ -775,18 +775,18 @@ $defaultSlippage = 0.5; // Slippage
                 <input type="number" name="loopCount" id="loopCount" min="1" value="1">
                 <label for="batchSize">📦 Batch Size (2-10):</label>
                 <input type="number" name="batchSize" id="batchSize" min="2" max="10" value="2" required>
+
+                <label for="skipTokenCheck" class="check-box">
+                    <input type="checkbox" name="skipTokenCheck" id="skipTokenCheck" value="1">
+                    <p>Skip token tradability check</p>
+                </label>
+                <p class="note">If you skip it, ensure the token is tradable on Jupiter API to avoid transaction failures.</p>
                 
                 <label for="skipBalanceCheck" class="check-box">
                     <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
                     <p>Skip wallet balance check</p>
                 </label>
                 <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
-                
-                <label for="skipTokenCheck" class="check-box">
-                    <input type="checkbox" name="skipTokenCheck" id="skipTokenCheck" value="1">
-                    <p>Skip token tradability check</p>
-                </label>
-                <p class="note">If you skip it, ensure the token is tradable on Jupiter API to avoid transaction failures.</p>
                 
                 <button class="cta-button" type="submit">🚀 Make Market</button>
             </form>
@@ -826,12 +826,6 @@ $defaultSlippage = 0.5; // Slippage
                 <input type="number" name="loopCount" id="loopCount" min="1" value="1">
                 <label for="batchSize">📦 Batch Size (2-10):</label>
                 <input type="number" name="batchSize" id="batchSize" min="2" max="10" value="2" required>
-                
-                <label for="skipBalanceCheck" class="check-box">
-                    <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
-                    <p>Skip wallet balance check</p>
-                </label>
-                <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
 
                 <label for="skipTokenCheck" class="check-box">
                     <input type="checkbox" name="skipTokenCheck" id="skipTokenCheck" value="1">
@@ -839,6 +833,12 @@ $defaultSlippage = 0.5; // Slippage
                 </label>
                 <p class="note">If you skip it, ensure the token is tradable on Jupiter API to avoid transaction failures.</p>
                 
+                <label for="skipBalanceCheck" class="check-box">
+                    <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
+                    <p>Skip wallet balance check</p>
+                </label>
+                <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
+
                 <button class="cta-button" type="submit">🚀 Create Process</button>
             </form>
             <div id="mm-result" class="status-box"></div>
