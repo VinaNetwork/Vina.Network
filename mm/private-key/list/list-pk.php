@@ -132,7 +132,7 @@ $page_css = ['/mm/private-key/list/list-pk.css'];
 			<tbody>
 				<?php if (empty($wallets)): ?>
 					<tr>
-						<td colspan="5" style="text-align: center;">No wallets have been added yet.</td>
+						<td colspan="4" style="text-align: center;">No wallets have been added yet.</td>
 					</tr>
 				<?php else: ?>
 					<?php foreach ($wallets as $wallet): ?>
