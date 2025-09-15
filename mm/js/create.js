@@ -44,34 +44,43 @@ async function log_message(message, log_file = 'make-market.log', module = 'make
 function showError(message) {
     const resultDiv = document.getElementById('mm-result');
     let userFriendlyMessage = 'An error occurred while submitting the form. Please try again.';
-
-    // Parse error message if it's JSON
     let parsedError = {};
+
+    // Parse error message if it's a string or an object
     try {
-        if (typeof message === 'string' && message.includes('{"status":"error"')) {
-            parsedError = JSON.parse(message);
-            message = parsedError.message || message;
+        if (typeof message === 'string') {
+            if (message.includes('{"status":"error"')) {
+                parsedError = JSON.parse(message);
+            } else {
+                parsedError = { message: message }; // Treat as plain message
+            }
+        } else if (typeof message === 'object' && message !== null) {
+            parsedError = message; // Use object directly
         }
     } catch (e) {
         console.error('Failed to parse error message:', e.message, message);
-        log_message(`Failed to parse error message: ${e.message}, raw_message=${message}`, 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Failed to parse error message: ${e.message}, raw_message=${JSON.stringify(message)}`, 'make-market.log', 'make-market', 'ERROR');
     }
 
+    // Extract message and errorCode from parsedError
+    const errorMessage = parsedError.message || (typeof message === 'string' ? message : 'Unknown error');
+    const errorCode = parsedError.errorCode || '';
+
     // Handle specific errors
-    if (parsedError.errorCode === 'TOKEN_NOT_TRADABLE') {
+    if (errorCode === 'TOKEN_NOT_TRADABLE') {
         userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
-    } else if (message.includes('Insufficient SOL balance')) {
-        userFriendlyMessage = `${message}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
-    } else if (message.includes('Connection error while checking wallet balance')) {
-        userFriendlyMessage = `${message}. Please check your network connection or try again later.`;
-    } else if (message.includes('Error checking token decimals')) {
-        userFriendlyMessage = `${message}. Please verify the token mint address and try again.`;
-    } else if (message.includes('Error checking token tradability')) {
-        userFriendlyMessage = `${message}. Please try again or contact support.`;
-    } else if (parsedError.errorCode) {
-        userFriendlyMessage = `Error: ${message} (Code: ${parsedError.errorCode}). Please try again or contact support.`;
-    } else if (message.includes('No private keys available')) {
-        userFriendlyMessage = `${message}`;
+    } else if (errorMessage.includes('Insufficient SOL balance')) {
+        userFriendlyMessage = `${errorMessage}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
+    } else if (errorMessage.includes('Connection error while checking wallet balance')) {
+        userFriendlyMessage = `${errorMessage}. Please check your network connection or try again later.`;
+    } else if (errorMessage.includes('Error checking token decimals')) {
+        userFriendlyMessage = `${errorMessage}. Please verify the token mint address and try again.`;
+    } else if (errorMessage.includes('Error checking token tradability')) {
+        userFriendlyMessage = `${errorMessage}. Please try again or contact support.`;
+    } else if (errorCode) {
+        userFriendlyMessage = `Error: ${errorMessage} (Code: ${errorCode}). Please try again or contact support.`;
+    } else if (errorMessage.includes('No private keys available')) {
+        userFriendlyMessage = `${errorMessage}`;
         resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
         resultDiv.classList.add('active');
         const submitButton = document.querySelector('#makeMarketForm button');
@@ -80,6 +89,8 @@ function showError(message) {
         }
         log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
         return;
+    } else {
+        userFriendlyMessage = errorMessage; // Fallback to raw message if no specific handling
     }
 
     resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
@@ -207,7 +218,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     } catch (error) {
         log_message(`Failed to refresh CSRF token: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Failed to refresh CSRF token:', error.message);
-        showError('Failed to refresh CSRF token. Please reload the page and try again.');
+        showError({ message: 'Failed to refresh CSRF token. Please reload the page and try again.' });
         if (submitButton) {
             submitButton.disabled = false;
         }
@@ -222,7 +233,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         console.log('Fetched SOLANA_NETWORK:', network);
     } catch (error) {
         log_message(`Failed to fetch SOLANA_NETWORK: ${error.message}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Failed to fetch network configuration. Please reload the page.');
+        showError({ message: 'Failed to fetch network configuration. Please reload the page.' });
         if (submitButton) {
             submitButton.disabled = false;
         }
@@ -250,7 +261,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     // Client-side validation for required fields
     if (!params.processName) {
         log_message('Process name is empty', 'make-market.log', 'make-market', 'ERROR');
-        showError('Process name is required.');
+        showError({ message: 'Process name is required.' });
         console.error('Process name is empty');
         if (submitButton) {
             submitButton.disabled = false;
@@ -259,7 +270,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     }
     if (!params.walletId) {
         log_message('Wallet selection is empty', 'make-market.log', 'make-market', 'ERROR');
-        showError('Please select a wallet.');
+        showError({ message: 'Please select a wallet.' });
         console.error('Wallet selection is empty');
         if (submitButton) {
             submitButton.disabled = false;
@@ -268,7 +279,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     }
     if (!params.tokenMint) {
         log_message('Token mint is empty', 'make-market.log', 'make-market', 'ERROR');
-        showError('Token mint address is required.');
+        showError({ message: 'Token mint address is required.' });
         console.error('Token mint is empty');
         if (submitButton) {
             submitButton.disabled = false;
@@ -277,7 +288,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     }
     if (!/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{32,44}$/.test(params.tokenMint)) {
         log_message('Invalid token address', 'make-market.log', 'make-market', 'ERROR');
-        showError('Invalid token address. Please check again.');
+        showError({ message: 'Invalid token address. Please check again.' });
         console.error('Invalid token address');
         if (submitButton) {
             submitButton.disabled = false;
@@ -287,7 +298,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     if (params.tradeDirection === 'buy') {
         if (isNaN(params.solAmount) || params.solAmount <= 0) {
             log_message(`Invalid SOL amount for buy: ${params.solAmount}`, 'make-market.log', 'make-market', 'ERROR');
-            showError('SOL amount must be greater than 0 for buy transactions.');
+            showError({ message: 'SOL amount must be greater than 0 for buy transactions.' });
             console.error('Invalid SOL amount for buy');
             if (submitButton) {
                 submitButton.disabled = false;
@@ -296,7 +307,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         }
         if (params.tokenAmount !== 0) {
             log_message(`Invalid token amount for buy: ${params.tokenAmount}, must be exactly 0`, 'make-market.log', 'make-market', 'ERROR');
-            showError('Token amount must be exactly 0 for buy transactions.');
+            showError({ message: 'Token amount must be exactly 0 for buy transactions.' });
             console.error('Invalid token amount for buy');
             if (submitButton) {
                 submitButton.disabled = false;
@@ -306,7 +317,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     } else if (params.tradeDirection === 'sell') {
         if (isNaN(params.tokenAmount) || params.tokenAmount <= 0) {
             log_message(`Invalid token amount for sell: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
-            showError('Token amount must be greater than 0 for sell transactions.');
+            showError({ message: 'Token amount must be greater than 0 for sell transactions.' });
             console.error('Invalid token amount for sell');
             if (submitButton) {
                 submitButton.disabled = false;
@@ -316,7 +327,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     } else if (params.tradeDirection === 'both') {
         if (isNaN(params.solAmount) || params.solAmount <= 0) {
             log_message(`Invalid SOL amount for both: ${params.solAmount}`, 'make-market.log', 'make-market', 'ERROR');
-            showError('SOL amount must be greater than 0 for both transactions.');
+            showError({ message: 'SOL amount must be greater than 0 for both transactions.' });
             console.error('Invalid SOL amount for both');
             if (submitButton) {
                 submitButton.disabled = false;
@@ -325,7 +336,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         }
         if (isNaN(params.tokenAmount) || params.tokenAmount <= 0) {
             log_message(`Invalid token amount for both: ${params.tokenAmount}, must be greater than 0`, 'make-market.log', 'make-market', 'ERROR');
-            showError('Token amount must be greater than 0 for both transactions.');
+            showError({ message: 'Token amount must be greater than 0 for both transactions.' });
             console.error('Invalid token amount for both');
             if (submitButton) {
                 submitButton.disabled = false;
@@ -334,7 +345,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         }
     } else {
         log_message('Invalid trade direction', 'make-market.log', 'make-market', 'ERROR');
-        showError('Please select a valid trade direction (Buy, Sell, or Both).');
+        showError({ message: 'Please select a valid trade direction (Buy, Sell, or Both).' });
         console.error('Invalid trade direction');
         if (submitButton) {
             submitButton.disabled = false;
@@ -343,7 +354,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     }
     if (isNaN(params.slippage) || params.slippage < 0) {
         log_message(`Invalid slippage: ${params.slippage}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Slippage must be non-negative.');
+        showError({ message: 'Slippage must be non-negative.' });
         console.error('Invalid slippage');
         if (submitButton) {
             submitButton.disabled = false;
@@ -352,7 +363,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     }
     if (isNaN(params.loopCount) || params.loopCount < 1) {
         log_message(`Invalid loop count: ${params.loopCount}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Loop count must be at least 1.');
+        showError({ message: 'Loop count must be at least 1.' });
         console.error('Invalid loop count');
         if (submitButton) {
             submitButton.disabled = false;
@@ -361,14 +372,13 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     }
     if (isNaN(params.batchSize) || params.batchSize < 2 || params.batchSize > 10) {
         log_message(`Invalid batch size: ${params.batchSize}`, 'make-market.log', 'make-market', 'ERROR');
-        showError('Batch size must be between 2 and 10.');
+        showError({ message: 'Batch size must be between 2 and 10.' });
         console.error('Invalid batch size');
         if (submitButton) {
             submitButton.disabled = false;
         }
         return;
     }
-    // Log if balance check is skipped due to invalid trade direction or user choice
     if (params.skipBalanceCheck || !isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)) {
         log_message(`Balance check skipped: skipBalanceCheck=${params.skipBalanceCheck}, validTradeDirection=${isValidTradeDirection(params.tradeDirection, params.solAmount, params.tokenAmount)}`, 'make-market.log', 'make-market', 'INFO');
     }
@@ -388,7 +398,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         if (response.status !== 200) {
             log_message(`Form submission failed: HTTP ${response.status}, Response: ${JSON.stringify(response.data)}`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Form submission failed:', response.data);
-            showError('Form submission failed. Please try again.');
+            showError(response.data);
             if (submitButton) {
                 submitButton.disabled = false;
             }
@@ -396,9 +406,9 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         }
         const result = response.data;
         if (result.status !== 'success') {
-            log_message(`Form submission failed: ${result.message}`, 'make-market.log', 'make-market', 'ERROR');
-            console.error('Form submission failed:', result.message);
-            showError(result.message);
+            log_message(`Form submission failed: ${result.message}, errorCode=${result.errorCode || 'none'}`, 'make-market.log', 'make-market', 'ERROR');
+            console.error('Form submission failed:', result);
+            showError(result);
             if (submitButton) {
                 submitButton.disabled = false;
             }
@@ -410,7 +420,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         if (!redirectUrl || !redirectUrl.includes('token=')) {
             log_message(`Invalid redirect URL: ${redirectUrl}, missing token parameter`, 'make-market.log', 'make-market', 'ERROR');
             console.error('Invalid redirect URL:', redirectUrl);
-            showError('Invalid redirect URL. Please try again.');
+            showError({ message: 'Invalid redirect URL. Please try again.' });
             if (submitButton) {
                 submitButton.disabled = false;
             }
@@ -426,7 +436,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
     } catch (error) {
         log_message(`Error submitting form: ${error.message}, response=${JSON.stringify(error.response?.data || 'none')}`, 'make-market.log', 'make-market', 'ERROR');
         console.error('Error submitting form:', error.message, error.response ? error.response.data : '');
-        showError(error.response?.data?.message || 'Error submitting form. Please try again.');
+        showError(error.response?.data || { message: 'Error submitting form. Please try again.' });
         if (submitButton) {
             submitButton.disabled = false;
         }
