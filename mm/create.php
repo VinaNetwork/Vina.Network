@@ -438,73 +438,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$noWallets) {
         }
 
         // Check token tradability by calling check-token.php, unless skipped
-    if (!$errorMessage && !$skipTokenCheck) {
-        log_message("Calling check-token.php for token_mint=$tokenMint, network=$network", 'make-market.log', 'make-market', 'INFO');
-        try {
-            ob_start();
-            $_POST = [
-                'token_mint' => $tokenMint,
-                'network' => $network,
-                'csrf_token' => $csrf_token
-            ];
-            $_SERVER['REQUEST_METHOD'] = 'POST';
-            $_SERVER['REQUEST_URI'] = '/mm/check-token';
-            $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
-            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
-            $_COOKIE['PHPSESSID'] = session_id();
+        if (!$errorMessage && !$skipTokenCheck) {
+    log_message("Calling check-token.php for token_mint=$tokenMint, network=$network, user_id=" . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'none'), 'make-market.log', 'make-market', 'INFO');
+    try {
+        ob_start();
+        $_POST = [
+            'token_mint' => $tokenMint,
+            'network' => $network,
+            'csrf_token' => $csrf_token
+        ];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/mm/endpoints-c/check-token.php';
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+        $_COOKIE['PHPSESSID'] = session_id();
 
-            // Refresh CSRF
-            $csrf_token = generate_csrf_token();
-            log_message("CSRF token refreshed before calling check-token.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
-            $_POST['csrf_token'] = $csrf_token;
-            $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
+        // Refresh CSRF
+        $csrf_token = generate_csrf_token();
+        log_message("CSRF token refreshed before calling check-token.php: $csrf_token", 'make-market.log', 'make-market', 'INFO');
+        $_POST['csrf_token'] = $csrf_token;
+        $_SERVER['HTTP_X_CSRF_TOKEN'] = $csrf_token;
 
-            // Call check-token.php
-            require_once $root_path . 'mm/check-token';
-            $response = ob_get_clean();
+        // Call check-token.php
+        require_once $root_path . 'mm/endpoints-c/check-token.php';
+        $response = ob_get_clean();
 
-            // Check feedback
-            $data = json_decode($response, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                log_message("Failed to parse check-token.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
-                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => 'Error parsing response from token tradability check']);
-                    exit;
-                } else {
-                    $errorMessage = 'Error parsing response from token tradability check';
-                }
-            }
-
-            if ($data['status'] !== 'success') {
-                log_message("Token tradability check failed: {$data['message']}", 'make-market.log', 'make-market', 'ERROR');
-                if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-                    header('Content-Type: application/json');
-                    echo json_encode(['status' => 'error', 'message' => $data['message']]);
-                    exit;
-                } else {
-                    $errorMessage = $data['message'];
-                }
-            }
-
-            log_message("Token tradability check passed for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
-        } catch (Exception $e) {
-            if (!session_id()) {
-                session_start();
-            }
-            log_message("Token tradability check failed: {$e->getMessage()}, Stack trace: {$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+        // Check feedback
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            log_message("Failed to parse check-token.php response: " . json_last_error_msg() . ", raw_response=" . ($response ?: 'empty'), 'make-market.log', 'make-market', 'ERROR');
             if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Error checking token tradability: ' . $e->getMessage()]);
+                echo json_encode(['status' => 'error', 'message' => 'Error parsing response from token tradability check']);
                 exit;
             } else {
-                $errorMessage = 'Error checking token tradability: ' . $e->getMessage();
+                $errorMessage = 'Error parsing response from token tradability check';
             }
         }
-    } else {
-        log_message("Token tradability check skipped: skipTokenCheck=$skipTokenCheck", 'make-market.log', 'make-market', 'INFO');
-    }
 
+        if ($data['status'] !== 'success') {
+            log_message("Token tradability check failed: {$data['message']}, errorCode=" . ($data['errorCode'] ?? 'none'), 'make-market.log', 'make-market', 'ERROR');
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => $data['message'], 'errorCode' => $data['errorCode'] ?? 'UNKNOWN']);
+                exit;
+            } else {
+                $errorMessage = $data['message'];
+            }
+        }
+
+        log_message("Token tradability check passed for token_mint=$tokenMint", 'make-market.log', 'make-market', 'INFO');
+    } catch (Exception $e) {
+        if (!session_id()) {
+            session_start();
+        }
+        log_message("Token tradability check failed: {$e->getMessage()}, stack_trace={$e->getTraceAsString()}", 'make-market.log', 'make-market', 'ERROR');
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Error checking token tradability: ' . $e->getMessage()]);
+            exit;
+        } else {
+            $errorMessage = 'Error checking token tradability: ' . $e->getMessage();
+        }
+    }
+} else {
+    log_message("Token tradability check skipped: skipTokenCheck=$skipTokenCheck", 'make-market.log', 'make-market', 'INFO');
+        }
+        
         // Check wallet balance by calling check-balance.php, unless skipped or trade direction conditions are not met
         if (!$errorMessage && !$skipBalanceCheck && isValidTradeDirection($tradeDirection, $solAmount, $tokenAmount)) {
             log_message("Calling check-balance.php: tradeDirection=$tradeDirection, solAmount=$solAmount, tokenAmount=$tokenAmount, network=$network, session_id=" . session_id(), 'make-market.log', 'make-market', 'INFO');
