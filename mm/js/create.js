@@ -102,62 +102,25 @@ async function checkWallets() {
 }
 
 // Show error message
-async function showError(error) {
+function showError(message) {
     const resultDiv = document.getElementById('mm-result');
     let userFriendlyMessage = 'An error occurred while submitting the form. Please try again.';
+
+    // Parse error message if it's JSON
     let parsedError = {};
-    let message = '';
-    let errorCode = 'none';
-    let httpStatus = 'unknown';
-
-    // Log raw error for debugging
-    console.log('showError called:', { error });
-    log_message(`showError called: ${JSON.stringify(error)}`, 'make-market.log', 'make-market', 'DEBUG');
-
-    // Parse error response
     try {
-        if (error.response && error.response.data) {
-            if (typeof error.response.data === 'string' && error.response.data.includes('{"status":"error"')) {
-                parsedError = JSON.parse(error.response.data);
-            } else if (typeof error.response.data === 'object') {
-                parsedError = error.response.data;
-            }
-            message = parsedError.message || error.response.data.message || 'Unknown error';
-            errorCode = parsedError.errorCode || 'none';
-            httpStatus = error.response.status || 'unknown';
-        } else if (typeof error === 'string') {
-            if (error.includes('{"status":"error"')) {
-                parsedError = JSON.parse(error);
-                message = parsedError.message || error;
-                errorCode = parsedError.errorCode || 'none';
-            } else {
-                message = error;
-            }
-        } else {
-            message = error.message || 'Unknown error';
-            errorCode = error.errorCode || 'none';
-            httpStatus = error.status || 'unknown';
+        if (typeof message === 'string' && message.includes('{"status":"error"')) {
+            parsedError = JSON.parse(message);
+            message = parsedError.message || message;
         }
     } catch (e) {
-        console.error('Failed to parse error response:', e.message, error);
-        log_message(`Failed to parse error response: ${e.message}, raw_error=${JSON.stringify(error)}`, 'make-market.log', 'make-market', 'ERROR');
-        message = 'Failed to process error response. Please try again.';
+        console.error('Failed to parse error message:', e.message, message);
+        log_message(`Failed to parse error message: ${e.message}, raw_message=${message}`, 'make-market.log', 'make-market', 'ERROR');
     }
 
-    // Log parsed error details
-    console.log('Parsed error:', parsedError);
-    log_message(
-        `Error submitting form: ${message}, HTTP ${httpStatus}, errorCode=${errorCode}, response=${JSON.stringify(parsedError || 'none')}`,
-        'make-market.log', 'make-market', 'ERROR'
-    );
-
-    // Handle specific errors based on errorCode
-    if (errorCode === 'TOKEN_NOT_TRADABLE') {
-        userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token from <a href="https://jup.ag/tokens" target="_blank">Jupiter\'s token list</a> or enable "Skip Token Tradability Check" to proceed.';
-    } else if (errorCode === 'UNKNOWN') {
-        userFriendlyMessage = `Unknown error occurred: ${message}. Please try again or contact support.`;
-    } else if (message.includes('Invalid token mint address')) {
-        userFriendlyMessage = 'The provided token mint address is invalid. Please verify and try again.';
+    // Handle specific errors
+    if (parsedError.errorCode === 'TOKEN_NOT_TRADABLE') {
+        userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
     } else if (message.includes('Insufficient SOL balance')) {
         userFriendlyMessage = `${message}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
     } else if (message.includes('Connection error while checking wallet balance')) {
@@ -166,6 +129,8 @@ async function showError(error) {
         userFriendlyMessage = `${message}. Please verify the token mint address and try again.`;
     } else if (message.includes('Error checking token tradability')) {
         userFriendlyMessage = `${message}. Please try again or contact support.`;
+    } else if (parsedError.errorCode) {
+        userFriendlyMessage = `Error: ${message} (Code: ${parsedError.errorCode}). Please try again or contact support.`;
     } else if (message.includes('No private keys available')) {
         userFriendlyMessage = `${message}`;
         resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
@@ -174,25 +139,17 @@ async function showError(error) {
         if (submitButton) {
             submitButton.disabled = false;
         }
-        log_message(`Client-side error displayed: ${userFriendlyMessage}, errorCode=${errorCode}`, 'make-market.log', 'make-market', 'ERROR');
+        log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
         return;
-    } else {
-        userFriendlyMessage = `Error: ${message} (Code: ${errorCode}). Please try again or contact support.`;
     }
 
-    resultDiv.innerHTML = `
-        <div class="alert alert-danger">
-            <strong>Error:</strong> ${userFriendlyMessage}
-            ${window.ENVIRONMENT === 'development' ? `<br>Detail: ${JSON.stringify(parsedError || error)}` : ''}
-        </div>
-    `;
+    resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
     resultDiv.classList.add('active');
-
     const submitButton = document.querySelector('#makeMarketForm button');
     if (submitButton) {
         submitButton.disabled = false;
     }
-    log_message(`Client-side error displayed: ${userFriendlyMessage}, errorCode=${errorCode}`, 'make-market.log', 'make-market', 'ERROR');
+    log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
 }
 
 // Function to validate Trade Direction conditions
