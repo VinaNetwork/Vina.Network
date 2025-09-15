@@ -67,7 +67,6 @@
 }
 
 .mm-content {
-  background: var(--mm-color-background-fallback);
   background: var(--mm-color-background);
   border-radius: var(--mm-border-radius);
   padding: var(--mm-spacing-xl);
