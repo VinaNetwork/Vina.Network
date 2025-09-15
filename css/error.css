@@ -65,7 +65,6 @@
 
 /* Notification Card Styling */
 .content-error {
-  background: var(--error-color-background-fallback);
   background: var(--error-color-background);
   border-radius: var(--error-border-radius); 
   padding: var(--error-spacing-xl);
