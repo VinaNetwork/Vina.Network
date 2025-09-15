@@ -63,7 +63,6 @@
 }
 
 .process-content {
-  background: var(--process-color-background-fallback);
   background: var(--process-color-background);
   border-radius: var(--process-border-radius);
   padding: var(--process-spacing-xl);
