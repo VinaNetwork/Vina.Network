@@ -40,6 +40,57 @@ async function log_message(message, log_file = 'make-market.log', module = 'make
     }
 }
 
+// Show error message
+function showError(message) {
+    const resultDiv = document.getElementById('mm-result');
+    let userFriendlyMessage = 'An error occurred while submitting the form. Please try again.';
+
+    // Parse error message if it's JSON
+    let parsedError = {};
+    try {
+        if (typeof message === 'string' && message.includes('{"status":"error"')) {
+            parsedError = JSON.parse(message);
+            message = parsedError.message || message;
+        }
+    } catch (e) {
+        console.error('Failed to parse error message:', e.message, message);
+        log_message(`Failed to parse error message: ${e.message}, raw_message=${message}`, 'make-market.log', 'make-market', 'ERROR');
+    }
+
+    // Handle specific errors
+    if (parsedError.errorCode === 'TOKEN_NOT_TRADABLE') {
+        userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
+    } else if (message.includes('Insufficient SOL balance')) {
+        userFriendlyMessage = `${message}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
+    } else if (message.includes('Connection error while checking wallet balance')) {
+        userFriendlyMessage = `${message}. Please check your network connection or try again later.`;
+    } else if (message.includes('Error checking token decimals')) {
+        userFriendlyMessage = `${message}. Please verify the token mint address and try again.`;
+    } else if (message.includes('Error checking token tradability')) {
+        userFriendlyMessage = `${message}. Please try again or contact support.`;
+    } else if (parsedError.errorCode) {
+        userFriendlyMessage = `Error: ${message} (Code: ${parsedError.errorCode}). Please try again or contact support.`;
+    } else if (message.includes('No private keys available')) {
+        userFriendlyMessage = `${message}`;
+        resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
+        resultDiv.classList.add('active');
+        const submitButton = document.querySelector('#makeMarketForm button');
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+        log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
+        return;
+    }
+
+    resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
+    resultDiv.classList.add('active');
+    const submitButton = document.querySelector('#makeMarketForm button');
+    if (submitButton) {
+        submitButton.disabled = false;
+    }
+    log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
+}
+
 // Refresh CSRF token
 async function refreshCSRFToken() {
     const response = await axios.get('/mm/refresh-csrf', {
@@ -99,57 +150,6 @@ async function checkWallets() {
         console.error('Failed to check wallets:', error.message);
         return false;
     }
-}
-
-// Show error message
-function showError(message) {
-    const resultDiv = document.getElementById('mm-result');
-    let userFriendlyMessage = 'An error occurred while submitting the form. Please try again.';
-
-    // Parse error message if it's JSON
-    let parsedError = {};
-    try {
-        if (typeof message === 'string' && message.includes('{"status":"error"')) {
-            parsedError = JSON.parse(message);
-            message = parsedError.message || message;
-        }
-    } catch (e) {
-        console.error('Failed to parse error message:', e.message, message);
-        log_message(`Failed to parse error message: ${e.message}, raw_message=${message}`, 'make-market.log', 'make-market', 'ERROR');
-    }
-
-    // Handle specific errors
-    if (parsedError.errorCode === 'TOKEN_NOT_TRADABLE') {
-        userFriendlyMessage = 'The selected token is not tradable on Jupiter. Please choose a different token or enable "Skip Token Tradability Check" to proceed.';
-    } else if (message.includes('Insufficient SOL balance')) {
-        userFriendlyMessage = `${message}. Please deposit more SOL to your wallet or enable "Skip Balance Check" to proceed.`;
-    } else if (message.includes('Connection error while checking wallet balance')) {
-        userFriendlyMessage = `${message}. Please check your network connection or try again later.`;
-    } else if (message.includes('Error checking token decimals')) {
-        userFriendlyMessage = `${message}. Please verify the token mint address and try again.`;
-    } else if (message.includes('Error checking token tradability')) {
-        userFriendlyMessage = `${message}. Please try again or contact support.`;
-    } else if (parsedError.errorCode) {
-        userFriendlyMessage = `Error: ${message} (Code: ${parsedError.errorCode}). Please try again or contact support.`;
-    } else if (message.includes('No private keys available')) {
-        userFriendlyMessage = `${message}`;
-        resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
-        resultDiv.classList.add('active');
-        const submitButton = document.querySelector('#makeMarketForm button');
-        if (submitButton) {
-            submitButton.disabled = false;
-        }
-        log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
-        return;
-    }
-
-    resultDiv.innerHTML = `<p>${userFriendlyMessage}</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
-    resultDiv.classList.add('active');
-    const submitButton = document.querySelector('#makeMarketForm button');
-    if (submitButton) {
-        submitButton.disabled = false;
-    }
-    log_message(`Client-side error displayed: ${userFriendlyMessage}`, 'make-market.log', 'make-market', 'ERROR');
 }
 
 // Function to validate Trade Direction conditions
