@@ -706,11 +706,19 @@ $defaultSlippage = 0.5; // Slippage
                 <input type="number" name="loopCount" id="loopCount" min="1" value="1">
                 <label for="batchSize">📦 Batch Size (2-10):</label>
                 <input type="number" name="batchSize" id="batchSize" min="2" max="10" value="2" required>
+                
                 <label for="skipBalanceCheck" class="check-box">
                     <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
                     <p>Skip wallet balance check</p>
                 </label>
                 <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
+                
+                <label for="skipTokenCheck" class="check-box">
+                    <input type="checkbox" name="skipTokenCheck" id="skipTokenCheck" value="1">
+                    <p>Skip token tradability check</p>
+                </label>
+                <p class="note">If you skip it, ensure the token is tradable on Jupiter API to avoid transaction failures.</p>
+                
                 <button class="cta-button" type="submit">🚀 Make Market</button>
             </form>
             <div id="mm-result" class="status-box"></div>
@@ -749,11 +757,19 @@ $defaultSlippage = 0.5; // Slippage
                 <input type="number" name="loopCount" id="loopCount" min="1" value="1">
                 <label for="batchSize">📦 Batch Size (2-10):</label>
                 <input type="number" name="batchSize" id="batchSize" min="2" max="10" value="2" required>
+                
                 <label for="skipBalanceCheck" class="check-box">
                     <input type="checkbox" name="skipBalanceCheck" id="skipBalanceCheck" value="1">
                     <p>Skip wallet balance check</p>
                 </label>
                 <p class="note">If you skip it, make sure your wallet balance is enough to complete the transaction.</p>
+
+                <label for="skipTokenCheck" class="check-box">
+                    <input type="checkbox" name="skipTokenCheck" id="skipTokenCheck" value="1">
+                    <p>Skip token tradability check</p>
+                </label>
+                <p class="note">If you skip it, ensure the token is tradable on Jupiter API to avoid transaction failures.</p>
+                
                 <button class="cta-button" type="submit">🚀 Create Process</button>
             </form>
             <div id="mm-result" class="status-box"></div>
