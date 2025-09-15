@@ -110,6 +110,8 @@ function showError(message) {
         resultDiv.innerHTML = `<p>${message}. Please check your network connection or try again later.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
     } else if (message.includes('Error checking token decimals')) {
         resultDiv.innerHTML = `<p>${message}. Please verify the token mint address and try again.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
+    } else if (message.includes('Token is not tradable')) {
+        resultDiv.innerHTML = `<p>${message}. Please verify the token mint address or enable "Skip Token Tradability Check" to proceed.</p><button class="cta-button" onclick="document.getElementById('mm-result').innerHTML='';document.getElementById('mm-result').classList.remove('active');">Clear Notification</button>`;
     } else if (message.includes('No private keys available')) {
         resultDiv.innerHTML = `<p>${message}</p><a href="/mm/add-private-key" class="cta-button">Add Private Key</a>`;
     } else {
@@ -213,6 +215,7 @@ document.getElementById('makeMarketForm')?.addEventListener('submit', async (e) 
         batchSize: parseInt(formData.get('batchSize')) || 2,
         csrf_token: csrfToken,
         skipBalanceCheck: formData.get('skipBalanceCheck') === '1' ? 1 : 0
+        skipTokenCheck: formData.get('skipTokenCheck') === '1' ? 1 : 0
     };
     log_message(`Processed Form data: ${JSON.stringify(params)}`, 'make-market.log', 'make-market', 'DEBUG');
     console.log('Processed Form data:', params);
